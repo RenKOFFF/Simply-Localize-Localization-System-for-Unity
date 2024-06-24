@@ -1,7 +1,7 @@
 using SimplyLocalize.Data.Extensions;
 using UnityEngine;
 
-namespace SimplyLocalize.Data.KeyGeneration
+namespace SimplyLocalize.Data.Keys
 {
     [CreateAssetMenu(fileName = "LocalizationKeysData", menuName = "SimplyLocalize/New LocalizationKeysData", order = 0)]
     public class LocalizationKeysData : ScriptableObject

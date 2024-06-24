@@ -4,14 +4,15 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 
-namespace SimplyLocalize.Data.KeyGeneration
+namespace SimplyLocalize.Data.Keys
 {
     public static class KeyGenerator
     {
         private static IEnumerable<EnumHolder> _enums;
         private static string _enumKeysName;
 
-        private static readonly string FilePathAndName = $"Assets/{nameof(SimplyLocalize)}/Data/Keys/{0}.cs";
+        private static readonly string FilePathAndName = $"Assets/{nameof(SimplyLocalize)}/Data/Keys";
+        private static readonly string FileExtension = ".cs";
 
         public static void SetEnums(IEnumerable<EnumHolder> enumEntries)
         {
@@ -27,7 +28,9 @@ namespace SimplyLocalize.Data.KeyGeneration
         public static void GenerateEnumKeys(string fileName)
         {
             _enumKeysName = fileName;
-            var path = string.Format(FilePathAndName, fileName);
+            var path = Path.Combine(FilePathAndName, fileName);
+            path = Path.ChangeExtension(path, FileExtension);
+
             using (var streamWriter = new StreamWriter(path))
             {
                 streamWriter.WriteLine("using UnityEngine;\n");
@@ -57,11 +60,13 @@ namespace SimplyLocalize.Data.KeyGeneration
 
         public static void GenerateDictionaryKeys(string fileName)
         {
-            var path = string.Format(FilePathAndName, fileName);
+            var path = Path.Combine(FilePathAndName, fileName);
+            path = Path.ChangeExtension(path, FileExtension);
+
             using (var streamWriter = new StreamWriter(path))
             {
                 streamWriter.WriteLine("using System.Collections.Generic;");
-                streamWriter.WriteLine($"namespace {nameof(SimplyLocalize)}.Data.KeyGeneration\n{{");
+                streamWriter.WriteLine($"namespace {nameof(SimplyLocalize)}.Data.Keys\n{{");
                 streamWriter.WriteLine("\tpublic static class " + fileName);
                 streamWriter.WriteLine("\t{");
                 streamWriter.WriteLine($"\t\tpublic static readonly Dictionary<{_enumKeysName}, string> Keys = new()");

@@ -1,6 +1,6 @@
 using System;
 
-namespace SimplyLocalize.Data.KeyGeneration
+namespace SimplyLocalize.Data.Keys
 {
     [Serializable]
     public class EnumHolder

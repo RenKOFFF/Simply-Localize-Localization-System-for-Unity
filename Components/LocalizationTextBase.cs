@@ -1,5 +1,5 @@
 using SimplyLocalize.Data;
-using SimplyLocalize.Data.KeyGeneration;
+using SimplyLocalize.Data.Keys;
 using SimplyLocalize.Main;
 using UnityEngine;
 
