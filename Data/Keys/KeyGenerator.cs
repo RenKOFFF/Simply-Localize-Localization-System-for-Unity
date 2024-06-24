@@ -11,7 +11,7 @@ namespace SimplyLocalize.Data.Keys
         private static IEnumerable<EnumHolder> _enums;
         private static string _enumKeysName;
 
-        private static readonly string FilePathAndName = "Packages/Simply Localize/Data/Keys";
+        private static readonly string FilePathAndName = "Packages/com.renkoff.simply-localize/Data/Keys";
         private static readonly string FileExtension = ".cs";
 
         public static void SetEnums(IEnumerable<EnumHolder> enumEntries)
