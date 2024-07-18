@@ -16,7 +16,8 @@ namespace SimplyLocalize.Components
 
         public bool Translated { get; protected set; }
         public string DefaultText { get; protected set; }
-        
+        public LocalizationKey LocalizationKey => _localizationKey;
+
 
         private void Awake()
         {
@@ -82,9 +83,9 @@ namespace SimplyLocalize.Components
         
         private void SetTextByKey()
         {
-            if (TryGetKey(_localizationKey, out var key))
+            if (TryGetKey(LocalizationKey, out var key))
                 SetTextByKey(key);
-            else Debug.Log($"Localization key {_localizationKey} not founded");
+            else Debug.Log($"Localization key {LocalizationKey} not founded");
         }
 
         private void SetTextByKey(string key)
@@ -99,7 +100,7 @@ namespace SimplyLocalize.Components
 
         private void Init()
         {
-            if (_localizationKey != LocalizationKey.None)
+            if (LocalizationKey != LocalizationKey.None)
             {
                 SetTextByKey();
             }
