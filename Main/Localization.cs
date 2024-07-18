@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SimplyLocalize.Components;
 using SimplyLocalize.Data;
-using Unity.Plastic.Newtonsoft.Json;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace SimplyLocalize.Main
@@ -43,6 +44,8 @@ namespace SimplyLocalize.Main
 
                 _localization = localizationDictionary;
                 _fontHolder = localizationResource.OverrideFontAsset;
+                
+                LocalizationTextBase.ApplyLocalizationDictionary();
                 return true;
             }
 
