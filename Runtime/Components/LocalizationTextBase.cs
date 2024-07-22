@@ -10,6 +10,7 @@ namespace SimplyLocalize.Runtime.Components
     {
         [SerializeField] private StringEnum<LocalizationKey> _localizationKey;
 
+        private static string _lang;
         private static LocalizationDictionary _allLocalizationsDict;
         private static FontHolder _overrideFontHolder;
         
@@ -59,12 +60,13 @@ namespace SimplyLocalize.Runtime.Components
         {
             translated = "***";
             return LocalizationKeys.Keys.TryGetValue(localizationKey, out var key) &&
-                   _allLocalizationsDict.Items.TryGetValue(key, out translated);
+                   _allLocalizationsDict.TryGetTranslating(_lang, key, out translated);
         }
 
         public static void ApplyLocalizationDictionary()
         {
             _allLocalizationsDict = Localization.LocalizationDictionary;
+            _lang = Localization.CurrentLanguage;
             if (Localization.TryGetFontHolder(out var fontHolder))
             {
                 _overrideFontHolder = fontHolder;
@@ -91,7 +93,7 @@ namespace SimplyLocalize.Runtime.Components
 
         private void SetTextByKey(string key)
         {
-            if (_allLocalizationsDict.Items.TryGetValue(key, out var translatedText))
+            if (_allLocalizationsDict.TryGetTranslating(_lang, key, out var translatedText))
             {
                 ApplyTranslate(translatedText);
                 SetTranslate(translatedText);
@@ -101,18 +103,7 @@ namespace SimplyLocalize.Runtime.Components
 
         private void Init()
         {
-            if (LocalizationKey != LocalizationKey.None)
-            {
-                SetTextByKey();
-            }
-            else
-            {
-                var o = gameObject;
-                // Debug.Log($"The key is missing when awake is called. " +
-                //           $"Need to set the key in the inspector or via code." +
-                //           $" If the text {o.transform.root.name}/.../" +
-                //           $"{o.transform.parent.name}/{o.name} is correct, dont worry");
-            }
+            SetTextByKey();
 
             if (_overrideFontHolder)
             {

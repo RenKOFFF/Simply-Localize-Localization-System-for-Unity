@@ -6,7 +6,7 @@ namespace SimplyLocalize.Runtime.Data.Keys.Generated
 	{
 		public static readonly Dictionary<LocalizationKey, string> Keys = new()
 		{
-			{LocalizationKey.None, LocalizationKey.None.ToString()},
+			{LocalizationKey.Sample, LocalizationKey.Sample.ToString()},
 		};
 	}
 }

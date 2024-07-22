@@ -24,6 +24,8 @@ namespace SimplyLocalize.Runtime.Main
             }
         }
 
+        public static string CurrentLanguage { get; private set; }
+
         public static bool TryGetFontHolder(out FontHolder fontHolder)
         {
             fontHolder = _fontHolder;
@@ -32,25 +34,33 @@ namespace SimplyLocalize.Runtime.Main
 
         public static bool SetLocalization(string lang)
         {
-            IEnumerable<LocalizationData> allLocalizationData = Resources.LoadAll<LocalizationData>("LocalizationData");
+            IEnumerable<LocalizationData> allLocalizationData = Resources.LoadAll<LocalizationData>("");
+            var localization = Resources.Load<TextAsset>("Localization");
 
             var localizationResource = allLocalizationData
                 .FirstOrDefault(l => l.i18nLang.Equals(lang));
-
-            if (localizationResource != null)
+            
+            if (localization == null)
             {
-                var localizationDictionary = JsonConvert.DeserializeObject<LocalizationDictionary>
-                    (localizationResource.LocalizationJsonFile.text);
-
-                _localization = localizationDictionary;
-                _fontHolder = localizationResource.OverrideFontAsset;
-                
-                LocalizationTextBase.ApplyLocalizationDictionary();
-                return true;
+                Debug.LogWarning($"{nameof(localization)} not founded");
+                return false;
             }
 
-            Debug.Log($"{nameof(localizationResource)} not founded");
-            return false;
+            if (localizationResource == null)
+            {
+                Debug.LogWarning($"{nameof(localizationResource)} not founded");
+                return false;
+            }
+
+            CurrentLanguage = lang;
+                
+            var localizationDictionary = JsonConvert.DeserializeObject<LocalizationDictionary>(localization.text);
+
+            _localization = localizationDictionary;
+            _fontHolder = localizationResource.OverrideFontAsset;
+                
+            LocalizationTextBase.ApplyLocalizationDictionary();
+            return true;
         }
     }
 }

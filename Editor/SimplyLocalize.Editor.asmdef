@@ -2,7 +2,8 @@
     "name": "SimplyLocalize.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:e55ffc05c840e854da074020f5a1f025"
+        "GUID:e55ffc05c840e854da074020f5a1f025",
+        "GUID:f576fac433856444e817119d3cfb1a11"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

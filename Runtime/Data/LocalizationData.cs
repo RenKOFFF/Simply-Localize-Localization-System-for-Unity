@@ -6,7 +6,6 @@ namespace SimplyLocalize.Runtime.Data
     public class LocalizationData : ScriptableObject
     {
         [field:SerializeField] public string i18nLang { get; private set; }
-        [field:SerializeField] public TextAsset LocalizationJsonFile { get; private set; }
         [field:SerializeField] public FontHolder OverrideFontAsset { get; private set; }
     }
 }
