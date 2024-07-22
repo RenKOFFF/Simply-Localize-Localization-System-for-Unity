@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,7 +13,9 @@ namespace SimplyLocalize.Editor.Keys
         private static IEnumerable<EnumHolder> _enums;
         private static string _enumKeysName;
 
-        private static readonly string FilePathAndName = "Packages/com.renkoff.simply-localize/Runtime/Data/Keys";
+        // private static readonly string FilePathAndName = "Packages/com.renkoff.simply-localize/Runtime/Data/Keys/Generated";
+        private static readonly string FilePathAndName = "Assets/SimplyLocalize/Runtime/Data/Keys/Generated";
+
         private static readonly string FileExtension = ".cs";
 
         public static void SetEnums(IEnumerable<EnumHolder> enumEntries)
@@ -35,27 +38,28 @@ namespace SimplyLocalize.Editor.Keys
             using (var streamWriter = new StreamWriter(path))
             {
                 streamWriter.WriteLine("using UnityEngine;\n");
-                streamWriter.WriteLine($"namespace {nameof(SimplyLocalize)}.Data.Keys\n{{\n");
+                streamWriter.WriteLine($"namespace {nameof(SimplyLocalize)}.Runtime.Data.Keys.Generated\n{{");
                 streamWriter.WriteLine("\tpublic enum " + fileName);
                 streamWriter.WriteLine("\t{");
                 foreach (var e in _enums)
                 {
                     var inspectorName = e.InspectorName;
+                    var markedInspectorName = e.MarkAsFormattable ? $"#F {(string.IsNullOrEmpty(inspectorName) ? e.Name : inspectorName)}" : inspectorName;
 
-                    if (string.IsNullOrEmpty(inspectorName))
+                    if (string.IsNullOrEmpty(markedInspectorName))
                     {
                         streamWriter.WriteLine("\t\t" + e.Name + ", ");
                     }
                     else
                     {
-                        streamWriter.WriteLine("\t\t" + $"[InspectorName(\"{inspectorName}\")]" + e.Name + ", ");
+                        streamWriter.WriteLine("\t\t" + $"[InspectorName(\"{markedInspectorName}\")] " + e.Name + ", ");
                     }
                 }
 
                 streamWriter.WriteLine("\t}");
                 streamWriter.WriteLine("}");
             }
-            
+
             AssetDatabase.Refresh();
         }
 
@@ -66,23 +70,24 @@ namespace SimplyLocalize.Editor.Keys
 
             using (var streamWriter = new StreamWriter(path))
             {
-                streamWriter.WriteLine("using System.Collections.Generic;");
-                streamWriter.WriteLine($"namespace {nameof(SimplyLocalize)}.Data.Keys\n{{");
-                streamWriter.WriteLine("\tpublic static class " + fileName);
-                streamWriter.WriteLine("\t{");
-                streamWriter.WriteLine($"\t\tpublic static readonly Dictionary<{_enumKeysName}, string> Keys = new()");
-                streamWriter.WriteLine("\t\t{");
-                foreach (var e in _enums)
-                {
-                    streamWriter.Write("\n\t\t\t{");
-                    streamWriter.Write($"{_enumKeysName}.{e.Name}" + ", " +
-                                       $"{_enumKeysName}.{e.Name}.ToString()");
-                    streamWriter.Write("},");
-                }
+                streamWriter.WriteLine(
+                    $"using System.Collections.Generic;\n\n" +
+                    $"namespace {nameof(SimplyLocalize)}.Runtime.Data.Keys.Generated\n" +
+                    $"{{\n" +
+                    $"\tpublic static class {fileName}\n" +
+                    $"\t{{\n" +
+                    $"\t\tpublic static readonly Dictionary<{_enumKeysName}, string> Keys = new()\n" +
+                    $"\t\t{{"
+                );
 
-                streamWriter.WriteLine("\n\t\t};");
-                streamWriter.WriteLine("\t}");
-                streamWriter.WriteLine("}");
+                var keys = _enums.Select(e => $"\t\t\t{{{_enumKeysName}.{e.Name}, {_enumKeysName}.{e.Name}.ToString()}},");
+                streamWriter.Write(string.Join(Environment.NewLine, keys));
+
+                streamWriter.WriteLine(
+                    $"\n\t\t}};\n" +
+                    $"\t}}\n" +
+                    $"}}"
+                );
             }
 
             AssetDatabase.Refresh();

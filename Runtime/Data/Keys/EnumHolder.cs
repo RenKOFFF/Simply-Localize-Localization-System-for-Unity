@@ -6,6 +6,7 @@ namespace SimplyLocalize.Runtime.Data.Keys
     public class EnumHolder
     {
         public string Name;
+        public bool MarkAsFormattable;
         public string InspectorName;
     }
 }

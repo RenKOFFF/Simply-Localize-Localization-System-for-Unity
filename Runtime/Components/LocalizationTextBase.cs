@@ -1,5 +1,6 @@
 using SimplyLocalize.Runtime.Data;
-using SimplyLocalize.Runtime.Data.Keys;
+using SimplyLocalize.Runtime.Data.Keys.Generated;
+using SimplyLocalize.Runtime.Data.StringEnum;
 using SimplyLocalize.Runtime.Main;
 using UnityEngine;
 
@@ -7,7 +8,7 @@ namespace SimplyLocalize.Runtime.Components
 {
     public abstract class LocalizationTextBase : MonoBehaviour
     {
-        [SerializeField] private LocalizationKey _localizationKey;
+        [SerializeField] private StringEnum<LocalizationKey> _localizationKey;
 
         private static LocalizationDictionary _allLocalizationsDict;
         private static FontHolder _overrideFontHolder;

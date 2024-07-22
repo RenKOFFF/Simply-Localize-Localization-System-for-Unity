@@ -1,6 +1,5 @@
 ﻿#if UNITY_EDITOR
 using System.IO;
-using System.Text;
 using SimplyLocalize.Editor.Keys;
 using SimplyLocalize.Runtime.Data.Keys;
 using UnityEditor;
@@ -59,7 +58,7 @@ namespace SimplyLocalize.Editor
         [MenuItem("SimplyLocalize/Generate Keys", priority = 2)]
         public static void GenerateLocalizationKeys()
         {
-            if (_localizationKeysData == null)
+            if (_localizationKeysData == null && !FindLocalizationData(out _localizationKeysData))
             {
                 Debug.LogWarning($"No {nameof(LocalizationKeysData)} asset found. Create one and try again.");
                 return;
