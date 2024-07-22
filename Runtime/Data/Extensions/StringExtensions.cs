@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace SimplyLocalize.Data.Extensions
+namespace SimplyLocalize.Runtime.Data.Extensions
 {
     public static class StringExtensions
     {

@@ -1,9 +1,9 @@
-using SimplyLocalize.Data;
-using SimplyLocalize.Data.Keys;
-using SimplyLocalize.Main;
+using SimplyLocalize.Runtime.Data;
+using SimplyLocalize.Runtime.Data.Keys;
+using SimplyLocalize.Runtime.Main;
 using UnityEngine;
 
-namespace SimplyLocalize.Components
+namespace SimplyLocalize.Runtime.Components
 {
     public abstract class LocalizationTextBase : MonoBehaviour
     {

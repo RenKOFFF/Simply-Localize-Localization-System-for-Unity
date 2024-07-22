@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SimplyLocalize.Components;
-using SimplyLocalize.Data;
 using Newtonsoft.Json;
+using SimplyLocalize.Runtime.Components;
+using SimplyLocalize.Runtime.Data;
 using UnityEngine;
 
-namespace SimplyLocalize.Main
+namespace SimplyLocalize.Runtime.Main
 {
     public static class Localization
     {

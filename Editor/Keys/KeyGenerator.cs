@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using SimplyLocalize.Runtime.Data.Keys;
 using UnityEditor;
 
-namespace SimplyLocalize.Data.Keys
+namespace SimplyLocalize.Editor.Keys
 {
     public static class KeyGenerator
     {
         private static IEnumerable<EnumHolder> _enums;
         private static string _enumKeysName;
 
-        private static readonly string FilePathAndName = "Packages/com.renkoff.simply-localize/Data/Keys";
+        private static readonly string FilePathAndName = "Packages/com.renkoff.simply-localize/Runtime/Data/Keys";
         private static readonly string FileExtension = ".cs";
 
         public static void SetEnums(IEnumerable<EnumHolder> enumEntries)

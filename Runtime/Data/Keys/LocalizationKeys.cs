@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-namespace SimplyLocalize.Data.Keys
+
+namespace SimplyLocalize.Runtime.Data.Keys
 {
 	public static class LocalizationKeys
 	{

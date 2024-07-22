@@ -1,8 +1,8 @@
-using SimplyLocalize.Data;
+using SimplyLocalize.Runtime.Data;
 using TMPro;
 using UnityEngine;
 
-namespace SimplyLocalize.Components.TMP
+namespace SimplyLocalize.Runtime.Components.TMP
 {
 
     public class LocalizationTextTMP : LocalizationTextBase

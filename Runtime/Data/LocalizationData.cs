@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SimplyLocalize.Data
+namespace SimplyLocalize.Runtime.Data
 {
     [CreateAssetMenu(fileName = "LocalizationData_", menuName = "SimplyLocalize/New localization data", order = 0)]
     public class LocalizationData : ScriptableObject

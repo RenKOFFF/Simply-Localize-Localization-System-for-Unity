@@ -3,11 +3,12 @@
   "version": "1.0.1",
   "displayName": "Simply Localize",
   "description": "A simple localization system for Unity",
+  "license": "MIT",
   "dependencies": {
     "com.unity.textmeshpro": "3.0.9"
   },
   "author": {
-    "name": "Alexey Renkoff Kucherenko",
+    "name": "Alexey Renkoff",
     "email": "lex.renkoff@gmail.com",
     "url": "https://t.me/renKOF"
   }

@@ -1,0 +1,16 @@
+{
+    "name": "SimplyLocalize.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:e55ffc05c840e854da074020f5a1f025"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

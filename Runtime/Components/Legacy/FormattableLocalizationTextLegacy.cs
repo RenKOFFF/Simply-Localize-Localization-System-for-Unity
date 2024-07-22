@@ -1,13 +1,12 @@
 using System;
 
-namespace SimplyLocalize.Components.TMP
+namespace SimplyLocalize.Runtime.Components.Legacy
 {
-    public class FormattableLocalizationTextTMP : LocalizationTextTMP
+    public class FormattableLocalizationTextLegacy : LocalizationTextLegacy
     {
         private string _deferredValue;
 
         public event Action TranslatedEvent;
-
 
         /// <summary>
         /// To update dynamic text, use the format like this: Hi, {0}. Then in SetValue method, replace the placeholder {0} with the desired value. For example, SetValue("Alex") will display Hi, Alex.

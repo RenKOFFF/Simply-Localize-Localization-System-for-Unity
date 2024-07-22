@@ -1,8 +1,8 @@
-using SimplyLocalize.Data;
+using SimplyLocalize.Runtime.Data;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SimplyLocalize.Components.Legacy
+namespace SimplyLocalize.Runtime.Components.Legacy
 {
     public class LocalizationTextLegacy : LocalizationTextBase
     {
