@@ -8,18 +8,18 @@ namespace SimplyLocalize.Runtime.Components
 {
     public abstract class LocalizationTextBase : MonoBehaviour
     {
-        [SerializeField] private StringEnum<LocalizationKey> _localizationKey;
-
         private static string _lang;
-        private static LocalizationDictionary _allLocalizationsDict;
         private static FontHolder _overrideFontHolder;
+
+        [SerializeField] private StringEnum<LocalizationKey> _localizationKey;
         
         private bool _isInitialized;
-
+        
         public bool Translated { get; protected set; }
         public string DefaultText { get; protected set; }
         public LocalizationKey LocalizationKey => _localizationKey;
-
+        
+        private static LocalizationDictionary AllLocalizationsDict => Localization.LocalizationDictionary;
 
         private void Awake()
         {
@@ -60,12 +60,11 @@ namespace SimplyLocalize.Runtime.Components
         {
             translated = "***";
             return LocalizationKeys.Keys.TryGetValue(localizationKey, out var key) &&
-                   _allLocalizationsDict.TryGetTranslating(_lang, key, out translated);
+                   AllLocalizationsDict.TryGetTranslating(_lang, key, out translated);
         }
 
-        public static void ApplyLocalizationDictionary()
+        public static void ApplyLocalization()
         {
-            _allLocalizationsDict = Localization.LocalizationDictionary;
             _lang = Localization.CurrentLanguage;
             if (Localization.TryGetFontHolder(out var fontHolder))
             {
@@ -88,12 +87,12 @@ namespace SimplyLocalize.Runtime.Components
         {
             if (TryGetKey(LocalizationKey, out var key))
                 SetTextByKey(key);
-            else Debug.Log($"Localization key {LocalizationKey} not founded");
+            else Debug.LogWarning($"Localization key {LocalizationKey} not founded");
         }
 
         private void SetTextByKey(string key)
         {
-            if (_allLocalizationsDict.TryGetTranslating(_lang, key, out var translatedText))
+            if (AllLocalizationsDict.TryGetTranslating(_lang, key, out var translatedText))
             {
                 ApplyTranslate(translatedText);
                 SetTranslate(translatedText);

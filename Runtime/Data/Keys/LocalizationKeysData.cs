@@ -5,6 +5,7 @@ namespace SimplyLocalize.Runtime.Data.Keys
 {
     public class LocalizationKeysData : ScriptableObject
     {
+        [field: SerializeField] public LocalizationData DefaultLocalizationData { get; private set; }
         [field: SerializeField] public EnumHolder[] Keys { get; private set; } =
         {
             new()

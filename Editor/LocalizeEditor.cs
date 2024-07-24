@@ -15,27 +15,15 @@ namespace SimplyLocalize.Editor
     public static class LocalizeEditor
     {
         private static readonly string FolderName = "SimplyLocalizeData";
-
         private static readonly string LocalizationFolderPath = Path.Combine("Assets", FolderName);
-
-        private static readonly string LocalizationDataPath =
-            Path.Combine(LocalizationFolderPath, nameof(LocalizationKeysData));
-
         private static readonly string FileExtension = ".asset";
-
-        private static readonly string DataPath = Path.ChangeExtension(LocalizationDataPath, FileExtension);
-
+        
         private static readonly string LocalizationTemplateName = "Localization";
-        private static readonly string LocalizationResourcesPath = Path.Combine("Assets", FolderName, "Resources");
-
-        private static readonly string LocalizationResourcesDataPath =
-            Path.Combine(LocalizationResourcesPath, LocalizationTemplateName);
-
         private static readonly string TemplateExtension = ".json";
-
-        private static readonly string LocalizationTemplatePath =
-            Path.ChangeExtension(LocalizationResourcesDataPath, TemplateExtension);
-
+        
+        private static readonly string LocalizationResourcesPath = Path.Combine("Assets", FolderName, "Resources");
+        private static readonly string LocalizationResourcesDataPath = Path.Combine(LocalizationResourcesPath, LocalizationTemplateName);
+        private static readonly string LocalizationTemplatePath = Path.ChangeExtension(LocalizationResourcesDataPath, TemplateExtension);
 
         private static LocalizationKeysData _localizationKeysData;
 
@@ -55,14 +43,22 @@ namespace SimplyLocalize.Editor
             {
                 AssetDatabase.CreateFolder("Assets", FolderName);
             }
+            
+            if (!AssetDatabase.IsValidFolder(LocalizationResourcesPath))
+            {
+                AssetDatabase.CreateFolder(LocalizationFolderPath, "Resources");
+            }
+            
+            var localizationDataPath = Path.Combine(LocalizationResourcesPath, nameof(LocalizationKeysData));
+            var dataPath = Path.ChangeExtension(localizationDataPath, FileExtension);
 
-            AssetDatabase.CreateAsset(_localizationKeysData, DataPath);
+            AssetDatabase.CreateAsset(_localizationKeysData, dataPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             SelectLocalizationKeysData();
 
-            Debug.Log($"{nameof(LocalizationKeysData)} created at " + DataPath);
+            Debug.Log($"{nameof(LocalizationKeysData)} created at " + dataPath);
         }
 
         [MenuItem("Window/SimplyLocalize/Select Localization Keys List", priority = 300, secondaryPriority = 2)]
@@ -137,16 +133,12 @@ namespace SimplyLocalize.Editor
 
         private static void GenerateLocalizationTemplate()
         {
-            if (!AssetDatabase.IsValidFolder(LocalizationResourcesPath))
-            {
-                AssetDatabase.CreateFolder(LocalizationFolderPath, "Resources");
-            }
-
-            var data = GetLocalizationData().ToArray();
+            var data = GetLocalizationData();
             if (!data.Any())
             {
                 Debug.LogWarning($"No {nameof(LocalizationData)} found. " +
-                                 "Create one or more files in the \"Resources\" folder from the menu \"Create/Easy localize/New localization data\" and try again.");
+                                 "Create one or more files in the \"Resources\" folder from the menu " +
+                                 "\"Create/Easy localize/New localization data\" and try again.");
                 return;
             }
 
@@ -161,7 +153,10 @@ namespace SimplyLocalize.Editor
             }
         }
 
-        private static IEnumerable<LocalizationData> GetLocalizationData() => Resources.LoadAll<LocalizationData>("");
+        private static LocalizationData[] GetLocalizationData()
+        {
+            return Resources.LoadAll<LocalizationData>("");
+        }
 
         private static void WriteLocalization(string json)
         {
