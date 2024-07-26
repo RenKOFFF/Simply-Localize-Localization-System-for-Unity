@@ -10,15 +10,21 @@ namespace SimplyLocalize.Runtime.Data.Keys
         {
             new()
             {
-                Name = "None"
+                Name = "Sample"
             }
         };
 
         private void OnValidate()
         {
-            foreach (var key in Keys)
+            for (var i = 0; i < Keys.Length; i++)
             {
+                var key = Keys[i];
                 key.Name = key.Name.ToPascalCase();
+                
+                if (i > 0 && key.Name == Keys[i - 1].Name)
+                {
+                    key.Name = $"{key.Name}2";
+                }
             }
         }
     }

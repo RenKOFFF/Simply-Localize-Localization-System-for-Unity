@@ -14,10 +14,8 @@ namespace SimplyLocalize.Runtime.Data.StringEnum
             _value = value;
         }
 
-        [SerializeField]
-        private string _stringValue;
-
-        private T _value;
+        [SerializeField] private string _stringValue;
+        [SerializeField] private T _value;
 
         public T Value
         {

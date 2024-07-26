@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.2] - 2024-07-27 
+### Added
+* Added search field to search for keys. Thanks to https://github.com/roboryantron for providing the search field asset - ***UnityEditorJunkie***.
+* Added comments for generated keys.
+* Added additional check for created keys. Now when creating a new key and when duplicating keys, the last key will receive the number 2 at the end.
+
 ## [1.2.1] - 2024-07-25 
 ### Changed
 * Added the ability to set a default language in the LocalizationKeysData asset. 
@@ -9,7 +15,7 @@
 ### Changed
 * Added global localization template generation. Now there is only one .json file with translations and it is generated mainly from code. To work, just add the translations themselves to the created file.
 ### Removed
-* Removed check for "None" key. Now this key is not required to be stored and can be easily replaced with any other or deleted.
+* Removed check for "Sample" key. Now this key is not required to be stored and can be easily replaced with any other or deleted.
 
 ## [1.1.0] - 2024-07-22 
 ### Changed

@@ -1,8 +1,10 @@
 using SimplyLocalize.Runtime.Data;
 using SimplyLocalize.Runtime.Data.Keys.Generated;
+using SimplyLocalize.Runtime.Data.SearchableEnum;
 using SimplyLocalize.Runtime.Data.StringEnum;
 using SimplyLocalize.Runtime.Main;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace SimplyLocalize.Runtime.Components
 {
@@ -10,14 +12,15 @@ namespace SimplyLocalize.Runtime.Components
     {
         private static string _lang;
         private static FontHolder _overrideFontHolder;
-
+        
+        [SearchableStringEnum]
         [SerializeField] private StringEnum<LocalizationKey> _localizationKey;
         
         private bool _isInitialized;
         
         public bool Translated { get; protected set; }
         public string DefaultText { get; protected set; }
-        public LocalizationKey LocalizationKey => _localizationKey;
+        public LocalizationKey LocalizationKey => _localizationKey.Value;
         
         private static LocalizationDictionary AllLocalizationsDict => Localization.LocalizationDictionary;
 
@@ -28,7 +31,7 @@ namespace SimplyLocalize.Runtime.Components
 
         public void TranslateByKey(LocalizationKey key)
         {
-            _localizationKey = key;
+            _localizationKey.Value = key;
 
             if (_isInitialized == false) 
                 Init();
