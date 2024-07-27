@@ -87,6 +87,19 @@ namespace SimplyLocalize.Editor
             GenerateLocalizationTemplate();
         }
 
+        public static bool TryAddNewKey(string newEnumKey)
+        {
+            if (_localizationKeysData == null && !FindLocalizationData(out _localizationKeysData))
+                return false;
+
+            if (!_localizationKeysData.TryAddNewKey(newEnumKey))
+                return false;
+            
+            GenerateLocalizationKeys();
+            
+            return true;
+        }
+
         private static bool FindLocalizationData(out LocalizationKeysData data)
         {
             var guids = AssetDatabase.FindAssets($"t:{nameof(LocalizationKeysData)}");

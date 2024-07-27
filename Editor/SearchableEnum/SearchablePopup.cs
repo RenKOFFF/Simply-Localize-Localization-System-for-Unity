@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using SimplyLocalize.Editor.Keys;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,6 +13,9 @@ namespace SimplyLocalize.Editor.SearchableEnum
 {
     public class SearchablePopup : PopupWindowContent
     {
+        /// <summary> Name to use for the new key. </summary>
+        private const string _ADD_NEW_KEY_WORD = "Add new key: ";
+        
         /// <summary> Height of each element in the popup list. </summary>
         private const float ROW_HEIGHT = 22.0f;
         
@@ -32,7 +36,7 @@ namespace SimplyLocalize.Editor.SearchableEnum
         /// <param name="onSelectionMade">
         /// Callback to trigger when a choice is made.
         /// </param>
-        public static void Show(Rect activatorRect, string[] options, int current, Action<int> onSelectionMade)
+        public static void Show(Rect activatorRect, string[] options, int current, Action<string, int> onSelectionMade)
         {
             SearchablePopup win = 
                 new SearchablePopup(options, current, onSelectionMade);
@@ -75,13 +79,18 @@ namespace SimplyLocalize.Editor.SearchableEnum
             
             /// <summary> All posibile items in the list. </summary>
             private readonly string[] allItems;
+            
+            /// <summary> The special entry when filtering returns nothing. </summary>
+            private readonly string _specialEntry;
 
             /// <summary> Create a new filtered list. </summary>
             /// <param name="items">All The items to filter.</param>
-            public FilteredList(string[] items)
+            /// <param name="specialEntry">The special entry when filtering returns nothing.</param>
+            public FilteredList(string[] items, string specialEntry)
             {
                 allItems = items;
                 Entries = new List<Entry>();
+                _specialEntry = specialEntry;
                 UpdateFilter("");
             }
             
@@ -127,12 +136,22 @@ namespace SimplyLocalize.Editor.SearchableEnum
                             Entries.Add(entry);
                     }
                 }
+                
+                if (Entries.Count == 0)
+                {
+                    Entries.Add(new Entry
+                    {
+                        Index = -1,
+                        Text = _specialEntry + filter
+                    });
+                }
+                
                 return true;
             }
         }
         
         /// <summary> Callback to trigger when an item is selected. </summary>
-        private readonly Action<int> onSelectionMade;
+        private readonly Action<string, int> onSelectionMade;
         
         /// <summary>
         /// Index of the item that was selected when the list was opened.
@@ -174,9 +193,9 @@ namespace SimplyLocalize.Editor.SearchableEnum
         private static GUIStyle DisabledCancelButton = "ToolbarSearchCancelButtonEmpty";
         private static GUIStyle Selection = "SelectionRect";
         
-        private SearchablePopup(string[] names, int currentIndex, Action<int> onSelectionMade)
+        private SearchablePopup(string[] names, int currentIndex, Action<string, int> onSelectionMade)
         {
-            list = new FilteredList(names);
+            list = new FilteredList(names, _ADD_NEW_KEY_WORD);
             this.currentIndex = currentIndex;
             this.onSelectionMade = onSelectionMade;
             
@@ -184,7 +203,7 @@ namespace SimplyLocalize.Editor.SearchableEnum
             scrollToIndex = currentIndex;
             scrollOffset = GetWindowSize().y - ROW_HEIGHT * 2;
         }
-
+        
         public override void OnOpen()
         {
             base.OnOpen();
@@ -278,7 +297,18 @@ namespace SimplyLocalize.Editor.SearchableEnum
                         hoverIndex = i;
                     if (Event.current.type == EventType.MouseDown)
                     {
-                        onSelectionMade(list.Entries[i].Index);
+                        if (list.Entries[i].Index == -1)
+                        {
+                            var key = list.Entries[i].Text.Remove(0, _ADD_NEW_KEY_WORD.Length);
+                            if (TryAddNewKey(key))
+                            {
+                                onSelectionMade(key, 0);
+                            }
+                        }
+                        else
+                        {
+                            onSelectionMade(list.Entries[i].Text, list.Entries[i].Index);
+                        }
                         EditorWindow.focusedWindow.Close();
                     }
                 }
@@ -289,6 +319,11 @@ namespace SimplyLocalize.Editor.SearchableEnum
             }
 
             GUI.EndScrollView();
+        }
+
+        private bool TryAddNewKey(string key)
+        {
+            return LocalizeEditor.TryAddNewKey(key);
         }
 
         private void DrawRow(Rect rowRect, int i)
@@ -331,7 +366,18 @@ namespace SimplyLocalize.Editor.SearchableEnum
                 {
                     if (hoverIndex >= 0 && hoverIndex < list.Entries.Count)
                     {
-                        onSelectionMade(list.Entries[hoverIndex].Index);
+                        if (list.Entries[hoverIndex].Index == -1)
+                        {
+                            var key = list.Entries[hoverIndex].Text.Remove(0, _ADD_NEW_KEY_WORD.Length);
+                            if (TryAddNewKey(key))
+                            {
+                                onSelectionMade(key, 0);
+                            }
+                        }
+                        else
+                        {
+                            onSelectionMade(list.Entries[hoverIndex].Text, list.Entries[hoverIndex].Index);
+                        }
                         EditorWindow.focusedWindow.Close();
                     }
                 }

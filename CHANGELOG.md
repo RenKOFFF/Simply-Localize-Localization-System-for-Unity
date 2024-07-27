@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.3] - 2024-07-27 
+### Added
+* Added the ability to add a new key directly through the input field.
+
 ## [1.2.2] - 2024-07-27 
 ### Added
 * Added search field to search for keys. Thanks to https://github.com/roboryantron for providing the search field asset - ***UnityEditorJunkie***.

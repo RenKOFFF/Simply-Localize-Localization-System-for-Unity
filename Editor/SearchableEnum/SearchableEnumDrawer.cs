@@ -5,7 +5,6 @@
 
 using System;
 using SimplyLocalize.Runtime.Data.SearchableEnum;
-using SimplyLocalize.Runtime.Data.StringEnum;
 using UnityEditor;
 using UnityEngine;
 
@@ -16,7 +15,7 @@ namespace SimplyLocalize.Editor.SearchableEnum
     {
         private const string _TYPE_ERROR = "SearchableEnum can only be used on enum fields.";
         private int _idHash;
-        
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (!property.type.Contains(nameof(StringEnum)))
@@ -64,10 +63,10 @@ namespace SimplyLocalize.Editor.SearchableEnum
             
             if (DropdownButton(id, position, buttonText))
             {
-                void OnSelect(int i)
+                void OnSelect(string key, int index)
                 {
-                    valueProperty.enumValueIndex = i;
-                    stringValueProperty.stringValue = valueProperty.enumNames[i];
+                    valueProperty.enumValueIndex = index;
+                    stringValueProperty.stringValue = key;
                     
                     property.serializedObject.ApplyModifiedProperties();
                 }
