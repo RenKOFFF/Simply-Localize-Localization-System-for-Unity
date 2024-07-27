@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.4] - 2024-07-27
+### Added
+* Added the ability to change the language at runtime.
+* Added documentation in README.MD file.
+
+### Changed
+* A small restructuring of methods was made: TryGetKey() and TryGetTranslatedText() were moved from the LocalizationText components to the Localizaton class.
+
+### Bug fixes
+* Fixed a bug where when switching fonts it was impossible to return to the original font version.
+
 ## [1.2.3] - 2024-07-27 
 ### Added
 * Added the ability to add a new key directly through the input field.

@@ -9,6 +9,8 @@ namespace SimplyLocalize.Runtime.Components.TMP
     {
         [SerializeField] protected TMP_Text _textElement;
         
+        private TMP_FontAsset _defaultFont;
+
         public virtual TMP_Text TextElement => _textElement;
         
         protected virtual void OnValidate()
@@ -32,6 +34,19 @@ namespace SimplyLocalize.Runtime.Components.TMP
             Debug.Log($"Translated text not founded by key: {key}");
         }
 
-        protected override void SetFont(FontHolder overrideFontHolder) => _textElement.font = overrideFontHolder.TMPFont;
+        protected override void SaveDefaultFont()
+        {
+            _defaultFont = _textElement.font;
+        }
+
+        protected override void SetFont(FontHolder overrideFontHolder)
+        {
+            _textElement.font = overrideFontHolder.TMPFont;
+        }
+
+        protected override void ResetFont()
+        {
+            _textElement.font = _defaultFont;
+        }
     }
 }

@@ -8,6 +8,8 @@ namespace SimplyLocalize.Runtime.Components.Legacy
     {
         [SerializeField] protected Text _textElement;
         
+        private Font _defaultFont;
+
         public virtual Text TextElement => _textElement;
         
         protected virtual void OnValidate()
@@ -31,6 +33,19 @@ namespace SimplyLocalize.Runtime.Components.Legacy
             Debug.Log($"Translated text not founded by key: {key}");
         }
 
-        protected override void SetFont(FontHolder overrideFontHolder) => _textElement.font = overrideFontHolder.LegacyFont;
+        protected override void SaveDefaultFont()
+        {
+            _defaultFont = _textElement.font;
+        }
+
+        protected override void SetFont(FontHolder overrideFontHolder)
+        {
+            _textElement.font = overrideFontHolder.LegacyFont;
+        }
+
+        protected override void ResetFont()
+        {
+            _textElement.font = _defaultFont;
+        }
     }
 }

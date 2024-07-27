@@ -185,13 +185,13 @@ namespace SimplyLocalize.Editor
         {
             var json = File.ReadAllText(LocalizationTemplatePath);
 
-            var oldLocalizationData = JsonConvert.DeserializeObject<LocalizationDictionary>(json);
+            var oldLocalizationData = JsonConvert.DeserializeObject<AllLocalizationsDictionary>(json);
 
             var newJson = GetTemplateContent(data, oldLocalizationData);
             WriteLocalization(newJson);
         }
 
-        private static string GetTemplateContent(LocalizationData[] data, LocalizationDictionary loadedData)
+        private static string GetTemplateContent(LocalizationData[] data, AllLocalizationsDictionary loadedData)
         {
             var langDict = data
                 .ToDictionary(d => d.i18nLang, _ => new Dictionary<string, string>());
@@ -212,7 +212,7 @@ namespace SimplyLocalize.Editor
                 }
             }
 
-            var dictionary = new LocalizationDictionary
+            var dictionary = new AllLocalizationsDictionary
             {
                 Translations = langDict
             };
