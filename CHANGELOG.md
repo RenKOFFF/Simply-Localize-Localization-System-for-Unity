@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.5] - 2024-08-19
+### Added
+* Added the ability to add multiple keys at once.
+
 ## [1.2.4] - 2024-07-27
 ### Added
 * Added the ability to change the language at runtime.
