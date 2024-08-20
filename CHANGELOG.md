@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.0] - 2024-08-20
+### Changed
+* The logic of constructing localization keys has been changed. Now the keys will be stored in the Assets folder, and not in Packages as before. This will help avoid errors and constant recompilations.
+
 ## [1.2.5] - 2024-08-19
 ### Added
 * Added the ability to add multiple keys at once.

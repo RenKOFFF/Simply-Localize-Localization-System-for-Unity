@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using SimplyLocalize.Runtime.Data.Keys;
+using SimplyLocalize.Runtime.Data.Keys.Generated;
 using UnityEditor;
 
 namespace SimplyLocalize.Editor.Keys
@@ -23,10 +24,16 @@ namespace SimplyLocalize.Editor.Keys
         private static IEnumerable<EnumHolder> _enums;
         private static string _enumKeysName;
 
-        private static readonly string FilePathAndName = "Packages/com.renkoff.simply-localize/Runtime/Data/Keys/Generated";
-        // private static readonly string FilePathAndName = "Assets/SimplyLocalize/Runtime/Data/Keys/Generated";
-
+        private static readonly string OldFilePathAndName = "Packages/com.renkoff.simply-localize/Runtime/Data/Keys/Generated";
+        // private static readonly string OldFilePathAndName = "Assets/SimplyLocalize/Runtime/Data/Keys/Generated";
         private static readonly string FileExtension = ".cs";
+        
+        private static string NewFilePathAndName => LocalizeEditor.NewKeysPath;
+
+        public static void UpdateGenerationPath()
+        {
+            ClearOldFilesIfExist();
+        }
 
         public static void SetEnums(IEnumerable<EnumHolder> enumEntries)
         {
@@ -39,11 +46,12 @@ namespace SimplyLocalize.Editor.Keys
             _enums = enumHolders;
         }
 
-        public static void GenerateEnumKeys(string fileName)
+        public static void GenerateEnumKeys()
         {
+            const string fileName = nameof(LocalizationKey);
             _enumKeysName = fileName;
-            var path = Path.Combine(FilePathAndName, fileName);
-            path = Path.ChangeExtension(path, FileExtension);
+            
+            var path = GetDataPath(fileName, true);
 
             using (var streamWriter = new StreamWriter(path))
             {
@@ -78,11 +86,11 @@ namespace SimplyLocalize.Editor.Keys
             AssetDatabase.Refresh();
         }
 
-        public static void GenerateDictionaryKeys(string fileName)
+        public static void GenerateDictionaryKeys()
         {
-            var path = Path.Combine(FilePathAndName, fileName);
-            path = Path.ChangeExtension(path, FileExtension);
-
+            var fileName = nameof(LocalizationKeys);
+            var path = GetDataPath(fileName, true);
+            
             using (var streamWriter = new StreamWriter(path))
             {
                 streamWriter.WriteLine(_WARNING_HEADER);
@@ -109,6 +117,33 @@ namespace SimplyLocalize.Editor.Keys
             }
 
             AssetDatabase.Refresh();
+        }
+
+        private static string GetDataPath(string fileName, bool isNewPath)
+        {
+            var dictionaryDataPath = Path.Combine(isNewPath ? NewFilePathAndName : OldFilePathAndName, fileName);
+            var dictionaryDataPathWithExtension = Path.ChangeExtension(dictionaryDataPath, FileExtension);
+            
+            return dictionaryDataPathWithExtension;
+        }
+
+        private static void ClearOldFilesIfExist()
+        {
+            var keysName = nameof(LocalizationKey);
+            var dictionaryKeysName = nameof(LocalizationKeys);
+
+            var oldKeysPath = GetDataPath(keysName, false);
+            var oldDictionaryKeysPath = GetDataPath(dictionaryKeysName, false);
+            
+            if (File.Exists(oldKeysPath))
+            {
+                File.Delete(oldKeysPath);
+            }
+            
+            if (File.Exists(oldDictionaryKeysPath))
+            {
+                File.Delete(oldDictionaryKeysPath);
+            }
         }
     }
 }
