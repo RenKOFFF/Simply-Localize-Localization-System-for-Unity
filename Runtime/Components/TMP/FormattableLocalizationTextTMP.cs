@@ -4,7 +4,7 @@ namespace SimplyLocalize.Runtime.Components.TMP
 {
     public class FormattableLocalizationTextTMP : LocalizationTextTMP
     {
-        private string _deferredValue;
+        private string _formattableValue;
 
         public event Action TranslatedEvent;
 
@@ -15,11 +15,10 @@ namespace SimplyLocalize.Runtime.Components.TMP
         /// <param name="value">You can use placeholders like this: Hi, value</param>
         public void SetValue(string value)
         {
+            _formattableValue = value;
+            
             if (!Translated)
-            {
-                _deferredValue = value;
                 TranslatedEvent += SetValueWhenTranslated;
-            }
             else _textElement.text = string.Format(DefaultText, value);
         }
 
@@ -37,13 +36,13 @@ namespace SimplyLocalize.Runtime.Components.TMP
         protected override void ApplyTranslate(string translatedText)
         {
             base.ApplyTranslate(translatedText);
-            SetValue(_deferredValue);
+            SetValue(_formattableValue);
         }
 
         protected void SetValueWhenTranslated()
         {
             TranslatedEvent -= SetValueWhenTranslated;
-            SetValue(_deferredValue);
+            SetValue(_formattableValue);
         }
     }
 }
