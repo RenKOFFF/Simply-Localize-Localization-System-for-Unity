@@ -6,7 +6,6 @@ using Newtonsoft.Json;
 using SimplyLocalize.Editor.Keys;
 using SimplyLocalize.Runtime.Data;
 using SimplyLocalize.Runtime.Data.Keys;
-using SimplyLocalize.Runtime.Data.Keys.Generated;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;

@@ -1,4 +1,6 @@
-﻿using SimplyLocalize.Runtime.Data.Extensions;
+﻿#if UNITY_EDITOR
+
+using SimplyLocalize.Runtime.Data.Extensions;
 using SimplyLocalize.Runtime.Data.Keys;
 using UnityEditor;
 using UnityEngine;
@@ -46,3 +48,5 @@ namespace SimplyLocalize.Editor.Keys
         }
     }
 }
+
+#endif

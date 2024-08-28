@@ -3,9 +3,10 @@
 // Date:   05/01/2018
 // ----------------------------------------------------------------------------
 
+#if UNITY_EDITOR
+
 using System;
 using System.Collections.Generic;
-using SimplyLocalize.Editor.Keys;
 using UnityEditor;
 using UnityEngine;
 
@@ -390,3 +391,4 @@ namespace SimplyLocalize.Editor.SearchableEnum
         }
     }
 }
+#endif
