@@ -43,16 +43,20 @@ MyNameTextElement.SetValue("Alex");
 ```
 
 ## Installation
-1) Import this from Unity Package Manager. You can [download and import it from your hard drive](https://docs.unity3d.com/Manual/upm-ui-local.html), or [link to it from github directly](https://docs.unity3d.com/Manual/upm-ui-giturl.html).
+1) Install newtonsoft json package > + > Add package from git URL.. <br>
+```
+com.unity.nuget.newtonsoft-json
+```
+2) Import this from Unity Package Manager. You can [download and import it from your hard drive](https://docs.unity3d.com/Manual/upm-ui-local.html), or [link to it from github directly](https://docs.unity3d.com/Manual/upm-ui-giturl.html).
 ```
 https://github.com/RenKOFFF/SimplyLocalize.git
 ```
-2) Done.
+3) Initialize the package. Click Window -> SimplyLocalize -> Initialize Asset
 
 ## How to use
 After installation, an additional tab "SimplyLocalize" will appear in the "Window" tab, which has 3 methods.
 
-* Create Localization Keys List (1)
+* Initialize Asset (1)
 * Select Localization Keys List (2)
 * Generate Keys (3)
 
