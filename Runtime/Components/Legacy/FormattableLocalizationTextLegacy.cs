@@ -33,6 +33,12 @@ namespace SimplyLocalize.Runtime.Components.Legacy
             TranslatedEvent?.Invoke();
         }
 
+        protected override void ApplyTranslate(string translatedText)
+        {
+            base.ApplyTranslate(translatedText);
+            SetValue(_deferredValue);
+        }
+
         protected void SetValueWhenTranslated()
         {
             TranslatedEvent -= SetValueWhenTranslated;

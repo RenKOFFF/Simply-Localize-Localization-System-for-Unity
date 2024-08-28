@@ -34,6 +34,12 @@ namespace SimplyLocalize.Runtime.Components.TMP
             TranslatedEvent?.Invoke();
         }
 
+        protected override void ApplyTranslate(string translatedText)
+        {
+            base.ApplyTranslate(translatedText);
+            SetValue(_deferredValue);
+        }
+
         protected void SetValueWhenTranslated()
         {
             TranslatedEvent -= SetValueWhenTranslated;

@@ -76,7 +76,7 @@ namespace SimplyLocalize.Runtime.Components
         protected abstract void SetTranslate(string translatedText);
         protected abstract void OnHasNotTranslated(string key);
 
-        protected void ApplyTranslate(string translatedText)
+        protected virtual void ApplyTranslate(string translatedText)
         {
             DefaultText = translatedText;
             Translated = true;

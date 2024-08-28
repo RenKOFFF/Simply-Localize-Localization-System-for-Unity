@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] - 2024-08-28
+### Fixed
+* Fixed a bug where Formattable components were not automatically updated when changing the language.
+
+
 ## [1.3.0] - 2024-08-20
 ### Changed
 * The logic of constructing localization keys has been changed. Now the keys will be stored in the Assets folder, and not in Packages as before. This will help avoid errors and constant recompilations.
