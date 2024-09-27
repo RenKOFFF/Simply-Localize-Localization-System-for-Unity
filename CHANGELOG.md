@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.2] - 2024-09-27
+### Fixed
+* Replaced the body of the SetValue method for FormattableLocalization components. Now it can accept multiple values.
+
 ## [1.3.1] - 2024-08-28
 ### Fixed
 * Fixed a bug where Formattable components were not automatically updated when changing the language.
