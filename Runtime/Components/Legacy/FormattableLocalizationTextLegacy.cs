@@ -1,13 +1,26 @@
 using System;
 using System.Linq;
+using UnityEngine;
 
 namespace SimplyLocalize.Runtime.Components.Legacy
 {
     public class FormattableLocalizationTextLegacy : LocalizationTextLegacy
     {
+        [SerializeField] private string[] _defaultValues;
+
         private string[] _formattableValue;
 
         public event Action TranslatedEvent;
+        
+        protected override void Awake()
+        {
+            if (_defaultValues.Length > 0)
+            {
+                SetValue(_defaultValues);
+            }
+            
+            base.Awake();
+        }
         
         /// <summary>
         /// To update dynamic text, use the format like this: Hi, {0}. Then in SetValue method, replace the placeholder {0} with the desired value. For example, SetValue("Alex") will display Hi, Alex.

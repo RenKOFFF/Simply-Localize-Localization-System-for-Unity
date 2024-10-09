@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.3] - 2024-10-09
+### Added
+* Added the ability to change default values for Formattable components from the inspector.
+
 ## [1.3.2] - 2024-09-27
 ### Fixed
 * Replaced the body of the SetValue method for FormattableLocalization components. Now it can accept multiple values.
@@ -7,7 +11,6 @@
 ## [1.3.1] - 2024-08-28
 ### Fixed
 * Fixed a bug where Formattable components were not automatically updated when changing the language.
-
 
 ## [1.3.0] - 2024-08-20
 ### Changed

@@ -27,7 +27,7 @@ namespace SimplyLocalize.Runtime.Components
         
         public event Action LanguageChanged;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             if (!IsInitialized)
             {
