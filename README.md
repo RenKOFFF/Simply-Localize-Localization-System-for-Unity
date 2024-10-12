@@ -43,7 +43,7 @@ MyNameTextElement.SetValue("Alex");
 ```
 
 ## Installation
-1) Install newtonsoft json package > + > Add package from git URL.. <br>
+1) Install newtonsoft json package > Add package by name <br>
 ```
 com.unity.nuget.newtonsoft-json
 ```
@@ -83,3 +83,12 @@ In addition, the same tab will appear in the Create menu. From here you can crea
 
 ### An example of using the component
 [![An example of using the component](https://i.postimg.cc/mk9DCmVh/Unity-59-VYXzgt-JS.png)](https://postimg.cc/LgH2MBcM)
+
+## Existing problems
+### Error when opening project
+#### Problem
+
+When working on a project in a team, a situation arises when one person added a localizer, and another imported the project and/or switched from another git branch in which the localizer was not yet initialized.
+
+#### Solution
+Go to Packages/com.renkoff.simply-localize/Runtime/Data/Keys/Generated and delete the LocalizationKey.cs and LocalizationKeys.cs files + their meta files. Do not delete the SimplyLocalize.Generated.asmdef file!

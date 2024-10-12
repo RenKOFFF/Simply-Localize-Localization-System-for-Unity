@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.4] - 2024-10-12
+### Updated and changed
+* Updated KeyGenerator. Now it also deletes .meta files. 
+* Added error handler for situations when there is a conflict of LocalizationKey.cs files.
+* Added asset update after adding a key via the LocalizationText component.
+* Updated documentation.
+
 ## [1.3.3] - 2024-10-09
 ### Added
 * Added the ability to change default values for Formattable components from the inspector.

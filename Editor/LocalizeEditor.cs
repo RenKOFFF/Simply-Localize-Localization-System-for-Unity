@@ -34,9 +34,7 @@ namespace SimplyLocalize.Editor
         
         private static readonly string AssemblyReferenceDataPath = Path.Combine(GeneratedFolderPath, AssemblyReferenceName);
         private static readonly string AssemblyReferenceDataPathWithExtension = Path.ChangeExtension(AssemblyReferenceDataPath, AssemblyReferenceExtension);
-
-        private static readonly string AssemblyReferenceGuid = "GUID:f576fac433856444e817119d3cfb1a11";
-
+        
         private static LocalizationKeysData _localizationKeysData;
 
         public static string NewKeysPath => GeneratedFolderPath;
@@ -87,6 +85,10 @@ namespace SimplyLocalize.Editor
                 return false;
             
             GenerateLocalizationKeys();
+
+            EditorUtility.SetDirty(_localizationKeysData);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
             
             return true;
         }
@@ -248,7 +250,7 @@ namespace SimplyLocalize.Editor
         {
             var assemblyReferenceJson = new AssemblyDefinitionReferenceJson
             {
-                reference = AssemblyReferenceGuid
+                reference = AssemblyReferenceName
             };
 
             if (!AssetDatabase.IsValidFolder(GeneratedFolderPath))
