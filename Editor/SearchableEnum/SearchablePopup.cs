@@ -3,10 +3,9 @@
 // Date:   05/01/2018
 // ----------------------------------------------------------------------------
 
-#if UNITY_EDITOR
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -124,14 +123,18 @@ namespace SimplyLocalize.Editor.SearchableEnum
                 
                 for (int i = 0; i < allItems.Length; i++)
                 {
-                    if (string.IsNullOrEmpty(Filter) || allItems[i].ToLower().Contains(Filter.ToLower()))
+                    var item = new string(allItems[i]
+                        .Where(c => !char.IsWhiteSpace(c))
+                        .ToArray());
+                    
+                    if (string.IsNullOrEmpty(Filter) || item.ToLower().Contains(Filter.ToLower()))
                     {
                         Entry entry = new Entry
                         {
                             Index = i,
-                            Text = allItems[i]
+                            Text = item
                         };
-                        if (string.Equals(allItems[i], Filter, StringComparison.CurrentCultureIgnoreCase))
+                        if (string.Equals(item, Filter, StringComparison.CurrentCultureIgnoreCase))
                             Entries.Insert(0, entry);
                         else
                             Entries.Add(entry);
@@ -391,4 +394,3 @@ namespace SimplyLocalize.Editor.SearchableEnum
         }
     }
 }
-#endif

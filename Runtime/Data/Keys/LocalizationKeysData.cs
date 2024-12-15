@@ -3,43 +3,31 @@ using System.Linq;
 using SimplyLocalize.Runtime.Data.Extensions;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using SimplyLocalize.Runtime.Data.Serializable;
+#endif
+
 namespace SimplyLocalize.Runtime.Data.Keys
 {
     public class LocalizationKeysData : ScriptableObject
     {
-        [field: SerializeField] public LocalizationData DefaultLocalizationData { get; private set; }
-        [field: SerializeField] public List<EnumHolder> Keys { get; private set; } = new() { new EnumHolder()
-        {
-            Name = "Sample",
-        } };
-
-        private void OnValidate()
-        {
-            for (var i = 0; i < Keys.Count; i++)
-            {
-                var key = Keys[i];
-                key.Name = key.Name.ToPascalCase();
-                
-                if (i > 0 && key.Name == Keys[i - 1].Name)
-                {
-                    key.Name = $"{key.Name}2";
-                }
-            }
-        }
+        [field: SerializeField] public LocalizationData DefaultLocalizationData { get; set; }
+#if UNITY_EDITOR
+        [field: SerializeField] public List<string> Keys { get; set; } = new() { "Sample"};
+        [field: SerializeField] public SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> Translations { get; set; } = new();
+#endif
+        [field: SerializeField] public SerializableSerializableDictionary<string, SerializableSerializableDictionary<Object, Object>> ObjectsTranslations { get; set; } = new();
 
         public bool TryAddNewKey(string newEnumKey)
         {
-            var key = newEnumKey.ToPascalCase();
-            if (Keys.Any(x => x.Name == key))
+            var key = newEnumKey.ToEnumName();
+            if (Keys.Any(x => x == key))
             {
                 Debug.LogWarning($"Key {key} already exists");
                 return false;
             }
             
-            Keys.Add(new EnumHolder
-            {
-                Name = key
-            });
+            Keys.Add(key);
             
             return true;
         }

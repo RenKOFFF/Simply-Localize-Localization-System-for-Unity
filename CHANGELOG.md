@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0] - 2024-12-19
+### Updated and changed
+- Got rid of duplicates for TMP and Legacy components
+- Updated search in the list of keys
+- Updated the validator of the input text
+- Added `WindowEditor` for editing keys
+
 ## [1.3.4] - 2024-10-12
 ### Updated and changed
 * Updated KeyGenerator. Now it also deletes .meta files. 

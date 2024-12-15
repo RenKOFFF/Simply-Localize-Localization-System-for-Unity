@@ -3,8 +3,6 @@
 // Date:   05/01/2018
 // ----------------------------------------------------------------------------
 
-#if UNITY_EDITOR
-
 using SimplyLocalize.Runtime.Data.SearchableEnum;
 using UnityEditor;
 using UnityEngine;
@@ -104,5 +102,3 @@ namespace SimplyLocalize.Editor.SearchableEnum
         }
     }
 }
-
-#endif

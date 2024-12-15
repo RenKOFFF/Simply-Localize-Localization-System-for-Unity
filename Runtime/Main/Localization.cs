@@ -11,12 +11,12 @@ namespace SimplyLocalize.Runtime.Main
 {
     public static class Localization
     {
-        private static AllLocalizationsDictionary _allLocalizations;
+        private static Dictionary<string, Dictionary<string, string>> _allLocalizations;
         private static Dictionary<string, string> _currentLocalization;
 
         private static FontHolder _fontHolder;
         
-        public static AllLocalizationsDictionary AllLocalizations
+        public static Dictionary<string, Dictionary<string, string>> AllLocalizations
         {
             get
             {
@@ -40,7 +40,7 @@ namespace SimplyLocalize.Runtime.Main
             {
                 if (_currentLocalization != null) return _currentLocalization;
 
-                AllLocalizations.Translations.TryGetValue(CurrentLanguage, out _currentLocalization);
+                AllLocalizations.TryGetValue(CurrentLanguage, out _currentLocalization);
 
                 return _currentLocalization;
             }
@@ -65,8 +65,8 @@ namespace SimplyLocalize.Runtime.Main
                 return false;
             }
 
-            var allLocalizations = JsonConvert.DeserializeObject<AllLocalizationsDictionary>(localization.text);
-            allLocalizations.Translations.TryGetValue(localizationData.i18nLang, out _currentLocalization);
+            var allLocalizations = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(localization.text);
+            allLocalizations.TryGetValue(localizationData.i18nLang, out _currentLocalization);
 
             _allLocalizations = allLocalizations;
             _fontHolder = localizationData.OverrideFontAsset;

@@ -1,8 +1,8 @@
-{
-  "name": "com.renkoff.simply-localize",
-  "version": "1.4.0",
-  "displayName": "Simply Localize",
-  "description": "A simple localization system for Unity",
+﻿{
+  "name": "com.renkoff.simply-localize-preparation",
+  "version": "1.0.0",
+  "displayName": "Simply Localize Preparation",
+  "description": "A preparation script for Simply Localize",
   "license": "MIT",
   "dependencies": {
     "com.unity.textmeshpro": "3.0.9",

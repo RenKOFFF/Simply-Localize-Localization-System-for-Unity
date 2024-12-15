@@ -1,85 +1,48 @@
-﻿#if UNITY_EDITOR
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using SimplyLocalize.Editor.Keys;
+using SimplyLocalize.Editor.Preparation;
 using SimplyLocalize.Runtime.Data;
 using SimplyLocalize.Runtime.Data.Keys;
+using SimplyLocalize.Runtime.Data.Serializable;
 using UnityEditor;
-using UnityEditorInternal;
 using UnityEngine;
 
 namespace SimplyLocalize.Editor
 {
     public static class LocalizeEditor
     {
-        private static readonly string FolderName = "SimplyLocalizeData";
-        
-        private static readonly string LocalizationFolderPath = Path.Combine("Assets", FolderName);
-        private static readonly string FileExtension = ".asset";
-        
-        private static readonly string LocalizationTemplateName = "Localization";
-        private static readonly string TemplateExtension = ".json";
-        
-        private static readonly string LocalizationResourcesPath = Path.Combine("Assets", FolderName, "Resources");
-        private static readonly string LocalizationResourcesDataPath = Path.Combine(LocalizationResourcesPath, LocalizationTemplateName);
-        private static readonly string LocalizationTemplatePath = Path.ChangeExtension(LocalizationResourcesDataPath, TemplateExtension);
-        
-        private static readonly string GeneratedFolderName = "Generated";
-        private static readonly string GeneratedFolderPath = Path.Combine(LocalizationFolderPath, GeneratedFolderName);
-        
-        private static readonly string AssemblyReferenceName = "SimplyLocalize.Generated";
-        private static readonly string AssemblyReferenceExtension = ".asmref";
-        
-        private static readonly string AssemblyReferenceDataPath = Path.Combine(GeneratedFolderPath, AssemblyReferenceName);
-        private static readonly string AssemblyReferenceDataPathWithExtension = Path.ChangeExtension(AssemblyReferenceDataPath, AssemblyReferenceExtension);
-        
         private static LocalizationKeysData _localizationKeysData;
-
-        public static string NewKeysPath => GeneratedFolderPath;
-
-        [MenuItem("Window/SimplyLocalize/Initialize Asset", priority = 300, secondaryPriority = 1)]
-        public static void InitializeAssets()
-        {
-            GenerateLocalizationKeysData();
-            
-            CreateAssemblyReferences();
-            GenerateLocalizationKeys();
-        }
-
-        [MenuItem("Window/SimplyLocalize/Select Localization Keys List", priority = 300, secondaryPriority = 2)]
-        public static void SelectLocalizationKeysData()
+        
+        public static LocalizationKeysData GetLocalizationKeysData()
         {
             if (_localizationKeysData != null || FindLocalizationKeysData(out _localizationKeysData))
             {
-                EditorUtility.FocusProjectWindow();
-                Selection.activeObject = _localizationKeysData;
+                return _localizationKeysData;
             }
+
+            return GenerateLocalizationKeysData();
         }
 
-        [MenuItem("Window/SimplyLocalize/Generate Keys", priority = 3000, secondaryPriority = 3)]
         public static void GenerateLocalizationKeys()
         {
-            if (_localizationKeysData == null && !FindLocalizationKeysData(out _localizationKeysData))
-            {
-                Debug.LogWarning($"No {nameof(LocalizationKeysData)} asset found. Create one and try again.");
-                return;
-            }
-
-            KeyGenerator.UpdateGenerationPath();
+            GetLocalizationKeysData();
+            
+            _localizationKeysData.Keys = _localizationKeysData.Keys
+                .GroupBy(x => x)
+                .Select(x => x.First())
+                .ToList();
             
             KeyGenerator.SetEnums(_localizationKeysData.Keys);
-            KeyGenerator.GenerateEnumKeys();
-            KeyGenerator.GenerateDictionaryKeys();
+            KeyGenerator.GenerateKeys();
 
-            GenerateLocalizationTemplate();
+            GenerateLocalizationJson(_localizationKeysData.Translations);
         }
 
         public static bool TryAddNewKey(string newEnumKey)
         {
-            if (_localizationKeysData == null && !FindLocalizationKeysData(out _localizationKeysData))
-                return false;
+            GetLocalizationKeysData();
 
             if (!_localizationKeysData.TryAddNewKey(newEnumKey))
                 return false;
@@ -93,37 +56,74 @@ namespace SimplyLocalize.Editor
             return true;
         }
 
-        private static void GenerateLocalizationKeysData()
+        public static void GenerateLocalizationJson(SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> oldLocalizationData)
         {
-            if (FindLocalizationKeysData(out _localizationKeysData))
+            var data = GetLocalizationsData();
+            if (!data.Any())
             {
-                Debug.LogWarning($"{nameof(LocalizationKeysData)} already exists");
-                SelectLocalizationKeysData();
+                Debug.LogWarning($"No {nameof(LocalizationData)} found. " +
+                                 "Create one or more files in the \"Resources\" folder from the menu " +
+                                 "\"Create/SimplyLocalize/New localization data\" and try again.");
                 return;
             }
 
+            if (!File.Exists(LocalizationPreparation.LocalizationTemplatePath))
+            {
+                var json = GetLocalizationsAsJson(data, oldLocalizationData);
+                WriteLocalization(json);
+            }
+            else
+            {
+                OverrideLocalization(data, oldLocalizationData);
+            }
+        }
+
+        public static SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> GetAllLocalizationsDictionary()
+        {
+            if (File.Exists(LocalizationPreparation.LocalizationTemplatePath) == false)
+            {
+                return null;
+            }
+            
+            var json = File.ReadAllText(LocalizationPreparation.LocalizationTemplatePath);
+            var deserializeTranslating = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(json);
+            
+            var result = new SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>>();
+
+            foreach (var localization in deserializeTranslating)
+            {
+                var valueDictionary = new SerializableSerializableDictionary<string, string>();
+
+                foreach (var pair in localization.Value)
+                {
+                    valueDictionary.Add(pair.Key, pair.Value);
+                }
+                
+                result.Add(localization.Key, valueDictionary);
+            }
+
+            return result;
+        }
+
+        private static LocalizationKeysData GenerateLocalizationKeysData()
+        {
+            if (FindLocalizationKeysData(out _localizationKeysData))
+            {
+                return _localizationKeysData;
+            }
+        
             _localizationKeysData = ScriptableObject.CreateInstance<LocalizationKeysData>();
-
-            if (!AssetDatabase.IsValidFolder(LocalizationFolderPath))
-            {
-                AssetDatabase.CreateFolder("Assets", FolderName);
-            }
             
-            if (!AssetDatabase.IsValidFolder(LocalizationResourcesPath))
-            {
-                AssetDatabase.CreateFolder(LocalizationFolderPath, "Resources");
-            }
-            
-            var localizationDataPath = Path.Combine(LocalizationResourcesPath, nameof(LocalizationKeysData));
-            var dataPath = Path.ChangeExtension(localizationDataPath, FileExtension);
-
+            var localizationDataPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, nameof(LocalizationKeysData));
+            var dataPath = Path.ChangeExtension(localizationDataPath, LocalizationPreparation.FileExtensionAsset);
+        
             AssetDatabase.CreateAsset(_localizationKeysData, dataPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-
-            SelectLocalizationKeysData();
-
+        
             Debug.Log($"{nameof(LocalizationKeysData)} created at " + dataPath);
+            
+            return _localizationKeysData;
         }
 
         private static bool FindLocalizationKeysData(out LocalizationKeysData data)
@@ -170,107 +170,66 @@ namespace SimplyLocalize.Editor
             return true;
         }
 
-        private static void GenerateLocalizationTemplate()
-        {
-            var data = GetLocalizationData();
-            if (!data.Any())
-            {
-                Debug.LogWarning($"No {nameof(LocalizationData)} found. " +
-                                 "Create one or more files in the \"Resources\" folder from the menu " +
-                                 "\"Create/SimplyLocalize/New localization data\" and try again.");
-                return;
-            }
-
-            if (!File.Exists(LocalizationTemplatePath))
-            {
-                var json = GetTemplateContent(data, null);
-                WriteLocalization(json);
-            }
-            else
-            {
-                OverrideLocalization(data);
-            }
-        }
-
-        private static LocalizationData[] GetLocalizationData()
+        private static LocalizationData[] GetLocalizationsData()
         {
             return Resources.LoadAll<LocalizationData>("");
         }
 
         private static void WriteLocalization(string json)
         {
-            File.WriteAllText(LocalizationTemplatePath, json);
+            File.WriteAllText(LocalizationPreparation.LocalizationTemplatePath, json);
             AssetDatabase.Refresh();
 
-            EditorUtility.FocusProjectWindow();
-            var loadAssetAtPath = AssetDatabase.LoadAssetAtPath<TextAsset>(LocalizationTemplatePath);
+            var loadAssetAtPath = AssetDatabase.LoadAssetAtPath<TextAsset>(LocalizationPreparation.LocalizationTemplatePath);
+            if (loadAssetAtPath == null)
+                return;
+
             Selection.activeObject = loadAssetAtPath;
+
+            EditorUtility.SetDirty(loadAssetAtPath);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
         }
 
-        private static void OverrideLocalization(LocalizationData[] data)
+        private static void OverrideLocalization(LocalizationData[] data, SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> oldLocalizationData)
         {
-            var json = File.ReadAllText(LocalizationTemplatePath);
-
-            var oldLocalizationData = JsonConvert.DeserializeObject<AllLocalizationsDictionary>(json);
-
-            var newJson = GetTemplateContent(data, oldLocalizationData);
+            var newJson = GetLocalizationsAsJson(data, oldLocalizationData);
             WriteLocalization(newJson);
         }
 
-        private static string GetTemplateContent(LocalizationData[] data, AllLocalizationsDictionary loadedData)
+        private static string GetLocalizationsAsJson(LocalizationData[] data, SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> existingLocalization)
         {
-            var langDict = data
-                .ToDictionary(d => d.i18nLang, _ => new Dictionary<string, string>());
+            var langDict = new SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>>();
 
-            foreach (var translations in langDict)
+            foreach (var language in data)
             {
-                foreach (var enumHolder in _localizationKeysData.Keys)
+                langDict.Add(language.i18nLang, new SerializableSerializableDictionary<string, string>());
+            }
+
+            foreach (var language in langDict)
+            {
+                foreach (var key in GetLocalizationKeysData().Keys)
                 {
-                    if (loadedData != null &&
-                        loadedData.TryGetTranslating(translations.Key, enumHolder.Name, out var existTranslation))
+                    if (existingLocalization != null && existingLocalization.TryGetValue(language.Key, out var currentLocalization) && currentLocalization.TryGetValue(key, out var existTranslation))
                     {
-                        translations.Value.Add(enumHolder.Name, existTranslation);
+                        language.Value.Add(key, existTranslation);
                     }
                     else
                     {
-                        translations.Value.Add(enumHolder.Name, enumHolder.Name);
+                        language.Value.Add(key, key);
                     }
                 }
             }
+            
+            _localizationKeysData.Translations = langDict;
 
-            var dictionary = new AllLocalizationsDictionary
-            {
-                Translations = langDict
-            };
+            var dictionary = langDict
+                .ToDictionary<KeyValuePair<string, SerializableSerializableDictionary<string, string>>, string, Dictionary<string, string>>(
+                    language => language.Key, 
+                    language => language.Value);
 
             return JsonConvert.SerializeObject(dictionary, Formatting.Indented);
         }
-        
-        private static void CreateAssemblyReferences()
-        {
-            var assemblyReferenceJson = new AssemblyDefinitionReferenceJson
-            {
-                reference = AssemblyReferenceName
-            };
-
-            if (!AssetDatabase.IsValidFolder(GeneratedFolderPath))
-            {
-                AssetDatabase.CreateFolder(LocalizationFolderPath, GeneratedFolderName);
-            }
-            
-            var json = JsonConvert.SerializeObject(assemblyReferenceJson, Formatting.Indented);
-            File.WriteAllText(AssemblyReferenceDataPathWithExtension, json);
-
-            AssetDatabase.Refresh();
-            
-            Debug.Log($"{nameof(AssemblyDefinitionReferenceAsset)} created at " + AssemblyReferenceDataPathWithExtension);
-        }
-        
-        [System.Serializable]
-        private class AssemblyDefinitionReferenceJson
-        {
-            public string reference;
-        }
     }
 }
-#endif

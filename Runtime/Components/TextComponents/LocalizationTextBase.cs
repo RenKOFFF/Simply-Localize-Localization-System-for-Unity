@@ -7,7 +7,7 @@ using SimplyLocalize.Runtime.Data.StringEnum;
 using SimplyLocalize.Runtime.Main;
 using UnityEngine;
 
-namespace SimplyLocalize.Runtime.Components
+namespace SimplyLocalize.Runtime.Components.TextComponents
 {
     public abstract class LocalizationTextBase : MonoBehaviour
     {

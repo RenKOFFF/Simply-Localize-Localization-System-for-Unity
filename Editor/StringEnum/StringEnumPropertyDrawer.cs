@@ -1,7 +1,5 @@
 // StringEnum, Maxwell Keonwoo Kang <code.athei@gmail.com>, 2022
 
-#if UNITY_EDITOR
-
 using System;
 using SimplyLocalize.Runtime.Data.StringEnum;
 using UnityEditor;
@@ -43,5 +41,3 @@ namespace SimplyLocalize.Editor.StringEnum
         }
     }
 }
-
-#endif

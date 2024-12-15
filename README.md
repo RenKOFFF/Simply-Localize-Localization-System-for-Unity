@@ -1,94 +1,122 @@
 # SimplyLocalAsset
-A simple localization system for Unity.
+
+A localization system for Unity designed to simplify translation management and text handling in your project.
+
+*Read this in other languages: [Russian](README_RU.md).*
 
 ## Features
-* Keys are stored as enum, which eliminates the possibility of making a mistake when writing a key in a component
-* Enum keys are generated, so there is no need to enter them into the code yourself.
-* Easy editing of translations without having to dig around in different scripts/prefabs/components or any other places where translations are often stored, everything is stored in one file
 
-### Example of generated file with localization
+> [!NOTE]
+> - **Enum-based keys**: Prevents errors when accessing strings.
+> - **Automatic key generation**: No need to manually add them to the code.
+> - **Convenient translation editing**: All translations are stored centrally.
+> - **Flexible integration**: Supports formatted texts with parameters.
+> - **Ease of use**: Configurable via an intuitive editor.
+> - **Runtime language switching**: Change the active language during gameplay.
+
+## Example Localization File
+
 ```json
 {
-   "Translations": {
-      "en": {
-         "SelectLanguage": "Select language",
-         "Ru": "Russian",
-         "En": "English",
-         "Jp": "Japanese",
-         "MyNameIs": "My name is {0}"
-      },
-      "jp": {
-         "SelectLanguage": "言語を選択する",
-         "Ru": "ロシア",
-         "En": "英語",
-         "Jp": "日本語",
-         "MyNameIs": "私の名前は {0}"
-      },
-      "ru": {
-         "SelectLanguage": "Выбери язык",
-         "Ru": "Русский",
-         "En": "Английский",
-         "Jp": "Японский",
-         "MyNameIs": "Меня зовут {0}"
-      }
-   }
+  "en": {
+    "SelectLanguage": "Select Language",
+    "En": "English",
+    "Ru": "Russian",
+    "Jp": "Japanese",
+    "MyNameIs": "My name is {0}"
+  },
+  "ru": {
+    "SelectLanguage": "Выберите язык",
+    "En": "Английский",
+    "Ru": "Русский",
+    "Jp": "Японский",
+    "MyNameIs": "Меня зовут {0}"
+  },
+  "jp": {
+    "SelectLanguage": "言語を選択する",
+    "En": "英語",
+    "Ru": "ロシア語",
+    "Jp": "日本語",
+    "MyNameIs": "私の名前は {0}"
+  }
 }
 ```
-### Example of use in code
-```csharp
-MyNameTextElement.TranslateByKey(LocalizationKey.MyNameIs);
-MyNameTextElement.SetValue("Alex"); 
 
-// output result: My name is Alex (en)
+## Example Usage in Code
+
+```csharp
+// Setting text with a parameter
+MyNameTextElement.TranslateByKey(LocalizationKey.MyNameIs);
+MyNameTextElement.SetValue("Alex");
+
+// Result: "My name is Alex" (en)
+
+// Changing the language at runtime
+Localization.SetLocalization("jp");
+
+// Result after language change: "私の名前は Alex"
 ```
 
 ## Installation
-1) Install newtonsoft json package > Add package by name <br>
+
+1. Install `newtonsoft json` package: `Window > Package Manager > Add package by name`
 ```
 com.unity.nuget.newtonsoft-json
 ```
-2) Import this from Unity Package Manager. You can [download and import it from your hard drive](https://docs.unity3d.com/Manual/upm-ui-local.html), or [link to it from github directly](https://docs.unity3d.com/Manual/upm-ui-giturl.html).
+2. Download the **preparation script** from the link: `Window > Package Manager > Add package from git URL`
+```
+https://github.com/RenKOFFF/SimplyLocalize.git?path=/Editor/Preparation
+```
+3. Wait for the script to generate all necessary files in the `Assets` folder.
+4. Delete the preparation script.
+5. Download and install the **main asset**: `Window > Package Manager > Add package from git URL` 
 ```
 https://github.com/RenKOFFF/SimplyLocalize.git
 ```
-3) Initialize the package. Click Window -> SimplyLocalize -> Initialize Asset
+## Usage
 
-## How to use
-After installation, an additional tab "SimplyLocalize" will appear in the "Window" tab, which has 3 methods.
+After installation, a new menu will appear in Unity:\
+**`Window -> SimplyLocalize -> Localization Settings`**.
 
-* Initialize Asset (1)
-* Select Localization Keys List (2)
-* Generate Keys (3)
+In this window, you can:
 
-In addition, the same tab will appear in the Create menu. From here you can create LocalizationData (4) and FontHolder (5)
+- Add new languages and language-specific fonts.
+- Create and edit keys.
+- Set translations for each language.
 
-1) Use (1) to create an asset in which you will enter all the keys. The asset is created only once when the project starts and is stored in resources.
-   Use (2) to quickly find and select it.
-2) In order to use the created keys, they must be compiled. Use (3) to generate and compile the keys. However, before generating, you must create configs with localization (4).
-   * Configs store only two fields:
-     * language code in i18n format.
-     * font, to which the localized text is replaced during localization. You can leave it blank and then the font will not be replaced.
 
-3) After creating the configs (4), you can generate keys (3).
-4) At this stage, you can use the asset. Add the **LocalizationText(TMP/Legacy)** or **FormattableLocalizationText(TMP/Legacy)** component to the text depending on your needs
-5) Before starting the game, call the Localization.SetLocalization() method or add the config you want to use by default to the generated asset with keys (1, 2).
+[![Unity-I04r-Rke-Er-J.png](https://i.postimg.cc/rFJRbwvv/Unity-I04r-Rke-Er-J.png)](https://postimg.cc/HVrL8dW2)
+[![Unity-JMqpnnk6s-F.png](https://i.postimg.cc/sggGRRz1/Unity-JMqpnnk6s-F.png)](https://postimg.cc/hfNt96fq)
+[![Unity-ZYMQ7g-Bkd4.png](https://i.postimg.cc/ZKZyVdD8/Unity-ZYMQ7g-Bkd4.png)](https://postimg.cc/SjTsKJ4R)
 
-### Example of adding a key
-[![Unity-Gh-JXj6-XTKr.png](https://i.postimg.cc/J4b0hdG2/Unity-Gh-JXj6-XTKr.png)](https://postimg.cc/Ln82CDkt)
-* You can move the keys in any convenient order, and also change the key if, for example, you made a typo, the serialized values ​​​​will not be lost.
 
-### An example of an alternative way to add a key
-[![Unity-UYR04t-Ener.png](https://i.postimg.cc/9M7Vnr9n/Unity-UYR04t-Ener.png)](https://postimg.cc/wygStx0X)
-* You can add a new key directly in the localization component by entering it in the search.
+### Configuring Components
 
-### An example of using the component
-[![An example of using the component](https://i.postimg.cc/mk9DCmVh/Unity-59-VYXzgt-JS.png)](https://postimg.cc/LgH2MBcM)
+Add one of the components to your text element:
 
-## Existing problems
-### Error when opening project
-#### Problem
+- **`LocalizationText`** — for static strings.
+- **`FormattableLocalizationText`** — for strings with parameters.
 
-When working on a project in a team, a situation arises when one person added a localizer, and another imported the project and/or switched from another git branch in which the localizer was not yet initialized.
+[![Unity-AVOn-Det1d2.png](https://i.postimg.cc/cC7tdx6t/Unity-AVOn-Det1d2.png)](https://postimg.cc/gLJ2DPVG)
 
-#### Solution
-Go to Packages/com.renkoff.simply-localize/Runtime/Data/Keys/Generated and delete the LocalizationKey.cs and LocalizationKeys.cs files + their meta files. Do not delete the SimplyLocalize.Generated.asmdef file!
+### Change Language and Setting the Default Language
+
+Call the method to set the language:
+
+```csharp
+Localization.SetLocalization("ru"); // Set Russian language.
+```
+
+> [!TIP]
+> - You can set the default language in the localization settings windows and change it during the game if necessary.
+> - Setting the default language is not necessary. The main thing is to set the language before starting to execute all localization scripts.
+
+### Alternative Key Addition
+
+Keys can also be added directly through text components. Enter a new key in the search field to create it.
+
+> [!WARNING]
+> When adding a key in this way, the current key is reset to the first one. After adding, you must manually install the added key in the component.
+
+[![Unity-36w-Z3-Hw-Z6-K.png](https://i.postimg.cc/KctMPNQc/Unity-36w-Z3-Hw-Z6-K.png)](https://postimg.cc/CdL5YbW9)
+
