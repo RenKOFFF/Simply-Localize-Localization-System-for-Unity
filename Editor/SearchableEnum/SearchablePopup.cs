@@ -9,7 +9,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace SimplyLocalize.Editor.SearchableEnum
+namespace SimplyLocalize.Editor
 {
     public class SearchablePopup : PopupWindowContent
     {

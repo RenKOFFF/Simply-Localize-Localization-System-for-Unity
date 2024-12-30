@@ -1,7 +1,6 @@
-﻿using SimplyLocalize.Runtime.Data.Keys;
-using UnityEditor;
+﻿using UnityEditor;
 
-namespace SimplyLocalize.Editor.Keys
+namespace SimplyLocalize.Editor
 {
     [CustomEditor(typeof(LocalizationKeysData))]
     public class LocalizationKeysDataEditor : UnityEditor.Editor

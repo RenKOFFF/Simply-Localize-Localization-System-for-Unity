@@ -1,7 +1,6 @@
-﻿using SimplyLocalize.Runtime.Components.TextComponents;
-using UnityEditor;
+﻿using UnityEditor;
 
-namespace SimplyLocalize.Editor.Components
+namespace SimplyLocalize.Editor
 {
     [CustomEditor(typeof(FormattableLocalizationText))]
     public class FormattableLocalizationTextEditor : LocalizationTextEditor

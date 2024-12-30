@@ -3,11 +3,10 @@
 // Date:   05/01/2018
 // ----------------------------------------------------------------------------
 
-using SimplyLocalize.Runtime.Data.SearchableEnum;
 using UnityEditor;
 using UnityEngine;
 
-namespace SimplyLocalize.Editor.SearchableEnum
+namespace SimplyLocalize.Editor
 {
     [CustomPropertyDrawer(typeof(SearchableStringEnumAttribute))]
     public class SearchableEnumDrawer : PropertyDrawer
@@ -17,7 +16,7 @@ namespace SimplyLocalize.Editor.SearchableEnum
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (!property.type.Contains(nameof(StringEnum)))
+            if (!property.type.Contains("StringEnum"))
             {
                 GUIStyle errorStyle = "CN EntryErrorIconSmall";
                 

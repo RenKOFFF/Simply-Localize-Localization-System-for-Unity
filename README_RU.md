@@ -1,4 +1,4 @@
-﻿# SimplyLocalAsset
+﻿# Simply Localize
 
 Система локализации для Unity, разработанная для упрощения управления переводами и обработки текста в вашем проекте.
 
@@ -13,6 +13,7 @@
 > - **Гибкая интеграция**: поддерживает форматированные тексты с параметрами.
 > - **Простота использования**: настраивается с помощью интуитивно понятного редактора.
 > - **Переключение языка во время выполнения**: изменение активного языка во время игры.
+> - **Локализация изображений**: поддерживается локализация изображений.
 
 ## Пример файла локализации
 
@@ -59,17 +60,13 @@ Localization.SetLocalization("ru");
 
 ## Установка
 
-1. Установите пакет `newtonsoft json`: `Window > Package Manager > Add package by name`
-```
-com.unity.nuget.newtonsoft-json
-```
-2. Загрузите **скрипт подготовки** по ссылке: `Window > Package Manager > Add package from git URL`
+1. Загрузите **скрипт подготовки** по ссылке: `Window > Package Manager > Add package from git URL`
 ```
 https://github.com/RenKOFFF/SimplyLocalize.git?path=/Editor/Preparation
 ```
-3. Подождите, пока скрипт сгенерирует все необходимые файлы в папке `Assets`.
-4. Удалите скрипт подготовки.
-5. Загрузите и установите **основной ассет**: `Window > Package Manager > Add package from git URL`
+2. Подождите, пока скрипт сгенерирует все необходимые файлы в папке `Assets`.
+3. Удалите скрипт подготовки.
+4. Загрузите и установите **основной ассет**: `Window > Package Manager > Add package from git URL`
 ```
 https://github.com/RenKOFFF/SimplyLocalize.git
 ```

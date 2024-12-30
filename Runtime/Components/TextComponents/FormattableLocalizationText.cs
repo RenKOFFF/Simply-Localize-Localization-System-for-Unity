@@ -2,8 +2,10 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-namespace SimplyLocalize.Runtime.Components.TextComponents
+namespace SimplyLocalize
 {
+    [AddComponentMenu("Simply Localize/Formattable Localization Text")]
+    [DisallowMultipleComponent]
     public class FormattableLocalizationText : LocalizationText
     {
         [SerializeField] private string[] _defaultValues;
@@ -39,8 +41,8 @@ namespace SimplyLocalize.Runtime.Components.TextComponents
             }
             else
             {
-                _textElement.text = string.Format(DefaultText, value);
-                _textElementLegacy.text = string.Format(DefaultText, value);
+                if (_textElement != null) _textElement.text = string.Format(DefaultText, value);
+                if (_textElementLegacy != null) _textElementLegacy.text = string.Format(DefaultText, value);
             }
         }
 

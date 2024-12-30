@@ -1,11 +1,10 @@
 // StringEnum, Maxwell Keonwoo Kang <code.athei@gmail.com>, 2022
 
 using System;
-using SimplyLocalize.Runtime.Data.StringEnum;
 using UnityEditor;
 using UnityEngine;
 
-namespace SimplyLocalize.Editor.StringEnum
+namespace SimplyLocalize.Editor
 {
     [CustomPropertyDrawer(typeof(StringEnum<>), true)]
     public class StringEnumPropertyDrawer : PropertyDrawer

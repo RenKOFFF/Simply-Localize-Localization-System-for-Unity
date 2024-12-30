@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1] - 2024-12-19
+### Changed
+- Updated the namespaces for the asset.
+- Updated the installation instructions.
+- Added image localization component.
+- Added logging settings.
+- Added localization menu options.
+
 ## [1.4.0] - 2024-12-19
 ### Updated and changed
 - Got rid of duplicates for TMP and Legacy components

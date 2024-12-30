@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-namespace SimplyLocalize.Runtime.Data
+namespace SimplyLocalize
 {
     public class FontHolder : ScriptableObject
     {

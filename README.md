@@ -1,4 +1,4 @@
-# SimplyLocalAsset
+# Simply Localize
 
 A localization system for Unity designed to simplify translation management and text handling in your project.
 
@@ -13,6 +13,7 @@ A localization system for Unity designed to simplify translation management and 
 > - **Flexible integration**: Supports formatted texts with parameters.
 > - **Ease of use**: Configurable via an intuitive editor.
 > - **Runtime language switching**: Change the active language during gameplay.
+> - **Image localization**: Support for localization of images.
 
 ## Example Localization File
 
@@ -59,17 +60,13 @@ Localization.SetLocalization("jp");
 
 ## Installation
 
-1. Install `newtonsoft json` package: `Window > Package Manager > Add package by name`
-```
-com.unity.nuget.newtonsoft-json
-```
-2. Download the **preparation script** from the link: `Window > Package Manager > Add package from git URL`
+1. Download the **preparation script** from the link: `Window > Package Manager > Add package from git URL`
 ```
 https://github.com/RenKOFFF/SimplyLocalize.git?path=/Editor/Preparation
 ```
-3. Wait for the script to generate all necessary files in the `Assets` folder.
-4. Delete the preparation script.
-5. Download and install the **main asset**: `Window > Package Manager > Add package from git URL` 
+2. Wait for the script to generate all necessary files in the `Assets` folder.
+3. Delete the preparation script.
+4. Download and install the **main asset**: `Window > Package Manager > Add package from git URL` 
 ```
 https://github.com/RenKOFFF/SimplyLocalize.git
 ```

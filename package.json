@@ -1,12 +1,13 @@
 {
   "name": "com.renkoff.simply-localize",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "displayName": "Simply Localize",
   "description": "A simple localization system for Unity",
   "license": "MIT",
   "dependencies": {
     "com.unity.textmeshpro": "3.0.9",
-    "com.unity.editorcoroutines": "1.0.0"
+    "com.unity.editorcoroutines": "1.0.0",
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
   },
   "author": {
     "name": "Alexey Renkoff",

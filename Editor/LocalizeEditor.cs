@@ -2,10 +2,6 @@
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
-using SimplyLocalize.Editor.Preparation;
-using SimplyLocalize.Runtime.Data;
-using SimplyLocalize.Runtime.Data.Keys;
-using SimplyLocalize.Runtime.Data.Serializable;
 using UnityEditor;
 using UnityEngine;
 
@@ -61,9 +57,10 @@ namespace SimplyLocalize.Editor
             var data = GetLocalizationsData();
             if (!data.Any())
             {
-                Debug.LogWarning($"No {nameof(LocalizationData)} found. " +
-                                 "Create one or more files in the \"Resources\" folder from the menu " +
-                                 "\"Create/SimplyLocalize/New localization data\" and try again.");
+                Logging.Log($"No {nameof(LocalizationData)} found. " +
+                            "Create one or more files in the \"Resources\" folder from the menu " +
+                            "\"Create/SimplyLocalize/New localization data\" and try again.", LogType.Warning);
+                
                 return;
             }
 
@@ -121,7 +118,7 @@ namespace SimplyLocalize.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         
-            Debug.Log($"{nameof(LocalizationKeysData)} created at " + dataPath);
+            Logging.Log($"{nameof(LocalizationKeysData)} created at " + dataPath);
             
             return _localizationKeysData;
         }
@@ -133,7 +130,7 @@ namespace SimplyLocalize.Editor
 
             if (guids.Length == 0)
             {
-                Debug.LogWarning($"No {nameof(LocalizationKeysData)} asset found. Create one and try again.");
+                Logging.Log($"No {nameof(LocalizationKeysData)} asset found. Create one and try again.", LogType.Warning);
                 return false;
             }
 
@@ -141,7 +138,7 @@ namespace SimplyLocalize.Editor
             {
                 if (LoadLocalizationKeysData(guids, out data)) return true;
 
-                Debug.LogWarning($"No {nameof(LocalizationKeysData)} asset found. Create one and try again.");
+                Logging.Log($"No {nameof(LocalizationKeysData)} asset found. Create one and try again.", LogType.Warning);
                 return false;
             }
 
@@ -149,7 +146,7 @@ namespace SimplyLocalize.Editor
             {
                 if (LoadLocalizationKeysData(guids, out data)) return true;
 
-                Debug.LogError($"Multiple {nameof(LocalizationKeysData)} assets found. Delete one and try again.");
+                Logging.Log($"Multiple {nameof(LocalizationKeysData)} assets found. Delete one and try again.", LogType.Error);
                 return false;
             }
 
