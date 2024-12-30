@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SimplyLocalize.Runtime.Data
+namespace SimplyLocalize
 {
     public class LocalizationData : ScriptableObject
     {

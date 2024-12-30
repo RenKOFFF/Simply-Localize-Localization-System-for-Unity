@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 
-namespace SimplyLocalize.Editor.Preparation
+namespace SimplyLocalize.Editor
 {
     public static class KeyGenerator
     {
@@ -60,7 +60,7 @@ namespace SimplyLocalize.Editor.Preparation
                 streamWriter.WriteLine(_WARNING_HEADER);
 
                 streamWriter.WriteLine("using UnityEngine;\n" +
-                                       $"namespace {nameof(SimplyLocalize)}.Runtime.Data.Keys.Generated\n{{\n" +
+                                       $"namespace {nameof(SimplyLocalize)}\n{{\n" +
                                        "\tpublic enum " + fileName + "\n" +
                                        "\t{");
 
@@ -87,7 +87,7 @@ namespace SimplyLocalize.Editor.Preparation
 
                 streamWriter.WriteLine(
                     $"using System.Collections.Generic;\n\n" +
-                    $"namespace {nameof(SimplyLocalize)}.Runtime.Data.Keys.Generated\n" +
+                    $"namespace {nameof(SimplyLocalize)}\n" +
                     $"{{\n" +
                     $"\tpublic static class {fileName}\n" +
                     $"\t{{\n" +

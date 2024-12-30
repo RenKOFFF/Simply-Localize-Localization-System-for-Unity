@@ -1,10 +1,11 @@
-using SimplyLocalize.Runtime.Data;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SimplyLocalize.Runtime.Components.TextComponents
+namespace SimplyLocalize
 {
+    [AddComponentMenu("Simply Localize/Localization Text")]
+    [DisallowMultipleComponent]
     public class LocalizationText : LocalizationTextBase
     {
         [SerializeField] private bool _overrideTextElements;
@@ -43,7 +44,7 @@ namespace SimplyLocalize.Runtime.Components.TextComponents
             if (_textElement != null) _textElement.text = key;
             if (_textElementLegacy != null) _textElementLegacy.text = key;
             
-            Debug.Log($"Translated text not founded by key: {key}");
+            Logging.Log($"Translated text not founded by key: {key}");
         }
 
         protected override void SaveDefaultFont()

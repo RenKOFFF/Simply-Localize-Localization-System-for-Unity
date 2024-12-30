@@ -3,7 +3,7 @@
 using System;
 using UnityEngine;
 
-namespace SimplyLocalize.Runtime.Data.StringEnum
+namespace SimplyLocalize
 {
     [Serializable]
     public struct StringEnum<T> : IEquatable<T>, IEquatable<StringEnum<T>>, ISerializationCallbackReceiver

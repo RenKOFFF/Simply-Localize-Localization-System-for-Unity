@@ -1,8 +1,7 @@
-﻿using SimplyLocalize.Runtime.Components.TextComponents;
-using TMPro;
+﻿using TMPro;
 using UnityEditor;
 
-namespace SimplyLocalize.Editor.Components
+namespace SimplyLocalize.Editor
 {
     [CustomEditor(typeof(LocalizationText), true)]
     public class LocalizationTextEditor : UnityEditor.Editor

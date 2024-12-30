@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SimplyLocalize.Runtime.Data.Serializable
+namespace SimplyLocalize
 {
     [Serializable]
     public class SerializableSerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver

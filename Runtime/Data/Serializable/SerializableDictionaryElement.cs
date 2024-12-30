@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimplyLocalize.Runtime.Data.Serializable
+namespace SimplyLocalize
 {
     [Serializable]
     public class SerializableDictionaryElement<TKey, TValue>

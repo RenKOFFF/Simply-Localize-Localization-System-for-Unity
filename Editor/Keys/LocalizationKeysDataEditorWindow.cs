@@ -1,16 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using SimplyLocalize.Editor.Preparation;
-using SimplyLocalize.Runtime.Data;
-using SimplyLocalize.Runtime.Data.Extensions;
-using SimplyLocalize.Runtime.Data.Keys;
-using SimplyLocalize.Runtime.Data.Serializable;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
-namespace SimplyLocalize.Editor.Keys
+namespace SimplyLocalize.Editor
 {
     public class LocalizationKeysDataEditorWindow : EditorWindow
     {
@@ -18,7 +15,7 @@ namespace SimplyLocalize.Editor.Keys
         private const int _MAX_FIELD_HEIGHT = 400; 
         
         private int _selectedMainTab;
-        private readonly string[] _mainTabs = { "Language", "Keys", "Text Translating"};//, "Sprites", "Audio" };
+        private readonly string[] _mainTabs = { "Language", "Keys", "Text Translating", "Sprites"};//, "Objects", "AudioClip" };
         
         private string _newKeys = "";
         
@@ -28,6 +25,7 @@ namespace SimplyLocalize.Editor.Keys
 
         private GUIStyle _labelStyle;
         private GUIStyle _keyStyle;
+        private GUIStyle _toggleStyle;
         private GUIStyle _textAreaStyle;
         private GUIStyle _buttonStyle;
         
@@ -48,7 +46,7 @@ namespace SimplyLocalize.Editor.Keys
         
         private Object _newObjectKey;
 
-        [MenuItem("Window/SimplyLocalize/Localization Settings", priority = 300, secondaryPriority = 2)]
+        [MenuItem("Window/Simply Localize/Localization Settings", priority = 300, secondaryPriority = 2)]
         private static void ShowWindow()
         {
             var window = GetWindow<LocalizationKeysDataEditorWindow>();
@@ -122,6 +120,11 @@ namespace SimplyLocalize.Editor.Keys
                 fixedHeight = _LINE_HEIGHT,
             };
 
+            _toggleStyle = new GUIStyle(GUI.skin.toggle)
+            {
+                fixedHeight = _LINE_HEIGHT,
+            };
+
             _textAreaStyle = new GUIStyle(GUI.skin.textArea)
             {
                 alignment = TextAnchor.UpperCenter,
@@ -160,11 +163,11 @@ namespace SimplyLocalize.Editor.Keys
                     break;
                 
                 case 3:
-                    // DrawSprites();
+                    DrawObject(typeof(Sprite));
                     break;
                 
                 case 4:
-                    // DrawAudio();
+                    DrawObject(typeof(AudioClip));
                     break;
             }
         }
@@ -174,6 +177,7 @@ namespace SimplyLocalize.Editor.Keys
             DrawDefaultLanguageData();
             DrawLanguageSetting();
             DrawFontSetting();
+            DrawSettings();
         }
 
         private void DrawDefaultLanguageData()
@@ -209,6 +213,11 @@ namespace SimplyLocalize.Editor.Keys
                 EditorGUI.EndDisabledGroup();
                 
                 language.OverrideFontAsset = (FontHolder)EditorGUILayout.ObjectField(language.OverrideFontAsset, typeof(FontHolder), false, GUILayout.Height(_LINE_HEIGHT));
+
+                if (GUI.changed)
+                {
+                    EditorUtility.SetDirty(language);
+                }
                 
                 if (GUILayout.Button("Remove Language", _buttonStyle, GUILayout.Height(_LINE_HEIGHT)))
                 {
@@ -353,6 +362,31 @@ namespace SimplyLocalize.Editor.Keys
             {
                 GUI.color = Color.white;
             }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void DrawSettings()
+        {
+            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
+            EditorGUILayout.LabelField("Settings", _labelStyle);
+            
+            EditorGUILayout.BeginHorizontal();
+
+            EditorGUILayout.LabelField("Enable Logging", _labelStyle, GUILayout.Height(_LINE_HEIGHT));
+            
+            _localizationKeysData.EnableLogging = EditorGUILayout.Toggle(
+                _localizationKeysData.EnableLogging, 
+                _toggleStyle,
+                GUILayout.Height(_LINE_HEIGHT)
+            );
+            
+            EditorGUILayout.LabelField("In Editor Only", _labelStyle, GUILayout.Height(_LINE_HEIGHT));
+            _localizationKeysData.LoggingInEditorOnly = EditorGUILayout.Toggle(
+                _localizationKeysData.LoggingInEditorOnly, 
+                _toggleStyle,
+                GUILayout.Height(_LINE_HEIGHT)
+            );
 
             EditorGUILayout.EndHorizontal();
         }
@@ -600,14 +634,36 @@ namespace SimplyLocalize.Editor.Keys
             return true;
         }
 
-        private void DrawSprites()
+        private void DrawObject(Type type)
         {
             if (DrawTranslatingLanguageTabs() == false) return;
 
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
-            _newObjectKey = EditorGUILayout.ObjectField(_newObjectKey, typeof(Object), false, GUILayout.Height(_LINE_HEIGHT));
+
+            int height;
+            int width;
+
+            if (type == typeof(Sprite))
+            {
+                height = _LINE_HEIGHT * 4;
+                width = _LINE_HEIGHT * 4;
+            }
+            else
+            {
+                height = _LINE_HEIGHT * 2;
+                width = _LINE_HEIGHT * 8;
+            }
+
+            _newObjectKey = EditorGUILayout.ObjectField(_newObjectKey, type, false, GUILayout.Height(height), GUILayout.Width(width));
+            
+            if (_newObjectKey != null && _newObjectKey.GetType() != type)
+            {
+                _newObjectKey = null;
+            }
+                
+            EditorGUI.BeginDisabledGroup(_newObjectKey == null);
             if (GUILayout.Button("Add", _buttonStyle,GUILayout.Height(_LINE_HEIGHT)))
             {
                 foreach (var lang in _languages)
@@ -622,6 +678,7 @@ namespace SimplyLocalize.Editor.Keys
                 
                 _newObjectKey = null;
             }
+            EditorGUI.EndDisabledGroup();
             EditorGUILayout.EndHorizontal();
             
             EditorGUILayout.Space();
@@ -630,11 +687,13 @@ namespace SimplyLocalize.Editor.Keys
             
             if (_localizationKeysData.ObjectsTranslations.TryGetValue(language, out var translating))
             {
-                for (var i = 0; i < translating.Count; i++)
+                var sortedTranslating = translating
+                    .Where(t => t.Key.GetType() == type)
+                    .ToDictionary(t => t.Key, t => t.Value);
+                
+                for (var i = 0; i < sortedTranslating.Count; i++)
                 {
-                    var key = translating.ElementAt(i).Key;
-                    var height = _LINE_HEIGHT * 4;
-                    var width = _LINE_HEIGHT * 4;
+                    var key = sortedTranslating.ElementAt(i).Key;
 
                     EditorGUILayout.BeginHorizontal();
                     
@@ -642,7 +701,7 @@ namespace SimplyLocalize.Editor.Keys
                     EditorGUILayout.ObjectField(key, key.GetType(), false, GUILayout.Height(height), GUILayout.Width(width));
                     EditorGUI.EndDisabledGroup();
 
-                    translating[key] = EditorGUILayout.ObjectField(translating[key], key.GetType(), false, GUILayout.Height(height), GUILayout.Width(width));
+                    translating[key] = EditorGUILayout.ObjectField(sortedTranslating[key], key.GetType(), false, GUILayout.Height(height), GUILayout.Width(width));
                     
                     if (GUILayout.Button("Remove", _buttonStyle,GUILayout.Height(_LINE_HEIGHT)))
                     {

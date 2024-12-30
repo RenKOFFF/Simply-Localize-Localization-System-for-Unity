@@ -1,13 +1,8 @@
 using System;
 using System.Collections.Generic;
-using SimplyLocalize.Runtime.Data;
-using SimplyLocalize.Runtime.Data.Keys.Generated;
-using SimplyLocalize.Runtime.Data.SearchableEnum;
-using SimplyLocalize.Runtime.Data.StringEnum;
-using SimplyLocalize.Runtime.Main;
 using UnityEngine;
 
-namespace SimplyLocalize.Runtime.Components.TextComponents
+namespace SimplyLocalize
 {
     public abstract class LocalizationTextBase : MonoBehaviour
     {
@@ -90,7 +85,7 @@ namespace SimplyLocalize.Runtime.Components.TextComponents
         {
             if (Localization.TryGetKey(LocalizationKey, out var key))
                 SetTextByKey(key);
-            else Debug.LogWarning($"Localization key {LocalizationKey} not founded");
+            else Logging.Log($"Localization key {LocalizationKey} not founded", LogType.Warning);
         }
 
         private void SetTextByKey(string key)

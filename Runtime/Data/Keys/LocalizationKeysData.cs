@@ -1,13 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using SimplyLocalize.Runtime.Data.Extensions;
 using UnityEngine;
 
-#if UNITY_EDITOR
-using SimplyLocalize.Runtime.Data.Serializable;
-#endif
-
-namespace SimplyLocalize.Runtime.Data.Keys
+namespace SimplyLocalize
 {
     public class LocalizationKeysData : ScriptableObject
     {
@@ -18,12 +13,16 @@ namespace SimplyLocalize.Runtime.Data.Keys
 #endif
         [field: SerializeField] public SerializableSerializableDictionary<string, SerializableSerializableDictionary<Object, Object>> ObjectsTranslations { get; set; } = new();
 
+        [field: SerializeField] public bool EnableLogging { get; set; } = true;
+        [field: SerializeField] public bool LoggingInEditorOnly { get; set; } = true;
+
+#if UNITY_EDITOR
         public bool TryAddNewKey(string newEnumKey)
         {
             var key = newEnumKey.ToEnumName();
             if (Keys.Any(x => x == key))
             {
-                Debug.LogWarning($"Key {key} already exists");
+                Logging.Log($"Key {key} already exists", LogType.Warning);
                 return false;
             }
             
@@ -31,5 +30,6 @@ namespace SimplyLocalize.Runtime.Data.Keys
             
             return true;
         }
+#endif
     }
 }

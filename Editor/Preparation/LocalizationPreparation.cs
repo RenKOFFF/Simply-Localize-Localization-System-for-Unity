@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 
-namespace SimplyLocalize.Editor.Preparation
+namespace SimplyLocalize.Editor
 {
     [InitializeOnLoad]
     public class LocalizationPreparation

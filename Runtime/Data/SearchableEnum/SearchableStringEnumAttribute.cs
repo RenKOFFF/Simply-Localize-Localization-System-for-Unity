@@ -6,7 +6,7 @@
 using System;
 using UnityEngine;
 
-namespace SimplyLocalize.Runtime.Data.SearchableEnum
+namespace SimplyLocalize
 {
     [AttributeUsage(AttributeTargets.Field)]
     public class SearchableStringEnumAttribute : PropertyAttribute {}
