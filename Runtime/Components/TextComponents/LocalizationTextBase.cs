@@ -8,13 +8,13 @@ namespace SimplyLocalize
     {
         private static FontHolder _overrideFontHolder;
 
-        [SearchableStringEnum, SerializeField] private StringEnum<LocalizationKey> _localizationKey;
+        [SerializeField] private LocalizationKey _localizationKey;
         
         public bool IsInitialized { get; protected set; }
 
         public bool Translated { get; protected set; }
         public string DefaultText { get; protected set; }
-        public LocalizationKey LocalizationKey => _localizationKey.Value;
+        public LocalizationKey LocalizationKey => _localizationKey;
 
         public static FontHolder OverrideFontHolder => Localization.TryGetFontHolder(out _overrideFontHolder) ? _overrideFontHolder : null;
 
@@ -37,7 +37,7 @@ namespace SimplyLocalize
 
         public void TranslateByKey(LocalizationKey key)
         {
-            _localizationKey.Value = key;
+            _localizationKey = key;
 
             if (!IsInitialized)
             {
@@ -85,7 +85,7 @@ namespace SimplyLocalize
         {
             if (Localization.TryGetKey(LocalizationKey, out var key))
                 SetTextByKey(key);
-            else Logging.Log($"Localization key {LocalizationKey} not founded", LogType.Warning);
+            else Logging.Log($"Localization key {LocalizationKey.Key} not founded in object: {gameObject.name}.", LogType.Warning, this);
         }
 
         private void SetTextByKey(string key)

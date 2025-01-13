@@ -36,7 +36,7 @@ namespace SimplyLocalize
         {
             if (_keyObject == null)
             {
-                Logging.Log($"{nameof(LocalizationImage)}: _keyObject is null in object: {gameObject.name}", LogType.Error);
+                Logging.Log($"{nameof(LocalizationImage)}: _keyObject is null in object: {gameObject.name}", LogType.Error, this);
                 return;
             }
             
@@ -74,7 +74,7 @@ namespace SimplyLocalize
         {
             _image.sprite = key as Sprite;
             
-            Logging.Log($"Translated image not founded by key: {key} in object: {gameObject.name}. Assigned default image.");
+            Logging.Log($"Translated image not founded by key: {key} in object: {gameObject.name}. Assigned default image.", LogType.Warning, this);
         }
 
 

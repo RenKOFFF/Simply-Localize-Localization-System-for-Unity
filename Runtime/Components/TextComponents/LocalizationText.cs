@@ -44,7 +44,7 @@ namespace SimplyLocalize
             if (_textElement != null) _textElement.text = key;
             if (_textElementLegacy != null) _textElementLegacy.text = key;
             
-            Logging.Log($"Translated text not founded by key: {key}");
+            Logging.Log($"Localization key {LocalizationKey.Key} not founded in object: {gameObject.name}.", LogType.Warning, this);
         }
 
         protected override void SaveDefaultFont()

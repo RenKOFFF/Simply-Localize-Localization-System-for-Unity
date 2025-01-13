@@ -26,10 +26,9 @@ namespace SimplyLocalize
                 
                 if (!TryLoadDefaultLanguage())
                 {
-                    throw new NotImplementedException(
-                        $"{nameof(AllLocalizations)} is empty. " +
-                        $"You should call {nameof(Localization)}.{nameof(SetLocalization)} method before use localization components " +
-                        $"or set default localization data in Localization Settings window.");
+                    Logging.Log($"{nameof(AllLocalizations)} is empty. " +
+                                $"You should call {nameof(Localization)}.{nameof(SetLocalization)} method before use localization components " +
+                                $"or set default localization data in Localization Settings window.", LogType.Error);
                 }
                 
                 return _localizationKeysData;
@@ -44,10 +43,10 @@ namespace SimplyLocalize
 
                 if (!TryLoadDefaultLanguage())
                 {
-                    throw new NotImplementedException(
+                    Logging.Log(
                         $"{nameof(AllLocalizations)} is empty. " +
                         $"You should call {nameof(Localization)}.{nameof(SetLocalization)} method before use localization components " +
-                        $"or set default localization data in Localization Settings window.");
+                        $"or set default localization data in Localization Settings window.", LogType.Error);
                 }
 
                 return _allLocalizations;
@@ -62,10 +61,10 @@ namespace SimplyLocalize
 
                 if (!TryLoadDefaultLanguage())
                 {
-                    throw new NotImplementedException(
+                    Logging.Log(
                         $"{nameof(AllLocalizations)} is empty. " +
                         $"You should call {nameof(Localization)}.{nameof(SetLocalization)} method before use localization components " +
-                        $"or set default localization data in Localization Settings window.");
+                        $"or set default localization data in Localization Settings window.", LogType.Error);
                 }
 
                 return _allLocalizationsObjects;
@@ -80,7 +79,7 @@ namespace SimplyLocalize
 
                 AllLocalizations.TryGetValue(CurrentLanguage, out _currentLocalization);
 
-                return _currentLocalization;
+                return _currentLocalization ?? new Dictionary<string, string>();
             }
         }
 
@@ -92,7 +91,7 @@ namespace SimplyLocalize
                 
                 AllLocalizationsObjects.TryGetValue(CurrentLanguage, out _currentLocalizationObjects);
 
-                return _currentLocalizationObjects;
+                return _currentLocalizationObjects ?? new Dictionary<Object, Object>();
             }
         }
 
@@ -165,14 +164,14 @@ namespace SimplyLocalize
         
         public static bool TryGetKey(LocalizationKey localizationKey, out string key)
         {
-            return LocalizationKeys.Keys.TryGetValue(localizationKey, out key);
+            key = LocalizationKeysData.Keys.FirstOrDefault(x => x == localizationKey.Key);
+            return key != null;
         }
 
         public static bool TryGetTranslatedText(LocalizationKey localizationKey, out string translated)
         {
             translated = "***";
-            return LocalizationKeys.Keys.TryGetValue(localizationKey, out var key) &&
-                   CurrentLocalization.TryGetValue(key, out translated);
+            return TryGetKey(localizationKey, out var key) && CurrentLocalization.TryGetValue(key, out translated);
         }
 
         private static bool TryLoadDefaultLanguage()

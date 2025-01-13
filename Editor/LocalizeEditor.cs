@@ -29,9 +29,6 @@ namespace SimplyLocalize.Editor
                 .GroupBy(x => x)
                 .Select(x => x.First())
                 .ToList();
-            
-            KeyGenerator.SetEnums(_localizationKeysData.Keys);
-            KeyGenerator.GenerateKeys();
 
             GenerateLocalizationJson(_localizationKeysData.Translations);
         }
@@ -58,8 +55,7 @@ namespace SimplyLocalize.Editor
             if (!data.Any())
             {
                 Logging.Log($"No {nameof(LocalizationData)} found. " +
-                            "Create one or more files in the \"Resources\" folder from the menu " +
-                            "\"Create/SimplyLocalize/New localization data\" and try again.", LogType.Warning);
+                            "Create one or more files in the \"Resources\" folder in editor window and try again.", LogType.Warning);
                 
                 return;
             }
@@ -104,11 +100,6 @@ namespace SimplyLocalize.Editor
 
         private static LocalizationKeysData GenerateLocalizationKeysData()
         {
-            if (FindLocalizationKeysData(out _localizationKeysData))
-            {
-                return _localizationKeysData;
-            }
-        
             _localizationKeysData = ScriptableObject.CreateInstance<LocalizationKeysData>();
             
             var localizationDataPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, nameof(LocalizationKeysData));
@@ -118,8 +109,6 @@ namespace SimplyLocalize.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         
-            Logging.Log($"{nameof(LocalizationKeysData)} created at " + dataPath);
-            
             return _localizationKeysData;
         }
 
@@ -130,27 +119,10 @@ namespace SimplyLocalize.Editor
 
             if (guids.Length == 0)
             {
-                Logging.Log($"No {nameof(LocalizationKeysData)} asset found. Create one and try again.", LogType.Warning);
                 return false;
             }
 
-            if (guids.Length == 1)
-            {
-                if (LoadLocalizationKeysData(guids, out data)) return true;
-
-                Logging.Log($"No {nameof(LocalizationKeysData)} asset found. Create one and try again.", LogType.Warning);
-                return false;
-            }
-
-            if (guids.Length > 1)
-            {
-                if (LoadLocalizationKeysData(guids, out data)) return true;
-
-                Logging.Log($"Multiple {nameof(LocalizationKeysData)} assets found. Delete one and try again.", LogType.Error);
-                return false;
-            }
-
-            return false;
+            return guids.Length >= 1 && LoadLocalizationKeysData(guids, out data);
         }
 
         private static bool LoadLocalizationKeysData(string[] guids, out LocalizationKeysData data)

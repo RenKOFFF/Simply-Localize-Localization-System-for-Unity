@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SimplyLocalize
 {
@@ -7,7 +8,11 @@ namespace SimplyLocalize
     
     public static class Logging
     {
-        public static void Log(string message, LogType type = LogType.Info)
+        private static readonly Color InfoColor = new(0f, .6f, 1, 1f);
+        private static readonly Color WarningColor = new(1f, 0.5f, 0f, 1f);
+        private static readonly Color ErrorColor = new(1f, 0f, 0f, 1f);
+        
+        public static void Log(string message, LogType type = LogType.Info, Object context = null)
         {
             if (Localization.EnableLogging == false) return;
 
@@ -17,14 +22,16 @@ namespace SimplyLocalize
             
             var color = type switch
             {
-                LogType.Info => Color.white,
-                LogType.Warning => Color.yellow,
-                LogType.Error => Color.red,
+                LogType.Info => InfoColor,
+                LogType.Warning => WarningColor,
+                LogType.Error => ErrorColor,
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
-
-
-            Debug.Log($"<color={color}>[Simply Localize]</color>: {message}");
+            
+            int r = (int)(color.r * 255), g = (int)(color.g * 255), b = (int)(color.b * 255);
+            var hexColor = r.ToString("X2") + g.ToString("X2") + b.ToString("X2");
+            
+            Debug.Log($"<color=#{hexColor}>[Simply Localize]</color>: {message}", context);
         }
     }
 }

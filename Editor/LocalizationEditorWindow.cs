@@ -9,7 +9,7 @@ using Object = UnityEngine.Object;
 
 namespace SimplyLocalize.Editor
 {
-    public class LocalizationKeysDataEditorWindow : EditorWindow
+    public class LocalizationEditorWindow : EditorWindow
     {
         private const int _LINE_HEIGHT = 30;
         private const int _MAX_FIELD_HEIGHT = 400; 
@@ -49,7 +49,7 @@ namespace SimplyLocalize.Editor
         [MenuItem("Window/Simply Localize/Localization Settings", priority = 300, secondaryPriority = 2)]
         private static void ShowWindow()
         {
-            var window = GetWindow<LocalizationKeysDataEditorWindow>();
+            var window = GetWindow<LocalizationEditorWindow>();
             window.titleContent = new GUIContent("Localization Settings");
             window.Show();
         }
@@ -421,7 +421,7 @@ namespace SimplyLocalize.Editor
                     GUI.color = Color.white;
                 }
                 
-                _localizationKeysData.Keys[i] = _localizationKeysData.Keys[i].ToEnumName();
+                _localizationKeysData.Keys[i] = _localizationKeysData.Keys[i].ToCorrectName();
 
                 if (GUILayout.Button("Remove", _buttonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
                 {
@@ -520,7 +520,7 @@ namespace SimplyLocalize.Editor
 
             foreach (var key in keysArray)
             {
-                var keyName = key.ToEnumName();
+                var keyName = key.ToCorrectName();
                 if (keyName == "")
                 {
                     continue;
