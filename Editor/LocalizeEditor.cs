@@ -32,15 +32,26 @@ namespace SimplyLocalize.Editor
 
             GenerateLocalizationJson(_localizationKeysData.Translations);
         }
-
-        public static bool TryAddNewKey(string newEnumKey)
+        
+        public static bool CanAddNewKey(string newKey)
         {
+            return GetLocalizationKeysData().Keys.All(x => x != newKey.ToCorrectLocalizationKeyName());
+        }
+
+        public static bool TryAddNewKey(string newKey, bool generateKeysAfterSuccess)
+        {
+            if (!CanAddNewKey(newKey))
+            {
+                return false;
+            }
+            
             GetLocalizationKeysData();
 
-            if (!_localizationKeysData.TryAddNewKey(newEnumKey))
+            if (!_localizationKeysData.TryAddNewKey(newKey))
                 return false;
             
-            GenerateLocalizationKeys();
+            if (generateKeysAfterSuccess)
+                GenerateLocalizationKeys();
 
             EditorUtility.SetDirty(_localizationKeysData);
             AssetDatabase.SaveAssets();

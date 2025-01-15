@@ -22,15 +22,21 @@ namespace SimplyLocalize
         
         public event Action LanguageChanged;
 
-        protected virtual void Awake()
+        protected virtual void OnEnable()
         {
             if (!IsInitialized)
             {
                 Initialize();
             }
+            else
+            {
+                SetLanguage();
+            }
+
+            Localization.LanguageChanged += SetLanguage;
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             Localization.LanguageChanged -= SetLanguage;
         }
@@ -101,9 +107,7 @@ namespace SimplyLocalize
         private void Initialize()
         {
             SaveDefaultFont();
-            
             SetLanguage();
-            Localization.LanguageChanged += SetLanguage;
 
             IsInitialized = true;
         }

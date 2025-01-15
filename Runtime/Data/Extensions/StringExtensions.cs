@@ -4,14 +4,19 @@ namespace SimplyLocalize
 {
     public static class StringExtensions
     {
-        public static string ToCorrectName(this string input)
+        public static string ToCorrectLocalizationKeyName(this string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return "Empty";
 
             input = input.Trim();
             
             var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            return string.Join("/", parts);
+            var finalKey = string.Join("/", parts);
+            
+            if (finalKey.EndsWith("/")) 
+                finalKey = finalKey[..^1];
+            
+            return finalKey;
         }
     }
 }

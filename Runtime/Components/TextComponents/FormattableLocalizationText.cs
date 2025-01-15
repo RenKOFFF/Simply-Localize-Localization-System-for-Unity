@@ -14,14 +14,14 @@ namespace SimplyLocalize
 
         public event Action TranslatedEvent;
 
-        protected override void Awake()
+        protected override void OnEnable()
         {
             if (_defaultValues.Length > 0)
             {
                 SetValue(_defaultValues);
             }
             
-            base.Awake();
+            base.OnEnable();
         }
 
         /// <summary>

@@ -3,7 +3,7 @@
 namespace SimplyLocalize.Editor
 {
     [CustomEditor(typeof(LocalizationKeysData))]
-    public class LocalizationKeysDataEditor : UnityEditor.Editor
+    internal class LocalizationKeysDataEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {

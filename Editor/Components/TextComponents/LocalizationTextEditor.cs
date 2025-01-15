@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System;
+using TMPro;
 using UnityEditor;
 
 namespace SimplyLocalize.Editor
@@ -15,6 +16,9 @@ namespace SimplyLocalize.Editor
             var textElementProp = serializedObject.FindProperty("_textElement");
             var textElementLegacyProp = serializedObject.FindProperty("_textElementLegacy");
 
+            if (localizationKeyProp == null || overrideTextsElementProp == null)
+                return;
+            
             EditorGUILayout.PropertyField(localizationKeyProp);
             EditorGUILayout.PropertyField(overrideTextsElementProp);
 

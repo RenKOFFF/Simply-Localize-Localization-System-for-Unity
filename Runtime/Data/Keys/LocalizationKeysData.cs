@@ -19,10 +19,10 @@ namespace SimplyLocalize
 #if UNITY_EDITOR
         public bool TryAddNewKey(string newEnumKey)
         {
-            var key = newEnumKey.ToCorrectName();
+            var key = newEnumKey.ToCorrectLocalizationKeyName();
             if (Keys.Any(x => x == key))
             {
-                Logging.Log($"Key {key} already exists", LogType.Warning);
+                Logging.Log($"Key {key} already exists", LogType.Error);
                 return false;
             }
             

@@ -181,9 +181,12 @@ namespace SimplyLocalize
             if (_localizationKeysData.DefaultLocalizationData != null)
             {
                 SetLocalization(_localizationKeysData.DefaultLocalizationData);
-
-                Logging.Log($"Used default language: {CurrentLanguage}, please call the method: " +
-                            $"{nameof(Localization)}.{nameof(SetLocalization)} to use another one.");
+                
+                if (Application.isPlaying)
+                {
+                    Logging.Log($"Used default language: {CurrentLanguage}, please call the method: " +
+                                $"{nameof(Localization)}.{nameof(SetLocalization)} to use another one.");
+                }
 
                 return true;
             }
