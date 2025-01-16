@@ -18,6 +18,8 @@ namespace SimplyLocalize.Editor
         private readonly string[] _mainTabs = { "Language", "Keys", "Text Translating", "Sprites"};//, "Objects", "AudioClip" };
         
         private string _newKeys = "";
+
+        private LocalizationConfig.SpaceUsage _spaceIsGroupSeparator;
         
         private Vector2 _windowScrollPosition;
         private Vector2 _keysScrollPosition;
@@ -30,6 +32,8 @@ namespace SimplyLocalize.Editor
         private static GUIStyle ButtonStyle => LocalizationEditorStyles.ButtonStyle;
         
         private LocalizationKeysData _localizationKeysData;
+        private LocalizationConfig _localizationConfig;
+        
         private List<LocalizationData> _languages;
         private List<FontHolder> _fontHolders;
         
@@ -57,6 +61,7 @@ namespace SimplyLocalize.Editor
         private void OnGUI()
         {
             if (TryInitializeKeysData() == false) return;
+            if (TryInitializeLocalizationConfig() == false) return;
             
             _windowScrollPosition = GUILayout.BeginScrollView(_windowScrollPosition); 
             
@@ -67,6 +72,7 @@ namespace SimplyLocalize.Editor
             if (GUI.changed)
             {
                 EditorUtility.SetDirty(_localizationKeysData);
+                EditorUtility.SetDirty(_localizationConfig);
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
@@ -90,6 +96,29 @@ namespace SimplyLocalize.Editor
             );
 
             EditorGUILayout.HelpBox("Please assign a LocalizationKeysData asset to edit.", MessageType.Error);
+
+            return false;
+
+        }
+
+        private bool TryInitializeLocalizationConfig()
+        {
+            if (_localizationConfig != null) 
+                return true;
+            
+            _localizationConfig = LocalizeEditor.GetLocalizationConfig();
+
+            if (_localizationConfig != null) 
+                return true;
+            
+            _localizationConfig = (LocalizationConfig)EditorGUILayout.ObjectField(
+                "Localization Config",
+                _localizationConfig,
+                typeof(LocalizationConfig),
+                false
+            );
+
+            EditorGUILayout.HelpBox("Please assign a LocalizationConfig asset to edit.", MessageType.Error);
 
             return false;
 
@@ -326,18 +355,29 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.LabelField("Settings", LabelStyle);
             
             EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.Space();
 
-            EditorGUILayout.LabelField("Enable Logging", LabelStyle, GUILayout.Height(_LINE_HEIGHT));
+            // Space
+            EditorGUILayout.LabelField("Space is:", LabelStyle, GUILayout.Height(_LINE_HEIGHT));
+            var options = Enum.GetValues(typeof(LocalizationConfig.SpaceUsage)).Cast<LocalizationConfig.SpaceUsage>().Select(x => x.ToString()).ToArray();
             
-            _localizationKeysData.EnableLogging = EditorGUILayout.Toggle(
-                _localizationKeysData.EnableLogging, 
+            _spaceIsGroupSeparator = _localizationConfig.SpaceIsGroupSeparator;
+            _spaceIsGroupSeparator = (LocalizationConfig.SpaceUsage)EditorGUILayout.Popup("", (int)_spaceIsGroupSeparator, options, LocalizationEditorStyles.PopupStyle);
+            _localizationConfig.SpaceIsGroupSeparator = _spaceIsGroupSeparator;
+            EditorGUILayout.Space();
+
+            // Logging
+            EditorGUILayout.LabelField("Enable Logging", LabelStyle, GUILayout.Height(_LINE_HEIGHT));
+            _localizationConfig.EnableLogging = EditorGUILayout.Toggle(
+                _localizationConfig.EnableLogging, 
                 ToggleStyle,
                 GUILayout.Height(_LINE_HEIGHT)
             );
             
+            // In Editor Only
             EditorGUILayout.LabelField("In Editor Only", LabelStyle, GUILayout.Height(_LINE_HEIGHT));
-            _localizationKeysData.LoggingInEditorOnly = EditorGUILayout.Toggle(
-                _localizationKeysData.LoggingInEditorOnly, 
+            _localizationConfig.LoggingInEditorOnly = EditorGUILayout.Toggle(
+                _localizationConfig.LoggingInEditorOnly, 
                 ToggleStyle,
                 GUILayout.Height(_LINE_HEIGHT)
             );
@@ -375,7 +415,8 @@ namespace SimplyLocalize.Editor
                     GUI.color = Color.white;
                 }
                 
-                _localizationKeysData.Keys[i] = _localizationKeysData.Keys[i].ToCorrectLocalizationKeyName();
+                _localizationKeysData.Keys = _localizationKeysData.Keys.Where(key => key != "").ToList();
+                _localizationKeysData.Keys[i] = _localizationKeysData.Keys[i].Trim();
 
                 if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
                 {
@@ -392,23 +433,30 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
+
+            if (LocalizeEditor.CanAddNewKey(_newKey) == false)
+            {
+                GUI.color = Color.red;    
+            }
             
             _newKey = EditorGUILayout.TextField(_newKey, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
             
-            if (_newKey == "")
+            if (LocalizeEditor.CanAddNewKey(_newKey) == false)
             {
                 EditorGUI.BeginDisabledGroup(true);
             }
             
+            GUI.color = Color.white;
+            
             if (GUILayout.Button("Add New Key", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
             {
-                _localizationKeysData.Keys.Add(_newKey);
+                _localizationKeysData.Keys.Add(_newKey.ToCorrectLocalizationKeyName());
                 _keysScrollPosition = new Vector2(0, _MAX_FIELD_HEIGHT);
                 
                 _newKey = "";
             }
             
-            if (_newKey == "")
+            if (LocalizeEditor.CanAddNewKey(_newKey) == false)
             {
                 EditorGUI.EndDisabledGroup();
             }
@@ -485,6 +533,7 @@ namespace SimplyLocalize.Editor
             }
 
             _newKeys = "";
+            _newKey = "";
 
             EditorUtility.SetDirty(_localizationKeysData);
             AssetDatabase.SaveAssets();

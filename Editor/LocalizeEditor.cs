@@ -10,15 +10,26 @@ namespace SimplyLocalize.Editor
     public static class LocalizeEditor
     {
         private static LocalizationKeysData _localizationKeysData;
+        private static LocalizationConfig _localizationConfig;
         
         public static LocalizationKeysData GetLocalizationKeysData()
         {
-            if (_localizationKeysData != null || FindLocalizationKeysData(out _localizationKeysData))
+            if (_localizationKeysData != null)
             {
                 return _localizationKeysData;
             }
 
-            return GenerateLocalizationKeysData();
+            return _localizationKeysData = GetData<LocalizationKeysData>();
+        }
+        
+        public static LocalizationConfig GetLocalizationConfig()
+        {
+            if (_localizationConfig != null)
+            {
+                return _localizationConfig;
+            }
+
+            return _localizationConfig = GetData<LocalizationConfig>();
         }
 
         public static void GenerateLocalizationKeys()
@@ -35,7 +46,11 @@ namespace SimplyLocalize.Editor
         
         public static bool CanAddNewKey(string newKey)
         {
-            return GetLocalizationKeysData().Keys.All(x => x != newKey.ToCorrectLocalizationKeyName());
+            var keys = GetLocalizationKeysData().Keys;
+            
+            return newKey != "" && 
+                   keys.All(x => x != newKey.ToCorrectLocalizationKeyName()) && 
+                   keys.Any(x => x != "<None>");
         }
 
         public static bool TryAddNewKey(string newKey, bool generateKeysAfterSuccess)
@@ -46,9 +61,15 @@ namespace SimplyLocalize.Editor
             }
             
             GetLocalizationKeysData();
-
-            if (!_localizationKeysData.TryAddNewKey(newKey))
-                return false;
+            
+            var key = newKey.ToCorrectLocalizationKeyName();
+            // if (_localizationKeysData.Keys.Any(x => x == key))
+            // {
+            //     Logging.Log($"Key {key} already exists", LogType.Error);
+            //     return false;
+            // }
+            
+            _localizationKeysData.Keys.Add(key);
             
             if (generateKeysAfterSuccess)
                 GenerateLocalizationKeys();
@@ -109,37 +130,49 @@ namespace SimplyLocalize.Editor
             return result;
         }
 
-        private static LocalizationKeysData GenerateLocalizationKeysData()
+        private static T GetData<T>() where T : ScriptableObject
         {
-            _localizationKeysData = ScriptableObject.CreateInstance<LocalizationKeysData>();
+            if (FindData(out T data))
+            {
+                return data;
+            }
             
-            var localizationDataPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, nameof(LocalizationKeysData));
+            return GenerateData<T>();
+        }
+        
+        private static T GenerateData<T>() where T : ScriptableObject
+        {
+            var so = ScriptableObject.CreateInstance<T>();
+            var dataName = typeof(T).Name;
+            
+            var localizationDataPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, dataName);
             var dataPath = Path.ChangeExtension(localizationDataPath, LocalizationPreparation.FileExtensionAsset);
         
-            AssetDatabase.CreateAsset(_localizationKeysData, dataPath);
+            AssetDatabase.CreateAsset(so, dataPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-        
-            return _localizationKeysData;
+
+            return so;
         }
 
-        private static bool FindLocalizationKeysData(out LocalizationKeysData data)
+        private static bool FindData<T>(out T data) where T : Object
         {
-            var guids = AssetDatabase.FindAssets($"t:{nameof(LocalizationKeysData)}");
+            var typeName = typeof(T).Name;
+            var guids = AssetDatabase.FindAssets($"t:{typeName}");
             data = null;
-
+        
             if (guids.Length == 0)
             {
                 return false;
             }
-
-            return guids.Length >= 1 && LoadLocalizationKeysData(guids, out data);
+            
+            return guids.Length >= 1 && LoadData(guids, out data);
         }
 
-        private static bool LoadLocalizationKeysData(string[] guids, out LocalizationKeysData data)
+        private static bool LoadData<T>(string[] guids, out T data) where T : Object
         {
             var assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);
-            var asset = AssetDatabase.LoadAssetAtPath<LocalizationKeysData>(assetPath);
+            var asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
             if (asset == null)
             {
                 data = null;

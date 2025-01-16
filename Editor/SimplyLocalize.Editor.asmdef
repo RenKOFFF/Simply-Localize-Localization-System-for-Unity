@@ -3,10 +3,8 @@
     "rootNamespace": "",
     "references": [
         "SimplyLocalize",
-        "SimplyLocalize.Generated",
         "Unity.EditorCoroutines.Editor",
-        "Unity.TextMeshPro",
-        "SimplyLocalize.Preparation"
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

@@ -10,6 +10,8 @@ namespace SimplyLocalize
     public static class Localization
     {
         private static LocalizationKeysData _localizationKeysData;
+        private static LocalizationConfig _localizationConfig;
+        
         private static Dictionary<string, Dictionary<string, string>> _allLocalizations;
         private static Dictionary<string, Dictionary<Object, Object>> _allLocalizationsObjects;
         
@@ -32,6 +34,21 @@ namespace SimplyLocalize
                 }
                 
                 return _localizationKeysData;
+            }
+        }
+        
+        public static LocalizationConfig LocalizationConfig
+        {
+            get
+            {
+                if (_localizationConfig != null) return _localizationConfig;
+                
+                if (!TryGetLocalizationConfig())
+                {
+                    throw new Exception("LocalizationConfig is null");
+                }
+                
+                return _localizationConfig;
             }
         }
         
@@ -62,7 +79,7 @@ namespace SimplyLocalize
                 if (!TryLoadDefaultLanguage())
                 {
                     Logging.Log(
-                        $"{nameof(AllLocalizations)} is empty. " +
+                        $"{nameof(AllLocalizationsObjects)} is empty. " +
                         $"You should call {nameof(Localization)}.{nameof(SetLocalization)} method before use localization components " +
                         $"or set default localization data in Localization Settings window.", LogType.Error);
                 }
@@ -96,9 +113,6 @@ namespace SimplyLocalize
         }
 
         public static string CurrentLanguage { get; private set; }
-        public static bool EnableLogging => LocalizationKeysData.EnableLogging;
-        public static bool LoggingOnlyInEditor => LocalizationKeysData.LoggingInEditorOnly;
-
         public static event Action LanguageChanged;
 
         public static bool SetLocalization(LocalizationData localizationData)
@@ -119,7 +133,7 @@ namespace SimplyLocalize
             var allLocalizations = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(localization.text);
             allLocalizations.TryGetValue(localizationData.i18nLang, out _currentLocalization);
             
-            var allLocalizationsObjects = _localizationKeysData.ObjectsTranslations
+            var allLocalizationsObjects = LocalizationKeysData.ObjectsTranslations
                 .ToDictionary(d => d.Key, d => d.Value
                     .ToDictionary(d => d.Key, d => d.Value));
 
@@ -132,10 +146,15 @@ namespace SimplyLocalize
             if (CurrentLanguage == null)
             {
                 CurrentLanguage = localizationData.i18nLang;
+                
+                Logging.Log("Setup language. Current language: {0}", args: (CurrentLanguage, Color.green));
             }
             else
             {
+                
                 CurrentLanguage = localizationData.i18nLang;
+                Logging.Log("Language changed. New language: {0}", args: (CurrentLanguage, Color.green));
+                
                 LanguageChanged?.Invoke();
             }
 
@@ -178,6 +197,12 @@ namespace SimplyLocalize
         {
             _localizationKeysData ??= Resources.Load<LocalizationKeysData>(nameof(LocalizationKeysData));
             
+            if (_localizationKeysData == null)
+            {
+                Logging.Log($"{nameof(LocalizationKeysData)} not founded.", LogType.Error);
+                return false;
+            }
+            
             if (_localizationKeysData.DefaultLocalizationData != null)
             {
                 SetLocalization(_localizationKeysData.DefaultLocalizationData);
@@ -191,7 +216,14 @@ namespace SimplyLocalize
                 return true;
             }
 
-            return false;
+            return true;
+        }
+
+        private static bool TryGetLocalizationConfig()
+        {
+            _localizationConfig ??= Resources.Load<LocalizationConfig>(nameof(LocalizationConfig));
+
+            return _localizationConfig != null;
         }
     }
 }

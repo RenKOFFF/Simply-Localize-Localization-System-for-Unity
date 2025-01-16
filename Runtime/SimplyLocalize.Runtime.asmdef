@@ -2,9 +2,7 @@
     "name": "SimplyLocalize",
     "rootNamespace": "",
     "references": [
-        "GUID:6055be8ebefd69e48b49212b09b47b2f",
-        "GUID:f576fac433856444e817119d3cfb1a11",
-        "GUID:1f5f6febbd38c96489687d0d20939f71"
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -13,14 +14,18 @@ namespace SimplyLocalize.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             var errorColor = new Color(1, 0.3f, 0.3f);
+            const string noneKey = "<None>";
             
             var keyProperty = property.FindPropertyRelative("_key");
-
-            var keys = LocalizeEditor.GetLocalizationKeysData().Keys;
-            var isErrorKey = keys.IndexOf(keyProperty.stringValue) < 0 || string.IsNullOrEmpty(keyProperty.stringValue);
-            var errorKey = $"<None> : ({keyProperty.stringValue})";
+            var keys = new List<string>(LocalizeEditor.GetLocalizationKeysData().Keys);
+            
+            var errorKey = $"{noneKey} : ({keyProperty.stringValue})";
+            var isErrorKey = keys.IndexOf(keyProperty.stringValue) < 0;
 
             var currentKey = keyProperty.stringValue;
+            
+            keys.Add(noneKey);
+            
             if (isErrorKey == false)
             {
                 if (currentKey.Split('/', StringSplitOptions.RemoveEmptyEntries).Length > 1)
@@ -36,7 +41,15 @@ namespace SimplyLocalize.Editor
             }
             else
             {
-                currentKey = $"{errorKey}";
+                if (string.IsNullOrEmpty(keyProperty.stringValue))
+                {
+                    currentKey = noneKey;
+                    isErrorKey = false;
+                }
+                else
+                {
+                    currentKey = $"{errorKey}";
+                }
             }
 
             EditorGUILayout.BeginHorizontal();
@@ -101,6 +114,9 @@ namespace SimplyLocalize.Editor
             void OnSelectEntry(string key)
             {
                 if (string.IsNullOrEmpty(key)) return;
+
+                if (key == noneKey)
+                    key = "";
                 
                 keyProperty.stringValue = key;
                 property.serializedObject.ApplyModifiedProperties();

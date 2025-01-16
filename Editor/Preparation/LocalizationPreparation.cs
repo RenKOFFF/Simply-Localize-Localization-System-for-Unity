@@ -23,6 +23,7 @@ namespace SimplyLocalize.Editor
         {
             PrepareFolders();
             LocalizeEditor.GetLocalizationKeysData();
+            LocalizeEditor.GetLocalizationConfig();
         }
         
         public static void PrepareFolders()
