@@ -5,7 +5,7 @@ namespace SimplyLocalize.Editor
 {
     public static class LocalizationStringExtensions
     {
-        public static readonly char[] WrongChars = { '\\', '/', '\t', '\n', '\r', '\f', '\v', '\0', ';', '.', '!', '?', '{', '}' };
+        public static readonly char[] WrongChars = { '\\', '\t', '\n', '\r', '\f', '\v', '\0', ';', '.', '!', '?', '{', '}' };
         
         public static string ToCorrectLocalizationKeyName(this string input)
         {

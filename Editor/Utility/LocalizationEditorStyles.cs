@@ -19,7 +19,7 @@ namespace SimplyLocalize.Editor
             {
                 textColor = Color.white
             },
-            fixedWidth = 200
+            // fixedWidth = 200
         };
         public static GUIStyle LabelStyle => new()
         {
@@ -68,6 +68,12 @@ namespace SimplyLocalize.Editor
             fontStyle = FontStyle.Bold,
             fontSize = 14,
             fixedHeight = LINE_HEIGHT,
+        };
+
+        public static GUIStyle HorizontalStyle => new()
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fixedWidth = 100
         };
     }
 }

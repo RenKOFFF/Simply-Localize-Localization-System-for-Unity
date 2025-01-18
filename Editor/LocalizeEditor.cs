@@ -11,6 +11,7 @@ namespace SimplyLocalize.Editor
     {
         private static LocalizationKeysData _localizationKeysData;
         private static LocalizationConfig _localizationConfig;
+        private static List<LocalizationData> _languages;
         
         public static LocalizationKeysData GetLocalizationKeysData()
         {
@@ -32,6 +33,19 @@ namespace SimplyLocalize.Editor
             return _localizationConfig = GetData<LocalizationConfig>();
         }
 
+        public static List<LocalizationData> GetLanguages()
+        {
+            if (_languages != null)
+            {
+                _languages = _languages.Where(x => x != null).ToList();
+                
+                return _languages.ToList();
+            }
+            
+            _languages = Resources.LoadAll<LocalizationData>("").ToList();
+            return _languages;
+        }
+
         public static void GenerateLocalizationKeys()
         {
             GetLocalizationKeysData();
@@ -47,10 +61,14 @@ namespace SimplyLocalize.Editor
         public static bool CanAddNewKey(string newKey)
         {
             var keys = GetLocalizationKeysData().Keys;
+
+            var notEmpty = newKey != "";
+            var hasNotDuplicates = keys.All(x => x != newKey.ToCorrectLocalizationKeyName());
+            var isNotNope = newKey.ToCorrectLocalizationKeyName() != "<None>";
             
-            return newKey != "" && 
-                   keys.All(x => x != newKey.ToCorrectLocalizationKeyName()) && 
-                   keys.Any(x => x != "<None>");
+            return notEmpty && 
+                   hasNotDuplicates && 
+                   isNotNope;
         }
 
         public static bool TryAddNewKey(string newKey, bool generateKeysAfterSuccess)

@@ -94,7 +94,15 @@ namespace SimplyLocalize
             {
                 if (_currentLocalization != null) return _currentLocalization;
 
-                AllLocalizations.TryGetValue(CurrentLanguage, out _currentLocalization);
+                if (CurrentLanguage == null)
+                {
+                    Logging.Log($"Unsuccessful attempt to access localization keys. You probably forgot to set the language. Call the {nameof(Localization)}.{nameof(SetLocalization)}() method or set the default language in the localization window.",
+                        LogType.Error);
+                }
+                else
+                {
+                    AllLocalizations.TryGetValue(CurrentLanguage, out _currentLocalization);
+                }
 
                 return _currentLocalization ?? new Dictionary<string, string>();
             }
@@ -106,7 +114,15 @@ namespace SimplyLocalize
             {
                 if (_currentLocalizationObjects != null) return _currentLocalizationObjects;
                 
-                AllLocalizationsObjects.TryGetValue(CurrentLanguage, out _currentLocalizationObjects);
+                if (CurrentLanguage == null)
+                {
+                    Logging.Log($"Unsuccessful attempt to access localization keys. You probably forgot to set the language. Call the {nameof(Localization)}.{nameof(SetLocalization)}() method or set the default language in the localization window.",
+                        LogType.Error);
+                }
+                else
+                {
+                    AllLocalizationsObjects.TryGetValue(CurrentLanguage, out _currentLocalizationObjects);
+                }
 
                 return _currentLocalizationObjects ?? new Dictionary<Object, Object>();
             }
@@ -143,7 +159,7 @@ namespace SimplyLocalize
             _allLocalizationsObjects = allLocalizationsObjects;
             _fontHolder = localizationData.OverrideFontAsset;
             
-            if (CurrentLanguage == null)
+            if (string.IsNullOrEmpty(CurrentLanguage))
             {
                 CurrentLanguage = localizationData.i18nLang;
                 

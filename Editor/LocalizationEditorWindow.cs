@@ -26,10 +26,12 @@ namespace SimplyLocalize.Editor
         private Vector2 _multipleKeysScrollPosition;
 
         private static GUIStyle LabelStyle => LocalizationEditorStyles.LabelStyle;
+        private static GUIStyle LabelStylePrefix => LocalizationEditorStyles.LabelStylePrefix;
         private static GUIStyle KeyStyle => LocalizationEditorStyles.KeyStyle;
         private static GUIStyle ToggleStyle => LocalizationEditorStyles.ToggleStyle;
         private static GUIStyle TextAreaStyle => LocalizationEditorStyles.TextAreaStyle;
         private static GUIStyle ButtonStyle => LocalizationEditorStyles.ButtonStyle;
+        private static GUIStyle HorizontalStyle => LocalizationEditorStyles.HorizontalStyle;
         
         private LocalizationKeysData _localizationKeysData;
         private LocalizationConfig _localizationConfig;
@@ -181,9 +183,8 @@ namespace SimplyLocalize.Editor
         private void DrawLanguageSetting()
         {
             EditorGUILayout.LabelField("Language Setting", LabelStyle);
-            
-            _languages ??= Resources.LoadAll<LocalizationData>("").ToList();
-            _languages = _languages.Where(x => x != null).ToList();
+
+            _languages = LocalizeEditor.GetLanguages();
             
             for (var i = 0; i < _languages.Count; i++)
             {
@@ -354,34 +355,51 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
             EditorGUILayout.LabelField("Settings", LabelStyle);
             
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.Space();
 
             // Space
-            EditorGUILayout.LabelField("Space is:", LabelStyle, GUILayout.Height(_LINE_HEIGHT));
+            EditorGUILayout.BeginHorizontal(HorizontalStyle);
+            EditorGUILayout.Space();
+            
+            EditorGUILayout.LabelField("Space is:", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
             var options = Enum.GetValues(typeof(LocalizationConfig.SpaceUsage)).Cast<LocalizationConfig.SpaceUsage>().Select(x => x.ToString()).ToArray();
             
             _spaceIsGroupSeparator = _localizationConfig.SpaceIsGroupSeparator;
             _spaceIsGroupSeparator = (LocalizationConfig.SpaceUsage)EditorGUILayout.Popup("", (int)_spaceIsGroupSeparator, options, LocalizationEditorStyles.PopupStyle);
             _localizationConfig.SpaceIsGroupSeparator = _spaceIsGroupSeparator;
-            EditorGUILayout.Space();
+            EditorGUILayout.EndHorizontal();
 
             // Logging
-            EditorGUILayout.LabelField("Enable Logging", LabelStyle, GUILayout.Height(_LINE_HEIGHT));
+            EditorGUILayout.BeginHorizontal(HorizontalStyle);
+            EditorGUILayout.Space();
+
+            EditorGUILayout.LabelField("Enable Logging", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
             _localizationConfig.EnableLogging = EditorGUILayout.Toggle(
                 _localizationConfig.EnableLogging, 
                 ToggleStyle,
                 GUILayout.Height(_LINE_HEIGHT)
             );
+            EditorGUILayout.Space();
             
             // In Editor Only
-            EditorGUILayout.LabelField("In Editor Only", LabelStyle, GUILayout.Height(_LINE_HEIGHT));
+            EditorGUILayout.LabelField("In Editor Only", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
             _localizationConfig.LoggingInEditorOnly = EditorGUILayout.Toggle(
                 _localizationConfig.LoggingInEditorOnly, 
                 ToggleStyle,
                 GUILayout.Height(_LINE_HEIGHT)
             );
-
+            EditorGUILayout.EndHorizontal();
+            
+            // Show Editor Language Changing Popup
+            EditorGUILayout.BeginHorizontal(HorizontalStyle);
+            EditorGUILayout.Space();
+            
+            EditorGUILayout.LabelField("Show Editor Language Changing Popup", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+            _localizationConfig.ShowLanguagePopup = EditorGUILayout.Toggle(
+                _localizationConfig.ShowLanguagePopup, 
+                ToggleStyle,
+                GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(100)
+            );
+            
             EditorGUILayout.EndHorizontal();
         }
 
