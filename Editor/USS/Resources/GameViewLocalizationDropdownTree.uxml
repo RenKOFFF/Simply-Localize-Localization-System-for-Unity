@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/SimplyLocalize/Editor/USS/Resources/SimplyLocalizeStyles.uss?fileID=7433441132597879392&amp;guid=338047225f63b4f4dba56ca2adeea842&amp;type=3#SimplyLocalizeStyles" />
+    <ui:DropdownField label="Language" index="-1" name="LanguageDropdown" class="simplyLocalize-dropdown simplyLocalize-gameViewDropdown" style="flex-direction: column; width: 89px; height: 50px; justify-content: space-around; align-items: stretch; align-self: center;" />
+</ui:UXML>

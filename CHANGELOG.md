@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.5.1] - 2025-01-20
+### Updated and changed
+- Updated the language change window in the game view.
+
 ## [1.5.0] - 2025-01-19
 ### Updated and changed
 - Removed enum keys. Now they are stored as strings.

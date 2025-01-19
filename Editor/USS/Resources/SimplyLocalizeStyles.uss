@@ -1,0 +1,19 @@
+.simplyLocalize-gameViewDropdown {
+    opacity: 0.75;
+    position: absolute;
+    left: 10px;
+    top: 30px;
+    border-top-width: 6px;
+    border-right-width: 6px;
+    border-bottom-width: 6px;
+    border-left-width: 6px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    display: flex;
+    -unity-font-style: bold;
+    background-color: var(--unity-colors-play_mode-background);
+    overflow: visible;
+    color: var(--unity-colors-label-text);
+}

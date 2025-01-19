@@ -7,11 +7,11 @@ using UnityEngine.UIElements;
 namespace SimplyLocalize.Editor
 {
     [InitializeOnLoad]
-    public static class GameViewDropdown
+    public static class GameViewLocalizationDropdown
     {
-        private const string _GAME_VIEW_DROPDOWN_NAME = "GameViewDropdown";
+        private const string _GAME_VIEW_DROPDOWN_NAME = "GameViewLocalizationDropdownTree";
 
-        static GameViewDropdown()
+        static GameViewLocalizationDropdown()
         {
             EditorApplication.update += AddDropdownToGameView;
         }
@@ -24,7 +24,7 @@ namespace SimplyLocalize.Editor
             var root = gameView.rootVisualElement;
             var gameViewDropdown = root.Q<VisualElement>(_GAME_VIEW_DROPDOWN_NAME);
 
-            if (!Application.isPlaying || !LocalizeEditor.GetLocalizationConfig().ShowLanguagePopup)
+            if (/*!Application.isPlaying || */!LocalizeEditor.GetLocalizationConfig().ShowLanguagePopup)
             {
                 RemoveElementIfExist(gameViewDropdown, root);
                 return;
@@ -32,26 +32,15 @@ namespace SimplyLocalize.Editor
 
             if (gameViewDropdown != null) return;
 
-            var container = new VisualElement
+            var uss = Resources.Load<VisualTreeAsset>(_GAME_VIEW_DROPDOWN_NAME);
+            if (uss == null)
             {
-                name = _GAME_VIEW_DROPDOWN_NAME,
-                style =
-                {
-                    position = Position.Absolute,
-                    top = 30,
-                    left = 10,
-                    width = 200,
-                    backgroundColor = new Color(0, 0, 0, 0.5f),
-                    paddingLeft = 10,
-                    paddingRight = 10,
-                    paddingTop = 5,
-                    paddingBottom = 5,
-                    borderBottomLeftRadius = 5,
-                    borderBottomRightRadius = 5,
-                    borderTopLeftRadius = 5,
-                    borderTopRightRadius = 5
-                }
-            };
+                return;
+            }
+            
+            var container = new VisualElement();
+            uss.CloneTree(container);
+            container.name = _GAME_VIEW_DROPDOWN_NAME;
             
             var currentLanguage = Localization.CurrentLanguage ?? LocalizeEditor.GetLocalizationKeysData().DefaultLocalizationData?.i18nLang;
 
@@ -68,9 +57,18 @@ namespace SimplyLocalize.Editor
                 return;
             }
             
-            var dropdown = new PopupField<string>("Language", choices, index);
+            var dropdown = container.Q<DropdownField>("LanguageDropdown");
+            dropdown.choices = choices;
+            dropdown.index = index;
+            
             dropdown.RegisterValueChangedCallback(evt =>
             {
+                if (Application.isPlaying == false)
+                {
+                    Logging.Log($"Cannot change language in play mode.", LogType.Warning);
+                    return;
+                }
+                
                 var language = evt.newValue;
                 Localization.SetLocalization(language);
             });
