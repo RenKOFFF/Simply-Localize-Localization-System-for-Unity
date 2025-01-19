@@ -5,6 +5,7 @@ using UnityEditor;
 namespace SimplyLocalize.Editor
 {
     [CustomEditor(typeof(LocalizationText), true)]
+    [CanEditMultipleObjects]
     public class LocalizationTextEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()

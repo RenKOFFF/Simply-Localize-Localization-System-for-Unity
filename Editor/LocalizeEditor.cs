@@ -33,9 +33,9 @@ namespace SimplyLocalize.Editor
             return _localizationConfig = GetData<LocalizationConfig>();
         }
 
-        public static List<LocalizationData> GetLanguages()
+        public static List<LocalizationData> GetLanguages(bool overrideExisting = false)
         {
-            if (_languages != null)
+            if (_languages != null && !overrideExisting)
             {
                 _languages = _languages.Where(x => x != null).ToList();
                 

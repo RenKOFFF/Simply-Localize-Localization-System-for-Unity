@@ -1,21 +1,28 @@
 # Simply Localize
 
-A localization system for Unity designed to simplify translation management and text handling in your project.
+A localization system for Unity, designed to simplify the management of translations and text handling for multiple languages in your project.
 
-*Read this in other languages: [Russian](README_RU.md).*
+*Read in other languages: [Russian](README_RU.md).*
+
+## Table of Contents
+
+* [Features](#features)
+* [Example](#example)
+* [Installation](#installation)
+* [Usage](#usage)
 
 ## Features
 
 > [!NOTE]
-> - **Enum-based keys**: Prevents errors when accessing strings.
-> - **Automatic key generation**: No need to manually add them to the code.
-> - **Convenient translation editing**: All translations are stored centrally.
-> - **Flexible integration**: Supports formatted texts with parameters.
-> - **Ease of use**: Configurable via an intuitive editor.
-> - **Runtime language switching**: Change the active language during gameplay.
-> - **Image localization**: Support for localization of images.
+> - **Convenient storage**: all translations are stored in a single JSON file and editor.
+> - **Parameterization**: supports formatted texts with parameters.
+> - **Custom editor**: allows adding keys both through the settings window and directly via localization components.
+> - **Runtime language switching**: change the active language during gameplay.
+> - **Image localization**: supports localization of images.
+> - **Automatic key generation**: no need to add keys manually in the code.
 
-## Example Localization File
+## Example
+### Localization File
 
 ```json
 {
@@ -23,80 +30,73 @@ A localization system for Unity designed to simplify translation management and 
     "SelectLanguage": "Select Language",
     "En": "English",
     "Ru": "Russian",
-    "Jp": "Japanese",
+    "Ja": "Japanese",
     "MyNameIs": "My name is {0}"
   },
   "ru": {
     "SelectLanguage": "Выберите язык",
     "En": "Английский",
     "Ru": "Русский",
-    "Jp": "Японский",
+    "Ja": "Японский",
     "MyNameIs": "Меня зовут {0}"
   },
-  "jp": {
+  "ja": {
     "SelectLanguage": "言語を選択する",
     "En": "英語",
     "Ru": "ロシア語",
-    "Jp": "日本語",
+    "Ja": "日本語",
     "MyNameIs": "私の名前は {0}"
   }
 }
 ```
 
-## Example Usage in Code
+### Usage in Code
 
 ```csharp
 // Setting text with a parameter
-MyNameTextElement.TranslateByKey(LocalizationKey.MyNameIs);
+MyNameTextElement.TranslateByKey("MyNameIs");
 MyNameTextElement.SetValue("Alex");
 
 // Result: "My name is Alex" (en)
 
 // Changing the language at runtime
-Localization.SetLocalization("jp");
+Localization.SetLocalization("ru");
 
-// Result after language change: "私の名前は Alex"
+// Result after switching language: "Меня зовут Alex"
 ```
 
 ## Installation
 
-1. Download the **preparation script** from the link: `Window > Package Manager > Add package from git URL`
-```
-https://github.com/RenKOFFF/SimplyLocalize.git?path=/Editor/Preparation
-```
-2. Wait for the script to generate all necessary files in the `Assets` folder.
-3. Delete the preparation script.
-4. Download and install the **main asset**: `Window > Package Manager > Add package from git URL` 
+1. Download and install the asset via the link: `Window > Package Manager > Add package from git URL`
 ```
 https://github.com/RenKOFFF/SimplyLocalize.git
 ```
+
 ## Usage
 
-After installation, a new menu will appear in Unity:\
+After installation, a new menu will appear in Unity:
 **`Window -> SimplyLocalize -> Localization Settings`**.
 
 In this window, you can:
 
-- Add new languages and language-specific fonts.
+- Add new languages and fonts for specific languages.
 - Create and edit keys.
 - Set translations for each language.
+- Configure editor behavior:
+    - Text-to-key conversion settings: replace spaces with slashes, underscores, or leave unchanged.
+    - Enable/disable logging.
 
+[![Unity-a-Jno-Nkr-PW9.gif](https://i.postimg.cc/BvWYbcmC/Unity-a-Jno-Nkr-PW9.gif)](https://postimg.cc/K1NrsLSK)
 
-[![Unity-I04r-Rke-Er-J.png](https://i.postimg.cc/rFJRbwvv/Unity-I04r-Rke-Er-J.png)](https://postimg.cc/HVrL8dW2)
-[![Unity-JMqpnnk6s-F.png](https://i.postimg.cc/sggGRRz1/Unity-JMqpnnk6s-F.png)](https://postimg.cc/hfNt96fq)
-[![Unity-ZYMQ7g-Bkd4.png](https://i.postimg.cc/ZKZyVdD8/Unity-ZYMQ7g-Bkd4.png)](https://postimg.cc/SjTsKJ4R)
+### Component Setup
 
-
-### Configuring Components
-
-Add one of the components to your text element:
+Add one of the components to a text element:
 
 - **`LocalizationText`** — for static strings.
 - **`FormattableLocalizationText`** — for strings with parameters.
+- **`LocalizationImage`** — for images.
 
-[![Unity-AVOn-Det1d2.png](https://i.postimg.cc/cC7tdx6t/Unity-AVOn-Det1d2.png)](https://postimg.cc/gLJ2DPVG)
-
-### Change Language and Setting the Default Language
+### Changing Language and Setting a Default Language
 
 Call the method to set the language:
 
@@ -105,15 +105,12 @@ Localization.SetLocalization("ru"); // Set Russian language.
 ```
 
 > [!TIP]
-> - You can set the default language in the localization settings windows and change it during the game if necessary.
-> - Setting the default language is not necessary. The main thing is to set the language before starting to execute all localization scripts.
+> - You can set the default language in the localization settings window and change it during gameplay if needed.
+> - Setting a default language is optional. The key is to set the language before any localization scripts execute.
 
-### Alternative Key Addition
+### Alternative Method for Adding Keys
 
-Keys can also be added directly through text components. Enter a new key in the search field to create it.
+Keys can also be added directly through text components.
 
-> [!WARNING]
-> When adding a key in this way, the current key is reset to the first one. After adding, you must manually install the added key in the component.
-
-[![Unity-36w-Z3-Hw-Z6-K.png](https://i.postimg.cc/KctMPNQc/Unity-36w-Z3-Hw-Z6-K.png)](https://postimg.cc/CdL5YbW9)
+[![Unity-srfu-Fb-Dd-Z7.png](https://i.postimg.cc/bvQ6tDMf/Unity-srfu-Fb-Dd-Z7.png)](https://postimg.cc/7CZMv6wK)
 

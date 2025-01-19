@@ -18,7 +18,7 @@ namespace SimplyLocalize
             if (Localization.LocalizationConfig.EnableLogging == false) return;
 
 #if !UNITY_EDITOR
-            if (Localization.LocalizationConfig.LoggingInEditorOnly) return;
+            if (Localization.LocalizationConfig.EnableLoggingInBuild == false) return;
 #endif
             
             var color = type switch

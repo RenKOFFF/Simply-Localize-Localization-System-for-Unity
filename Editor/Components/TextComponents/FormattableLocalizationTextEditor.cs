@@ -3,6 +3,7 @@
 namespace SimplyLocalize.Editor
 {
     [CustomEditor(typeof(FormattableLocalizationText))]
+    [CanEditMultipleObjects]
     public class FormattableLocalizationTextEditor : LocalizationTextEditor
     {
         public override void OnInspectorGUI()

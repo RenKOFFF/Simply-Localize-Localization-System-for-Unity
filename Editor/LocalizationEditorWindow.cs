@@ -184,7 +184,7 @@ namespace SimplyLocalize.Editor
         {
             EditorGUILayout.LabelField("Language Setting", LabelStyle);
 
-            _languages = LocalizeEditor.GetLanguages();
+            _languages = LocalizeEditor.GetLanguages(true);
             
             for (var i = 0; i < _languages.Count; i++)
             {
@@ -380,10 +380,10 @@ namespace SimplyLocalize.Editor
             );
             EditorGUILayout.Space();
             
-            // In Editor Only
-            EditorGUILayout.LabelField("In Editor Only", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
-            _localizationConfig.LoggingInEditorOnly = EditorGUILayout.Toggle(
-                _localizationConfig.LoggingInEditorOnly, 
+            // Enable Logging In Build
+            EditorGUILayout.LabelField("Enable Logging In Build", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+            _localizationConfig.EnableLoggingInBuild = EditorGUILayout.Toggle(
+                _localizationConfig.EnableLoggingInBuild, 
                 ToggleStyle,
                 GUILayout.Height(_LINE_HEIGHT)
             );

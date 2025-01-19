@@ -89,6 +89,11 @@ namespace SimplyLocalize
 
         private void SetTextByKey()
         {
+            if (string.IsNullOrEmpty(LocalizationKey.Key))
+            {
+                return;
+            }
+            
             if (Localization.TryGetKey(LocalizationKey, out var key))
                 SetTextByKey(key);
             else Logging.Log($"Localization key {LocalizationKey.Key} not founded in object: {gameObject.name}.", LogType.Warning, this);

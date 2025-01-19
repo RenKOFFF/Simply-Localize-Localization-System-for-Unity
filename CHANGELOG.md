@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.5.0] - 2025-01-19
+### Updated and changed
+- Removed enum keys. Now they are stored as strings.
+- Updated the way of adding keys. Now it is possible to add keys from the input field.
+- Added the ability to change the current language at runtime from the inspector.
+
 ## [1.4.1] - 2024-12-19
 ### Changed
 - Updated the namespaces for the asset.

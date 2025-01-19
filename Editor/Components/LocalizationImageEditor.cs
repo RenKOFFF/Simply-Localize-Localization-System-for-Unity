@@ -4,6 +4,7 @@ using UnityEngine.UI;
 namespace SimplyLocalize.Editor
 {
     [CustomEditor(typeof(LocalizationImage), true)]
+    [CanEditMultipleObjects]
     public class LocalizationImageEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
