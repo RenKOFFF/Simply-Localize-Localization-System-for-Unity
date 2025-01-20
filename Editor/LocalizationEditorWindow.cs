@@ -367,6 +367,7 @@ namespace SimplyLocalize.Editor
             _spaceIsGroupSeparator = (LocalizationConfig.SpaceUsage)EditorGUILayout.Popup("", (int)_spaceIsGroupSeparator, options, LocalizationEditorStyles.PopupStyle);
             _localizationConfig.SpaceIsGroupSeparator = _spaceIsGroupSeparator;
             EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space();
 
             // Logging
             EditorGUILayout.BeginHorizontal(HorizontalStyle);
@@ -378,9 +379,12 @@ namespace SimplyLocalize.Editor
                 ToggleStyle,
                 GUILayout.Height(_LINE_HEIGHT)
             );
-            EditorGUILayout.Space();
+            EditorGUILayout.EndHorizontal();
             
             // Enable Logging In Build
+            EditorGUILayout.BeginHorizontal(HorizontalStyle);
+            EditorGUILayout.Space();
+            
             EditorGUILayout.LabelField("Enable Logging In Build", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
             _localizationConfig.EnableLoggingInBuild = EditorGUILayout.Toggle(
                 _localizationConfig.EnableLoggingInBuild, 
@@ -388,6 +392,7 @@ namespace SimplyLocalize.Editor
                 GUILayout.Height(_LINE_HEIGHT)
             );
             EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space();
             
             // Show Editor Language Changing Popup
             EditorGUILayout.BeginHorizontal(HorizontalStyle);
@@ -396,6 +401,19 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.LabelField("Show Editor Language Changing Popup", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
             _localizationConfig.ShowLanguagePopup = EditorGUILayout.Toggle(
                 _localizationConfig.ShowLanguagePopup, 
+                ToggleStyle,
+                GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(100)
+            );
+            
+            EditorGUILayout.EndHorizontal();
+            
+            // Translate in editor
+            EditorGUILayout.BeginHorizontal(HorizontalStyle);
+            EditorGUILayout.Space();
+            
+            EditorGUILayout.LabelField("Translate In Editor", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+            _localizationConfig.TranslateInEditor = EditorGUILayout.Toggle(
+                _localizationConfig.TranslateInEditor, 
                 ToggleStyle,
                 GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(100)
             );

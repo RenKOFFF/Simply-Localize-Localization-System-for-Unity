@@ -4,6 +4,8 @@ using UnityEngine;
 
 namespace SimplyLocalize
 {
+    [ExecuteAlways]
+    [DisallowMultipleComponent]
     public abstract class LocalizationTextBase : MonoBehaviour
     {
         private static FontHolder _overrideFontHolder;
@@ -22,8 +24,17 @@ namespace SimplyLocalize
         
         public event Action LanguageChanged;
 
+        protected virtual void OnValidate()
+        {
+            if (Localization.CanTranslateInEditor() == false) return;
+            
+            TranslateByKey(_localizationKey);
+        }
+        
         protected virtual void OnEnable()
         {
+            if (Localization.CanTranslateInEditor() == false) return;
+            
             if (!IsInitialized)
             {
                 Initialize();
@@ -75,6 +86,7 @@ namespace SimplyLocalize
         public abstract void Concatenate(string str, string separator = " ");
 
         protected abstract void SetTranslate(string translatedText);
+
         protected abstract void OnHasNotTranslated(string key);
 
         protected virtual void ApplyTranslate(string translatedText)
@@ -82,21 +94,23 @@ namespace SimplyLocalize
             DefaultText = translatedText;
             Translated = true;
         }
-        
+
         protected abstract void SaveDefaultFont();
+
         protected abstract void SetFont(FontHolder overrideFontHolder);
+
         protected abstract void ResetFont();
 
         private void SetTextByKey()
         {
-            if (string.IsNullOrEmpty(LocalizationKey.Key))
+            if (LocalizationKey == null || string.IsNullOrEmpty(LocalizationKey.Key))
             {
                 return;
             }
             
             if (Localization.TryGetKey(LocalizationKey, out var key))
                 SetTextByKey(key);
-            else Logging.Log($"Localization key {LocalizationKey.Key} not founded in object: {gameObject.name}.", LogType.Warning, this);
+            else Logging.Log($"Localization key {LocalizationKey} not founded in object: {gameObject.name}.", LogType.Warning, this);
         }
 
         private void SetTextByKey(string key)
@@ -116,7 +130,7 @@ namespace SimplyLocalize
 
             IsInitialized = true;
         }
-        
+
         private void SetLanguage()
         {
             SetTextByKey();

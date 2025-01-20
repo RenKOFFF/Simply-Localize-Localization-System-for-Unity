@@ -9,6 +9,7 @@ namespace SimplyLocalize
 {
     public static class Localization
     {
+        private static TextAsset _localization;
         private static LocalizationKeysData _localizationKeysData;
         private static LocalizationConfig _localizationConfig;
         
@@ -104,7 +105,7 @@ namespace SimplyLocalize
                     AllLocalizations.TryGetValue(CurrentLanguage, out _currentLocalization);
                 }
 
-                return _currentLocalization ?? new Dictionary<string, string>();
+                return _currentLocalization ??= new Dictionary<string, string>();
             }
         }
 
@@ -124,11 +125,12 @@ namespace SimplyLocalize
                     AllLocalizationsObjects.TryGetValue(CurrentLanguage, out _currentLocalizationObjects);
                 }
 
-                return _currentLocalizationObjects ?? new Dictionary<Object, Object>();
+                return _currentLocalizationObjects ??= new Dictionary<Object, Object>();
             }
         }
 
         public static string CurrentLanguage { get; private set; }
+        public static bool Initialized => CurrentLanguage != null && string.IsNullOrEmpty(CurrentLanguage) == false;
         public static event Action LanguageChanged;
 
         public static bool SetLocalization(LocalizationData localizationData)
@@ -138,25 +140,25 @@ namespace SimplyLocalize
                 return false;
             }
             
-            var localization = Resources.Load<TextAsset>("Localization");
+            CurrentLanguage = localizationData.i18nLang;
             
-            if (localization == null)
+            _localization ??= Resources.Load<TextAsset>("Localization");
+            
+            if (_localization == null)
             {
-                Logging.Log($"{nameof(localization)} not founded", LogType.Warning);
+                Logging.Log($"{nameof(_localization)} not founded", LogType.Warning);
                 return false;
             }
 
-            var allLocalizations = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(localization.text);
-            allLocalizations.TryGetValue(localizationData.i18nLang, out _currentLocalization);
+            _allLocalizations ??= JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(_localization.text);
+            _allLocalizations.TryGetValue(localizationData.i18nLang, out _currentLocalization);
             
-            var allLocalizationsObjects = LocalizationKeysData.ObjectsTranslations
+            _allLocalizationsObjects = LocalizationKeysData.ObjectsTranslations
                 .ToDictionary(d => d.Key, d => d.Value
-                    .ToDictionary(d => d.Key, d => d.Value));
+                    .ToDictionary(keyValuePair => keyValuePair.Key, valuePair => valuePair.Value));
 
-            allLocalizationsObjects.TryGetValue(localizationData.i18nLang, out _currentLocalizationObjects);
+            _allLocalizationsObjects.TryGetValue(localizationData.i18nLang, out _currentLocalizationObjects);
             
-            _allLocalizations = allLocalizations;
-            _allLocalizationsObjects = allLocalizationsObjects;
             _fontHolder = localizationData.OverrideFontAsset;
             
             if (string.IsNullOrEmpty(CurrentLanguage))
@@ -208,6 +210,11 @@ namespace SimplyLocalize
             translated = "***";
             return TryGetKey(localizationKey, out var key) && CurrentLocalization.TryGetValue(key, out translated);
         }
+        
+        public static bool CanTranslateInEditor()
+        {
+             return Application.isPlaying || LocalizationConfig.TranslateInEditor;
+        }
 
         private static bool TryLoadDefaultLanguage()
         {
@@ -218,6 +225,9 @@ namespace SimplyLocalize
                 Logging.Log($"{nameof(LocalizationKeysData)} not founded.", LogType.Error);
                 return false;
             }
+
+            if (Initialized)
+                return true;
             
             if (_localizationKeysData.DefaultLocalizationData != null)
             {

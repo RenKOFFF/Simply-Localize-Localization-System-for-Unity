@@ -17,8 +17,7 @@ namespace SimplyLocalize.Editor
             soFormattable.Update();
             var localizationKeyFormattable = soFormattable.FindProperty("_localizationKey");
 
-            var stringValueFormattable = localizationKeyFormattable.FindPropertyRelative("_stringValue");
-            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_value");
+            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_key");
 
             Undo.RegisterCompleteObjectUndo(gameObject, $"Replace {formattable.GetType().Name} with {nameof(LocalizationText)}");
             Undo.DestroyObjectImmediate(formattable);
@@ -28,11 +27,9 @@ namespace SimplyLocalize.Editor
             var soLocalizationText = new SerializedObject(localizationText);
             var localizationKeyText = soLocalizationText.FindProperty("_localizationKey");
 
-            var stringValueText = localizationKeyText.FindPropertyRelative("_stringValue");
-            var valueText = localizationKeyText.FindPropertyRelative("_value");
+            var valueText = localizationKeyText.FindPropertyRelative("_key");
 
-            stringValueText.stringValue = stringValueFormattable.stringValue;
-            valueText.intValue = valueFormattable.intValue;
+            valueText.stringValue = valueFormattable.stringValue;
 
             soLocalizationText.ApplyModifiedProperties();
             Selection.activeObject = localizationText;
@@ -48,8 +45,7 @@ namespace SimplyLocalize.Editor
             soLocalizationText.Update();
             var localizationKeyText = soLocalizationText.FindProperty("_localizationKey");
 
-            var stringValueText = localizationKeyText.FindPropertyRelative("_stringValue");
-            var valueText = localizationKeyText.FindPropertyRelative("_value");
+            var valueText = localizationKeyText.FindPropertyRelative("_key");
 
             Undo.RegisterCompleteObjectUndo(gameObject, $"Replace {localizationText.GetType().Name} with {nameof(FormattableLocalizationText)}");
             Undo.DestroyObjectImmediate(localizationText);
@@ -59,11 +55,9 @@ namespace SimplyLocalize.Editor
             var soFormattable = new SerializedObject(formattableLocalizationText);
             var localizationKeyFormattable = soFormattable.FindProperty("_localizationKey");
 
-            var stringValueFormattable = localizationKeyFormattable.FindPropertyRelative("_stringValue");
-            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_value");
+            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_key");
             
-            stringValueFormattable.stringValue = stringValueText.stringValue;
-            valueFormattable.intValue = valueText.intValue;
+            valueFormattable.stringValue = valueText.stringValue;
 
             soFormattable.ApplyModifiedProperties();
             Selection.activeObject = formattableLocalizationText;

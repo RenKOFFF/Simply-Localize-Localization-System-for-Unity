@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -33,12 +34,17 @@ namespace SimplyLocalize
             
             if (args.Length > 0)
             {
-                foreach (var arg in args)
+                var argsList = new object[args.Length];
+
+                for (var i = 0; i < args.Length; i++)
                 {
+                    var arg = args[i];
                     var argString = $"<color=#{HexColor(arg.color)}>{arg.arg}</color>";
                     
-                    message = string.Format(message, argString);
+                    argsList[i] = argString;
                 }
+
+                message = string.Format(message, argsList);
             }
             
             Debug.Log($"<color=#{hexColor}>[Simply Localize]</color>: {message}", context);

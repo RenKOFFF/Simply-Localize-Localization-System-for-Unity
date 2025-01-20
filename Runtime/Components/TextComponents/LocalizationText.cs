@@ -5,7 +5,6 @@ using UnityEngine.UI;
 namespace SimplyLocalize
 {
     [AddComponentMenu("Simply Localize/Localization Text")]
-    [DisallowMultipleComponent]
     public class LocalizationText : LocalizationTextBase
     {
         [SerializeField] private bool _overrideTextElements;
@@ -19,8 +18,10 @@ namespace SimplyLocalize
         public virtual TMP_Text TextElement => _textElement;
         public virtual Text TextElementLegacy => _textElementLegacy;
         
-        protected virtual void OnValidate()
+        protected override void OnValidate()
         {
+            base.OnValidate();
+            
             _textElement ??= GetComponent<TMP_Text>();
             _textElementLegacy ??= GetComponent<Text>();
         }

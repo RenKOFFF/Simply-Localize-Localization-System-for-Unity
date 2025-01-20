@@ -8,6 +8,7 @@ namespace SimplyLocalize
 {
     [AddComponentMenu("Simply Localize/Localization Image")]
     [DisallowMultipleComponent]
+    [ExecuteAlways]
     public class LocalizationImage : MonoBehaviour
     {
         public event Action LanguageChanged;
@@ -24,16 +25,25 @@ namespace SimplyLocalize
 
         private void OnValidate()
         {
+            if (Localization.CanTranslateInEditor() == false) return;
+            
             _image ??= GetComponent<Image>();
 
             if (_keyObject == null && _image != null)
             {
                 _keyObject = _image.sprite;
             }
+            
+            if (_keyObject != null)
+            {
+                TranslateByKey(_keyObject);
+            }
         }
 
-        protected virtual void Awake()
+        protected virtual void OnEnable()
         {
+            if (Localization.CanTranslateInEditor() == false) return;
+
             if (_keyObject == null)
             {
                 Logging.Log($"{nameof(LocalizationImage)}: _keyObject is null in object: {gameObject.name}", LogType.Error, this);
@@ -44,9 +54,15 @@ namespace SimplyLocalize
             {
                 Initialize();
             }
+            else
+            {
+                SetLanguage();
+            }
+
+            Localization.LanguageChanged += SetLanguage;
         }
 
-        private void OnDestroy()
+        private void OnDisable()
         {
             Localization.LanguageChanged -= SetLanguage;
         }
@@ -97,8 +113,6 @@ namespace SimplyLocalize
         private void Initialize()
         {
             SetLanguage();
-            Localization.LanguageChanged += SetLanguage;
-
             IsInitialized = true;
         }
         

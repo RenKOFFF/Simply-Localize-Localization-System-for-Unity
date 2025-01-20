@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2] - 2025-01-20
+### Updated and changed
+- Fixed bug with transition between text localization types (Formattable to Base and back).
+- Added localization update in editor + setting for this.
+- Fixed Logger.
+- Remove reinitialization of languages.
+
 ## [1.5.1] - 2025-01-20
 ### Updated and changed
 - Updated the language change window in the game view.
@@ -20,10 +27,10 @@
 
 ## [1.4.0] - 2024-12-19
 ### Updated and changed
-- Got rid of duplicates for TMP and Legacy components
-- Updated search in the list of keys
-- Updated the validator of the input text
-- Added `WindowEditor` for editing keys
+- Got rid of duplicates for TMP and Legacy components.
+- Updated search in the list of keys.
+- Updated the validator of the input text.
+- Added `WindowEditor` for editing keys.
 
 ## [1.3.4] - 2024-10-12
 ### Updated and changed

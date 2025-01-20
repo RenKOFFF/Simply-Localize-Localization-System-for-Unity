@@ -42,12 +42,12 @@ namespace SimplyLocalize.Editor
             uss.CloneTree(container);
             container.name = _GAME_VIEW_DROPDOWN_NAME;
             
-            var currentLanguage = Localization.CurrentLanguage ?? LocalizeEditor.GetLocalizationKeysData().DefaultLocalizationData?.i18nLang;
-
-            if (string.IsNullOrEmpty(currentLanguage))
+            if (Localization.Initialized == false)
             {
                 return;
             }
+            
+            var currentLanguage = Localization.CurrentLanguage;
 
             var choices = LocalizeEditor.GetLanguages().Select(x => x.i18nLang).ToList();
             var index = choices.IndexOf(currentLanguage);
@@ -63,9 +63,9 @@ namespace SimplyLocalize.Editor
             
             dropdown.RegisterValueChangedCallback(evt =>
             {
-                if (Application.isPlaying == false)
+                if (Localization.CanTranslateInEditor() == false)
                 {
-                    Logging.Log($"Cannot change language in play mode.", LogType.Warning);
+                    Logging.Log($"Cannot change language in editor.", LogType.Warning);
                     return;
                 }
                 

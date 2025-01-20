@@ -5,7 +5,6 @@ using UnityEngine;
 namespace SimplyLocalize
 {
     [AddComponentMenu("Simply Localize/Formattable Localization Text")]
-    [DisallowMultipleComponent]
     public class FormattableLocalizationText : LocalizationText
     {
         [SerializeField] private string[] _defaultValues;
@@ -16,7 +15,7 @@ namespace SimplyLocalize
 
         protected override void OnEnable()
         {
-            if (_defaultValues.Length > 0)
+            if (_defaultValues is { Length: > 0 })
             {
                 SetValue(_defaultValues);
             }
@@ -31,7 +30,16 @@ namespace SimplyLocalize
         public void SetValue(params string[] value)
         {
             if (value == null || value.Length == 0)
-                return;
+            {
+                if (_defaultValues is { Length: > 0 })
+                {
+                    value = _defaultValues;
+                }
+                else
+                {
+                    value = new[] {""};
+                }
+            }
             
             _formattableValue = value;
 
