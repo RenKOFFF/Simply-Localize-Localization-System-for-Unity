@@ -22,15 +22,32 @@ namespace SimplyLocalize.Editor
             if (gameView == null) return;
 
             var root = gameView.rootVisualElement;
-            var gameViewDropdown = root.Q<VisualElement>(_GAME_VIEW_DROPDOWN_NAME);
+            var gameViewElement = root.Q<VisualElement>(_GAME_VIEW_DROPDOWN_NAME);
 
-            if (/*!Application.isPlaying || */!LocalizeEditor.GetLocalizationConfig().ShowLanguagePopup)
+            if (!LocalizeEditor.GetLocalizationConfig().ShowLanguagePopup)
             {
-                RemoveElementIfExist(gameViewDropdown, root);
+                RemoveElementIfExist(gameViewElement, root);
                 return;
             }
 
-            if (gameViewDropdown != null) return;
+            var currentLanguage = Localization.CurrentLanguage ?? LocalizeEditor.GetLocalizationKeysData().DefaultLocalizationData?.i18nLang;
+            var choices = LocalizeEditor.GetLanguages().Select(x => x.i18nLang).ToList();
+            var index = choices.IndexOf(currentLanguage);
+
+            if (gameViewElement != null)
+            {
+                var existingDropdown = gameViewElement.Q<DropdownField>("LanguageDropdown");
+                if (existingDropdown == null || index == -1) return;
+                
+                existingDropdown.UnregisterValueChangedCallback(ChangeLanguage);
+                
+                existingDropdown.index = index;
+                existingDropdown.choices = choices;
+                
+                existingDropdown.RegisterValueChangedCallback(ChangeLanguage);
+
+                return;
+            }
 
             var uss = Resources.Load<VisualTreeAsset>(_GAME_VIEW_DROPDOWN_NAME);
             if (uss == null)
@@ -42,17 +59,8 @@ namespace SimplyLocalize.Editor
             uss.CloneTree(container);
             container.name = _GAME_VIEW_DROPDOWN_NAME;
             
-            if (Localization.Initialized == false)
-            {
-                return;
-            }
-            
-            var currentLanguage = Localization.CurrentLanguage;
 
-            var choices = LocalizeEditor.GetLanguages().Select(x => x.i18nLang).ToList();
-            var index = choices.IndexOf(currentLanguage);
-
-            if (index == -1)
+            if (string.IsNullOrEmpty(currentLanguage) || index == -1)
             {
                 return;
             }
@@ -61,20 +69,22 @@ namespace SimplyLocalize.Editor
             dropdown.choices = choices;
             dropdown.index = index;
             
-            dropdown.RegisterValueChangedCallback(evt =>
-            {
-                if (Localization.CanTranslateInEditor() == false)
-                {
-                    Logging.Log($"Cannot change language in editor.", LogType.Warning);
-                    return;
-                }
-                
-                var language = evt.newValue;
-                Localization.SetLocalization(language);
-            });
+            dropdown.RegisterValueChangedCallback(ChangeLanguage);
 
             container.Add(dropdown);
             root.Add(container);
+        }
+
+        private static void ChangeLanguage(ChangeEvent<string> evt)
+        {
+            if (Localization.CanTranslateInEditor() == false)
+            {
+                Logging.Log($"Cannot change language in editor.", LogType.Warning);
+                return;
+            }
+                
+            var language = evt.newValue;
+            Localization.SetLocalization(language);
         }
 
         private static void RemoveElementIfExist(VisualElement gameViewDropdown, VisualElement root)

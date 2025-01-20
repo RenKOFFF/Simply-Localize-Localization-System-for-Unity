@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.5.3] - 2025-01-20
+### Updated and changed
+- Added real-time update for game window dropdown.
+
 ## [1.5.2] - 2025-01-20
 ### Updated and changed
 - Fixed bug with transition between text localization types (Formattable to Base and back).
