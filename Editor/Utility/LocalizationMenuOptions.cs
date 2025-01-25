@@ -17,7 +17,7 @@ namespace SimplyLocalize.Editor
             soFormattable.Update();
             var localizationKeyFormattable = soFormattable.FindProperty("_localizationKey");
 
-            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_key");
+            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_keyGuid");
 
             Undo.RegisterCompleteObjectUndo(gameObject, $"Replace {formattable.GetType().Name} with {nameof(LocalizationText)}");
             Undo.DestroyObjectImmediate(formattable);
@@ -27,7 +27,7 @@ namespace SimplyLocalize.Editor
             var soLocalizationText = new SerializedObject(localizationText);
             var localizationKeyText = soLocalizationText.FindProperty("_localizationKey");
 
-            var valueText = localizationKeyText.FindPropertyRelative("_key");
+            var valueText = localizationKeyText.FindPropertyRelative("_keyGuid");
 
             valueText.stringValue = valueFormattable.stringValue;
 
@@ -45,7 +45,7 @@ namespace SimplyLocalize.Editor
             soLocalizationText.Update();
             var localizationKeyText = soLocalizationText.FindProperty("_localizationKey");
 
-            var valueText = localizationKeyText.FindPropertyRelative("_key");
+            var valueText = localizationKeyText.FindPropertyRelative("_keyGuid");
 
             Undo.RegisterCompleteObjectUndo(gameObject, $"Replace {localizationText.GetType().Name} with {nameof(FormattableLocalizationText)}");
             Undo.DestroyObjectImmediate(localizationText);
@@ -55,7 +55,7 @@ namespace SimplyLocalize.Editor
             var soFormattable = new SerializedObject(formattableLocalizationText);
             var localizationKeyFormattable = soFormattable.FindProperty("_localizationKey");
 
-            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_key");
+            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_keyGuid");
             
             valueFormattable.stringValue = valueText.stringValue;
 

@@ -8,9 +8,9 @@ namespace SimplyLocalize.Editor
 {
     public class StringKeysSearchWindow : ScriptableObject, ISearchWindowProvider
     {
-        private List<string> _keys;
-        private Action<string> _onSelectEntry;
-        public void SetKeys(List<string> keys, Action<string> onSelectEntry)
+        private List<LocalizationKey> _keys;
+        private Action<LocalizationKey> _onSelectEntry;
+        public void SetKeys(List<LocalizationKey> keys, Action<LocalizationKey> onSelectEntry)
         {
             _keys = keys;
             _onSelectEntry = onSelectEntry;
@@ -28,7 +28,7 @@ namespace SimplyLocalize.Editor
             var groups = new List<string>();
             foreach (var item in sortedKeys)
             {
-                var entryTitle = item.Split('/');
+                var entryTitle = item.Key.Split('/');
                 var groupName = string.Empty;
 
                 for (var i = 0; i < entryTitle.Length - 1; i++)
@@ -60,18 +60,18 @@ namespace SimplyLocalize.Editor
 
         public bool OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
         {
-            _onSelectEntry?.Invoke(searchTreeEntry.userData as string);
+            _onSelectEntry?.Invoke(searchTreeEntry.userData as LocalizationKey);
             return true;
         }
 
-        private List<string> GetSortedKeys()
+        private List<LocalizationKey> GetSortedKeys()
         {
             var groupedKeys = _keys
-                .GroupBy(key => key.Split('/')[0])
+                .GroupBy(key => key.Key.Split('/')[0])
                 .OrderBy(group => group.Key)
                 .SelectMany(group =>
                 {
-                    return group.OrderByDescending(key => key.Count(c => c == '/'))
+                    return group.OrderByDescending(key => key.Key.Count(c => c == '/'))
                         .ThenBy(key => key);
                 });
 

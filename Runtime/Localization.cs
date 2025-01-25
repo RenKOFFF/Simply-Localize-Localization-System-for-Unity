@@ -201,7 +201,7 @@ namespace SimplyLocalize
         
         public static bool TryGetKey(LocalizationKey localizationKey, out string key)
         {
-            key = LocalizationKeysData.Keys.FirstOrDefault(x => x == localizationKey.Key);
+            key = LocalizationKeysData.Keys.FirstOrDefault(x => x == localizationKey)?.Key;
             return key != null;
         }
 

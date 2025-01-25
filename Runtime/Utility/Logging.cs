@@ -46,8 +46,26 @@ namespace SimplyLocalize
 
                 message = string.Format(message, argsList);
             }
+
+            var m = $"<color=#{hexColor}>[Simply Localize]</color>: {message}";
             
-            Debug.Log($"<color=#{hexColor}>[Simply Localize]</color>: {message}", context);
+            switch (type)
+            {
+                case LogType.Info:
+                    Debug.Log(m, context);
+                    break;
+
+                case LogType.Warning:
+                    Debug.LogWarning(m, context);
+                    break;
+                    
+                case LogType.Error:
+                    Debug.LogError(m, context);
+                    break;
+                
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
         }
 
         private static string HexColor(Color color)

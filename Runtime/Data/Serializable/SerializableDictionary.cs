@@ -5,7 +5,7 @@ using UnityEngine;
 namespace SimplyLocalize
 {
     [Serializable]
-    public class SerializableSerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
+    public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
         [SerializeField] private List<SerializableDictionaryElement<TKey, TValue>> _elements = new();
 

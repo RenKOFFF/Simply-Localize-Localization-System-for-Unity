@@ -63,7 +63,7 @@ namespace SimplyLocalize.Editor
             var keys = GetLocalizationKeysData().Keys;
 
             var notEmpty = newKey != "";
-            var hasNotDuplicates = keys.All(x => x != newKey.ToCorrectLocalizationKeyName());
+            var hasNotDuplicates = keys.All(x => x.Key != newKey.ToCorrectLocalizationKeyName());
             var isNotNope = newKey.ToCorrectLocalizationKeyName() != "<None>";
             
             return notEmpty && 
@@ -87,7 +87,7 @@ namespace SimplyLocalize.Editor
             //     return false;
             // }
             
-            _localizationKeysData.Keys.Add(key);
+            _localizationKeysData.Keys.Add(new LocalizationKey(key));
             
             if (generateKeysAfterSuccess)
                 GenerateLocalizationKeys();
@@ -99,7 +99,7 @@ namespace SimplyLocalize.Editor
             return true;
         }
 
-        public static void GenerateLocalizationJson(SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> oldLocalizationData)
+        public static void GenerateLocalizationJson(SerializableDictionary<string, SerializableDictionary<LocalizationKey, string>> oldLocalizationData)
         {
             var data = GetLocalizationsData();
             if (!data.Any())
@@ -121,7 +121,7 @@ namespace SimplyLocalize.Editor
             }
         }
 
-        public static SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> GetAllLocalizationsDictionary()
+        public static SerializableDictionary<string, SerializableDictionary<LocalizationKey, string>> GetAllLocalizationsDictionary()
         {
             if (File.Exists(LocalizationPreparation.LocalizationTemplatePath) == false)
             {
@@ -131,11 +131,11 @@ namespace SimplyLocalize.Editor
             var json = File.ReadAllText(LocalizationPreparation.LocalizationTemplatePath);
             var deserializeTranslating = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string>>>(json);
             
-            var result = new SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>>();
+            var result = new SerializableDictionary<string, SerializableDictionary<LocalizationKey, string>>();
 
             foreach (var localization in deserializeTranslating)
             {
-                var valueDictionary = new SerializableSerializableDictionary<string, string>();
+                var valueDictionary = new SerializableDictionary<LocalizationKey, string>();
 
                 foreach (var pair in localization.Value)
                 {
@@ -223,32 +223,35 @@ namespace SimplyLocalize.Editor
             AssetDatabase.Refresh();
         }
 
-        private static void OverrideLocalization(LocalizationData[] data, SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> oldLocalizationData)
+        private static void OverrideLocalization(LocalizationData[] data, SerializableDictionary<string, SerializableDictionary<LocalizationKey, string>> oldLocalizationData)
         {
             var newJson = GetLocalizationsAsJson(data, oldLocalizationData);
             WriteLocalization(newJson);
         }
 
-        private static string GetLocalizationsAsJson(LocalizationData[] data, SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> existingLocalization)
+        private static string GetLocalizationsAsJson(LocalizationData[] data, SerializableDictionary<string, SerializableDictionary<LocalizationKey, string>> existingLocalization)
         {
-            var langDict = new SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>>();
+            var langDict = new SerializableDictionary<string, SerializableDictionary<LocalizationKey, string>>();
 
             foreach (var language in data)
             {
-                langDict.Add(language.i18nLang, new SerializableSerializableDictionary<string, string>());
+                langDict.Add(language.i18nLang, new SerializableDictionary<LocalizationKey, string>());
             }
 
             foreach (var language in langDict)
             {
                 foreach (var key in GetLocalizationKeysData().Keys)
                 {
-                    if (existingLocalization != null && existingLocalization.TryGetValue(language.Key, out var currentLocalization) && currentLocalization.TryGetValue(key, out var existTranslation))
+                    var b = existingLocalization != null;
+                    var tryGetValue = existingLocalization.TryGetValue(language.Key, out var currentLocalization);
+                    var getValue = currentLocalization.TryGetValue(key, out var existTranslation);
+                    if (b && tryGetValue && getValue)
                     {
                         language.Value.Add(key, existTranslation);
                     }
                     else
                     {
-                        language.Value.Add(key, key);
+                        language.Value.Add(key, key.Key);
                     }
                 }
             }
@@ -256,7 +259,7 @@ namespace SimplyLocalize.Editor
             _localizationKeysData.Translations = langDict;
 
             var dictionary = langDict
-                .ToDictionary<KeyValuePair<string, SerializableSerializableDictionary<string, string>>, string, Dictionary<string, string>>(
+                .ToDictionary<KeyValuePair<string, SerializableDictionary<LocalizationKey, string>>, string, Dictionary<LocalizationKey, string>>(
                     language => language.Key, 
                     language => language.Value);
 

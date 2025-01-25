@@ -14,20 +14,37 @@ namespace SimplyLocalize.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             var errorColor = new Color(1, 0.3f, 0.3f);
-            const string noneKey = "<None>";
+            var noneKey = new LocalizationKey("<None>");
             
             var keyProperty = property.FindPropertyRelative("_key");
-            var keys = new List<string>(LocalizeEditor.GetLocalizationKeysData().Keys);
+            var keyGuidProperty = property.FindPropertyRelative("_keyGuid");
+            
+            var keys = new List<LocalizationKey>(LocalizeEditor.GetLocalizationKeysData().Keys);
             
             var errorKey = $"{noneKey} : ({keyProperty.stringValue})";
-            var isErrorKey = keys.IndexOf(keyProperty.stringValue) < 0;
+            var keyIndex = keys.FindIndex(x => x.Key == keyProperty.stringValue || x.KeyGuid == keyGuidProperty.stringValue );
+            var isErrorKey = keyIndex < 0;
 
-            var currentKey = keyProperty.stringValue;
-            
+            string currentKey;
+
             keys.Add(noneKey);
             
             if (isErrorKey == false)
             {
+                if (keyProperty.stringValue != keys[keyIndex].Key)
+                {
+                    keyProperty.stringValue = keys[keyIndex].Key;
+                    keyProperty.serializedObject.ApplyModifiedProperties();
+                }
+                
+                if (keyGuidProperty.stringValue != keys[keyIndex].KeyGuid)
+                {
+                    keyGuidProperty.stringValue = keys[keyIndex].KeyGuid;
+                    keyGuidProperty.serializedObject.ApplyModifiedProperties();
+                }
+                
+                currentKey = keyProperty.stringValue;
+
                 if (currentKey.Split('/', StringSplitOptions.RemoveEmptyEntries).Length > 1)
                 {
                     var splitKey = currentKey.Split('/');
@@ -41,9 +58,9 @@ namespace SimplyLocalize.Editor
             }
             else
             {
-                if (string.IsNullOrEmpty(keyProperty.stringValue))
+                if (string.IsNullOrEmpty(keyGuidProperty.stringValue))
                 {
-                    currentKey = noneKey;
+                    currentKey = noneKey.Key;
                     isErrorKey = false;
                 }
                 else
@@ -98,7 +115,7 @@ namespace SimplyLocalize.Editor
             {
                 _addNewKey = _addNewKey.ToCorrectLocalizationKeyName();
                 LocalizeEditor.TryAddNewKey(_addNewKey, false);
-                OnSelectEntry(_addNewKey);
+                OnSelectEntry(new LocalizationKey(_addNewKey));
                 
                 _addNewKey = string.Empty;
             }
@@ -111,14 +128,16 @@ namespace SimplyLocalize.Editor
 
             return;
 
-            void OnSelectEntry(string key)
+            void OnSelectEntry(LocalizationKey key)
             {
-                if (string.IsNullOrEmpty(key)) return;
+                if (string.IsNullOrEmpty(key.KeyGuid)) return;
 
                 if (key == noneKey)
-                    key = "";
+                    key = new LocalizationKey(string.Empty);
                 
-                keyProperty.stringValue = key;
+                keyProperty.stringValue = key.Key;
+                keyGuidProperty.stringValue = key.KeyGuid;
+                
                 property.serializedObject.ApplyModifiedProperties();
             }
         }

@@ -432,11 +432,13 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.Space(_LINE_HEIGHT);
             _keysScrollPosition = GUILayout.BeginScrollView(_keysScrollPosition, GUILayout.Height(scrollHeight));
 
+            _localizationKeysData.Keys = _localizationKeysData.Keys.Where(key => key.Key != "").ToList();
+
             for (var i = 0; i < _localizationKeysData.Keys.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal();
 
-                var keyText = _localizationKeysData.Keys[i];
+                var keyText = _localizationKeysData.Keys[i].Key;
                 
                 var hasDoubles = HasDoubles(keyText);
                 if (hasDoubles)
@@ -444,15 +446,14 @@ namespace SimplyLocalize.Editor
                     GUI.color = Color.red;
                 }
                 
-                _localizationKeysData.Keys[i] = EditorGUILayout.TextField(keyText, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
+                _localizationKeysData.Keys[i].Key = EditorGUILayout.TextField(keyText, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
 
                 if (hasDoubles)
                 {
                     GUI.color = Color.white;
                 }
                 
-                _localizationKeysData.Keys = _localizationKeysData.Keys.Where(key => key != "").ToList();
-                _localizationKeysData.Keys[i] = _localizationKeysData.Keys[i].Trim();
+                _localizationKeysData.Keys[i].Key = _localizationKeysData.Keys[i].Key.Trim();
 
                 if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
                 {
@@ -486,7 +487,7 @@ namespace SimplyLocalize.Editor
             
             if (GUILayout.Button("Add New Key", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
             {
-                _localizationKeysData.Keys.Add(_newKey.ToCorrectLocalizationKeyName());
+                _localizationKeysData.Keys.Add(new LocalizationKey(_newKey.ToCorrectLocalizationKeyName()));
                 _keysScrollPosition = new Vector2(0, _MAX_FIELD_HEIGHT);
                 
                 _newKey = "";
@@ -502,12 +503,12 @@ namespace SimplyLocalize.Editor
 
         private bool HasDoubles(string keyText)
         {
-            return _localizationKeysData.Keys.Count(l => l == keyText) > 1;
+            return _localizationKeysData.Keys.Count(l => l.Key == keyText) > 1;
         }
 
         private bool HasDoubles()
         {
-            return _localizationKeysData.Keys.GroupBy(n => n).Any(g => g.Count() > 1);
+            return _localizationKeysData.Keys.GroupBy(n => n.Key).Any(g => g.Count() > 1);
         }
 
         private void DrawAddMultipleKeys()
@@ -565,7 +566,7 @@ namespace SimplyLocalize.Editor
                     continue;
                 }
                 
-                _localizationKeysData.Keys.Add(keyName);
+                _localizationKeysData.Keys.Add(new LocalizationKey(keyName));
             }
 
             _newKeys = "";
@@ -710,7 +711,7 @@ namespace SimplyLocalize.Editor
                 {
                     if (_localizationKeysData.ObjectsTranslations.TryGetValue(lang.i18nLang, out _) == false)
                     {
-                        _localizationKeysData.ObjectsTranslations.Add(lang.i18nLang, new SerializableSerializableDictionary<Object, Object>());
+                        _localizationKeysData.ObjectsTranslations.Add(lang.i18nLang, new SerializableDictionary<Object, Object>());
                     }
                     
                     _localizationKeysData.ObjectsTranslations[lang.i18nLang].Add(_newObjectKey, null);
