@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.5.4] - 2025-01-26
+### Updated
+- Updated Logging: changed args to string and added log types.
+
 ## [1.5.3] - 2025-01-20
 ### Updated and changed
 - Added real-time update for game window dropdown.

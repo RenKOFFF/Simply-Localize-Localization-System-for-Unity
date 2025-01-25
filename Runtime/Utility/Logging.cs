@@ -14,7 +14,7 @@ namespace SimplyLocalize
         private static readonly Color WarningColor = new(1f, 0.5f, 0f, 1f);
         private static readonly Color ErrorColor = new(1f, 0f, 0f, 1f);
         
-        public static void Log(string message, LogType type = LogType.Info, Object context = null, params (object arg, Color color)[] args)
+        public static void Log(string message, LogType type = LogType.Info, Object context = null, params (string arg, Color color)[] args)
         {
             if (Localization.LocalizationConfig.EnableLogging == false) return;
 
@@ -46,8 +46,26 @@ namespace SimplyLocalize
 
                 message = string.Format(message, argsList);
             }
-            
-            Debug.Log($"<color=#{hexColor}>[Simply Localize]</color>: {message}", context);
+
+            var m = $"<color=#{hexColor}>[Simply Localize]</color>: {message}";
+
+            switch (type)
+            {
+                case LogType.Info:
+                    Debug.Log(m, context);
+                    break;
+                
+                case LogType.Warning:
+                    Debug.LogWarning(m, context);
+                    break;
+                
+                case LogType.Error:
+                    Debug.LogError(m, context);
+                    break;
+                
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
         }
 
         private static string HexColor(Color color)
