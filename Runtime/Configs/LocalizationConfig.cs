@@ -9,6 +9,7 @@ namespace SimplyLocalize
         [field: SerializeField] public bool EnableLoggingInBuild { get; set; }
         [field: SerializeField] public bool TranslateInEditor { get; set; }
         [field: SerializeField] public bool ShowLanguagePopup { get; set; } = true;
+        [field: SerializeField] public bool ShowAppLocalizationGitPackagePopup { get; set; } = true;
 
         public enum SpaceUsage 
         {

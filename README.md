@@ -21,6 +21,9 @@ A localization system for Unity, designed to simplify the management of translat
 > - **Image localization**: supports localization of images.
 > - **Automatic key generation**: no need to add keys manually in the code.
 
+> [!NOTE]
+> - **Localization of app title**: The package does not provide the ability to localize the app title. It is recommended to use [Unity Localized App Title](https://github.com/yasirkula/UnityMobileLocalizedAppTitle.git) for this.
+
 ## Example
 ### Localization File
 
@@ -70,6 +73,11 @@ Localization.SetLocalization("ru");
 1. Download and install the asset via the link: `Window > Package Manager > Add package from git URL`
 ```
 https://github.com/RenKOFFF/SimplyLocalize.git
+```
+
+2. If you want to localize the app title on Android or IOS, install the third-party package `Unity Localized App Title`. You can add the package similar to the `SimplyLocalize` package or use one of the options from the original repository.
+```
+https://github.com/yasirkula/UnityMobileLocalizedAppTitle.git
 ```
 
 ## Usage

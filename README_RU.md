@@ -21,6 +21,9 @@
 > - **Локализация изображений**: поддерживается локализация изображений.
 > - **Автоматическая генерация ключей**: нет необходимости вручную добавлять их в код.
 
+> [!NOTE]
+> - **Локализация названия приложения**: пакет не предоставляет возможность локализации названия приложения. Рекомендуется использовать [Unity Localized App Title](https://github.com/yasirkula/UnityMobileLocalizedAppTitle.git) для этого.
+
 ## Пример
 ### Файл локализации
 
@@ -68,9 +71,15 @@ Localization.SetLocalization("ru");
 ## Установка
 
 1. Загрузите и установите ассет по ссылке: `Window > Package Manager > Add package from git URL`
-```
-https://github.com/RenKOFFF/SimplyLocalize.git
-```
+    ```
+    https://github.com/RenKOFFF/SimplyLocalize.git
+    ```
+   
+2. Если вы хотите локализовать название приложения на Android или IOS, установите сторонний пакет `Unity Localized App Title`. Вы можете добавить пакет аналогично пакету `SimplyLocalize` или использовать один из вариантов из оригинального репозитория.
+    ```
+    https://github.com/yasirkula/UnityMobileLocalizedAppTitle.git
+    ```
+
 ## Использование
 
 После установки в Unity появится новое меню:\

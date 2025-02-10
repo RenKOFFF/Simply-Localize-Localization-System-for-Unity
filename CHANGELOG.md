@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.5.5] - 2025-02-10
+### Added
+- Added popup window for installing "Unity Localized App Title" package.
+
 ## [1.5.4] - 2025-01-26
 ### Updated
 - Updated Logging: changed args to string and added log types.
