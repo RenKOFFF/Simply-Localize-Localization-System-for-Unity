@@ -165,7 +165,7 @@ namespace SimplyLocalize.Editor
             
             var localizationDataPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, dataName);
             var dataPath = Path.ChangeExtension(localizationDataPath, LocalizationPreparation.FileExtensionAsset);
-        
+
             AssetDatabase.CreateAsset(so, dataPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -178,21 +178,37 @@ namespace SimplyLocalize.Editor
             var typeName = typeof(T).Name;
             var guids = AssetDatabase.FindAssets($"t:{typeName}");
             data = null;
-        
+
             if (guids.Length == 0)
             {
+                Debug.Log($"SimplyLocalize: FindData for {typeName} not found.");
                 return false;
             }
-            
-            return guids.Length >= 1 && LoadData(guids, out data);
+
+            return LoadData(guids, out data);
         }
 
         private static bool LoadData<T>(string[] guids, out T data) where T : Object
         {
-            var assetPath = AssetDatabase.GUIDToAssetPath(guids[0]);
-            var asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+            foreach (var guid in guids)
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                return LoadData(assetPath, out data);
+            }
+            
+            Debug.Log("SimplyLocalize: LoadData for " + typeof(T).Name + " not found.");
+            
+            data = null;
+            return false;
+        }
+
+        private static bool LoadData<T>(string path, out T data) where T : Object
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
             if (asset == null)
             {
+                Debug.Log("SimplyLocalize: LoadData for " + path + $" not found. File already exist? {File.Exists(path)} <<<<---- If true check GIT!!!!!!!!!");
+                
                 data = null;
                 return false;
             }
