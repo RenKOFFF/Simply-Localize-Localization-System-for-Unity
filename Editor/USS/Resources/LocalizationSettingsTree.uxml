@@ -1,0 +1,21 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Simply-Localize-Localization-System-for-Unity/Editor/USS/Resources/SimplyLocalizeStyles.uss?fileID=7433441132597879392&amp;guid=338047225f63b4f4dba56ca2adeea842&amp;type=3#SimplyLocalizeStyles" />
+    <engine:IMGUIContainer name="Tab" class="horizontalGroup tab">
+        <engine:Button text="Localization" class="tabButton text button" />
+        <engine:Button text="Keys" class="tabButton text button" />
+        <engine:Button text="Translatings" class="tabButton text button" />
+        <engine:Button text="Sprites" class="tabButton text button" />
+    </engine:IMGUIContainer>
+    <engine:IMGUIContainer name="DefaultLanguage" class="container">
+        <engine:Label text="Default Language" class="titleText" style="justify-content: center; align-self: center;" />
+        <editor:ObjectField type="SimplyLocalize.LocalizationData, SimplyLocalize" allow-scene-objects="false" class="text selectField" />
+    </engine:IMGUIContainer>
+    <engine:IMGUIContainer name="LanguageSettings" class="container">
+        <engine:Label text="Language Settings" class="titleText" style="justify-content: center; align-self: center;" />
+        <engine:IMGUIContainer name="Horizontal" class="horizontalGroup">
+            <engine:TextField style="width: 20%;" />
+            <editor:ObjectField type="SimplyLocalize.FontHolder, SimplyLocalize" allow-scene-objects="false" class="selectField text" />
+            <engine:Button text="Remove" class="button text" style="white-space: nowrap; -unity-text-align: middle-center; text-overflow: clip; width: 20%; -unity-font-style: normal;" />
+        </engine:IMGUIContainer>
+    </engine:IMGUIContainer>
+</engine:UXML>

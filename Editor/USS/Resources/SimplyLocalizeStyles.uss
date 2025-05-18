@@ -1,4 +1,4 @@
-.simplyLocalize-gameViewDropdown {
+.languageDropDown {
     opacity: 0.75;
     position: absolute;
     left: 10px;
@@ -16,4 +16,85 @@
     background-color: var(--unity-colors-play_mode-background);
     overflow: visible;
     color: var(--unity-colors-label-text);
+}
+
+.titleText {
+    font-size: 20px;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+}
+
+.button {
+    background-color: rgb(88, 88, 88);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    -unity-text-align: middle-center;
+    border-left-color: rgba(255, 255, 255, 0);
+    border-right-color: rgba(255, 255, 255, 0);
+    border-top-color: rgba(255, 255, 255, 0);
+    border-bottom-color: rgba(255, 255, 255, 0);
+}
+
+.tabButton {
+    border-bottom-right-radius: 11px;
+    border-bottom-left-radius: 11px;
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-top-left-radius: 2px;
+    border-top-right-radius: 2px;
+}
+
+.selectField {
+    background-color: rgb(88, 88, 88);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.horizontalGroup {
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-around;
+    align-content: stretch;
+}
+
+.tab {
+    align-self: center;
+}
+
+.text {
+    color: rgb(202, 202, 202);
+}
+
+.container {
+    background-color: rgb(43, 43, 43);
+    border-top-left-radius: 7px;
+    border-top-right-radius: 7px;
+    border-bottom-right-radius: 7px;
+    border-bottom-left-radius: 7px;
+    border-left-color: rgb(96, 96, 96);
+    border-right-color: rgb(96, 96, 96);
+    border-top-color: rgb(96, 96, 96);
+    border-bottom-color: rgb(96, 96, 96);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    margin-right: 10px;
+    margin-bottom: 5px;
+    margin-left: 10px;
+    margin-top: 5px;
+    padding-bottom: 5px;
+    padding-top: 5px;
+}
+
+.text {
+    color: rgb(202, 202, 202);
 }
