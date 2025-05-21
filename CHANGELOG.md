@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.6.0] - 22.05.2025
+### Added
+- Automatic keys loading when clicking "Load From JSON" button
+- Full support for multiline translations
+- New language switch handling that removes focus from translation fields
+
+### Updated
+- Completely redesigned editor window UI
+- Improved text rendering for better readability
+- Optimized performance when working with large localization sets
+
+### Fixed
+- Minor layout issues in dark/light themes
+- Rare case of duplicate key generation
+
 ## [1.5.5] - 2025-02-10
 ### Added
 - Added popup window for installing "Unity Localized App Title" package.

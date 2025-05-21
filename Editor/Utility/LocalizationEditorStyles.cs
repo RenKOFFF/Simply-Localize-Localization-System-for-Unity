@@ -42,6 +42,16 @@ namespace SimplyLocalize.Editor
             fixedHeight = LINE_HEIGHT,
         };
 
+        public static GUIStyle KeyStyleMultiline => new(GUI.skin.textArea)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Italic,
+            fontSize = 15,
+            wordWrap = true,
+            clipping = TextClipping.Clip,
+            stretchHeight = true
+        };
+
         public static GUIStyle PopupStyle => new(EditorStyles.popup)
         {
             alignment = TextAnchor.MiddleCenter,

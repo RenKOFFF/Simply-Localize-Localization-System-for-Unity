@@ -81,11 +81,6 @@ namespace SimplyLocalize.Editor
             GetLocalizationKeysData();
             
             var key = newKey.ToCorrectLocalizationKeyName();
-            // if (_localizationKeysData.Keys.Any(x => x == key))
-            // {
-            //     Logging.Log($"Key {key} already exists", LogType.Error);
-            //     return false;
-            // }
             
             _localizationKeysData.Keys.Add(key);
             
@@ -150,22 +145,23 @@ namespace SimplyLocalize.Editor
 
         private static T GetData<T>() where T : ScriptableObject
         {
-            if (FindData(out T data))
-            {
-                return data;
-            }
-            
-            return GenerateData<T>();
-        }
-        
-        private static T GenerateData<T>() where T : ScriptableObject
-        {
-            var so = ScriptableObject.CreateInstance<T>();
             var dataName = typeof(T).Name;
             
             var localizationDataPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, dataName);
             var dataPath = Path.ChangeExtension(localizationDataPath, LocalizationPreparation.FileExtensionAsset);
-
+            
+            if (FindData(dataPath, out T data))
+            {
+                return data;
+            }
+            
+            return GenerateData<T>(dataPath);
+        }
+        
+        private static T GenerateData<T>(string dataPath) where T : ScriptableObject
+        {
+            var so = ScriptableObject.CreateInstance<T>();
+            
             AssetDatabase.CreateAsset(so, dataPath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -173,19 +169,20 @@ namespace SimplyLocalize.Editor
             return so;
         }
 
-        private static bool FindData<T>(out T data) where T : Object
+        private static bool FindData<T>(string dataPath, out T data) where T : Object
         {
             var typeName = typeof(T).Name;
             var guids = AssetDatabase.FindAssets($"t:{typeName}");
             data = null;
 
-            if (guids.Length == 0)
-            {
-                Debug.Log($"SimplyLocalize: FindData for {typeName} not found.");
-                return false;
-            }
+            if (guids.Length != 0) 
+                return LoadData(guids, out data);
 
-            return LoadData(guids, out data);
+            if (File.Exists(dataPath))
+                return LoadData(dataPath, out data);
+            
+            return false;
+
         }
 
         private static bool LoadData<T>(string[] guids, out T data) where T : Object
@@ -196,8 +193,6 @@ namespace SimplyLocalize.Editor
                 return LoadData(assetPath, out data);
             }
             
-            Debug.Log("SimplyLocalize: LoadData for " + typeof(T).Name + " not found.");
-            
             data = null;
             return false;
         }
@@ -207,8 +202,6 @@ namespace SimplyLocalize.Editor
             var asset = AssetDatabase.LoadAssetAtPath<T>(path);
             if (asset == null)
             {
-                Debug.Log("SimplyLocalize: LoadData for " + path + $" not found. File already exist? {File.Exists(path)} <<<<---- If true check GIT!!!!!!!!!");
-                
                 data = null;
                 return false;
             }

@@ -1,6 +1,6 @@
 {
   "name": "com.renkoff.simply-localize",
-  "version": "1.5.5",
+  "version": "1.6.0",
   "displayName": "Simply Localize",
   "description": "A simple localization system for Unity",
   "license": "MIT",
@@ -10,7 +10,7 @@
     "com.unity.nuget.newtonsoft-json": "3.2.1"
   },
   "author": {
-    "name": "Alexey Renkoff",
+    "name": "Lex Renkoff",
     "email": "lex.renkoff@gmail.com",
     "url": "https://t.me/renKOF"
   }

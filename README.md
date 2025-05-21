@@ -10,6 +10,7 @@ A localization system for Unity, designed to simplify the management of translat
 * [Example](#example)
 * [Installation](#installation)
 * [Usage](#usage)
+* [Component setup](#component-setup)
 
 ## Features
 
@@ -96,13 +97,35 @@ In this window, you can:
 
 [![Unity-a-Jno-Nkr-PW9.gif](https://i.postimg.cc/BvWYbcmC/Unity-a-Jno-Nkr-PW9.gif)](https://postimg.cc/K1NrsLSK)
 
-### Component Setup
+### Component setup
 
-Add one of the components to a text element:
+Add one of the localization components to UI elements:
 
-- **`LocalizationText`** — for static strings.
-- **`FormattableLocalizationText`** — for strings with parameters.
-- **`LocalizationImage`** — for images.
+#### **`LocalizationText`**
+- **Purpose**: For static text without dynamic changes
+- **Usage**:
+1. Add the component to TextMeshPro or regular text
+2. Select the localization key from the list
+
+#### **`FormattableLocalizationText`**
+- **Purpose**: For dynamic text with parameters (e.g. "Health: {0}/{1}")
+- **Features**:
+- Support for parameters in the string.Format style
+- Default values
+- **Usage**:
+1. Add the component to the text object
+2. Enter the key with placeholders (e.g. "STATS_HEALTH_{0}_{1}")
+3. Set the parameters via code: `.SetValue(100, 200)`
+4. Set default value in editor (optional)
+
+> [!IMPORTANT]
+> - translation text must contain a fragment with the {n} parameter (e.g. "STATS_HEALTH_{0}_{1}")
+
+#### **`LocalizationImage`**
+- **Purpose**: For localized images
+- **Usage**:
+1. Add component to Image
+2. Add sprite key from the list of keys in the editor window from the "Sprites" tab
 
 ### Changing Language and Setting a Default Language
 
