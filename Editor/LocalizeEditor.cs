@@ -19,7 +19,7 @@ namespace SimplyLocalize.Editor
             {
                 return _localizationKeysData;
             }
-
+            
             return _localizationKeysData = GetData<LocalizationKeysData>();
         }
         
@@ -155,7 +155,7 @@ namespace SimplyLocalize.Editor
                 return data;
             }
             
-            return GenerateData<T>(dataPath);
+            return File.Exists(localizationDataPath) ? null : GenerateData<T>(dataPath);
         }
         
         private static T GenerateData<T>(string dataPath) where T : ScriptableObject
@@ -179,7 +179,9 @@ namespace SimplyLocalize.Editor
                 return LoadData(guids, out data);
 
             if (File.Exists(dataPath))
+            {
                 return LoadData(dataPath, out data);
+            }
             
             return false;
 
@@ -203,7 +205,7 @@ namespace SimplyLocalize.Editor
             if (asset == null)
             {
                 data = null;
-                return false;
+                return true;
             }
 
             data = asset;

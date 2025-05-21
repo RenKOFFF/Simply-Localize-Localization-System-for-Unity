@@ -38,6 +38,8 @@ namespace SimplyLocalize
             }
         }
         
+        public static bool LocalizationKeysDataInitialized => _localizationKeysData != null;
+
         public static LocalizationConfig LocalizationConfig
         {
             get
@@ -52,7 +54,9 @@ namespace SimplyLocalize
                 return _localizationConfig;
             }
         }
-        
+
+        public static bool LocalizationConfigInitialized => _localizationConfig != null;
+
         public static Dictionary<string, Dictionary<string, string>> AllLocalizations
         {
             get
@@ -213,7 +217,7 @@ namespace SimplyLocalize
         
         public static bool CanTranslateInEditor()
         {
-             return Application.isPlaying || LocalizationConfig.TranslateInEditor;
+             return Application.isPlaying || (LocalizationConfigInitialized && LocalizationConfig.TranslateInEditor);
         }
 
         private static bool TryLoadDefaultLanguage()
