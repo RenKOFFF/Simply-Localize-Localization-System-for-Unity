@@ -54,20 +54,37 @@ A localization system for Unity, designed to simplify the management of translat
 }
 ```
 
-### Usage in Code
+### Editor Usage
+
+[![Unity-L76gtp-EYtd.png](https://i.postimg.cc/6pMYf4Vs/Unity-L76gtp-EYtd.png)](https://postimg.cc/sMZYVX0K)
+[![Unity-ukki-Yoz-LL6.png](https://i.postimg.cc/Sxkvrpw9/Unity-ukki-Yoz-LL6.png)](https://postimg.cc/0bXnkh55)
+
+### Code Usage
+
+#### Basic Implementation
+To set localized text with parameter:
 
 ```csharp
-// Setting text with a parameter
+// Setting text by localization key
 MyNameTextElement.TranslateByKey("MyNameIs");
+// Setting dynamic parameter
 MyNameTextElement.SetValue("Alex");
 
-// Result: "My name is Alex" (en)
-
-// Changing the language at runtime
-Localization.SetLocalization("ru");
-
-// Result after switching language: "Меня зовут Alex"
+/* Result:
+ * en: "My name is Alex"
+ * ru: "Меня зовут Alex"
+ */
 ```
+
+> [!NOTE]
+> 1. Method `TranslateByKey` is optional if key is set in Unity inspector
+> 2. Method `TranslateByKey` can override existing keys
+
+#### Language Switching
+```csharp
+Localization.SetLocalization("ru");
+```
+The change applies to all active UI elements using the localization system.
 
 ## Installation
 
@@ -104,19 +121,19 @@ Add one of the localization components to UI elements:
 #### **`LocalizationText`**
 - **Purpose**: For static text without dynamic changes
 - **Usage**:
-1. Add the component to TextMeshPro or regular text
-2. Select the localization key from the list
+  1. Add the component to TextMeshPro or regular text
+  2. Select the localization key from the list
 
 #### **`FormattableLocalizationText`**
 - **Purpose**: For dynamic text with parameters (e.g. "Health: {0}/{1}")
 - **Features**:
-- Support for parameters in the string.Format style
-- Default values
+  - Support for parameters in the string.Format style
+  - Default values
 - **Usage**:
-1. Add the component to the text object
-2. Enter the key with placeholders (e.g. "STATS_HEALTH_{0}_{1}")
-3. Set the parameters via code: `.SetValue(100, 200)`
-4. Set default value in editor (optional)
+  1. Add the component to the text object
+  2. Enter the key with placeholders (e.g. "STATS_HEALTH_{0}_{1}")
+  3. Set the parameters via code: `.SetValue(100, 200)`
+  4. Set default value in editor (optional)
 
 > [!IMPORTANT]
 > - translation text must contain a fragment with the {n} parameter (e.g. "STATS_HEALTH_{0}_{1}")
@@ -124,8 +141,8 @@ Add one of the localization components to UI elements:
 #### **`LocalizationImage`**
 - **Purpose**: For localized images
 - **Usage**:
-1. Add component to Image
-2. Add sprite key from the list of keys in the editor window from the "Sprites" tab
+  1. Add component to Image
+  2. Add sprite key from the list of keys in the editor window from the "Sprites" tab
 
 ### Changing Language and Setting a Default Language
 

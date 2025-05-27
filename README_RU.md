@@ -54,20 +54,37 @@
 }
 ```
 
+### Использование в редакторе
+
+[![Unity-L76gtp-EYtd.png](https://i.postimg.cc/6pMYf4Vs/Unity-L76gtp-EYtd.png)](https://postimg.cc/sMZYVX0K)
+[![Unity-ukki-Yoz-LL6.png](https://i.postimg.cc/Sxkvrpw9/Unity-ukki-Yoz-LL6.png)](https://postimg.cc/0bXnkh55)
+
 ### Использование в коде
 
+#### Базовое применение
+Для установки локализованного текста с параметром:
+
 ```csharp
-// Установка текста с параметром
+// Установка текста по ключу локализации
 MyNameTextElement.TranslateByKey("MyNameIs");
+// Задание динамического параметра
 MyNameTextElement.SetValue("Alex");
 
-// Результат: "Меня зовут Алекс" (en)
-
-// Изменение языка во время выполнения
-Localization.SetLocalization("ru");
-
-// Результат после смены языка: "Меня зовут Alex"
+/* Результат:
+ * en: "My name is Alex"
+ * ru: "Меня зовут Alex"
+ */
 ```
+
+> [!NOTE]
+> 1. Метод `TranslateByKey` не обязателен, если ключ задан в инспекторе Unity
+> 2. Метод `TranslateByKey` может переопределять установленные ключи
+
+#### Смена языка
+```csharp
+Localization.SetLocalization("ru");
+```
+Изменение применяется ко всем активным элементам интерфейса, использующим систему локализации.
 
 ## Установка
 
