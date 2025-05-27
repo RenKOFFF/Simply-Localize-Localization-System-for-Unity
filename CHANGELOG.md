@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.6.1] - 28.05.2025
+### Changed
+- Resource saving logic has been reworked.
+- Overall editor performance has been improved.
+- All auxiliary buttons have been removed: 'Load from JSON', 'Save to JSON' and 'Generate Keys'.
+
+### Fixed
+- Sprite localization has been improved: a bug has been fixed that caused keys to disappear in some languages
+
 ## [1.6.0] - 22.05.2025
 ### Added
 - Automatic keys loading when clicking "Load From JSON" button

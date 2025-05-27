@@ -226,7 +226,7 @@ namespace SimplyLocalize.Editor
             if (loadAssetAtPath == null)
                 return;
 
-            Selection.activeObject = loadAssetAtPath;
+            // Selection.activeObject = loadAssetAtPath;
 
             EditorUtility.SetDirty(loadAssetAtPath);
 
