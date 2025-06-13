@@ -176,7 +176,7 @@ namespace SimplyLocalize.Editor
             if (_localizationKeysData != null) 
                 return true;
             
-            _localizationKeysData = LocalizeEditor.GetLocalizationKeysData();
+            _localizationKeysData = LocalizeEditor.LocalizationKeysData;
 
             if (_localizationKeysData != null) 
                 return true;
@@ -198,7 +198,7 @@ namespace SimplyLocalize.Editor
             if (_localizationConfig != null) 
                 return true;
             
-            _localizationConfig = LocalizeEditor.GetLocalizationConfig();
+            _localizationConfig = LocalizeEditor.LocalizationConfig;
 
             if (_localizationConfig != null) 
                 return true;
@@ -534,6 +534,19 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.LabelField("Translate In Editor", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
             _localizationConfig.TranslateInEditor = EditorGUILayout.Toggle(
                 _localizationConfig.TranslateInEditor, 
+                ToggleStyle,
+                GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(100)
+            );
+            
+            EditorGUILayout.EndHorizontal();
+            
+            // ChangeDefaultLanguageWhenCantTranslateInEditor
+            EditorGUILayout.BeginHorizontal(HorizontalStyle);
+            EditorGUILayout.Space();
+            
+            EditorGUILayout.LabelField("Change default language when can't translate in editor", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+            _localizationConfig.ChangeDefaultLanguageWhenCantTranslateInEditor = EditorGUILayout.Toggle(
+                _localizationConfig.ChangeDefaultLanguageWhenCantTranslateInEditor, 
                 ToggleStyle,
                 GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(100)
             );

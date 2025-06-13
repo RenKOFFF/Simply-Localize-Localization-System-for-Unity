@@ -1,6 +1,7 @@
 ﻿using System;
 using TMPro;
 using UnityEditor;
+using UnityEngine;
 
 namespace SimplyLocalize.Editor
 {
@@ -8,36 +9,41 @@ namespace SimplyLocalize.Editor
     [CanEditMultipleObjects]
     public class LocalizationTextEditor : UnityEditor.Editor
     {
+        private SerializedProperty _overrideTextsElementProp;
+        private SerializedProperty _localizationKeyProp;
+        private SerializedProperty _textElementProp;
+        private SerializedProperty _textElementLegacyProp;
+
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            var overrideTextsElementProp = serializedObject.FindProperty("_overrideTextElements");
-            var localizationKeyProp = serializedObject.FindProperty("_localizationKey");
-            var textElementProp = serializedObject.FindProperty("_textElement");
-            var textElementLegacyProp = serializedObject.FindProperty("_textElementLegacy");
+            _overrideTextsElementProp = serializedObject.FindProperty("_overrideTextElements");
+            _localizationKeyProp = serializedObject.FindProperty("_localizationKey");
+            _textElementProp = serializedObject.FindProperty("_textElement");
+            _textElementLegacyProp = serializedObject.FindProperty("_textElementLegacy");
 
-            if (localizationKeyProp == null || overrideTextsElementProp == null)
+            if (_localizationKeyProp == null || _overrideTextsElementProp == null)
                 return;
             
-            EditorGUILayout.PropertyField(localizationKeyProp);
-            EditorGUILayout.PropertyField(overrideTextsElementProp);
+            EditorGUILayout.PropertyField(_localizationKeyProp);
+            EditorGUILayout.PropertyField(_overrideTextsElementProp);
 
-            var hasTextLegacy = textElementProp.propertyType != SerializedPropertyType.ObjectReference || textElementProp.objectReferenceValue != null;
-            var hasTextTMP = textElementLegacyProp.propertyType != SerializedPropertyType.ObjectReference || textElementLegacyProp.objectReferenceValue != null;
+            var hasTextTMP = HasTextComponent(_textElementProp);
+            var hasTextLegacy = HasTextComponent(_textElementLegacyProp);
 
-            if (overrideTextsElementProp.boolValue)
+            if (_overrideTextsElementProp.boolValue)
             {
                 var targetObject = (LocalizationText)serializedObject.targetObject;
 
                 if (targetObject != null)
                 {
-                    textElementProp.objectReferenceValue ??= targetObject.GetComponent<TMP_Text>();
-                    textElementLegacyProp.objectReferenceValue ??= targetObject.GetComponent<UnityEngine.UI.Text>();
+                    _textElementProp.objectReferenceValue ??= targetObject.GetComponent<TMP_Text>();
+                    _textElementLegacyProp.objectReferenceValue ??= targetObject.GetComponent<UnityEngine.UI.Text>();
                 }
                 
-                EditorGUILayout.PropertyField(textElementProp);
-                EditorGUILayout.PropertyField(textElementLegacyProp);
+                EditorGUILayout.PropertyField(_textElementProp);
+                EditorGUILayout.PropertyField(_textElementLegacyProp);
             }
             else
             {
@@ -45,21 +51,21 @@ namespace SimplyLocalize.Editor
 
                 if (targetObject != null)
                 {
-                    textElementProp.objectReferenceValue = targetObject.GetComponent<TMP_Text>();
-                    textElementLegacyProp.objectReferenceValue = targetObject.GetComponent<UnityEngine.UI.Text>();
-                }
-                
-                if (hasTextLegacy)
-                {
-                    EditorGUI.BeginDisabledGroup(true);
-                    EditorGUILayout.PropertyField(textElementProp);
-                    EditorGUI.EndDisabledGroup();
+                    _textElementProp.objectReferenceValue = targetObject.GetComponent<TMP_Text>();
+                    _textElementLegacyProp.objectReferenceValue = targetObject.GetComponent<UnityEngine.UI.Text>();
                 }
 
                 if (hasTextTMP)
                 {
                     EditorGUI.BeginDisabledGroup(true);
-                    EditorGUILayout.PropertyField(textElementLegacyProp);
+                    EditorGUILayout.PropertyField(_textElementProp);
+                    EditorGUI.EndDisabledGroup();
+                }
+                
+                if (hasTextLegacy)
+                {
+                    EditorGUI.BeginDisabledGroup(true);
+                    EditorGUILayout.PropertyField(_textElementLegacyProp);
                     EditorGUI.EndDisabledGroup();
                 }
             }
@@ -69,7 +75,49 @@ namespace SimplyLocalize.Editor
                 EditorGUILayout.HelpBox("You must add at least one text component.", MessageType.Warning);
             }
 
+            // GetType check is necessary for correct drawing of the button
+            DrawTranslateButton(GetType() != typeof(LocalizationTextEditor)); 
+
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private bool HasTextComponent(SerializedProperty property)
+        {
+            return property.propertyType != SerializedPropertyType.ObjectReference || property.objectReferenceValue != null;
+        }
+
+        protected void DrawTranslateButton(bool ignoreThisMethod)
+        {
+            if (ignoreThisMethod)
+                return;
+            
+            EditorGUILayout.Space();
+
+            var myButtonContent = new GUIContent("Set translation", "Set the translation for this key in the component using the current language.");
+            if (GUILayout.Button(myButtonContent, LocalizationEditorStyles.ButtonStyle))
+            {
+                var localizationKey = _localizationKeyProp.boxedValue as LocalizationKey;
+                Localization.TryGetTranslatedText(localizationKey, out var translated);
+                
+                var hasTextTMP = HasTextComponent(_textElementProp);
+                var hasTextLegacy = HasTextComponent(_textElementLegacyProp);
+                
+                if (hasTextTMP)
+                {
+                    var textElement = _textElementProp.objectReferenceValue as TMP_Text;
+                    Undo.RecordObject(textElement, "Set translation to component TMP");
+                    
+                    textElement.text = translated;
+                }
+                
+                if (hasTextLegacy)
+                {
+                    var textElement = _textElementLegacyProp.objectReferenceValue as UnityEngine.UI.Text;
+                    Undo.RecordObject(textElement, "Set translation to legacy text component");
+                    
+                    textElement.text = translated;
+                }
+            }
         }
     }
 }

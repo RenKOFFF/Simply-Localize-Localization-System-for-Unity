@@ -13,6 +13,8 @@ namespace SimplyLocalize.Editor
             var defaultValuesProp = serializedObject.FindProperty("_defaultValues");
             EditorGUILayout.PropertyField(defaultValuesProp);
             
+            DrawTranslateButton(false);
+            
             serializedObject.ApplyModifiedProperties();
         }
     }
