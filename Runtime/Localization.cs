@@ -173,7 +173,6 @@ namespace SimplyLocalize
             }
             else
             {
-                
                 CurrentLanguage = localizationData.i18nLang;
                 Logging.Log("Language changed. New language: {0}", args: (CurrentLanguage, Color.green));
                 
@@ -218,6 +217,11 @@ namespace SimplyLocalize
         public static bool CanTranslateInEditor()
         {
              return Application.isPlaying || (LocalizationConfigInitialized && LocalizationConfig.TranslateInEditor);
+        }
+        
+        public static bool CanChangeDefaultLanguageInEditor()
+        {
+             return Application.isPlaying == false && LocalizationConfigInitialized && LocalizationConfig.ChangeDefaultLanguageWhenCantTranslateInEditor && LocalizationConfig.TranslateInEditor == false;
         }
 
         private static bool TryLoadDefaultLanguage()

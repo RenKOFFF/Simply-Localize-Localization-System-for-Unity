@@ -117,7 +117,12 @@ namespace SimplyLocalize.Editor
 
         private static Canvas GetOrCreateCanvas()
         {
+#if UNITY_6000_0_OR_NEWER
+            var canvas = Object.FindFirstObjectByType<Canvas>();
+#else
             var canvas = Object.FindObjectOfType<Canvas>();
+#endif
+            
             if (canvas == null)
             {
                 var canvasGameObject = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler),

@@ -28,8 +28,8 @@ namespace SimplyLocalize.Editor
         static LocalizationPreparation()
         {
             PrepareFolders();
-            LocalizeEditor.GetLocalizationKeysData();
-            var config = LocalizeEditor.GetLocalizationConfig();
+            var keysData = LocalizeEditor.LocalizationKeysData;
+            var config = LocalizeEditor.LocalizationConfig;
 
 #if UNITY_ANDROID || UNITY_IOS
             if (config is { ShowAppLocalizationGitPackagePopup: true })
