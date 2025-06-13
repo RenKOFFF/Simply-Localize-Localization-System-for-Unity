@@ -13,24 +13,30 @@ namespace SimplyLocalize.Editor
         private static LocalizationConfig _localizationConfig;
         private static List<LocalizationData> _languages;
         
-        public static LocalizationKeysData GetLocalizationKeysData()
+        public static LocalizationKeysData LocalizationKeysData
         {
-            if (_localizationKeysData != null)
+            get
             {
-                return _localizationKeysData;
-            }
-            
-            return _localizationKeysData = GetData<LocalizationKeysData>();
-        }
-        
-        public static LocalizationConfig GetLocalizationConfig()
-        {
-            if (_localizationConfig != null)
-            {
-                return _localizationConfig;
-            }
+                if (_localizationKeysData != null)
+                {
+                    return _localizationKeysData;
+                }
 
-            return _localizationConfig = GetData<LocalizationConfig>();
+                return _localizationKeysData = GetData<LocalizationKeysData>();
+            }
+        }
+
+        public static LocalizationConfig LocalizationConfig
+        {
+            get 
+            {
+                if (_localizationConfig != null)
+                {
+                    return _localizationConfig;
+                }
+
+                return _localizationConfig = GetData<LocalizationConfig>();
+            }
         }
 
         public static List<LocalizationData> GetLanguages(bool overrideExisting = false)
@@ -48,19 +54,17 @@ namespace SimplyLocalize.Editor
 
         public static void GenerateLocalizationKeys()
         {
-            GetLocalizationKeysData();
-            
-            _localizationKeysData.Keys = _localizationKeysData.Keys
+            LocalizationKeysData.Keys = LocalizationKeysData.Keys
                 .GroupBy(x => x)
                 .Select(x => x.First())
                 .ToList();
 
-            GenerateLocalizationJson(_localizationKeysData.Translations);
+            GenerateLocalizationJson(LocalizationKeysData.Translations);
         }
         
         public static bool CanAddNewKey(string newKey)
         {
-            var keys = GetLocalizationKeysData().Keys;
+            var keys = LocalizationKeysData.Keys;
 
             var notEmpty = newKey != "";
             var hasNotDuplicates = keys.All(x => x != newKey.ToCorrectLocalizationKeyName());
@@ -71,25 +75,22 @@ namespace SimplyLocalize.Editor
                    isNotNope;
         }
 
-        public static bool TryAddNewKey(string newKey, bool generateKeysAfterSuccess)
+        public static bool TryAddNewKey(string newKey)
         {
             if (!CanAddNewKey(newKey))
             {
                 return false;
             }
             
-            GetLocalizationKeysData();
-            
             var key = newKey.ToCorrectLocalizationKeyName();
             
-            _localizationKeysData.Keys.Add(key);
+            LocalizationKeysData.Keys.Add(key);
             
-            if (generateKeysAfterSuccess)
-                GenerateLocalizationKeys();
+            GenerateLocalizationKeys();
 
-            EditorUtility.SetDirty(_localizationKeysData);
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            // EditorUtility.SetDirty(_localizationKeysData);
+            // AssetDatabase.SaveAssets();
+            // AssetDatabase.Refresh();
             
             return true;
         }
@@ -251,7 +252,7 @@ namespace SimplyLocalize.Editor
 
             foreach (var language in langDict)
             {
-                foreach (var key in GetLocalizationKeysData().Keys)
+                foreach (var key in LocalizationKeysData.Keys)
                 {
                     if (existingLocalization != null && existingLocalization.TryGetValue(language.Key, out var currentLocalization) && currentLocalization.TryGetValue(key, out var existTranslation))
                     {
