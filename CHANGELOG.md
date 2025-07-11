@@ -1,4 +1,7 @@
 # Changelog
+## [1.6.2] - 2025-07-11
+### Fixed
+- Fixed a bug with Layout. After exiting maximize mode for any window, the layout was reset to default results.
 
 ## [1.6.1] - 28.05.2025
 ### Changed

@@ -23,6 +23,7 @@ namespace SimplyLocalize.Editor
         private static GUIStyle ButtonStyle => LocalizationEditorStyles.ButtonStyle;
         private static GUIStyle HorizontalStyle => LocalizationEditorStyles.HorizontalStyle;
         
+        private bool _hasInitialized;
         private bool _needsSave;
         
         private readonly string[] _mainTabs = { "Language", "Keys", "Text Translating", "Sprites"};//, "Objects", "AudioClip" };
@@ -84,18 +85,54 @@ namespace SimplyLocalize.Editor
             }
         }
 
+        private void OnEnable()
+        {
+            _hasInitialized = false;
+
+            EditorApplication.update += DelayedInitialize;
+        }
+        
+        private void DelayedInitialize()
+        {
+            EditorApplication.update -= DelayedInitialize;
+
+            if (!TryInitializeLocalizationConfig())
+                return;
+
+            if (!TryInitializeKeysData())
+                return;
+
+            LoadFromJson();
+            _hasInitialized = true;
+
+            Repaint();
+        }
+
         private void OnFocus()
         {
-            if (TryInitializeKeysData() == false) return;
-            if (TryInitializeLocalizationConfig() == false) return;
-            
+            if (!_hasInitialized)
+            {
+                return;
+            }
+
             LoadFromJson();
         }
 
         private void OnLostFocus()
         {
-            SavePendingChanges(_selectedLanguageTab);
-            SaveToJson();
+            if (!_hasInitialized)
+            {
+                return;
+            }
+
+            EditorApplication.delayCall += () =>
+            {
+                if (this != null)
+                {
+                    SavePendingChanges(_selectedLanguageTab);
+                    SaveToJson();
+                }
+            };
         }
 
         private void SaveData()
