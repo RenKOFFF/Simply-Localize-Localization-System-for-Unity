@@ -24,7 +24,6 @@ namespace SimplyLocalize.Editor
         public static readonly string LocalizationResourcesDataPath = Path.Combine(LocalizationResourcesPath, LocalizationTemplateName);
         public static readonly string LocalizationTemplatePath = Path.ChangeExtension(LocalizationResourcesDataPath, TemplateExtension);
         
-        
         static LocalizationPreparation()
         {
             PrepareFolders();

@@ -1,19 +1,17 @@
 ﻿using UnityEngine;
-using UnityEngine.UI;
-using Object = UnityEngine.Object;
 
 namespace SimplyLocalize
 {
-    [AddComponentMenu("Simply Localize/Localization Image")]
+    [AddComponentMenu("Simply Localize/Localization Sprite Renderer")]
     [DisallowMultipleComponent]
     [ExecuteAlways]
-    public class LocalizationImage : LocalizationObject<Sprite>, ICanOverrideLocalizationTarget<Image>
+    public class LocalizationSpriteRenderer : LocalizationObject<Sprite>, ICanOverrideLocalizationTarget<SpriteRenderer>
     {
         [SerializeField] private bool _overrideLocalizationTarget;
-        [SerializeField] private Image _localizationTarget;
+        [SerializeField] private SpriteRenderer _localizationTarget;
 
         public bool OverrideLocalizationTarget => _overrideLocalizationTarget;
-        public Image LocalizationTarget => _localizationTarget;
+        public SpriteRenderer LocalizationTarget => _localizationTarget;
 
         protected override void OnValidate()
         {
@@ -21,7 +19,7 @@ namespace SimplyLocalize
             
             if (Localization.CanTranslateInEditor() == false) return;
             
-            _localizationTarget ??= GetComponent<Image>();
+            _localizationTarget ??= GetComponent<SpriteRenderer>();
 
             if (_keyObject == null && LocalizationTarget != null)
             {
