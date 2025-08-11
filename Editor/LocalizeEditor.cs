@@ -121,7 +121,7 @@ namespace SimplyLocalize.Editor
 
         public static void GenerateLocalizationJson(SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> oldLocalizationData)
         {
-            var data = GetLocalizationsData();
+            var data = _localizationKeysData.Languages.ToArray();
             if (!data.Any())
             {
                 Logging.Log($"No {nameof(LocalizationData)} found. " +
@@ -235,11 +235,6 @@ namespace SimplyLocalize.Editor
 
             data = asset;
             return true;
-        }
-
-        private static LocalizationData[] GetLocalizationsData()
-        {
-            return Resources.LoadAll<LocalizationData>("");
         }
 
         private static void WriteLocalization(string json)
