@@ -27,11 +27,10 @@ namespace SimplyLocalize.Editor
         static LocalizationPreparation()
         {
             PrepareFolders();
-            var keysData = LocalizeEditor.LocalizationKeysData;
-            var config = LocalizeEditor.LocalizationConfig;
-
+            LocalizeEditor.Initialize();
+            
 #if UNITY_ANDROID || UNITY_IOS
-            if (config is { ShowAppLocalizationGitPackagePopup: true })
+            if (LocalizeEditor.LocalizationConfig.ShowAppLocalizationGitPackagePopup)
                 CheckLocalizedAppTitlePackage(AppTitleLocalizationPackageURL);
 #endif
         }

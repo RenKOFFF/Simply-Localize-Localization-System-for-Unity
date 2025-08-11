@@ -12,6 +12,22 @@ namespace SimplyLocalize.Editor
         private static LocalizationKeysData _localizationKeysData;
         private static LocalizationConfig _localizationConfig;
         private static List<LocalizationData> _languages;
+
+        public static void Initialize()
+        {
+            var keysData = LocalizationKeysData;
+            var config = LocalizationConfig;
+            
+            var languages = GetLanguages();
+            if (keysData.DefaultLocalizationData == null && languages.Count == 0)
+            {
+                var language = CreateNewLocalizationData("en");
+                keysData.DefaultLocalizationData = language;
+                
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+        }
         
         public static LocalizationKeysData LocalizationKeysData
         {
@@ -93,6 +109,23 @@ namespace SimplyLocalize.Editor
             // AssetDatabase.Refresh();
             
             return true;
+        }
+        
+        public static LocalizationData CreateNewLocalizationData(string langCode, FontHolder fontHolder = null)
+        {
+            var newLanguage = ScriptableObject.CreateInstance<LocalizationData>();
+            newLanguage.name = $"LocalizationData_{langCode}";
+            newLanguage.i18nLang = langCode;
+            newLanguage.OverrideFontAsset = fontHolder;
+            
+            var newLanguageAssetPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, newLanguage.name);
+            var dataPath = Path.ChangeExtension(newLanguageAssetPath, LocalizationPreparation.FileExtensionAsset);
+
+            AssetDatabase.CreateAsset(newLanguage, dataPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            
+            return newLanguage;
         }
 
         public static void GenerateLocalizationJson(SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> oldLocalizationData)

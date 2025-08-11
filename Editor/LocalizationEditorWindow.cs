@@ -342,18 +342,8 @@ namespace SimplyLocalize.Editor
             
             if (GUILayout.Button("Add New Language", ButtonStyle, GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.3f)))
             {
-                var newLanguage = CreateInstance<LocalizationData>();
-                newLanguage.name = $"LocalizationData_{_newLanguage}";
-                newLanguage.i18nLang = _newLanguage;
-                newLanguage.OverrideFontAsset = _newLanguageFontHolder;
-            
-                var newLanguageAssetPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, newLanguage.name);
-                var dataPath = Path.ChangeExtension(newLanguageAssetPath, LocalizationPreparation.FileExtensionAsset);
+                var newLanguage = LocalizeEditor.CreateNewLocalizationData(_newLanguage, _newLanguageFontHolder);
 
-                AssetDatabase.CreateAsset(newLanguage, dataPath);
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-        
                 _languages.Add(newLanguage);
                 _newLanguage = "";
                 _newLanguageFontHolder = null;
