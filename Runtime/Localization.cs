@@ -44,14 +44,9 @@ namespace SimplyLocalize
         {
             get
             {
-                if (_localizationConfig != null) return _localizationConfig;
-                
-                if (!TryGetLocalizationConfig())
-                {
-                    throw new Exception("LocalizationConfig is null");
-                }
-                
-                return _localizationConfig;
+                if (_localizationConfig != null || TryGetLocalizationConfig()) return _localizationConfig;
+
+                return null;
             }
         }
 

@@ -16,7 +16,7 @@ namespace SimplyLocalize
         {
             var config = Localization.LocalizationConfig;
             
-            if (config != null && config.EnableLogging == false) return;
+            if (Localization.LocalizationConfigInitialized && config.EnableLogging == false) return;
 
 #if !UNITY_EDITOR
             if (config != null && config.EnableLoggingInBuild == false) return;

@@ -16,7 +16,7 @@ namespace SimplyLocalize.Editor
             
             if (string.IsNullOrWhiteSpace(input)) return "Empty";
             
-            var finalKey = Localization.LocalizationConfig.SpaceIsGroupSeparator switch
+            var finalKey = LocalizeEditor.LocalizationConfig.SpaceIsGroupSeparator switch
             {
                 LocalizationConfig.SpaceUsage.GroupSeparator => AsGroupSeparator(input),
                 LocalizationConfig.SpaceUsage.Underline => AsUnderlineSeparator(input),
