@@ -26,6 +26,8 @@ namespace SimplyLocalize.Editor
                 
                 GenerateLocalizationKeys();
                 
+                Logging.Log($"Created a default language with language code {language.i18nLang}.");
+                
                 EditorUtility.SetDirty(keysData);
                 
                 AssetDatabase.SaveAssets();
