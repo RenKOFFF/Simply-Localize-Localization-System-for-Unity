@@ -19,6 +19,11 @@ namespace SimplyLocalize
             return new LocalizationKey(key);
         }
         
+        public static implicit operator string(LocalizationKey key)
+        {
+            return key._key;
+        }
+        
         public override string ToString()
         {
             return _key;

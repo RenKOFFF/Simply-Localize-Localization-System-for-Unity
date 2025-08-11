@@ -24,6 +24,8 @@ namespace SimplyLocalize.Editor
                 var language = CreateNewLocalizationData("en");
                 keysData.DefaultLocalizationData = language;
                 
+                GenerateLocalizationKeys();
+                
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }

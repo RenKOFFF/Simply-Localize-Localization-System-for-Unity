@@ -78,7 +78,7 @@ namespace SimplyLocalize.Editor
                         TryAddLocalizedAppTitlePackage();
                     }
                     
-                    var config = LocalizeEditor.GetLocalizationConfig();
+                    var config = LocalizeEditor.LocalizationConfig;
                     config.ShowAppLocalizationGitPackagePopup = false;
                         
                     EditorUtility.SetDirty(config);

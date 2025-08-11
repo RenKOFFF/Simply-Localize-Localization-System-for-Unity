@@ -719,43 +719,6 @@ namespace SimplyLocalize.Editor
            ForceSaveData();
         }
 
-        private void DrawGenerateButton()
-        {
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-            
-            var canGenerate = HasDoubles() == false;
-            if (canGenerate)
-            {
-                GUI.color = Color.white;
-            }
-            else
-            {
-                GUI.color = Color.red;
-                EditorGUI.BeginDisabledGroup(true);
-            }
-
-            if (GUILayout.Button("Generate Keys", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
-            {
-                if (canGenerate)
-                {
-                    LocalizeEditor.GenerateLocalizationKeys();
-                    ForceSaveData();
-                }
-                else
-                {
-                    GUI.color = Color.white;
-                }
-            }
-
-            if (!canGenerate)
-            {
-                EditorGUI.BeginDisabledGroup(true);
-            }
-            
-            GUI.color = Color.white;
-        }
-
         private void DrawTranslating()
         {
             if (DrawTranslatingLanguageTabs() == false) return;
