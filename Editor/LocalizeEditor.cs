@@ -26,6 +26,8 @@ namespace SimplyLocalize.Editor
                 
                 GenerateLocalizationKeys();
                 
+                EditorUtility.SetDirty(keysData);
+                
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
