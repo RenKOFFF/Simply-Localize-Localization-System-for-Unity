@@ -11,18 +11,18 @@ namespace SimplyLocalize.Editor
     {
         private static LocalizationKeysData _localizationKeysData;
         private static LocalizationConfig _localizationConfig;
-        private static List<LocalizationData> _languages;
 
         public static void Initialize()
         {
             var keysData = LocalizationKeysData;
             var config = LocalizationConfig;
             
-            var languages = GetLanguages();
-            if (keysData.DefaultLocalizationData == null && languages.Count == 0)
+            var languages = keysData.Languages;
+            if (keysData.DefaultLanguage == null && languages.Count == 0)
             {
                 var language = CreateNewLocalizationData("en");
-                keysData.DefaultLocalizationData = language;
+                keysData.DefaultLanguage = language;
+                keysData.Languages.Add(language);
                 
                 GenerateLocalizationKeys();
                 
@@ -57,19 +57,6 @@ namespace SimplyLocalize.Editor
 
                 return _localizationConfig = GetData<LocalizationConfig>();
             }
-        }
-
-        public static List<LocalizationData> GetLanguages(bool overrideExisting = false)
-        {
-            if (_languages != null && !overrideExisting)
-            {
-                _languages = _languages.Where(x => x != null).ToList();
-                
-                return _languages.ToList();
-            }
-            
-            _languages = Resources.LoadAll<LocalizationData>("").ToList();
-            return _languages;
         }
 
         public static void GenerateLocalizationKeys()

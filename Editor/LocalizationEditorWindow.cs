@@ -41,7 +41,6 @@ namespace SimplyLocalize.Editor
         private Vector2 _keysScrollPosition;
         private Vector2 _multipleKeysScrollPosition;
         
-        private List<LocalizationData> _languages;
         private List<FontHolder> _fontHolders;
         
         private string _newLanguage;
@@ -154,6 +153,15 @@ namespace SimplyLocalize.Editor
             {
                 EditorUtility.SetDirty(_localizationKeysData);
                 EditorUtility.SetDirty(_localizationConfig);
+
+                foreach (var localizationData in _localizationKeysData.Languages)
+                {
+                    EditorUtility.SetDirty(localizationData);
+                    
+                    if (localizationData.OverrideFontAsset != null)
+                        EditorUtility.SetDirty(localizationData.OverrideFontAsset);
+                }
+                
                 _needsSave = false;
             }
         }
@@ -270,8 +278,8 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.Space(_LINE_HEIGHT);
             EditorGUILayout.LabelField("Default Language", LabelStyle);
             
-            _localizationKeysData.DefaultLocalizationData = (LocalizationData)EditorGUILayout.ObjectField(
-                _localizationKeysData.DefaultLocalizationData, 
+            _localizationKeysData.DefaultLanguage = (LocalizationData)EditorGUILayout.ObjectField(
+                _localizationKeysData.DefaultLanguage, 
                 typeof(LocalizationData),
                 false,
                 GUILayout.Height(_LINE_HEIGHT)
@@ -289,13 +297,11 @@ namespace SimplyLocalize.Editor
         {
             EditorGUILayout.LabelField("Language Setting", LabelStyle);
 
-            _languages = LocalizeEditor.GetLanguages(true);
-            
-            for (var i = 0; i < _languages.Count; i++)
+            for (var i = 0; i < _localizationKeysData.Languages.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal();
 
-                var language = _languages[i];
+                var language = _localizationKeysData.Languages[i];
 
                 EditorGUI.BeginDisabledGroup(true);
                 language.i18nLang = EditorGUILayout.TextField(language.i18nLang, KeyStyle, GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.3f));
@@ -312,7 +318,7 @@ namespace SimplyLocalize.Editor
                 
                 if (GUILayout.Button("Remove Language", ButtonStyle, GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.3f)))
                 {
-                    _languages.Remove(language);
+                    _localizationKeysData.Languages.Remove(language);
                     i--;
                     
                     AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(language));
@@ -324,7 +330,7 @@ namespace SimplyLocalize.Editor
             
             EditorGUILayout.BeginHorizontal();
 
-            var hasDoubles = _languages.Count(l => l.i18nLang == _newLanguage) > 0;
+            var hasDoubles = _localizationKeysData.Languages.Count(l => l.i18nLang == _newLanguage) > 0;
 
             if (hasDoubles)
             {
@@ -344,7 +350,7 @@ namespace SimplyLocalize.Editor
             {
                 var newLanguage = LocalizeEditor.CreateNewLocalizationData(_newLanguage, _newLanguageFontHolder);
 
-                _languages.Add(newLanguage);
+                _localizationKeysData.Languages.Add(newLanguage);
                 _newLanguage = "";
                 _newLanguageFontHolder = null;
                 
@@ -723,7 +729,7 @@ namespace SimplyLocalize.Editor
         {
             if (DrawTranslatingLanguageTabs() == false) return;
             
-            var language = _languages[_selectedLanguageTab].i18nLang;
+            var language = _localizationKeysData.Languages[_selectedLanguageTab].i18nLang;
 
             if (_localizationKeysData.Translations.TryGetValue(language, out var translating))
             {
@@ -854,7 +860,7 @@ namespace SimplyLocalize.Editor
 
         private bool DrawTranslatingLanguageTabs()
         {
-            if (_languages == null || _languages.Count == 0)
+            if (_localizationKeysData.Languages == null || _localizationKeysData.Languages.Count == 0)
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.HelpBox("No languages found", MessageType.Info );
@@ -864,7 +870,7 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.Space();
             
             var lastSelectedTab = _selectedLanguageTab;
-            _selectedLanguageTab = GUILayout.Toolbar(_selectedLanguageTab, _languages.Select(l => l.i18nLang).ToArray(), ButtonStyle);
+            _selectedLanguageTab = GUILayout.Toolbar(_selectedLanguageTab, _localizationKeysData.Languages.Select(l => l.i18nLang).ToArray(), ButtonStyle);
 
             if (_selectedLanguageTab != lastSelectedTab)
             {
@@ -881,7 +887,7 @@ namespace SimplyLocalize.Editor
         {
             if (_pendingChanges.Count == 0) return;
     
-            var language = _languages[previousSelectedTab].i18nLang;
+            var language = _localizationKeysData.Languages[previousSelectedTab].i18nLang;
             if (_localizationKeysData.Translations.TryGetValue(language, out var translating))
             {
                 foreach (var kvp in _pendingChanges)
@@ -914,9 +920,9 @@ namespace SimplyLocalize.Editor
                 height = _LINE_HEIGHT * 2;
                 width = _LINE_HEIGHT * 8;
             }
-            var language = _languages[_selectedLanguageTab].i18nLang;
+            var language = _localizationKeysData.Languages[_selectedLanguageTab].i18nLang;
             
-            foreach (var lang in _languages)
+            foreach (var lang in _localizationKeysData.Languages)
             {
                 if (_localizationKeysData.ObjectsTranslations.TryGetValue(lang.i18nLang, out _) == false)
                 {
@@ -930,12 +936,12 @@ namespace SimplyLocalize.Editor
                 }
             }
 
-            if (_localizationKeysData.ObjectsTranslations.Count != _languages.Count)
+            if (_localizationKeysData.ObjectsTranslations.Count != _localizationKeysData.Languages.Count)
             {
                 var langToRemove = new List<string>();
                 foreach (var lang in _localizationKeysData.ObjectsTranslations)
                 {
-                    if (_languages.Find((l) => l.i18nLang == lang.Key) == false)
+                    if (_localizationKeysData.Languages.Find((l) => l.i18nLang == lang.Key) == false)
                     {
                         langToRemove.Add(lang.Key);
                     }
@@ -968,7 +974,7 @@ namespace SimplyLocalize.Editor
             EditorGUI.BeginDisabledGroup(_newObjectKey == null || hasDoubles);
             if (GUILayout.Button("Add", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
             {
-                foreach (var lang in _languages)
+                foreach (var lang in _localizationKeysData.Languages)
                 {
                     _localizationKeysData.ObjectsTranslations[lang.i18nLang].Add(_newObjectKey, null);
                 }
@@ -1003,7 +1009,7 @@ namespace SimplyLocalize.Editor
                     
                     if (GUILayout.Button("Remove", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
                     {
-                        foreach (var lang in _languages)
+                        foreach (var lang in _localizationKeysData.Languages)
                         {
                             _localizationKeysData.ObjectsTranslations[lang.i18nLang].Remove(key);
                         }

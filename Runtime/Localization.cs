@@ -237,9 +237,9 @@ namespace SimplyLocalize
             if (Initialized)
                 return true;
             
-            if (_localizationKeysData.DefaultLocalizationData != null)
+            if (_localizationKeysData.DefaultLanguage != null)
             {
-                SetLocalization(_localizationKeysData.DefaultLocalizationData);
+                SetLocalization(_localizationKeysData.DefaultLanguage);
                 
                 if (Application.isPlaying)
                 {

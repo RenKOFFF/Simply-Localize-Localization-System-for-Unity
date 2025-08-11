@@ -30,8 +30,8 @@ namespace SimplyLocalize.Editor
                 return;
             }
 
-            var currentLanguage = Localization.CurrentLanguage ?? LocalizeEditor.LocalizationKeysData.DefaultLocalizationData?.i18nLang;
-            var choices = LocalizeEditor.GetLanguages().Select(x => x.i18nLang).ToList();
+            var currentLanguage = Localization.CurrentLanguage ?? LocalizeEditor.LocalizationKeysData.DefaultLanguage?.i18nLang;
+            var choices = LocalizeEditor.LocalizationKeysData.Languages.Select(x => x.i18nLang).ToList();
             var index = choices.IndexOf(currentLanguage);
 
             if (gameViewElement != null)
@@ -81,8 +81,8 @@ namespace SimplyLocalize.Editor
             
             if (Localization.CanChangeDefaultLanguageInEditor())
             {
-                var localizationData = LocalizeEditor.GetLanguages().First(x => x.i18nLang == language);
-                LocalizeEditor.LocalizationKeysData.DefaultLocalizationData = localizationData;
+                var localizationData = LocalizeEditor.LocalizationKeysData.Languages.First(x => x.i18nLang == language);
+                LocalizeEditor.LocalizationKeysData.DefaultLanguage = localizationData;
                 
                 EditorUtility.SetDirty(LocalizeEditor.LocalizationKeysData);
                 AssetDatabase.SaveAssets();

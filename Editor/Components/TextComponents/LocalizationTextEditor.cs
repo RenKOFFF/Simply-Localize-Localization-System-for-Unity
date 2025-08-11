@@ -97,7 +97,7 @@ namespace SimplyLocalize.Editor
             if (GUILayout.Button(myButtonContent, LocalizationEditorStyles.ButtonStyle))
             {
                 var localizationKey = _localizationKeyProp.boxedValue as LocalizationKey;
-                var localizationCode = LocalizeEditor.LocalizationKeysData.DefaultLocalizationData.i18nLang;
+                var localizationCode = LocalizeEditor.LocalizationKeysData.DefaultLanguage.i18nLang;
                 LocalizeEditor.LocalizationKeysData.Translations[localizationCode].TryGetValue(localizationKey, out var translated);
                 
                 var hasTextTMP = HasTextComponent(_textElementProp);

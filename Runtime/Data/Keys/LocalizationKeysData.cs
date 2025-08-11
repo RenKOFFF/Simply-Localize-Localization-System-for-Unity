@@ -6,7 +6,8 @@ namespace SimplyLocalize
 {
     public class LocalizationKeysData : ScriptableObject
     {
-        [field: SerializeField] public LocalizationData DefaultLocalizationData { get; set; }
+        [field: SerializeField] public LocalizationData DefaultLanguage { get; set; }
+        [field: SerializeField] public List<LocalizationData> Languages { get; set; }
         [field: SerializeField] public List<string> Keys { get; set; } = new() { "Sample"};
 #if UNITY_EDITOR
         [field: SerializeField] public SerializableSerializableDictionary<string, SerializableSerializableDictionary<string, string>> Translations { get; set; } = new();
