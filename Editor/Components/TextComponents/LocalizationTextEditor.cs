@@ -9,6 +9,7 @@ namespace SimplyLocalize.Editor
     [CanEditMultipleObjects]
     public class LocalizationTextEditor : UnityEditor.Editor
     {
+        private SerializedProperty _ignoreFontChangingProp;
         private SerializedProperty _overrideTextsElementProp;
         private SerializedProperty _localizationKeyProp;
         private SerializedProperty _textElementProp;
@@ -18,6 +19,7 @@ namespace SimplyLocalize.Editor
         {
             serializedObject.Update();
 
+            _ignoreFontChangingProp = serializedObject.FindProperty("_ignoreFontChanging");
             _overrideTextsElementProp = serializedObject.FindProperty("_overrideTextElements");
             _localizationKeyProp = serializedObject.FindProperty("_localizationKey");
             _textElementProp = serializedObject.FindProperty("_textElement");
@@ -27,6 +29,10 @@ namespace SimplyLocalize.Editor
                 return;
             
             EditorGUILayout.PropertyField(_localizationKeyProp);
+            
+            EditorGUILayout.PropertyField(_ignoreFontChangingProp);
+            EditorGUILayout.Space();
+            
             EditorGUILayout.PropertyField(_overrideTextsElementProp);
 
             var hasTextTMP = HasTextComponent(_textElementProp);
