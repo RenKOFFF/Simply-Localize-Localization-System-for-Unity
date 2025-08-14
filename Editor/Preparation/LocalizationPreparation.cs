@@ -30,7 +30,7 @@ namespace SimplyLocalize.Editor
             LocalizeEditor.Initialize();
 
             var defaultLanguage = LocalizeEditor.LocalizationKeysData.DefaultLanguage;
-            if (defaultLanguage != null)
+            if (defaultLanguage != null && Localization.Initialized == false)
                 Localization.SetLocalization(defaultLanguage);
 
 #if UNITY_ANDROID || UNITY_IOS
