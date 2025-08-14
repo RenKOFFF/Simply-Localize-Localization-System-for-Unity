@@ -36,7 +36,8 @@ namespace SimplyLocalize.Editor
             }
             else
             {
-                keysData.DefaultLanguage = languages.First();
+                var lang = languages.FirstOrDefault(l => l.i18nLang == "en") ?? languages.First();
+                keysData.DefaultLanguage = lang;
             }
                 
             EditorUtility.SetDirty(keysData);
