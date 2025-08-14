@@ -164,12 +164,15 @@ namespace SimplyLocalize
             {
                 CurrentLanguage = localizationData.i18nLang;
                 
-                Logging.Log("Setup language. Current language: {0}", args: (CurrentLanguage, Color.green));
+                if (Application.isPlaying)
+                    Logging.Log("Setup language. Current language: {0}", args: (CurrentLanguage, Color.green));
             }
             else
             {
                 CurrentLanguage = localizationData.i18nLang;
-                Logging.Log("Language changed. New language: {0}", args: (CurrentLanguage, Color.green));
+                
+                if (Application.isPlaying)
+                    Logging.Log("Language changed. New language: {0}", args: (CurrentLanguage, Color.green));
                 
                 LanguageChanged?.Invoke();
             }
