@@ -30,7 +30,7 @@ namespace SimplyLocalize.Editor
                 return;
             }
 
-            var currentLanguage = Localization.CurrentLanguage ?? LocalizeEditor.LocalizationKeysData.DefaultLanguage?.i18nLang;
+            var currentLanguage = LocalizeEditor.LocalizationKeysData.DefaultLanguage?.i18nLang ?? Localization.CurrentLanguage;
             var choices = LocalizeEditor.LocalizationKeysData.Languages.Select(x => x.i18nLang).ToList();
             var index = choices.IndexOf(currentLanguage);
 
