@@ -28,7 +28,11 @@ namespace SimplyLocalize.Editor
         {
             PrepareFolders();
             LocalizeEditor.Initialize();
-            
+
+            var defaultLanguage = LocalizeEditor.LocalizationKeysData.DefaultLanguage;
+            if (defaultLanguage != null)
+                Localization.SetLocalization(defaultLanguage);
+
 #if UNITY_ANDROID || UNITY_IOS
             if (LocalizeEditor.LocalizationConfig.ShowAppLocalizationGitPackagePopup)
                 CheckLocalizedAppTitlePackage(AppTitleLocalizationPackageURL);
