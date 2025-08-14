@@ -17,7 +17,9 @@ namespace SimplyLocalize.Editor
             var keysData = LocalizationKeysData;
             var config = LocalizationConfig;
             
+            UpdateLanguages();
             var languages = keysData.Languages;
+            
             if (keysData.DefaultLanguage == null && languages.Count == 0)
             {
                 var language = CreateNewLocalizationData("en");
@@ -239,6 +241,11 @@ namespace SimplyLocalize.Editor
             return true;
         }
 
+        private static void UpdateLanguages()
+        {
+            LocalizationKeysData.Languages = Resources.LoadAll<LocalizationData>("").ToList();
+        }
+        
         private static void WriteLocalization(string json)
         {
             File.WriteAllText(LocalizationPreparation.LocalizationTemplatePath, json);
