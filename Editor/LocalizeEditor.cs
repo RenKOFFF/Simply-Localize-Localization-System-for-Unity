@@ -19,27 +19,30 @@ namespace SimplyLocalize.Editor
             
             UpdateLanguages();
             var languages = keysData.Languages;
+
+            if (keysData.DefaultLanguage != null && languages.Count != 0) 
+                return;
             
-            if (keysData.DefaultLanguage == null && languages.Count == 0)
+            if (languages.Count == 0)
             {
                 var language = CreateNewLocalizationData("en");
+                    
                 keysData.DefaultLanguage = language;
                 keysData.Languages.Add(language);
-                
+                    
                 GenerateLocalizationKeys();
-                
+                    
                 Logging.Log("Created a default language with language code {0}", args: ($"{language.i18nLang}", Color.green));
-                
-                EditorUtility.SetDirty(keysData);
-                
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
             }
-            
-            if (keysData.DefaultLanguage == null)
+            else
             {
                 keysData.DefaultLanguage = languages.First();
             }
+                
+            EditorUtility.SetDirty(keysData);
+                
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
         }
         
         public static LocalizationKeysData LocalizationKeysData
