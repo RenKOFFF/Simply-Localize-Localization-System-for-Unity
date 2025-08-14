@@ -35,6 +35,11 @@ namespace SimplyLocalize.Editor
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
+            
+            if (keysData.DefaultLanguage == null)
+            {
+                keysData.DefaultLanguage = languages.First();
+            }
         }
         
         public static LocalizationKeysData LocalizationKeysData
