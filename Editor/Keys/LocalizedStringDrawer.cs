@@ -62,7 +62,7 @@ namespace SimplyLocalize.Editor
                 var context = new SearchWindowContext(GUIUtility.GUIToScreenPoint(Event.current.mousePosition));
                 
                 var searchWindowProvider = ScriptableObject.CreateInstance<StringKeysSearchWindow>();
-                searchWindowProvider.SetKeys(keys, OnSelectEntry);
+                searchWindowProvider.SetKeys(noneKey, keys, OnSelectEntry);
 
                 SearchWindow.Open(context, searchWindowProvider);
             }

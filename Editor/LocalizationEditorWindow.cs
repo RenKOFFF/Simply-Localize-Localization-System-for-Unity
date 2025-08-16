@@ -240,13 +240,11 @@ namespace SimplyLocalize.Editor
             {
                 case 0: 
                     DrawLanguageTab();
-                    //DrawGenerateButton();
                     break;
                 
                 case 1: 
                     DrawKeys();
                     DrawAddMultipleKeys();
-                    //DrawGenerateButton();
                     
                     break;
                 case 2:
@@ -399,7 +397,7 @@ namespace SimplyLocalize.Editor
                     _needsSave = true;
                 }
                 
-                if (GUILayout.Button("Remove Font Holder", ButtonStyle, GUILayout.Height(_LINE_HEIGHT)))
+                if (GUILayout.Button("Remove Font Holder", ButtonStyle, GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.3f)))
                 {
                     _fontHolders.Remove(fontHolder);
                     i--;

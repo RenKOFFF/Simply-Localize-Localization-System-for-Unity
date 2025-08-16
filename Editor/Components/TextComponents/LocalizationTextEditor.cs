@@ -83,8 +83,9 @@ namespace SimplyLocalize.Editor
 
             // GetType check is necessary for correct drawing of the button
             DrawTranslateButton(GetType() != typeof(LocalizationTextEditor)); 
-
             serializedObject.ApplyModifiedProperties();
+            
+            DrawReplaceToButton("Replace to Formattable Localization Text", ReplaceBaseToFormattable, ReplaceBaseToFormattableValidate);
         }
 
         private bool HasTextComponent(SerializedProperty property)
@@ -97,10 +98,10 @@ namespace SimplyLocalize.Editor
             if (ignoreThisMethod)
                 return;
             
-            EditorGUILayout.Space();
+            EditorGUILayout.Space(12, true);
 
-            var myButtonContent = new GUIContent("Set translation", "Set the translation for this key in the component using the current language.");
-            if (GUILayout.Button(myButtonContent, LocalizationEditorStyles.ButtonStyle))
+            var translateButtonContent = new GUIContent("Set translation", "Set the translation for this key in the component using the current language.");
+            if (GUILayout.Button(translateButtonContent, LocalizationEditorStyles.MiniButtonStyle))
             {
                 var localizationKey = _localizationKeyProp.boxedValue as LocalizationKey;
                 var localizationCode = LocalizeEditor.LocalizationKeysData.DefaultLanguage.i18nLang;
@@ -125,6 +126,57 @@ namespace SimplyLocalize.Editor
                     textElement.text = translated;
                 }
             }
+        }
+
+        protected void DrawReplaceToButton(string label, Action replaceDelegate, Func<bool> validateFunc)
+        {
+            if (validateFunc?.Invoke() == false)
+                return;
+            
+            var replaceButtonContent = new GUIContent(label);
+            if (GUILayout.Button(replaceButtonContent, LocalizationEditorStyles.MiniButtonStyle))
+            {
+                replaceDelegate?.Invoke();
+            }
+        }
+
+        private void ReplaceBaseToFormattable()
+        {
+            var localizationText = (LocalizationText)serializedObject.targetObject;
+            
+            if (localizationText == null)
+                throw new ArgumentNullException("Target object is not " + nameof(LocalizationText) + "."); 
+            
+            var gameObject = localizationText.gameObject;
+
+            var soLocalizationText = new SerializedObject(localizationText);
+            soLocalizationText.Update();
+            var localizationKeyText = soLocalizationText.FindProperty("_localizationKey");
+
+            var valueText = localizationKeyText.FindPropertyRelative("_key");
+
+            Undo.RegisterCompleteObjectUndo(gameObject, $"Replace {localizationText.GetType().Name} with {nameof(FormattableLocalizationText)}");
+            Undo.DestroyObjectImmediate(localizationText);
+
+            var formattableLocalizationText = Undo.AddComponent(gameObject, typeof(FormattableLocalizationText));
+
+            var soFormattable = new SerializedObject(formattableLocalizationText);
+            var localizationKeyFormattable = soFormattable.FindProperty("_localizationKey");
+
+            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_key");
+            
+            valueFormattable.stringValue = valueText.stringValue;
+
+            soFormattable.ApplyModifiedProperties();
+            Selection.activeObject = formattableLocalizationText;
+        }
+
+        private bool ReplaceBaseToFormattableValidate()
+        {
+            return serializedObject.targetObject is LocalizationText text && 
+                   text != null &&
+                   text.GetType() == typeof(LocalizationText) && 
+                   text is not FormattableLocalizationText;
         }
     }
 }
