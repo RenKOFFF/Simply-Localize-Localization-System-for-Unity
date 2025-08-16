@@ -561,35 +561,58 @@ namespace SimplyLocalize.Editor
             EditorGUI.BeginChangeCheck();
             _localizationKeysData.Keys = _localizationKeysData.Keys.Where(key => key != "").ToList();
             
-            for (var i = 0; i < _localizationKeysData.Keys.Count; i++)
+            const string flatKeys = "Flat Keys";
+            
+            var groupedKeys = _localizationKeysData.Keys
+                .OrderBy(key => key)
+                .GroupBy(key =>
+                {
+                    if (!key.Contains('/')) return "Other";
+
+                    var parts = key.Split('/');
+                    return parts.Length > 2
+                        ? $"{parts[0]}/{parts[1]}"
+                        : parts[0];
+                });
+            
+            foreach (var group in groupedKeys)
             {
-                EditorGUILayout.BeginHorizontal();
-
-                var keyText = _localizationKeysData.Keys[i];
-                
-                var hasDoubles = HasDoubles(keyText);
-                if (hasDoubles)
+                if (group.Key != flatKeys)
                 {
-                    GUI.color = Color.red;
+                    EditorGUILayout.Space();
+                    EditorGUILayout.LabelField(group.Key, LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
                 }
                 
-                _localizationKeysData.Keys[i] = EditorGUILayout.TextField(keyText, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
-
-                if (hasDoubles)
+                foreach (var keyText in group)
                 {
-                    GUI.color = Color.white;
-                }
-                
-                _localizationKeysData.Keys[i] = _localizationKeysData.Keys[i].Trim();
+                    var index = _localizationKeysData.Keys.IndexOf(keyText);
+                    
+                    EditorGUILayout.BeginHorizontal();
+                    
+                    var hasDoubles = HasDoubles(keyText);
+                    if (hasDoubles)
+                    {
+                        GUI.color = Color.red;
+                    }
+                    
+                    _localizationKeysData.Keys[index] = EditorGUILayout.TextField(keyText, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
 
-                if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
-                {
-                    _localizationKeysData.Keys.RemoveAt(i);
-                    i--; 
-                }
+                    if (hasDoubles)
+                    {
+                        GUI.color = Color.white;
+                    }
+                    
+                    _localizationKeysData.Keys[index] = _localizationKeysData.Keys[index].Trim();
 
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.Space();
+                    if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
+                    {
+                        _localizationKeysData.Keys.RemoveAt(index);
+                        break;
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.Space();
+                }
             }
             
             if (EditorGUI.EndChangeCheck())
@@ -617,14 +640,15 @@ namespace SimplyLocalize.Editor
             
             GUI.color = Color.white;
             
-            if (GUILayout.Button("Add New Key", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
+            if (GUILayout.Button("Add New Key", ButtonStyle, GUILayout.Height(_LINE_HEIGHT)))
             {
                 _localizationKeysData.Keys.Add(_newKey.ToCorrectLocalizationKeyName());
                 _keysScrollPosition = new Vector2(0, _MAX_FIELD_HEIGHT);
                 
                 _newKey = "";
-                
                 _needsSave = true;
+
+                GUI.FocusControl(null);
             }
             
             if (LocalizeEditor.CanAddNewKey(_newKey) == false)
@@ -790,24 +814,6 @@ namespace SimplyLocalize.Editor
                         _prevFocusedKey = _currentFocusedKey;
                     }
                 }
-
-                /*EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-                if (GUILayout.Button("Save to JSON", ButtonStyle, GUILayout.Height(_LINE_HEIGHT)))
-                {
-                    if (!string.IsNullOrEmpty(_currentFocusedKey) && _pendingChanges.TryGetValue(_currentFocusedKey, out var currentValue))
-                    {
-                        translating[_currentFocusedKey] = currentValue;
-                        _pendingChanges.Remove(_currentFocusedKey);
-                    }
-                    
-                    foreach (var kvp in _pendingChanges)
-                    {
-                        translating[kvp.Key] = kvp.Value;
-                    }
-                    _pendingChanges.Clear();
-                    
-                    SaveToJson();
-                }*/
             }
             else
             {
@@ -816,15 +822,6 @@ namespace SimplyLocalize.Editor
             }
             
             EditorGUILayout.Space();
-            
-            // if (GUILayout.Button("Load from JSON", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
-            // {
-            //     _pendingChanges.Clear();
-            //     _prevFocusedKey = null;
-            //     _currentFocusedKey = null;
-            //     
-            //     LoadFromJson();
-            // }
         }
 
         private void SaveToJson()
