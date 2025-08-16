@@ -23,6 +23,8 @@ namespace SimplyLocalize.Editor
         private static GUIStyle ButtonStyle => LocalizationEditorStyles.ButtonStyle;
         private static GUIStyle HorizontalStyle => LocalizationEditorStyles.HorizontalStyle;
         
+        private const int INDENT_LEVEL_PADDING = 15;
+        
         private bool _hasInitialized;
         private bool _needsSave;
         
@@ -559,62 +561,65 @@ namespace SimplyLocalize.Editor
             _keysScrollPosition = GUILayout.BeginScrollView(_keysScrollPosition, GUILayout.ExpandHeight(true));
 
             EditorGUI.BeginChangeCheck();
-            _localizationKeysData.Keys = _localizationKeysData.Keys.Where(key => key != "").ToList();
-            
-            const string flatKeys = "Flat Keys";
-            
-            var groupedKeys = _localizationKeysData.Keys
-                .OrderBy(key => key)
-                .GroupBy(key =>
-                {
-                    if (!key.Contains('/')) return "Other";
+            _localizationKeysData.Keys = _localizationKeysData.Keys.Where(key => key != "" && key != "Empty").ToList();
 
-                    var parts = key.Split('/');
-                    return parts.Length > 2
-                        ? $"{parts[0]}/{parts[1]}"
-                        : parts[0];
-                });
+            var flatKeys = _localizationKeysData.Keys
+                .Where(k => !k.Contains('/'))
+                .OrderBy(k => k)
+                .ToList();
             
-            foreach (var group in groupedKeys)
+            var nestedKeys = _localizationKeysData.Keys
+                .Where(k => k.Contains('/'))
+                .OrderBy(k => k)
+                .ToList();
+
+            if (flatKeys.Count > 0)
             {
-                if (group.Key != flatKeys)
+                foreach (var keyText in flatKeys)
                 {
-                    EditorGUILayout.Space();
-                    EditorGUILayout.LabelField(group.Key, LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+                    DrawKeyItem(keyText, 1);
                 }
-                
-                foreach (var keyText in group)
-                {
-                    var index = _localizationKeysData.Keys.IndexOf(keyText);
-                    
-                    EditorGUILayout.BeginHorizontal();
-                    
-                    var hasDoubles = HasDoubles(keyText);
-                    if (hasDoubles)
-                    {
-                        GUI.color = Color.red;
-                    }
-                    
-                    _localizationKeysData.Keys[index] = EditorGUILayout.TextField(keyText, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
 
-                    if (hasDoubles)
-                    {
-                        GUI.color = Color.white;
-                    }
-                    
-                    _localizationKeysData.Keys[index] = _localizationKeysData.Keys[index].Trim();
-
-                    if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
-                    {
-                        _localizationKeysData.Keys.RemoveAt(index);
-                        break;
-                    }
-
-                    EditorGUILayout.EndHorizontal();
-                    EditorGUILayout.Space();
-                }
+                EditorGUILayout.Space(_LINE_HEIGHT);
             }
-            
+
+            var drawnGroups = new HashSet<string>();
+            foreach (var keyText in nestedKeys)
+            {
+                var parts = keyText.Split('/');
+                var currentPath = "";
+
+                for (var i = 0; i < parts.Length - 1; i++)
+                {
+                    currentPath += (i > 0 ? "/" : "") + parts[i];
+                    if (!drawnGroups.Contains(currentPath))
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        
+                        var paddingSymbol = "";
+                        for (int j = 0; j <= i - 1; j++)
+                        {
+                            if (j == 0) 
+                                paddingSymbol = "┗";
+                            
+                            paddingSymbol += '━';
+                            paddingSymbol += '━';
+                            
+                            if (j == i - 1)
+                                paddingSymbol += " ";
+                        }
+                        
+                        EditorGUILayout.LabelField($"{paddingSymbol}{parts[i]}", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+                        
+                        EditorGUILayout.EndHorizontal();
+                        
+                        drawnGroups.Add(currentPath);
+                    }
+                }
+
+                DrawKeyItem(keyText, parts.Length - 1);
+            }
+
             if (EditorGUI.EndChangeCheck())
             {
                 _needsSave = true;
@@ -622,6 +627,42 @@ namespace SimplyLocalize.Editor
 
             GUILayout.EndScrollView();
             
+            DrawAddKeyField();
+        }
+
+        private void DrawKeyItem(string keyText, int indentLevel = 0)
+        {
+            var index = _localizationKeysData.Keys.IndexOf(keyText);
+            
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(indentLevel * INDENT_LEVEL_PADDING);
+            
+            var hasDoubles = HasDoubles(keyText);
+            if (hasDoubles)
+            {
+                GUI.color = Color.red;
+            }
+            
+            _localizationKeysData.Keys[index] = EditorGUILayout.TextField(keyText, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
+
+            if (hasDoubles)
+            {
+                GUI.color = Color.white;
+            }
+            
+            _localizationKeysData.Keys[index] = _localizationKeysData.Keys[index].Trim();
+
+            if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
+            {
+                _localizationKeysData.Keys.RemoveAt(index);
+            }
+
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space();
+        }
+
+        private void DrawAddKeyField()
+        {
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
