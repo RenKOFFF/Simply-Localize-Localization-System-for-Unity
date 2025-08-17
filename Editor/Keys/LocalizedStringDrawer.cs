@@ -17,7 +17,7 @@ namespace SimplyLocalize.Editor
             const string noneKey = "<None>";
             
             var keyProperty = property.FindPropertyRelative("_key");
-            var keys = new List<string>(LocalizeEditor.GetLocalizationKeysData().Keys);
+            var keys = new List<string>(LocalizeEditor.LocalizationKeysData.Keys);
             
             var errorKey = $"{noneKey} : ({keyProperty.stringValue})";
             var isErrorKey = keys.IndexOf(keyProperty.stringValue) < 0;
@@ -62,7 +62,7 @@ namespace SimplyLocalize.Editor
                 var context = new SearchWindowContext(GUIUtility.GUIToScreenPoint(Event.current.mousePosition));
                 
                 var searchWindowProvider = ScriptableObject.CreateInstance<StringKeysSearchWindow>();
-                searchWindowProvider.SetKeys(keys, OnSelectEntry);
+                searchWindowProvider.SetKeys(noneKey, keys, OnSelectEntry);
 
                 SearchWindow.Open(context, searchWindowProvider);
             }
@@ -73,7 +73,7 @@ namespace SimplyLocalize.Editor
             {
                 if (GUILayout.Button("Add", LocalizationEditorStyles.ButtonStyle))
                 {
-                    LocalizeEditor.TryAddNewKey(keyProperty.stringValue, false);
+                    LocalizeEditor.TryAddNewKey(keyProperty.stringValue);
                 }
             }
             
@@ -97,7 +97,7 @@ namespace SimplyLocalize.Editor
             if (GUILayout.Button("Add new key", LocalizationEditorStyles.ButtonStyle))
             {
                 _addNewKey = _addNewKey.ToCorrectLocalizationKeyName();
-                LocalizeEditor.TryAddNewKey(_addNewKey, false);
+                LocalizeEditor.TryAddNewKey(_addNewKey);
                 OnSelectEntry(_addNewKey);
                 
                 _addNewKey = string.Empty;

@@ -24,15 +24,17 @@ namespace SimplyLocalize.Editor
         public static readonly string LocalizationResourcesDataPath = Path.Combine(LocalizationResourcesPath, LocalizationTemplateName);
         public static readonly string LocalizationTemplatePath = Path.ChangeExtension(LocalizationResourcesDataPath, TemplateExtension);
         
-        
         static LocalizationPreparation()
         {
             PrepareFolders();
-            LocalizeEditor.GetLocalizationKeysData();
-            var config = LocalizeEditor.GetLocalizationConfig();
+            LocalizeEditor.Initialize();
+
+            var defaultLanguage = LocalizeEditor.LocalizationKeysData.DefaultLanguage;
+            if (defaultLanguage != null && Localization.Initialized == false)
+                Localization.SetLocalization(defaultLanguage);
 
 #if UNITY_ANDROID || UNITY_IOS
-            if (config is { ShowAppLocalizationGitPackagePopup: true })
+            if (LocalizeEditor.LocalizationConfig.ShowAppLocalizationGitPackagePopup)
                 CheckLocalizedAppTitlePackage(AppTitleLocalizationPackageURL);
 #endif
         }
@@ -80,7 +82,7 @@ namespace SimplyLocalize.Editor
                         TryAddLocalizedAppTitlePackage();
                     }
                     
-                    var config = LocalizeEditor.GetLocalizationConfig();
+                    var config = LocalizeEditor.LocalizationConfig;
                     config.ShowAppLocalizationGitPackagePopup = false;
                         
                     EditorUtility.SetDirty(config);

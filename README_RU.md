@@ -31,33 +31,46 @@
 ```json
 {
   "en": {
-    "SelectLanguage": "Select Language",
-    "En": "English",
-    "Ru": "Russian",
-    "Ja": "Japanese",
-    "MyNameIs": "My name is {0}"
-  },
-  "ru": {
-    "SelectLanguage": "Выберите язык",
-    "En": "Английский",
-    "Ru": "Русский",
-    "Ja": "Японский",
-    "MyNameIs": "Меня зовут {0}"
+    "Version": "Version {0}",
+    "WelcomeMessage": "Welcome!",
+    "Game/Inventory/Armor/Body": "Body Armor",
+    "Game/Inventory/Armor/Head": "Head Armor",
+    "Game/Inventory/Armor/Legs": "Leg Armor",
+    "UI/MainMenu/Play": "Play",
+    "UI/MainMenu/Quit": "Quit",
+    "UI/MainMenu/Settings": "Settings"
   },
   "ja": {
-    "SelectLanguage": "言語を選択する",
-    "En": "英語",
-    "Ru": "ロシア語",
-    "Ja": "日本語",
-    "MyNameIs": "私の名前は {0}"
+    "Version": "バージョン {0}",
+    "WelcomeMessage": "ようこそ！",
+    "Game/Inventory/Armor/Body": "胴防具",
+    "Game/Inventory/Armor/Head": "頭防具",
+    "Game/Inventory/Armor/Legs": "脚防具",
+    "UI/MainMenu/Play": "プレイ",
+    "UI/MainMenu/Quit": "終了",
+    "UI/MainMenu/Settings": "メインメニュー"
+  },
+  "ru": {
+    "Version": "Версия {0}",
+    "WelcomeMessage": "Добро пожаловать!",
+    "Game/Inventory/Armor/Body": "Нагрудник",
+    "Game/Inventory/Armor/Head": "Шлем",
+    "Game/Inventory/Armor/Legs": "Поножи",
+    "UI/MainMenu/Play": "Играть",
+    "UI/MainMenu/Quit": "Выйти",
+    "UI/MainMenu/Settings": "Настройки"
   }
 }
 ```
 
+> [!NOTE]
+> В примерах находится полный пример файла локализации и настроенной сцены.
+
+
 ### Использование в редакторе
 
-[![Unity-L76gtp-EYtd.png](https://i.postimg.cc/6pMYf4Vs/Unity-L76gtp-EYtd.png)](https://postimg.cc/sMZYVX0K)
-[![Unity-ukki-Yoz-LL6.png](https://i.postimg.cc/Sxkvrpw9/Unity-ukki-Yoz-LL6.png)](https://postimg.cc/0bXnkh55)
+[![Unity-R6-H9o-Xq-EOh.png](https://i.postimg.cc/Z58xgj37/Unity-R6-H9o-Xq-EOh.png)](https://postimg.cc/rDp4R1fx)
+[![Unity-b-M2doz-EGYT.png](https://i.postimg.cc/25C7fv7z/Unity-b-M2doz-EGYT.png)](https://postimg.cc/HrPywrNK)
 
 ### Использование в коде
 
@@ -66,13 +79,13 @@
 
 ```csharp
 // Установка текста по ключу локализации
-MyNameTextElement.TranslateByKey("MyNameIs");
+VersionText.TranslateByKey("Version");
 // Задание динамического параметра
-MyNameTextElement.SetValue("Alex");
+VersionText.SetValue("1.0.1");
 
 /* Результат:
- * en: "My name is Alex"
- * ru: "Меня зовут Alex"
+ * en: "Version 1.0.1"
+ * ru: "Версия 1.0.1"
  */
 ```
 
@@ -112,7 +125,7 @@ Localization.SetLocalization("ru");
   - Настройки преобразования текста в ключи: замена пробелов на слеш, на нижнее подчеркивание или не менять.
   - Включить/выключить логирование.
 
-[![Unity-a-Jno-Nkr-PW9.gif](https://i.postimg.cc/BvWYbcmC/Unity-a-Jno-Nkr-PW9.gif)](https://postimg.cc/K1NrsLSK)
+[![Unity-6o-AKl-J7x-Vb.gif](https://i.postimg.cc/2Sk7shwC/Unity-6o-AKl-J7x-Vb.gif)](https://postimg.cc/D8NGsWHN)
 
 ### Настройка компонентов
 

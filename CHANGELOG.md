@@ -1,5 +1,23 @@
 # Changelog
-## [1.6.2] - 2025-07-11
+
+## [1.6.3] - 17.08.2025
+### Added
+- Automatic sorting, grouping of keys and translations in the editor.
+- Added functionality for creating your own localization components.
+- Added a new localization component for `Sprite Renderer`.
+- New function buttons: `Set translation` and `Replace to *component*` for text components.
+- Example of using an asset.
+- Ability to change the default language via the language selection drop-down list + the ability to disable this functionality.
+- Automatic creation of a new language on first launch.
+- Ability to disable font replacement when changing the language.
+
+### Fixed
+- Reworked logic for sprite localization.
+
+### Changed
+- Reworked logic for searching for a key in the localization component.
+
+## [1.6.2] - 11.07.2025
 ### Fixed
 - Fixed a bug with Layout. After exiting maximize mode for any window, the layout was reset to default results.
 

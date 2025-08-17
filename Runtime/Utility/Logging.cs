@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -16,10 +14,12 @@ namespace SimplyLocalize
         
         public static void Log(string message, LogType type = LogType.Info, Object context = null, params (string arg, Color color)[] args)
         {
-            if (Localization.LocalizationConfig.EnableLogging == false) return;
+            var config = Localization.LocalizationConfig;
+            
+            if (Localization.LocalizationConfigInitialized && config.EnableLogging == false) return;
 
 #if !UNITY_EDITOR
-            if (Localization.LocalizationConfig.EnableLoggingInBuild == false) return;
+            if (config != null && config.EnableLoggingInBuild == false) return;
 #endif
             
             var color = type switch

@@ -24,14 +24,18 @@ namespace SimplyLocalize.Editor
             var root = gameView.rootVisualElement;
             var gameViewElement = root.Q<VisualElement>(_GAME_VIEW_DROPDOWN_NAME);
 
-            if (!LocalizeEditor.GetLocalizationConfig().ShowLanguagePopup)
+            if (!LocalizeEditor.LocalizationConfig.ShowLanguagePopup)
             {
                 RemoveElementIfExist(gameViewElement, root);
                 return;
             }
 
-            var currentLanguage = Localization.CurrentLanguage ?? LocalizeEditor.GetLocalizationKeysData().DefaultLocalizationData?.i18nLang;
-            var choices = LocalizeEditor.GetLanguages().Select(x => x.i18nLang).ToList();
+            var currentLanguage = 
+                Application.isPlaying ?
+                Localization.CurrentLanguage : 
+				LocalizeEditor.LocalizationKeysData.DefaultLanguage?.i18nLang ?? Localization.CurrentLanguage;
+
+            var choices = LocalizeEditor.LocalizationKeysData.Languages.Select(x => x.i18nLang).ToList();
             var index = choices.IndexOf(currentLanguage);
 
             if (gameViewElement != null)
@@ -77,13 +81,27 @@ namespace SimplyLocalize.Editor
 
         private static void ChangeLanguage(ChangeEvent<string> evt)
         {
-            if (Localization.CanTranslateInEditor() == false)
+            var language = evt.newValue;
+            
+            if (Localization.CanChangeDefaultLanguageInEditor())
             {
-                Logging.Log($"Cannot change language in editor.", LogType.Warning);
+                var localizationData = LocalizeEditor.LocalizationKeysData.Languages.First(x => x.i18nLang == language);
+                LocalizeEditor.LocalizationKeysData.DefaultLanguage = localizationData;
+                
+                EditorUtility.SetDirty(LocalizeEditor.LocalizationKeysData);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                
+                Logging.Log("Default language was changed to {0}", args: ($"{language}", Color.green));
                 return;
             }
-                
-            var language = evt.newValue;
+            
+            if (Localization.CanTranslateInEditor() == false)
+            {
+                Logging.Log($"Cannot change language in editor. You can enable this feature in the Localization Settings window.", LogType.Warning);
+                return;
+            }
+            
             Localization.SetLocalization(language);
         }
 

@@ -80,6 +80,14 @@ namespace SimplyLocalize.Editor
             fixedHeight = LINE_HEIGHT,
         };
 
+        public static GUIStyle MiniButtonStyle => new(GUI.skin.button)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontStyle = FontStyle.Normal,
+            fontSize = 12,
+            fixedHeight = LINE_HEIGHT * .9f,
+        };
+
         public static GUIStyle HorizontalStyle => new()
         {
             alignment = TextAnchor.MiddleCenter,

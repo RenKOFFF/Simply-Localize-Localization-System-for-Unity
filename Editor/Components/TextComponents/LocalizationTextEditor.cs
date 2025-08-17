@@ -1,6 +1,7 @@
 ﻿using System;
 using TMPro;
 using UnityEditor;
+using UnityEngine;
 
 namespace SimplyLocalize.Editor
 {
@@ -8,36 +9,47 @@ namespace SimplyLocalize.Editor
     [CanEditMultipleObjects]
     public class LocalizationTextEditor : UnityEditor.Editor
     {
+        private SerializedProperty _ignoreFontChangingProp;
+        private SerializedProperty _overrideTextsElementProp;
+        private SerializedProperty _localizationKeyProp;
+        private SerializedProperty _textElementProp;
+        private SerializedProperty _textElementLegacyProp;
+
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            var overrideTextsElementProp = serializedObject.FindProperty("_overrideTextElements");
-            var localizationKeyProp = serializedObject.FindProperty("_localizationKey");
-            var textElementProp = serializedObject.FindProperty("_textElement");
-            var textElementLegacyProp = serializedObject.FindProperty("_textElementLegacy");
+            _ignoreFontChangingProp = serializedObject.FindProperty("_ignoreFontChanging");
+            _overrideTextsElementProp = serializedObject.FindProperty("_overrideTextElements");
+            _localizationKeyProp = serializedObject.FindProperty("_localizationKey");
+            _textElementProp = serializedObject.FindProperty("_textElement");
+            _textElementLegacyProp = serializedObject.FindProperty("_textElementLegacy");
 
-            if (localizationKeyProp == null || overrideTextsElementProp == null)
+            if (_localizationKeyProp == null || _overrideTextsElementProp == null)
                 return;
             
-            EditorGUILayout.PropertyField(localizationKeyProp);
-            EditorGUILayout.PropertyField(overrideTextsElementProp);
+            EditorGUILayout.PropertyField(_localizationKeyProp);
+            
+            EditorGUILayout.PropertyField(_ignoreFontChangingProp);
+            EditorGUILayout.Space();
+            
+            EditorGUILayout.PropertyField(_overrideTextsElementProp);
 
-            var hasTextLegacy = textElementProp.propertyType != SerializedPropertyType.ObjectReference || textElementProp.objectReferenceValue != null;
-            var hasTextTMP = textElementLegacyProp.propertyType != SerializedPropertyType.ObjectReference || textElementLegacyProp.objectReferenceValue != null;
+            var hasTextTMP = HasTextComponent(_textElementProp);
+            var hasTextLegacy = HasTextComponent(_textElementLegacyProp);
 
-            if (overrideTextsElementProp.boolValue)
+            if (_overrideTextsElementProp.boolValue)
             {
                 var targetObject = (LocalizationText)serializedObject.targetObject;
 
                 if (targetObject != null)
                 {
-                    textElementProp.objectReferenceValue ??= targetObject.GetComponent<TMP_Text>();
-                    textElementLegacyProp.objectReferenceValue ??= targetObject.GetComponent<UnityEngine.UI.Text>();
+                    _textElementProp.objectReferenceValue ??= targetObject.GetComponent<TMP_Text>();
+                    _textElementLegacyProp.objectReferenceValue ??= targetObject.GetComponent<UnityEngine.UI.Text>();
                 }
                 
-                EditorGUILayout.PropertyField(textElementProp);
-                EditorGUILayout.PropertyField(textElementLegacyProp);
+                EditorGUILayout.PropertyField(_textElementProp);
+                EditorGUILayout.PropertyField(_textElementLegacyProp);
             }
             else
             {
@@ -45,21 +57,21 @@ namespace SimplyLocalize.Editor
 
                 if (targetObject != null)
                 {
-                    textElementProp.objectReferenceValue = targetObject.GetComponent<TMP_Text>();
-                    textElementLegacyProp.objectReferenceValue = targetObject.GetComponent<UnityEngine.UI.Text>();
-                }
-                
-                if (hasTextLegacy)
-                {
-                    EditorGUI.BeginDisabledGroup(true);
-                    EditorGUILayout.PropertyField(textElementProp);
-                    EditorGUI.EndDisabledGroup();
+                    _textElementProp.objectReferenceValue = targetObject.GetComponent<TMP_Text>();
+                    _textElementLegacyProp.objectReferenceValue = targetObject.GetComponent<UnityEngine.UI.Text>();
                 }
 
                 if (hasTextTMP)
                 {
                     EditorGUI.BeginDisabledGroup(true);
-                    EditorGUILayout.PropertyField(textElementLegacyProp);
+                    EditorGUILayout.PropertyField(_textElementProp);
+                    EditorGUI.EndDisabledGroup();
+                }
+                
+                if (hasTextLegacy)
+                {
+                    EditorGUI.BeginDisabledGroup(true);
+                    EditorGUILayout.PropertyField(_textElementLegacyProp);
                     EditorGUI.EndDisabledGroup();
                 }
             }
@@ -69,7 +81,102 @@ namespace SimplyLocalize.Editor
                 EditorGUILayout.HelpBox("You must add at least one text component.", MessageType.Warning);
             }
 
+            // GetType check is necessary for correct drawing of the button
+            DrawTranslateButton(GetType() != typeof(LocalizationTextEditor)); 
             serializedObject.ApplyModifiedProperties();
+            
+            DrawReplaceToButton("Replace to Formattable Localization Text", ReplaceBaseToFormattable, ReplaceBaseToFormattableValidate);
+        }
+
+        private bool HasTextComponent(SerializedProperty property)
+        {
+            return property.propertyType != SerializedPropertyType.ObjectReference || property.objectReferenceValue != null;
+        }
+
+        protected void DrawTranslateButton(bool ignoreThisMethod)
+        {
+            if (ignoreThisMethod)
+                return;
+            
+            EditorGUILayout.Space(12, true);
+
+            var translateButtonContent = new GUIContent("Set translation", "Set the translation for this key in the component using the current language.");
+            if (GUILayout.Button(translateButtonContent, LocalizationEditorStyles.MiniButtonStyle))
+            {
+                var localizationKey = _localizationKeyProp.boxedValue as LocalizationKey;
+                var localizationCode = LocalizeEditor.LocalizationKeysData.DefaultLanguage.i18nLang;
+                LocalizeEditor.LocalizationKeysData.Translations[localizationCode].TryGetValue(localizationKey, out var translated);
+                
+                var hasTextTMP = HasTextComponent(_textElementProp);
+                var hasTextLegacy = HasTextComponent(_textElementLegacyProp);
+                
+                if (hasTextTMP)
+                {
+                    var textElement = _textElementProp.objectReferenceValue as TMP_Text;
+                    Undo.RecordObject(textElement, "Set translation to component TMP");
+                    
+                    textElement.text = translated;
+                }
+                
+                if (hasTextLegacy)
+                {
+                    var textElement = _textElementLegacyProp.objectReferenceValue as UnityEngine.UI.Text;
+                    Undo.RecordObject(textElement, "Set translation to legacy text component");
+                    
+                    textElement.text = translated;
+                }
+            }
+        }
+
+        protected void DrawReplaceToButton(string label, Action replaceDelegate, Func<bool> validateFunc)
+        {
+            if (validateFunc?.Invoke() == false)
+                return;
+            
+            var replaceButtonContent = new GUIContent(label);
+            if (GUILayout.Button(replaceButtonContent, LocalizationEditorStyles.MiniButtonStyle))
+            {
+                replaceDelegate?.Invoke();
+            }
+        }
+
+        private void ReplaceBaseToFormattable()
+        {
+            var localizationText = (LocalizationText)serializedObject.targetObject;
+            
+            if (localizationText == null)
+                throw new ArgumentNullException("Target object is not " + nameof(LocalizationText) + "."); 
+            
+            var gameObject = localizationText.gameObject;
+
+            var soLocalizationText = new SerializedObject(localizationText);
+            soLocalizationText.Update();
+            var localizationKeyText = soLocalizationText.FindProperty("_localizationKey");
+
+            var valueText = localizationKeyText.FindPropertyRelative("_key");
+
+            Undo.RegisterCompleteObjectUndo(gameObject, $"Replace {localizationText.GetType().Name} with {nameof(FormattableLocalizationText)}");
+            Undo.DestroyObjectImmediate(localizationText);
+
+            var formattableLocalizationText = Undo.AddComponent(gameObject, typeof(FormattableLocalizationText));
+
+            var soFormattable = new SerializedObject(formattableLocalizationText);
+            var localizationKeyFormattable = soFormattable.FindProperty("_localizationKey");
+
+            var valueFormattable = localizationKeyFormattable.FindPropertyRelative("_key");
+            
+            valueFormattable.stringValue = valueText.stringValue;
+
+            soFormattable.ApplyModifiedProperties();
+            Selection.activeObject = formattableLocalizationText;
+        }
+
+        private bool ReplaceBaseToFormattableValidate()
+        {
+            return serializedObject.targetObject is LocalizationText text && 
+                   text != null &&
+                   text.GetType() == typeof(LocalizationText) && 
+                   text is not FormattableLocalizationText;
         }
     }
 }

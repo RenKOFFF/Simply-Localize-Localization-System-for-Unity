@@ -11,6 +11,19 @@ namespace SimplyLocalize.Editor
 {
     internal class LocalizationEditorWindow : EditorWindow
     {
+        private class KeyNode
+        {
+            public string Name { get; }
+            public string FullKey { get; }
+            public Dictionary<string, KeyNode> Children { get; } = new();
+
+            public KeyNode(string name, string fullKey = null)
+            {
+                Name = name;
+                FullKey = fullKey;
+            }
+        }
+        
         private const int _LINE_HEIGHT = LocalizationEditorStyles.LINE_HEIGHT;
         private const int _MAX_FIELD_HEIGHT = LocalizationEditorStyles.MAX_FIELD_HEIGHT; 
         
@@ -22,6 +35,8 @@ namespace SimplyLocalize.Editor
         private static GUIStyle TextAreaStyle => LocalizationEditorStyles.TextAreaStyle;
         private static GUIStyle ButtonStyle => LocalizationEditorStyles.ButtonStyle;
         private static GUIStyle HorizontalStyle => LocalizationEditorStyles.HorizontalStyle;
+        
+        private const int INDENT_LEVEL_PADDING = 15;
         
         private bool _hasInitialized;
         private bool _needsSave;
@@ -41,7 +56,6 @@ namespace SimplyLocalize.Editor
         private Vector2 _keysScrollPosition;
         private Vector2 _multipleKeysScrollPosition;
         
-        private List<LocalizationData> _languages;
         private List<FontHolder> _fontHolders;
         
         private string _newLanguage;
@@ -53,9 +67,12 @@ namespace SimplyLocalize.Editor
 
         private string _newKey;
         private Object _newObjectKey;
+        private List<string> _newOrderedKeys = new();
+        private string _removedKey;
         
         private int _selectedLanguageTab;
         
+        private Dictionary<string, string> _pendingKeyChanges = new();
         private Dictionary<string, string> _pendingChanges = new();
         private string _prevFocusedKey;
         private string _currentFocusedKey;
@@ -154,6 +171,15 @@ namespace SimplyLocalize.Editor
             {
                 EditorUtility.SetDirty(_localizationKeysData);
                 EditorUtility.SetDirty(_localizationConfig);
+
+                foreach (var localizationData in _localizationKeysData.Languages)
+                {
+                    EditorUtility.SetDirty(localizationData);
+                    
+                    if (localizationData.OverrideFontAsset != null)
+                        EditorUtility.SetDirty(localizationData.OverrideFontAsset);
+                }
+                
                 _needsSave = false;
             }
         }
@@ -176,7 +202,7 @@ namespace SimplyLocalize.Editor
             if (_localizationKeysData != null) 
                 return true;
             
-            _localizationKeysData = LocalizeEditor.GetLocalizationKeysData();
+            _localizationKeysData = LocalizeEditor.LocalizationKeysData;
 
             if (_localizationKeysData != null) 
                 return true;
@@ -198,7 +224,7 @@ namespace SimplyLocalize.Editor
             if (_localizationConfig != null) 
                 return true;
             
-            _localizationConfig = LocalizeEditor.GetLocalizationConfig();
+            _localizationConfig = LocalizeEditor.LocalizationConfig;
 
             if (_localizationConfig != null) 
                 return true;
@@ -232,13 +258,11 @@ namespace SimplyLocalize.Editor
             {
                 case 0: 
                     DrawLanguageTab();
-                    //DrawGenerateButton();
                     break;
                 
                 case 1: 
                     DrawKeys();
                     DrawAddMultipleKeys();
-                    //DrawGenerateButton();
                     
                     break;
                 case 2:
@@ -270,8 +294,8 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.Space(_LINE_HEIGHT);
             EditorGUILayout.LabelField("Default Language", LabelStyle);
             
-            _localizationKeysData.DefaultLocalizationData = (LocalizationData)EditorGUILayout.ObjectField(
-                _localizationKeysData.DefaultLocalizationData, 
+            _localizationKeysData.DefaultLanguage = (LocalizationData)EditorGUILayout.ObjectField(
+                _localizationKeysData.DefaultLanguage, 
                 typeof(LocalizationData),
                 false,
                 GUILayout.Height(_LINE_HEIGHT)
@@ -289,13 +313,11 @@ namespace SimplyLocalize.Editor
         {
             EditorGUILayout.LabelField("Language Setting", LabelStyle);
 
-            _languages = LocalizeEditor.GetLanguages(true);
-            
-            for (var i = 0; i < _languages.Count; i++)
+            for (var i = 0; i < _localizationKeysData.Languages.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal();
 
-                var language = _languages[i];
+                var language = _localizationKeysData.Languages[i];
 
                 EditorGUI.BeginDisabledGroup(true);
                 language.i18nLang = EditorGUILayout.TextField(language.i18nLang, KeyStyle, GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.3f));
@@ -312,7 +334,7 @@ namespace SimplyLocalize.Editor
                 
                 if (GUILayout.Button("Remove Language", ButtonStyle, GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.3f)))
                 {
-                    _languages.Remove(language);
+                    _localizationKeysData.Languages.Remove(language);
                     i--;
                     
                     AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(language));
@@ -324,7 +346,7 @@ namespace SimplyLocalize.Editor
             
             EditorGUILayout.BeginHorizontal();
 
-            var hasDoubles = _languages.Count(l => l.i18nLang == _newLanguage) > 0;
+            var hasDoubles = _localizationKeysData.Languages.Count(l => l.i18nLang == _newLanguage) > 0;
 
             if (hasDoubles)
             {
@@ -342,19 +364,9 @@ namespace SimplyLocalize.Editor
             
             if (GUILayout.Button("Add New Language", ButtonStyle, GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.3f)))
             {
-                var newLanguage = CreateInstance<LocalizationData>();
-                newLanguage.name = $"LocalizationData_{_newLanguage}";
-                newLanguage.i18nLang = _newLanguage;
-                newLanguage.OverrideFontAsset = _newLanguageFontHolder;
-            
-                var newLanguageAssetPath = Path.Combine(LocalizationPreparation.LocalizationResourcesPath, newLanguage.name);
-                var dataPath = Path.ChangeExtension(newLanguageAssetPath, LocalizationPreparation.FileExtensionAsset);
+                var newLanguage = LocalizeEditor.CreateNewLocalizationData(_newLanguage, _newLanguageFontHolder);
 
-                AssetDatabase.CreateAsset(newLanguage, dataPath);
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-        
-                _languages.Add(newLanguage);
+                _localizationKeysData.Languages.Add(newLanguage);
                 _newLanguage = "";
                 _newLanguageFontHolder = null;
                 
@@ -403,7 +415,7 @@ namespace SimplyLocalize.Editor
                     _needsSave = true;
                 }
                 
-                if (GUILayout.Button("Remove Font Holder", ButtonStyle, GUILayout.Height(_LINE_HEIGHT)))
+                if (GUILayout.Button("Remove Font Holder", ButtonStyle, GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.3f)))
                 {
                     _fontHolders.Remove(fontHolder);
                     i--;
@@ -540,6 +552,19 @@ namespace SimplyLocalize.Editor
             
             EditorGUILayout.EndHorizontal();
             
+            // ChangeDefaultLanguageWhenCantTranslateInEditor
+            EditorGUILayout.BeginHorizontal(HorizontalStyle);
+            EditorGUILayout.Space();
+            
+            EditorGUILayout.LabelField("Change default language when can't translate in editor", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+            _localizationConfig.ChangeDefaultLanguageWhenCantTranslateInEditor = EditorGUILayout.Toggle(
+                _localizationConfig.ChangeDefaultLanguageWhenCantTranslateInEditor, 
+                ToggleStyle,
+                GUILayout.Height(_LINE_HEIGHT), GUILayout.Width(100)
+            );
+            
+            EditorGUILayout.EndHorizontal();
+            
             if (EditorGUI.EndChangeCheck())
             {
                 _needsSave = true;
@@ -553,45 +578,193 @@ namespace SimplyLocalize.Editor
 
             EditorGUI.BeginChangeCheck();
             _localizationKeysData.Keys = _localizationKeysData.Keys.Where(key => key != "").ToList();
+            _newOrderedKeys = _localizationKeysData.Keys.ToList();
+
+            var flatKeys = _localizationKeysData.Keys
+                .Where(k => !k.Contains('/'))
+                .OrderBy(k => k)
+                .ToList();
             
-            for (var i = 0; i < _localizationKeysData.Keys.Count; i++)
+            var nestedKeys = _localizationKeysData.Keys
+                .Where(k => k.Contains('/'))
+                .OrderBy(k => k)
+                .ToList();
+
+            if (flatKeys.Count > 0)
             {
-                EditorGUILayout.BeginHorizontal();
-
-                var keyText = _localizationKeysData.Keys[i];
-                
-                var hasDoubles = HasDoubles(keyText);
-                if (hasDoubles)
+                foreach (var keyText in flatKeys)
                 {
-                    GUI.color = Color.red;
+                    DrawKeyItem(keyText, 1);
+                    
+                    _newOrderedKeys.Remove(keyText);
+                    _newOrderedKeys.Add(keyText);
                 }
+            }
+
+            var rootNode = new KeyNode("Root");
+            foreach (var key in nestedKeys)
+            {
+                var parts = key.Split('/');
+                var currentNode = rootNode;
                 
-                _localizationKeysData.Keys[i] = EditorGUILayout.TextField(keyText, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
-
-                if (hasDoubles)
+                for (int i = 0; i < parts.Length; i++)
                 {
-                    GUI.color = Color.white;
+                    var isLeaf = i == parts.Length - 1;
+                    var part = parts[i];
+                    
+                    if (!currentNode.Children.ContainsKey(part))
+                    {
+                        currentNode.Children[part] = new KeyNode(part, isLeaf ? key : null);
+                    }
+                    currentNode = currentNode.Children[part];
                 }
-                
-                _localizationKeysData.Keys[i] = _localizationKeysData.Keys[i].Trim();
+            }
 
-                if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
-                {
-                    _localizationKeysData.Keys.RemoveAt(i);
-                    i--; 
-                }
+            DrawKeyNode(rootNode, 0);
 
-                EditorGUILayout.EndHorizontal();
-                EditorGUILayout.Space();
+            if (string.IsNullOrEmpty(_removedKey) == false)
+            {
+                _newOrderedKeys.Remove(_removedKey);
+                _removedKey = null;
+            }
+
+            var indexMap = new Dictionary<string, int>();
+            for (int i = 0; i < _newOrderedKeys.Count; i++)
+            {
+                indexMap[_newOrderedKeys[i]] = i;
             }
             
+            _localizationKeysData.Keys = _localizationKeysData.Keys
+                .OrderBy(item => indexMap.GetValueOrDefault(item, int.MaxValue))
+                .ToList();
+            
+            _newOrderedKeys.Clear();
+
             if (EditorGUI.EndChangeCheck())
             {
                 _needsSave = true;
             }
 
             GUILayout.EndScrollView();
+            DrawAddKeyField();
             
+            if (Event.current.type == EventType.Repaint)
+            {
+                _currentFocusedKey = GUI.GetNameOfFocusedControl();
+
+                if (_prevFocusedKey != _currentFocusedKey &&
+                    !string.IsNullOrEmpty(_prevFocusedKey) &&
+                    _pendingKeyChanges.TryGetValue(_prevFocusedKey, out var newKey))
+                {
+                    var index = _localizationKeysData.Keys.IndexOf(_prevFocusedKey);
+                    if (index >= 0)
+                    {
+                        _localizationKeysData.Keys[index] = newKey;
+                        
+                        foreach (var lang in _localizationKeysData.Translations.Keys.ToList())
+                        {
+                            if (_localizationKeysData.Translations[lang].TryGetValue(_prevFocusedKey, out var value))
+                            {
+                                _localizationKeysData.Translations[lang].Remove(_prevFocusedKey);
+                                _localizationKeysData.Translations[lang][newKey] = value;
+                            }
+                        }
+                    }
+
+                    _pendingKeyChanges.Remove(_prevFocusedKey);
+                    _needsSave = true;
+                }
+
+                _prevFocusedKey = _currentFocusedKey;
+            }
+        }
+
+        private void DrawKeyNode(KeyNode node, int indentLevel)
+        {
+            if (node.FullKey != null && node.Children.Count == 0)
+            {
+                DrawKeyItem(node.FullKey, indentLevel - 1);
+                
+                _newOrderedKeys.Remove(node.FullKey);
+                _newOrderedKeys.Add(node.FullKey);
+                return;
+            }
+
+            var flatChildren = node.Children
+                .Where(kv => kv.Value.FullKey != null)
+                .OrderBy(kv => kv.Key);
+            
+            var groupChildren = node.Children
+                .Where(kv => kv.Value.Children.Count > 0)
+                .OrderBy(kv => kv.Key);
+
+            if (indentLevel > 0)
+            {
+                var paddingSymbol = "";
+                for (int j = 0; j <= indentLevel - 2; j++)
+                {
+                    if (j == 0) 
+                        paddingSymbol = "┗";
+                            
+                    paddingSymbol += '━';
+                    paddingSymbol += '━';
+                            
+                    if (j == indentLevel - 1)
+                        paddingSymbol += " ";
+                }
+                
+                EditorGUILayout.LabelField($"{paddingSymbol}{node.Name}", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+            }
+
+            foreach (var child in flatChildren)
+            {
+                DrawKeyItem(child.Value.FullKey, indentLevel);
+                
+                _newOrderedKeys.Remove(child.Value.FullKey);
+                _newOrderedKeys.Add(child.Value.FullKey);
+            }
+
+            foreach (var child in groupChildren)
+            {
+                DrawKeyNode(child.Value, indentLevel + 1);
+            }
+        }
+
+        private void DrawKeyItem(string keyText, int indentLevel = 0)
+        {
+            var index = _localizationKeysData.Keys.IndexOf(keyText);
+            
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(indentLevel * INDENT_LEVEL_PADDING);
+            
+            var hasDoubles = HasDoubles(keyText);
+            if (hasDoubles) GUI.color = Color.red;
+
+            var displayKey = _pendingKeyChanges.GetValueOrDefault(keyText, keyText);
+
+            GUI.SetNextControlName(keyText);
+            var newKey = EditorGUILayout.TextField(displayKey, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
+
+            if (newKey != displayKey)
+            {
+                _pendingKeyChanges[keyText] = newKey.Trim();
+            }
+
+            if (hasDoubles) GUI.color = Color.white;
+
+            if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
+            {
+                _localizationKeysData.Keys.RemoveAt(index);
+                _removedKey = keyText;
+                GUI.FocusControl(null);
+            }
+
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space();
+        }
+
+        private void DrawAddKeyField()
+        {
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
@@ -610,14 +783,15 @@ namespace SimplyLocalize.Editor
             
             GUI.color = Color.white;
             
-            if (GUILayout.Button("Add New Key", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
+            if (GUILayout.Button("Add New Key", ButtonStyle, GUILayout.Height(_LINE_HEIGHT)))
             {
                 _localizationKeysData.Keys.Add(_newKey.ToCorrectLocalizationKeyName());
                 _keysScrollPosition = new Vector2(0, _MAX_FIELD_HEIGHT);
                 
                 _newKey = "";
-                
                 _needsSave = true;
+
+                GUI.FocusControl(null);
             }
             
             if (LocalizeEditor.CanAddNewKey(_newKey) == false)
@@ -716,88 +890,37 @@ namespace SimplyLocalize.Editor
            ForceSaveData();
         }
 
-        private void DrawGenerateButton()
-        {
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-            
-            var canGenerate = HasDoubles() == false;
-            if (canGenerate)
-            {
-                GUI.color = Color.white;
-            }
-            else
-            {
-                GUI.color = Color.red;
-                EditorGUI.BeginDisabledGroup(true);
-            }
-
-            if (GUILayout.Button("Generate Keys", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
-            {
-                if (canGenerate)
-                {
-                    LocalizeEditor.GenerateLocalizationKeys();
-                    ForceSaveData();
-                }
-                else
-                {
-                    GUI.color = Color.white;
-                }
-            }
-
-            if (!canGenerate)
-            {
-                EditorGUI.BeginDisabledGroup(true);
-            }
-            
-            GUI.color = Color.white;
-        }
-
         private void DrawTranslating()
         {
             if (DrawTranslatingLanguageTabs() == false) return;
             
-            var language = _languages[_selectedLanguageTab].i18nLang;
+            var language = _localizationKeysData.Languages[_selectedLanguageTab].i18nLang;
 
             if (_localizationKeysData.Translations.TryGetValue(language, out var translating))
             {
                 EditorGUILayout.Space(_LINE_HEIGHT);
                 _keysScrollPosition = GUILayout.BeginScrollView(_keysScrollPosition, GUILayout.ExpandHeight(true));
                 
-                for (var i = 0; i < translating.Count; i++)
+                var rootNode = new KeyNode("Root");
+                foreach (var key in translating.Keys)
                 {
-                    var key = translating.Keys.ElementAt(i);
-                    var content = translating[key];
-                    
-                    if (_pendingChanges.TryGetValue(key, out var pendingContent))
+                    var parts = key.Contains('/') ? key.Split('/') : new[] { key };
+                    var currentNode = rootNode;
+            
+                    for (int i = 0; i < parts.Length; i++)
                     {
-                        content = pendingContent;
+                        var isLeaf = i == parts.Length - 1;
+                        var part = parts[i];
+                
+                        if (!currentNode.Children.ContainsKey(part))
+                        {
+                            currentNode.Children[part] = new KeyNode(part, isLeaf ? key : null);
+                        }
+                        currentNode = currentNode.Children[part];
                     }
-
-                    var textAreaHeight = KeyStyleMultiline.CalcHeight(new GUIContent(content), EditorGUIUtility.currentViewWidth * 0.7f);
-                    textAreaHeight = Mathf.Max(textAreaHeight, _LINE_HEIGHT);
-
-                    EditorGUILayout.BeginHorizontal();
-                    
-                    EditorGUI.BeginDisabledGroup(true);
-                    EditorGUILayout.TextField(key, KeyStyle, GUILayout.Height(textAreaHeight));
-                    EditorGUI.EndDisabledGroup();
-
-                    GUI.SetNextControlName(key);
-                    var newContent = EditorGUILayout.TextArea(
-                        content,
-                        KeyStyleMultiline,
-                        GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.7f),
-                        GUILayout.Height(textAreaHeight));
-                    
-                    if (newContent != content)
-                    {
-                        _pendingChanges[key] = newContent;
-                    }
-                    
-                    EditorGUILayout.EndHorizontal();
-                    EditorGUILayout.Space();
                 }
+
+                DrawTranslationNode(rootNode, translating);
                 
                 GUILayout.EndScrollView();
                 
@@ -820,24 +943,6 @@ namespace SimplyLocalize.Editor
                         _prevFocusedKey = _currentFocusedKey;
                     }
                 }
-
-                /*EditorGUILayout.LabelField("", GUI.skin.horizontalSlider);
-                if (GUILayout.Button("Save to JSON", ButtonStyle, GUILayout.Height(_LINE_HEIGHT)))
-                {
-                    if (!string.IsNullOrEmpty(_currentFocusedKey) && _pendingChanges.TryGetValue(_currentFocusedKey, out var currentValue))
-                    {
-                        translating[_currentFocusedKey] = currentValue;
-                        _pendingChanges.Remove(_currentFocusedKey);
-                    }
-                    
-                    foreach (var kvp in _pendingChanges)
-                    {
-                        translating[kvp.Key] = kvp.Value;
-                    }
-                    _pendingChanges.Clear();
-                    
-                    SaveToJson();
-                }*/
             }
             else
             {
@@ -846,15 +951,93 @@ namespace SimplyLocalize.Editor
             }
             
             EditorGUILayout.Space();
+        }
+
+        private void DrawTranslationNode(KeyNode node, SerializableSerializableDictionary<string, string> translating, int indentLevel = 0)
+        {
+            if (node.FullKey != null && node.Children.Count == 0)
+            {
+                DrawTranslationItem(node.FullKey, translating, indentLevel == 0 ? 1 : indentLevel);
+                return;
+            }
+
+            if (indentLevel > 0)
+            {
+                EditorGUILayout.BeginHorizontal();
+                
+                var paddingSymbol = "";
+                for (int j = 0; j <= indentLevel - 2; j++)
+                {
+                    if (j == 0) 
+                        paddingSymbol = "┗";
+                            
+                    paddingSymbol += '━';
+                    paddingSymbol += '━';
+                            
+                    if (j == indentLevel - 1)
+                        paddingSymbol += " ";
+                }
+                
+                EditorGUILayout.LabelField($"{paddingSymbol}{node.Name}", LabelStylePrefix, GUILayout.Height(_LINE_HEIGHT));
+                EditorGUILayout.EndHorizontal();
+                EditorGUILayout.Space();
+            }
+
+            var flatChildren  = node.Children.Values
+                .Where(x => x.FullKey != null)
+                .OrderBy(x => x.Name)
+                .ToList();
+                
+            foreach (var child in flatChildren )
+            {
+                DrawTranslationItem(child.FullKey, translating, indentLevel == 0 ? 1 : indentLevel);
+            }
+
+            var groupChildren = node.Children.Values
+                .Where(x => x.Children.Count > 0)
+                .OrderBy(x => x.Name);
+                
+            foreach (var child in groupChildren)
+            {
+                DrawTranslationNode(child, translating, indentLevel + 1);
+            }
+        }
+
+        private void DrawTranslationItem(string key, Dictionary<string, string> translations, int indentLevel = 0)
+        {
+            var content = translations[key];
+            if (_pendingChanges.TryGetValue(key, out var pendingContent))
+            {
+                content = pendingContent;
+            }
+
+            var textAreaHeight = KeyStyleMultiline.CalcHeight(
+                new GUIContent(content), 
+                EditorGUIUtility.currentViewWidth * 0.7f);
             
-            // if (GUILayout.Button("Load from JSON", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
-            // {
-            //     _pendingChanges.Clear();
-            //     _prevFocusedKey = null;
-            //     _currentFocusedKey = null;
-            //     
-            //     LoadFromJson();
-            // }
+            textAreaHeight = Mathf.Max(textAreaHeight, _LINE_HEIGHT);
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(indentLevel * 15);
+    
+            EditorGUI.BeginDisabledGroup(true);
+            EditorGUILayout.TextField(key, KeyStyle, GUILayout.Height(textAreaHeight));
+            EditorGUI.EndDisabledGroup();
+
+            GUI.SetNextControlName(key);
+            var newContent = EditorGUILayout.TextArea(
+                content,
+                KeyStyleMultiline,
+                GUILayout.Width(EditorGUIUtility.currentViewWidth * 0.7f),
+                GUILayout.Height(textAreaHeight));
+    
+            if (newContent != content)
+            {
+                _pendingChanges[key] = newContent;
+            }
+    
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space();
         }
 
         private void SaveToJson()
@@ -888,7 +1071,7 @@ namespace SimplyLocalize.Editor
 
         private bool DrawTranslatingLanguageTabs()
         {
-            if (_languages == null || _languages.Count == 0)
+            if (_localizationKeysData.Languages == null || _localizationKeysData.Languages.Count == 0)
             {
                 EditorGUILayout.Space();
                 EditorGUILayout.HelpBox("No languages found", MessageType.Info );
@@ -898,7 +1081,7 @@ namespace SimplyLocalize.Editor
             EditorGUILayout.Space();
             
             var lastSelectedTab = _selectedLanguageTab;
-            _selectedLanguageTab = GUILayout.Toolbar(_selectedLanguageTab, _languages.Select(l => l.i18nLang).ToArray(), ButtonStyle);
+            _selectedLanguageTab = GUILayout.Toolbar(_selectedLanguageTab, _localizationKeysData.Languages.Select(l => l.i18nLang).ToArray(), ButtonStyle);
 
             if (_selectedLanguageTab != lastSelectedTab)
             {
@@ -915,7 +1098,7 @@ namespace SimplyLocalize.Editor
         {
             if (_pendingChanges.Count == 0) return;
     
-            var language = _languages[previousSelectedTab].i18nLang;
+            var language = _localizationKeysData.Languages[previousSelectedTab].i18nLang;
             if (_localizationKeysData.Translations.TryGetValue(language, out var translating))
             {
                 foreach (var kvp in _pendingChanges)
@@ -948,9 +1131,9 @@ namespace SimplyLocalize.Editor
                 height = _LINE_HEIGHT * 2;
                 width = _LINE_HEIGHT * 8;
             }
-            var language = _languages[_selectedLanguageTab].i18nLang;
+            var language = _localizationKeysData.Languages[_selectedLanguageTab].i18nLang;
             
-            foreach (var lang in _languages)
+            foreach (var lang in _localizationKeysData.Languages)
             {
                 if (_localizationKeysData.ObjectsTranslations.TryGetValue(lang.i18nLang, out _) == false)
                 {
@@ -964,12 +1147,12 @@ namespace SimplyLocalize.Editor
                 }
             }
 
-            if (_localizationKeysData.ObjectsTranslations.Count != _languages.Count)
+            if (_localizationKeysData.ObjectsTranslations.Count != _localizationKeysData.Languages.Count)
             {
                 var langToRemove = new List<string>();
                 foreach (var lang in _localizationKeysData.ObjectsTranslations)
                 {
-                    if (_languages.Find((l) => l.i18nLang == lang.Key) == false)
+                    if (_localizationKeysData.Languages.Find((l) => l.i18nLang == lang.Key) == false)
                     {
                         langToRemove.Add(lang.Key);
                     }
@@ -1002,7 +1185,7 @@ namespace SimplyLocalize.Editor
             EditorGUI.BeginDisabledGroup(_newObjectKey == null || hasDoubles);
             if (GUILayout.Button("Add", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
             {
-                foreach (var lang in _languages)
+                foreach (var lang in _localizationKeysData.Languages)
                 {
                     _localizationKeysData.ObjectsTranslations[lang.i18nLang].Add(_newObjectKey, null);
                 }
@@ -1037,7 +1220,7 @@ namespace SimplyLocalize.Editor
                     
                     if (GUILayout.Button("Remove", ButtonStyle,GUILayout.Height(_LINE_HEIGHT)))
                     {
-                        foreach (var lang in _languages)
+                        foreach (var lang in _localizationKeysData.Languages)
                         {
                             _localizationKeysData.ObjectsTranslations[lang.i18nLang].Remove(key);
                         }

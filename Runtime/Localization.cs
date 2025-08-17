@@ -44,14 +44,9 @@ namespace SimplyLocalize
         {
             get
             {
-                if (_localizationConfig != null) return _localizationConfig;
-                
-                if (!TryGetLocalizationConfig())
-                {
-                    throw new Exception("LocalizationConfig is null");
-                }
-                
-                return _localizationConfig;
+                if (_localizationConfig != null || TryGetLocalizationConfig()) return _localizationConfig;
+
+                return null;
             }
         }
 
@@ -169,13 +164,15 @@ namespace SimplyLocalize
             {
                 CurrentLanguage = localizationData.i18nLang;
                 
-                Logging.Log("Setup language. Current language: {0}", args: (CurrentLanguage, Color.green));
+                if (Application.isPlaying)
+                    Logging.Log("Setup language. Current language: {0}", args: (CurrentLanguage, Color.green));
             }
             else
             {
-                
                 CurrentLanguage = localizationData.i18nLang;
-                Logging.Log("Language changed. New language: {0}", args: (CurrentLanguage, Color.green));
+                
+                if (Application.isPlaying)
+                    Logging.Log("Language changed. New language: {0}", args: (CurrentLanguage, Color.green));
                 
                 LanguageChanged?.Invoke();
             }
@@ -219,6 +216,11 @@ namespace SimplyLocalize
         {
              return Application.isPlaying || (LocalizationConfigInitialized && LocalizationConfig.TranslateInEditor);
         }
+        
+        public static bool CanChangeDefaultLanguageInEditor()
+        {
+             return Application.isPlaying == false && LocalizationConfigInitialized && LocalizationConfig.ChangeDefaultLanguageWhenCantTranslateInEditor && LocalizationConfig.TranslateInEditor == false;
+        }
 
         private static bool TryLoadDefaultLanguage()
         {
@@ -233,9 +235,9 @@ namespace SimplyLocalize
             if (Initialized)
                 return true;
             
-            if (_localizationKeysData.DefaultLocalizationData != null)
+            if (_localizationKeysData.DefaultLanguage != null)
             {
-                SetLocalization(_localizationKeysData.DefaultLocalizationData);
+                SetLocalization(_localizationKeysData.DefaultLanguage);
                 
                 if (Application.isPlaying)
                 {

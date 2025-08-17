@@ -9,14 +9,14 @@ namespace SimplyLocalize.Editor
         
         public static string ToCorrectLocalizationKeyName(this string input)
         {
-            if (string.IsNullOrWhiteSpace(input)) return "Empty";
+            if (string.IsNullOrWhiteSpace(input)) return "";
             
             input = input.Trim();
             input = input.Where(c => !WrongChars.Contains(c)).Aggregate("", (current, c) => current + c);
             
-            if (string.IsNullOrWhiteSpace(input)) return "Empty";
+            if (string.IsNullOrWhiteSpace(input)) return "";
             
-            var finalKey = Localization.LocalizationConfig.SpaceIsGroupSeparator switch
+            var finalKey = LocalizeEditor.LocalizationConfig.SpaceIsGroupSeparator switch
             {
                 LocalizationConfig.SpaceUsage.GroupSeparator => AsGroupSeparator(input),
                 LocalizationConfig.SpaceUsage.Underline => AsUnderlineSeparator(input),

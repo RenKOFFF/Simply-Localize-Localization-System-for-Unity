@@ -7,6 +7,9 @@ namespace SimplyLocalize
     [AddComponentMenu("Simply Localize/Localization Text")]
     public class LocalizationText : LocalizationTextBase
     {
+        [Header("Settings")]
+        [Tooltip("When changing the localization language, font replacement is usually required. In case font replacement is not required for a specific component, you can enable this option.")]
+        [SerializeField] private bool _ignoreFontChanging;
         [SerializeField] private bool _overrideTextElements;
         
         [SerializeField] protected TMP_Text _textElement;
@@ -56,12 +59,16 @@ namespace SimplyLocalize
 
         protected override void SetFont(FontHolder overrideFontHolder)
         {
+            if (_ignoreFontChanging) return;
+            
             if (_textElement != null) _textElement.font = overrideFontHolder.TMPFont;
             if (_textElementLegacy != null) _textElementLegacy.font = overrideFontHolder.LegacyFont;
         }
 
         protected override void ResetFont()
         {
+            if (_ignoreFontChanging) return;
+            
             if (_textElement != null) _textElement.font = _defaultFont;
             if (_textElementLegacy != null) _textElementLegacy.font = _defaultFontLegacy;
         }
