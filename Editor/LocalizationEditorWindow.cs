@@ -72,6 +72,7 @@ namespace SimplyLocalize.Editor
         
         private int _selectedLanguageTab;
         
+        private Dictionary<string, string> _pendingKeyChanges = new();
         private Dictionary<string, string> _pendingChanges = new();
         private string _prevFocusedKey;
         private string _currentFocusedKey;
@@ -646,6 +647,36 @@ namespace SimplyLocalize.Editor
 
             GUILayout.EndScrollView();
             DrawAddKeyField();
+            
+            if (Event.current.type == EventType.Repaint)
+            {
+                _currentFocusedKey = GUI.GetNameOfFocusedControl();
+
+                if (_prevFocusedKey != _currentFocusedKey &&
+                    !string.IsNullOrEmpty(_prevFocusedKey) &&
+                    _pendingKeyChanges.TryGetValue(_prevFocusedKey, out var newKey))
+                {
+                    var index = _localizationKeysData.Keys.IndexOf(_prevFocusedKey);
+                    if (index >= 0)
+                    {
+                        _localizationKeysData.Keys[index] = newKey;
+                        
+                        foreach (var lang in _localizationKeysData.Translations.Keys.ToList())
+                        {
+                            if (_localizationKeysData.Translations[lang].TryGetValue(_prevFocusedKey, out var value))
+                            {
+                                _localizationKeysData.Translations[lang].Remove(_prevFocusedKey);
+                                _localizationKeysData.Translations[lang][newKey] = value;
+                            }
+                        }
+                    }
+
+                    _pendingKeyChanges.Remove(_prevFocusedKey);
+                    _needsSave = true;
+                }
+
+                _prevFocusedKey = _currentFocusedKey;
+            }
         }
 
         private void DrawKeyNode(KeyNode node, int indentLevel)
@@ -707,25 +738,24 @@ namespace SimplyLocalize.Editor
             GUILayout.Space(indentLevel * INDENT_LEVEL_PADDING);
             
             var hasDoubles = HasDoubles(keyText);
-            if (hasDoubles)
-            {
-                GUI.color = Color.red;
-            }
-            
-            _localizationKeysData.Keys[index] = EditorGUILayout.TextField(keyText, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
+            if (hasDoubles) GUI.color = Color.red;
 
-            if (hasDoubles)
+            var displayKey = _pendingKeyChanges.GetValueOrDefault(keyText, keyText);
+
+            GUI.SetNextControlName(keyText);
+            var newKey = EditorGUILayout.TextField(displayKey, KeyStyle, GUILayout.Height(_LINE_HEIGHT));
+
+            if (newKey != displayKey)
             {
-                GUI.color = Color.white;
+                _pendingKeyChanges[keyText] = newKey.Trim();
             }
-            
-            _localizationKeysData.Keys[index] = _localizationKeysData.Keys[index].Trim();
+
+            if (hasDoubles) GUI.color = Color.white;
 
             if (GUILayout.Button("Remove", ButtonStyle, GUILayout.Width(70), GUILayout.Height(_LINE_HEIGHT)))
             {
                 _localizationKeysData.Keys.RemoveAt(index);
                 _removedKey = keyText;
-                
                 GUI.FocusControl(null);
             }
 
