@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: LocalizationData_ja
   m_EditorClassIdentifier: 
   <i18nLang>k__BackingField: ja
-  <OverrideFontAsset>k__BackingField: {fileID: 0}
+  <OverrideFontAsset>k__BackingField: {fileID: 11400000, guid: 3e04630366d3d11498459d837086019c, type: 2}

@@ -32,10 +32,6 @@ MonoBehaviour:
   - Success
   - Version
   - WelcomeMessage
-  - Audio/Music
-  - Audio/Sounds
-  - Game/Save
-  - Game/Time
   - Game/Character/Coins
   - Game/Character/Energy
   - Game/Character/Health
@@ -44,12 +40,9 @@ MonoBehaviour:
   - Game/Inventory/Armor/Legs
   - Game/Inventory/Weapons/Primary
   - Game/Inventory/Weapons/Secondary
-  - Menu/Exit
-  - Menu/Settings
-  - Menu/Start
   - UI/MainMenu/Play
   - UI/MainMenu/Quit
-  - UI/MainMenu/Title
+  - UI/MainMenu/Settings
   - UI/Settings/Controls
   - UI/Settings/Video
   - World/Locations/Cave
@@ -87,14 +80,6 @@ MonoBehaviour:
           Value: Version {0}
         - Key: WelcomeMessage
           Value: Welcome!
-        - Key: Audio/Music
-          Value: Music
-        - Key: Audio/Sounds
-          Value: Sounds
-        - Key: Game/Save
-          Value: Save Game
-        - Key: Game/Time
-          Value: Game Time
         - Key: Game/Character/Coins
           Value: Coins
         - Key: Game/Character/Energy
@@ -111,18 +96,12 @@ MonoBehaviour:
           Value: Primary Weapon
         - Key: Game/Inventory/Weapons/Secondary
           Value: Secondary Weapon
-        - Key: Menu/Exit
-          Value: Exit
-        - Key: Menu/Settings
-          Value: Settings
-        - Key: Menu/Start
-          Value: Start
         - Key: UI/MainMenu/Play
           Value: Play
         - Key: UI/MainMenu/Quit
           Value: Quit
-        - Key: UI/MainMenu/Title
-          Value: Main Menu
+        - Key: UI/MainMenu/Settings
+          Value: Settings
         - Key: UI/Settings/Controls
           Value: Controls
         - Key: UI/Settings/Video
@@ -153,7 +132,7 @@ MonoBehaviour:
         - Key: Next
           Value: "\u6B21\u3078"
         - Key: Open
-          Value: Open
+          Value: "\u958B\u304F"
         - Key: Retry
           Value: "\u518D\u8A66\u884C"
         - Key: Success
@@ -162,14 +141,6 @@ MonoBehaviour:
           Value: "\u30D0\u30FC\u30B8\u30E7\u30F3 {0}"
         - Key: WelcomeMessage
           Value: "\u3088\u3046\u3053\u305D\uFF01"
-        - Key: Audio/Music
-          Value: "\u97F3\u697D"
-        - Key: Audio/Sounds
-          Value: "\u52B9\u679C\u97F3"
-        - Key: Game/Save
-          Value: "\u30BB\u30FC\u30D6"
-        - Key: Game/Time
-          Value: "\u30B2\u30FC\u30E0\u6642\u9593"
         - Key: Game/Character/Coins
           Value: "\u30B3\u30A4\u30F3"
         - Key: Game/Character/Energy
@@ -186,17 +157,11 @@ MonoBehaviour:
           Value: "\u30E1\u30A4\u30F3\u6B66\u5668"
         - Key: Game/Inventory/Weapons/Secondary
           Value: "\u30B5\u30D6\u6B66\u5668"
-        - Key: Menu/Exit
-          Value: "\u7D42\u4E86"
-        - Key: Menu/Settings
-          Value: "\u8A2D\u5B9A"
-        - Key: Menu/Start
-          Value: "\u30B9\u30BF\u30FC\u30C8"
         - Key: UI/MainMenu/Play
           Value: "\u30D7\u30EC\u30A4"
         - Key: UI/MainMenu/Quit
           Value: "\u7D42\u4E86"
-        - Key: UI/MainMenu/Title
+        - Key: UI/MainMenu/Settings
           Value: "\u30E1\u30A4\u30F3\u30E1\u30CB\u30E5\u30FC"
         - Key: UI/Settings/Controls
           Value: "\u64CD\u4F5C\u8A2D\u5B9A"
@@ -237,14 +202,6 @@ MonoBehaviour:
           Value: "\u0412\u0435\u0440\u0441\u0438\u044F {0}"
         - Key: WelcomeMessage
           Value: "\u0414\u043E\u0431\u0440\u043E \u043F\u043E\u0436\u0430\u043B\u043E\u0432\u0430\u0442\u044C!"
-        - Key: Audio/Music
-          Value: "\u041C\u0443\u0437\u044B\u043A\u0430"
-        - Key: Audio/Sounds
-          Value: "\u0417\u0432\u0443\u043A\u0438"
-        - Key: Game/Save
-          Value: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0438\u0433\u0440\u0443"
-        - Key: Game/Time
-          Value: "\u0418\u0433\u0440\u043E\u0432\u043E\u0435 \u0432\u0440\u0435\u043C\u044F"
         - Key: Game/Character/Coins
           Value: "\u041C\u043E\u043D\u0435\u0442\u044B"
         - Key: Game/Character/Energy
@@ -262,18 +219,12 @@ MonoBehaviour:
         - Key: Game/Inventory/Weapons/Secondary
           Value: "\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0435
             \u043E\u0440\u0443\u0436\u0438\u0435"
-        - Key: Menu/Exit
-          Value: "\u0412\u044B\u0445\u043E\u0434\t"
-        - Key: Menu/Settings
-          Value: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"
-        - Key: Menu/Start
-          Value: "\u041D\u0430\u0447\u0430\u0442\u044C"
         - Key: UI/MainMenu/Play
           Value: "\u0418\u0433\u0440\u0430\u0442\u044C"
         - Key: UI/MainMenu/Quit
           Value: "\u0412\u044B\u0439\u0442\u0438"
-        - Key: UI/MainMenu/Title
-          Value: "\u0413\u043B\u0430\u0432\u043D\u043E\u0435 \u043C\u0435\u043D\u044E"
+        - Key: UI/MainMenu/Settings
+          Value: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"
         - Key: UI/Settings/Controls
           Value: "\u0423\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u0438\u0435"
         - Key: UI/Settings/Video
@@ -286,10 +237,16 @@ MonoBehaviour:
     _elements:
     - Key: en
       Value:
-        _elements: []
+        _elements:
+        - Key: {fileID: 3491117213682405278, guid: 6d1e614e07d76b949978e48195fcc1fe, type: 3}
+          Value: {fileID: 3491117213682405278, guid: 6d1e614e07d76b949978e48195fcc1fe, type: 3}
     - Key: ja
       Value:
-        _elements: []
+        _elements:
+        - Key: {fileID: 3491117213682405278, guid: 6d1e614e07d76b949978e48195fcc1fe, type: 3}
+          Value: {fileID: 1259155346243415058, guid: 6d1e614e07d76b949978e48195fcc1fe, type: 3}
     - Key: ru
       Value:
-        _elements: []
+        _elements:
+        - Key: {fileID: 3491117213682405278, guid: 6d1e614e07d76b949978e48195fcc1fe, type: 3}
+          Value: {fileID: -7280388241643676159, guid: 6d1e614e07d76b949978e48195fcc1fe, type: 3}
