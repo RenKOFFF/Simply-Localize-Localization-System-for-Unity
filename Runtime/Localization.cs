@@ -87,6 +87,9 @@ namespace SimplyLocalize
                 return _allLocalizationsObjects;
             }
         }
+        
+        public static List<LocalizationData> Languages => LocalizationKeysData.Languages;
+        public static List<string> LanguagesI18N => LocalizationKeysData.Languages.Select(x => x.i18nLang).ToList();
 
         public static Dictionary<string, string> CurrentLocalization
         {

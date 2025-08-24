@@ -16,7 +16,11 @@ namespace SimplyLocalize
 
         public bool Translated { get; protected set; }
         public string DefaultText { get; protected set; }
-        public LocalizationKey LocalizationKey => _localizationKey;
+        public LocalizationKey LocalizationKey
+        {
+            get => _localizationKey;
+            set => TranslateByKey(value);
+        }
 
         public static FontHolder OverrideFontHolder => Localization.TryGetFontHolder(out _overrideFontHolder) ? _overrideFontHolder : null;
 
@@ -54,7 +58,16 @@ namespace SimplyLocalize
 
         public void TranslateByKey(LocalizationKey key)
         {
+            if (key == null) 
+            {
+                Logging.Log($"{GetType().Name}: key is null in object: {gameObject.name}", LogType.Error, this);
+                return;
+            }
+            
             _localizationKey = key;
+            
+            if (Localization.CanTranslateInEditor() == false)
+                return;
 
             if (!IsInitialized)
             {

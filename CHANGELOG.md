@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.6.4] - 25.08.2025
+### Added
+- Added the ability to change the key from the code.
+
 ## [1.6.3] - 17.08.2025
 ### Added
 - Automatic sorting, grouping of keys and translations in the editor.
