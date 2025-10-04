@@ -185,8 +185,7 @@ namespace SimplyLocalize
 
         public static bool SetLocalization(string lang)
         {
-            IEnumerable<LocalizationData> allLocalizationData = Resources.LoadAll<LocalizationData>("");
-            var localizationResource = allLocalizationData.FirstOrDefault(l => l.i18nLang.Equals(lang));
+            var localizationResource = Languages.FirstOrDefault(l => l.i18nLang.Equals(lang));
             
             if (localizationResource == null)
             {

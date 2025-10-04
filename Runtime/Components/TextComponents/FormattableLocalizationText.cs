@@ -15,32 +15,42 @@ namespace SimplyLocalize
 
         protected override void OnEnable()
         {
-            if (_defaultValues is { Length: > 0 })
+            if (_formattableValue == null && _defaultValues is { Length: > 0 })
             {
                 SetValue(_defaultValues);
             }
             
             base.OnEnable();
         }
-
         /// <summary>
         /// To update dynamic text, use the format like this: Hi, {0}. Then in SetValue method, replace the placeholder {0} with the desired value. For example, SetValue("Alex") will display Hi, Alex.
         /// </summary>
         /// <param name="value">You can use placeholders like this: Hi, value</param>
         public void SetValue(params string[] value)
         {
-            if (value == null || value.Length == 0)
+            var requiredArgs = GetRequiredArgumentsCount(DefaultText);
+        
+            if (value == null || value.Length < requiredArgs)
             {
-                if (_defaultValues is { Length: > 0 })
+                if (_defaultValues != null && _defaultValues.Length == requiredArgs)
                 {
                     value = _defaultValues;
                 }
                 else
                 {
-                    value = new[] {""};
+                    var newValue = new string[requiredArgs];
+                    if (value != null)
+                    {
+                        Array.Copy(value, newValue, Math.Min(value.Length, requiredArgs));
+                    }
+                    for (int i = value?.Length ?? 0; i < requiredArgs; i++)
+                    {
+                        newValue[i] = "";
+                    }
+                    value = newValue;
                 }
             }
-            
+        
             _formattableValue = value;
 
             if (!Translated)
@@ -75,6 +85,25 @@ namespace SimplyLocalize
         {
             TranslatedEvent -= SetValueWhenTranslated;
             SetValue(_formattableValue);
+        }
+        
+        public int GetRequiredArgumentsCount(string formatString)
+        {
+            if (string.IsNullOrEmpty(formatString))
+                return 0;
+        
+            var matches = System.Text.RegularExpressions.Regex.Matches(formatString, @"{(\d+)(?:[^}]*)?}");
+            var maxIndex = -1;
+        
+            foreach (System.Text.RegularExpressions.Match match in matches)
+            {
+                if (int.TryParse(match.Groups[1].Value, out int index) && index > maxIndex)
+                {
+                    maxIndex = index;
+                }
+            }
+        
+            return maxIndex + 1;
         }
     }
 }

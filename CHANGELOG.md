@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.6.5] - 04.10.2025
+- Optimized the `SetLanguage(string)` method
+- Fixed a bug with `FormattalbeLocalizationText`
+
 ## [1.6.4] - 25.08.2025
 ### Added
 - Added the ability to change the key from the code.

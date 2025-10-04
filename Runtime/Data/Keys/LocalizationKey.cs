@@ -28,5 +28,18 @@ namespace SimplyLocalize
         {
             return _key;
         }
+        
+        public override bool Equals(object obj)
+        {
+            if (obj is not LocalizationKey key)
+                return false;
+    
+            return Key == key.Key;
+        }
+        
+        public override int GetHashCode()
+        {
+            return Key != null ? Key.GetHashCode() : 0;
+        }
     }
 }
