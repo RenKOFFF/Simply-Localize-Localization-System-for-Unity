@@ -1,8 +1,0 @@
-{
-  "translations": {
-    "UI/MainMenu/Play": "Играть",
-    "UI/MainMenu/Quit": "Выйти",
-    "UI/MainMenu/Settings": "Настройки",
-    "UI/MainMenu/Version": "Версия {0}"
-  }
-}
