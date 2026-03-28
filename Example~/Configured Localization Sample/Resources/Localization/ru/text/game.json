@@ -1,0 +1,11 @@
+{
+  "translations": {
+    "Game/Stats/Health": "ХП: {0}/{1}",
+    "Game/Loot/CoinsPickup": "Вы подобрали {0} {0|монету|монеты|монет}",
+    "Game/Loot/ItemPickup": "{playerName} нашёл {count} {count|предмет|предмета|предметов}",
+    "Game/Quest/Complete": "Задание выполнено! Награда: {0} {0|монета|монеты|монет}",
+    "Game/Inventory/Armor/Body": "Нагрудник",
+    "Game/Inventory/Armor/Head": "Шлем",
+    "Game/Inventory/Armor/Legs": "Поножи"
+  }
+}

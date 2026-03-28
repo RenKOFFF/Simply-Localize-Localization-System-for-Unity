@@ -1,6 +1,6 @@
 {
     "name": "SimplyLocalize.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "SimplyLocalize",
     "references": [
         "SimplyLocalize",
         "Unity.EditorCoroutines.Editor",
