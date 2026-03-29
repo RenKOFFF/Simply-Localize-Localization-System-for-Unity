@@ -35,25 +35,25 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 return;
             }
 
-            // Config reference
-            var configField = new UnityEditor.UIElements.ObjectField("Localization config");
-            configField.objectType = typeof(LocalizationConfig);
-            configField.value = _config;
-            configField.SetEnabled(false);
-            configField.style.marginBottom = 8;
-            root.Add(configField);
-
-            // Resources base path
             var imguiContainer = new IMGUIContainer(() =>
             {
+                // Config section
+                EditorGUILayout.LabelField("Localization config", EditorStyles.boldLabel);
+
+                using (new EditorGUI.DisabledScope(true))
+                {
+                    EditorGUILayout.ObjectField("Config asset", _config,
+                        typeof(LocalizationConfig), false);
+                }
+
                 EditorGUI.BeginChangeCheck();
 
-                var newPath = EditorGUILayout.TextField("Resources base path", _config.resourcesBasePath);
-
+                var newPath = EditorGUILayout.TextField("Resources base path",
+                    _config.resourcesBasePath);
                 var newMode = (KeyConversionMode)EditorGUILayout.EnumPopup(
                     "Key conversion mode", _config.keyConversionMode);
-
-                var newLogging = EditorGUILayout.Toggle("Enable logging", _config.enableLogging);
+                var newLogging = EditorGUILayout.Toggle("Enable logging",
+                    _config.enableLogging);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -64,17 +64,39 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     EditorUtility.SetDirty(_config);
                 }
 
-                EditorGUILayout.Space(12);
+                EditorGUILayout.Space(16);
+
+                // Game View Dropdown section
+                EditorGUILayout.LabelField("Game View language dropdown", EditorStyles.boldLabel);
+
+                bool dropdownEnabled = EditorPrefs.GetBool(
+                    GameViewLanguageDropdown.EnabledPrefKey, true);
+
+                bool newEnabled = EditorGUILayout.Toggle("Show in Play Mode", dropdownEnabled);
+
+                if (newEnabled != dropdownEnabled)
+                    EditorPrefs.SetBool(GameViewLanguageDropdown.EnabledPrefKey, newEnabled);
+
+                var currentPos = (GameViewLanguageDropdown.Position)EditorPrefs.GetInt(
+                    GameViewLanguageDropdown.PositionPrefKey,
+                    (int)GameViewLanguageDropdown.Position.TopRight);
+
+                var newPos = (GameViewLanguageDropdown.Position)EditorGUILayout.EnumPopup(
+                    "Position", currentPos);
+
+                if (newPos != currentPos)
+                    EditorPrefs.SetInt(GameViewLanguageDropdown.PositionPrefKey, (int)newPos);
+
+                EditorGUILayout.Space(16);
+
+                // Actions
+                EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
 
                 if (GUILayout.Button("Open config in Inspector"))
-                {
                     Selection.activeObject = _config;
-                }
 
                 if (GUILayout.Button("Refresh editor data"))
-                {
                     _window.FullRefresh();
-                }
             });
 
             root.Add(imguiContainer);

@@ -14,6 +14,7 @@ namespace SimplyLocalize.Editor.Inspectors
     {
         private SerializedProperty _keyProp;
         private string _newKeyInput = "";
+        private bool _editMode;
 
         private void OnEnable()
         {
@@ -26,16 +27,12 @@ namespace SimplyLocalize.Editor.Inspectors
             EditorGUILayout.Space(2);
 
             KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput);
-            DrawEditableTranslations(_keyProp.stringValue);
+            DrawTranslationsWithEdit(_keyProp.stringValue, ref _editMode);
 
             serializedObject.ApplyModifiedProperties();
         }
 
-        /// <summary>
-        /// Shows translations with an edit button per language.
-        /// Clicking the edit button makes the field editable, saves on blur.
-        /// </summary>
-        private void DrawEditableTranslations(string key)
+        internal static void DrawTranslationsWithEdit(string key, ref bool editMode)
         {
             if (string.IsNullOrEmpty(key)) return;
 
@@ -44,8 +41,27 @@ namespace SimplyLocalize.Editor.Inspectors
             if (data == null || config == null) return;
 
             EditorGUILayout.Space(4);
+
+            // Header with edit toggle
+            EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
 
+            var toggleContent = editMode
+                ? new GUIContent("✎ editing", "Click to lock translations")
+                : new GUIContent("✎", "Click to edit translations");
+
+            var toggleStyle = new GUIStyle(editMode ? EditorStyles.miniButtonMid : EditorStyles.miniButton);
+
+            if (editMode)
+                GUI.color = new Color(0.4f, 0.7f, 1f);
+
+            if (GUILayout.Button(toggleContent, toggleStyle, GUILayout.Width(editMode ? 70 : 24)))
+                editMode = !editMode;
+
+            GUI.color = Color.white;
+            EditorGUILayout.EndHorizontal();
+
+            // Translation rows
             foreach (var profile in config.languages)
             {
                 if (profile == null) continue;
@@ -55,31 +71,59 @@ namespace SimplyLocalize.Editor.Inspectors
 
                 EditorGUILayout.BeginHorizontal();
 
-                // Language label
                 EditorGUILayout.LabelField(
                     $"{profile.displayName} ({profile.Code})",
                     GUILayout.Width(120));
 
-                // Editable text field
                 Color prev = GUI.color;
                 if (isMissing) GUI.color = new Color(1f, 0.7f, 0.7f);
 
-                string newValue = EditorGUILayout.TextField(value);
-                GUI.color = prev;
-
-                // Save if changed
-                if (newValue != value)
+                if (editMode)
                 {
-                    string file = data.GetFileForKey(key);
+                    // Auto-grow text area based on content
+                    int lineCount = Mathf.Max(1, value.Split('\n').Length);
+                    float height = Mathf.Max(18f, lineCount * 16f + 4f);
 
-                    if (!string.IsNullOrEmpty(file))
+                    var textAreaStyle = new GUIStyle(EditorStyles.textArea)
                     {
-                        data.SetTranslation(key, profile.Code, newValue);
-                        data.SaveFile(file, profile.Code);
-                        EditorDataCache.Invalidate();
+                        wordWrap = true,
+                        fontSize = 11
+                    };
+
+                    string newValue = EditorGUILayout.TextArea(value, textAreaStyle,
+                        GUILayout.MinHeight(height));
+
+                    if (newValue != value)
+                    {
+                        string file = data.GetFileForKey(key);
+
+                        if (!string.IsNullOrEmpty(file))
+                        {
+                            data.SetTranslation(key, profile.Code, newValue);
+                            data.SaveFile(file, profile.Code);
+                            EditorDataCache.Invalidate();
+                        }
                     }
                 }
+                else
+                {
+                    string display = isMissing ? "(missing)" : value;
 
+                    // Auto-grow read-only label
+                    int lineCount = Mathf.Max(1, display.Split('\n').Length);
+                    float height = Mathf.Max(18f, lineCount * 16f + 4f);
+
+                    var readOnlyStyle = new GUIStyle(EditorStyles.helpBox)
+                    {
+                        wordWrap = true,
+                        fontSize = 11
+                    };
+
+                    EditorGUILayout.LabelField(display, readOnlyStyle,
+                        GUILayout.MinHeight(height));
+                }
+
+                GUI.color = prev;
                 EditorGUILayout.EndHorizontal();
             }
         }
@@ -91,6 +135,7 @@ namespace SimplyLocalize.Editor.Inspectors
         private SerializedProperty _keyProp;
         private SerializedProperty _namedParamsProp;
         private string _newKeyInput = "";
+        private bool _editMode;
 
         private void OnEnable()
         {
@@ -106,39 +151,28 @@ namespace SimplyLocalize.Editor.Inspectors
             KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput);
 
             EditorGUILayout.Space(4);
-
-            // Auto-fill params from template, then draw them
             DrawAutoParams();
 
-            // Translations + formatted preview
-            KeySelectorUI.DrawTranslationPreview(_keyProp.stringValue);
+            // Editable translations
+            LocalizedTextEditor.DrawTranslationsWithEdit(_keyProp.stringValue, ref _editMode);
+
+            // Formatted preview
             DrawFormattedPreview();
 
             serializedObject.ApplyModifiedProperties();
         }
 
-        /// <summary>
-        /// Extracts named and indexed params from the translation template,
-        /// syncs them with the serialized _defaultNamedParams list.
-        /// Param names are read-only, values are editable.
-        /// </summary>
         private void DrawAutoParams()
         {
             string key = _keyProp.stringValue;
 
             if (string.IsNullOrEmpty(key))
-            {
-                EditorGUILayout.LabelField("Named parameters", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox("Select a key to auto-detect parameters.", MessageType.Info);
                 return;
-            }
 
             var data = EditorDataCache.Data;
             var config = EditorDataCache.Config;
-
             if (data == null || config == null) return;
 
-            // Find the reference language template
             string refLang = config.DefaultLanguageCode
                 ?? (config.languages.Count > 0 ? config.languages[0].Code : null);
 
@@ -148,22 +182,11 @@ namespace SimplyLocalize.Editor.Inspectors
             var templateParams = ExtractParamNames(rawTemplate);
 
             if (templateParams.Count == 0)
-            {
-                // No params in template — hide the section
-                if (_namedParamsProp.arraySize > 0)
-                {
-                    EditorGUILayout.LabelField("Parameters", EditorStyles.boldLabel);
-                    EditorGUILayout.HelpBox("Template has no parameters.", MessageType.Info);
-                }
-
                 return;
-            }
 
-            // Sync serialized list with detected params
             SyncParams(templateParams);
 
-            // Draw params — names read-only, values editable
-            EditorGUILayout.LabelField("Parameters (auto-detected)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Parameters", EditorStyles.boldLabel);
 
             for (int i = 0; i < _namedParamsProp.arraySize; i++)
             {
@@ -173,15 +196,23 @@ namespace SimplyLocalize.Editor.Inspectors
 
                 EditorGUILayout.BeginHorizontal();
 
-                // Name — read-only, displayed as label with mono font
+                // Name — read-only
                 var nameStyle = new GUIStyle(EditorStyles.label)
                 {
                     fontStyle = FontStyle.Bold,
                     fontSize = 11
                 };
-                EditorGUILayout.LabelField(nameProp.stringValue, nameStyle, GUILayout.Width(120));
 
-                // Value — editable
+                string paramDisplay = nameProp.stringValue;
+
+                // Show {0} style for indexed, {name} style for named
+                if (int.TryParse(paramDisplay, out _))
+                    paramDisplay = "{" + paramDisplay + "}";
+                else
+                    paramDisplay = "{" + paramDisplay + "}";
+
+                EditorGUILayout.LabelField(paramDisplay, nameStyle, GUILayout.Width(120));
+
                 valueProp.stringValue = EditorGUILayout.TextField(valueProp.stringValue);
 
                 EditorGUILayout.EndHorizontal();
@@ -190,14 +221,8 @@ namespace SimplyLocalize.Editor.Inspectors
             EditorGUILayout.Space(2);
         }
 
-        /// <summary>
-        /// Syncs the serialized param list with params detected from the template.
-        /// Adds missing params with default values, removes params no longer in template.
-        /// Preserves existing values for params that still exist.
-        /// </summary>
         private void SyncParams(List<string> templateParams)
         {
-            // Build existing param map
             var existing = new Dictionary<string, int>();
 
             for (int i = 0; i < _namedParamsProp.arraySize; i++)
@@ -209,7 +234,6 @@ namespace SimplyLocalize.Editor.Inspectors
                     existing[name] = i;
             }
 
-            // Remove params not in template (iterate backwards)
             for (int i = _namedParamsProp.arraySize - 1; i >= 0; i--)
             {
                 string name = _namedParamsProp.GetArrayElementAtIndex(i)
@@ -219,7 +243,6 @@ namespace SimplyLocalize.Editor.Inspectors
                     _namedParamsProp.DeleteArrayElementAtIndex(i);
             }
 
-            // Add missing params
             foreach (var param in templateParams)
             {
                 if (existing.ContainsKey(param)) continue;
@@ -230,10 +253,10 @@ namespace SimplyLocalize.Editor.Inspectors
                 var newElem = _namedParamsProp.GetArrayElementAtIndex(newIndex);
                 newElem.FindPropertyRelative("name").stringValue = param;
 
-                // Default value: "0" for likely-numeric params, empty for others
-                bool isLikelyNumeric = param == "count" || param == "amount"
-                    || param == "level" || param == "hp" || param == "damage"
-                    || int.TryParse(param, out _);
+                bool isIndexed = int.TryParse(param, out _);
+                bool isLikelyNumeric = isIndexed || param == "count"
+                    || param == "amount" || param == "level"
+                    || param == "hp" || param == "damage";
 
                 newElem.FindPropertyRelative("value").stringValue =
                     isLikelyNumeric ? "0" : "";
@@ -244,13 +267,15 @@ namespace SimplyLocalize.Editor.Inspectors
         {
             string key = _keyProp.stringValue;
             if (string.IsNullOrEmpty(key)) return;
+            if (_namedParamsProp.arraySize == 0) return;
 
             var data = EditorDataCache.Data;
             var config = EditorDataCache.Config;
             if (data == null || config == null) return;
 
-            // Build param dict from serialized data
+            // Build both indexed args and named args from serialized params
             var namedArgs = new Dictionary<string, object>();
+            var indexedArgsList = new SortedDictionary<int, object>();
 
             for (int i = 0; i < _namedParamsProp.arraySize; i++)
             {
@@ -260,13 +285,40 @@ namespace SimplyLocalize.Editor.Inspectors
 
                 if (string.IsNullOrEmpty(pName)) continue;
 
+                object parsedValue;
+
                 if (int.TryParse(pValue, out int intVal))
-                    namedArgs[pName] = intVal;
+                    parsedValue = intVal;
                 else
-                    namedArgs[pName] = pValue ?? "";
+                    parsedValue = pValue ?? "";
+
+                // If param name is a number, it's an indexed param
+                if (int.TryParse(pName, out int paramIndex))
+                {
+                    indexedArgsList[paramIndex] = parsedValue;
+                }
+                else
+                {
+                    namedArgs[pName] = parsedValue;
+                }
             }
 
-            if (namedArgs.Count == 0) return;
+            // Convert indexed args to array
+            object[] indexedArgs = null;
+
+            if (indexedArgsList.Count > 0)
+            {
+                int maxIndex = indexedArgsList.Keys.Max();
+                indexedArgs = new object[maxIndex + 1];
+
+                foreach (var kvp in indexedArgsList)
+                    indexedArgs[kvp.Key] = kvp.Value;
+            }
+
+            bool hasAnyArgs = (indexedArgs != null && indexedArgs.Length > 0)
+                || namedArgs.Count > 0;
+
+            if (!hasAnyArgs) return;
 
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Formatted preview", EditorStyles.boldLabel);
@@ -281,7 +333,8 @@ namespace SimplyLocalize.Editor.Inspectors
                 var template = TokenParser.Parse(rawValue);
 
                 string formatted = template != null
-                    ? TextFormatter.Format(template, profile.Code, null, namedArgs)
+                    ? TextFormatter.Format(template, profile.Code, indexedArgs,
+                        namedArgs.Count > 0 ? namedArgs : null)
                     : rawValue;
 
                 EditorGUILayout.LabelField(profile.displayName, formatted,
@@ -289,10 +342,6 @@ namespace SimplyLocalize.Editor.Inspectors
             }
         }
 
-        /// <summary>
-        /// Extracts all unique parameter names from a translation template string.
-        /// Returns both indexed (as "0", "1") and named (as "playerName", "count") params.
-        /// </summary>
         private static List<string> ExtractParamNames(string template)
         {
             var result = new List<string>();
@@ -329,7 +378,7 @@ namespace SimplyLocalize.Editor.Inspectors
     }
 
     /// <summary>
-    /// Shared key selection UI used by all localized component inspectors.
+    /// Shared key selection UI.
     /// </summary>
     internal static class KeySelectorUI
     {
@@ -341,7 +390,6 @@ namespace SimplyLocalize.Editor.Inspectors
             bool keyExists = !string.IsNullOrEmpty(currentKey) && allKeys.Contains(currentKey);
             bool isEmpty = string.IsNullOrEmpty(currentKey);
 
-            // Current key — button opens SearchWindow
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PrefixLabel("Key");
 
@@ -360,9 +408,7 @@ namespace SimplyLocalize.Editor.Inspectors
                 GUI.color = new Color(1f, 0.35f, 0.35f);
 
             if (GUILayout.Button(displayText, EditorStyles.popup))
-            {
                 OpenSearchWindow(keyProp, allKeys, newKeyInput);
-            }
 
             GUI.color = prevColor;
 
@@ -405,35 +451,6 @@ namespace SimplyLocalize.Editor.Inspectors
 
             if (isDuplicate)
                 EditorGUILayout.HelpBox("This key already exists.", MessageType.Error);
-        }
-
-        public static void DrawTranslationPreview(string key)
-        {
-            if (string.IsNullOrEmpty(key)) return;
-
-            var data = EditorDataCache.Data;
-            var config = EditorDataCache.Config;
-            if (data == null || config == null) return;
-
-            EditorGUILayout.Space(4);
-            EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
-
-            foreach (var profile in config.languages)
-            {
-                if (profile == null) continue;
-
-                string value = data.GetTranslation(key, profile.Code);
-                string display = string.IsNullOrEmpty(value) ? "(missing)" : value;
-
-                Color prev = GUI.color;
-                if (string.IsNullOrEmpty(value)) GUI.color = new Color(1f, 0.7f, 0.7f);
-
-                EditorGUILayout.LabelField(
-                    $"{profile.displayName} ({profile.Code})",
-                    display, EditorStyles.helpBox);
-
-                GUI.color = prev;
-            }
         }
 
         private static void OpenSearchWindow(SerializedProperty keyProp, List<string> keys, string pendingNew)

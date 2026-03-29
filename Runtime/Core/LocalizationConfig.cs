@@ -14,14 +14,21 @@ namespace SimplyLocalize
         menuName = "SimplyLocalize/Localization Config")]
     public class LocalizationConfig : ScriptableObject
     {
+        [Header("Initialization")]
+        [Tooltip("Automatically initialize localization on game start. Config must be in a Resources folder for this to work. Alternative: use LocalizationBootstrap component.")]
+        public bool autoInitialize;
+
+        [Tooltip("Auto-detect language from device SystemLanguage on first launch")]
+        public bool autoDetectLanguage;
+
         [Header("Languages")]
-        [Tooltip("All language profiles supported by the project. Drag LanguageProfile assets here.")]
+        [Tooltip("All language profiles supported by the project.")]
         public List<LanguageProfile> languages = new();
 
-        [Tooltip("Language used when no language has been set. Drag a profile from the list above.")]
+        [Tooltip("Language used when no language has been set or auto-detect fails.")]
         public LanguageProfile defaultLanguage;
 
-        [Tooltip("Language used when a key is missing in the current language. Drag a profile from the list above.")]
+        [Tooltip("Language used when a key is missing in the current language.")]
         public LanguageProfile fallbackLanguage;
 
         [Header("Data")]
@@ -29,10 +36,7 @@ namespace SimplyLocalize
         public string resourcesBasePath = "Localization";
 
         [Header("Editor")]
-        [Tooltip("How spaces in keys are converted")]
         public KeyConversionMode keyConversionMode = KeyConversionMode.ReplaceSpacesWithSlashes;
-
-        [Tooltip("Enable debug logging")]
         public bool enableLogging;
 
         // ──────────────────────────────────────────────

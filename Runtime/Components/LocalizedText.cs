@@ -5,13 +5,9 @@ using UnityEngine.UI;
 namespace SimplyLocalize.Components
 {
     /// <summary>
-    /// Localizes a static text element (TextMeshPro or legacy Text).
-    /// Automatically detects the text component on the same GameObject.
-    ///
-    /// Applies both the translated string and the language profile settings
-    /// (font, size multiplier, weight, style, spacing, RTL).
-    ///
-    /// For text with dynamic parameters, use FormattableLocalizedText instead.
+    /// Localizes a static text element (TMP or legacy Text).
+    /// Applies language profile with full caching — switching languages
+    /// always restores originals first, then applies overrides.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("SimplyLocalize/Localized Text")]
@@ -19,16 +15,13 @@ namespace SimplyLocalize.Components
     {
         private TMP_Text _tmpText;
         private Text _legacyText;
-
-        // Cached original values for profile application
-        private float _originalFontSize;
-        private bool _originalsCached;
+        private readonly ProfileApplier _profileApplier = new();
 
         protected override void OnEnable()
         {
             CacheComponents();
+            CacheOriginals();
             base.OnEnable();
-
             Localization.OnProfileChanged += HandleProfileChanged;
         }
 
@@ -44,74 +37,46 @@ namespace SimplyLocalize.Components
                 return;
 
             CacheComponents();
+            CacheOriginals();
 
             string text = Localization.Get(_key);
 
             if (_tmpText != null)
             {
                 _tmpText.text = text;
-                ApplyProfile(_tmpText);
+                _profileApplier.Apply(_tmpText, Localization.CurrentProfile);
             }
             else if (_legacyText != null)
             {
                 _legacyText.text = text;
-                ApplyProfile(_legacyText);
+                _profileApplier.Apply(_legacyText, Localization.CurrentProfile);
             }
         }
 
         private void HandleProfileChanged(LanguageProfile profile)
         {
             if (_tmpText != null)
-                ApplyProfile(_tmpText);
-            
-            if (_legacyText != null)
-                ApplyProfile(_legacyText);
-        }
-
-        private void ApplyProfile(TMP_Text text)
-        {
-            var profile = Localization.CurrentProfile;
-
-            if (profile == null)
-                return;
-
-            if (!_originalsCached)
-            {
-                _originalFontSize = text.fontSize;
-                _originalsCached = true;
-            }
-
-            if (profile.primaryFont != null)
-                text.font = profile.primaryFont;
-
-            text.fontSize = _originalFontSize * profile.fontSizeMultiplier;
-            text.fontWeight = profile.fontWeight;
-            text.fontStyle = profile.fontStyle;
-            text.lineSpacing = profile.lineSpacingAdjustment;
-            text.characterSpacing = profile.characterSpacingAdjustment;
-            text.wordSpacing = profile.wordSpacingAdjustment;
-            text.isRightToLeftText = profile.IsRTL;
-
-            if (profile.overrideAlignment)
-                text.alignment = profile.alignmentOverride;
-        }
-
-        private void ApplyProfile(Text legacyText)
-        {
-            throw new System.NotImplementedException();
+                _profileApplier.Apply(_tmpText, profile);
+            else if (_legacyText != null)
+                _profileApplier.Apply(_legacyText, profile);
         }
 
         private void CacheComponents()
         {
-            if (_tmpText == null)
+            if (_tmpText == null && _legacyText == null)
             {
                 _tmpText = GetComponent<TMP_Text>();
+                if (_tmpText == null)
+                    _legacyText = GetComponent<Text>();
             }
+        }
 
-            if (_legacyText == null)
-            {
-                _legacyText = GetComponent<Text>();
-            }
+        private void CacheOriginals()
+        {
+            if (_tmpText != null)
+                _profileApplier.CacheOriginals(_tmpText);
+            else if (_legacyText != null)
+                _profileApplier.CacheOriginals(_legacyText);
         }
     }
 }

@@ -1,330 +1,185 @@
+using System;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace SimplyLocalize.Editor
 {
     /// <summary>
-    /// Shows a language switcher dropdown overlay in the Game View during Play Mode.
-    /// Position is configurable: Left, Right, or Center.
-    ///
-    /// Enable/disable via Window → SimplyLocalize → Toggle Game View Dropdown.
+    /// Draws a compact language dropdown directly on the Game View window.
+    /// Attaches via GUI callback injection — no separate floating window.
     /// </summary>
     [InitializeOnLoad]
     public static class GameViewLanguageDropdown
     {
-        private const string EnabledPrefKey = "SimplyLocalize_GameViewDropdown_Enabled";
-        private const string PositionPrefKey = "SimplyLocalize_GameViewDropdown_Position";
+        public const string EnabledPrefKey = "SimplyLocalize_Dropdown_Enabled";
+        public const string PositionPrefKey = "SimplyLocalize_Dropdown_Position";
 
-        public enum DropdownPosition { Left, Center, Right }
+        public enum Position { TopLeft, TopCenter, TopRight, BottomLeft, BottomCenter, BottomRight }
 
-        private static bool _enabled;
-        private static DropdownPosition _position;
-        private static bool _isExpanded;
+        private static bool _registered;
+        private static Type _gameViewType;
+        private static EditorWindow _gameView;
 
         static GameViewLanguageDropdown()
         {
-            _enabled = EditorPrefs.GetBool(EnabledPrefKey, true);
-            _position = (DropdownPosition)EditorPrefs.GetInt(PositionPrefKey, (int)DropdownPosition.Right);
-
-#if UNITY_2021_1_OR_NEWER
             EditorApplication.playModeStateChanged -= OnPlayModeChanged;
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
-#endif
-        }
+            EditorApplication.update -= TrackGameView;
+            EditorApplication.update += TrackGameView;
 
-        [MenuItem("Window/SimplyLocalize/Toggle Game View Dropdown")]
-        public static void ToggleEnabled()
-        {
-            _enabled = !_enabled;
-            EditorPrefs.SetBool(EnabledPrefKey, _enabled);
-        }
-
-        [MenuItem("Window/SimplyLocalize/Dropdown Position/Left")]
-        private static void SetPositionLeft() => SetPosition(DropdownPosition.Left);
-
-        [MenuItem("Window/SimplyLocalize/Dropdown Position/Center")]
-        private static void SetPositionCenter() => SetPosition(DropdownPosition.Center);
-
-        [MenuItem("Window/SimplyLocalize/Dropdown Position/Right")]
-        private static void SetPositionRight() => SetPosition(DropdownPosition.Right);
-
-        private static void SetPosition(DropdownPosition pos)
-        {
-            _position = pos;
-            EditorPrefs.SetInt(PositionPrefKey, (int)pos);
+            _gameViewType = typeof(UnityEditor.Editor).Assembly
+                .GetType("UnityEditor.GameView");
         }
 
         private static void OnPlayModeChanged(PlayModeStateChange state)
         {
-            if (state == PlayModeStateChange.EnteredPlayMode)
-                EditorApplication.update += RepaintGameView;
-            else if (state == PlayModeStateChange.ExitingPlayMode)
-                EditorApplication.update -= RepaintGameView;
+            if (state == PlayModeStateChange.ExitingPlayMode)
+                _registered = false;
         }
 
-        private static double _lastRepaint;
-
-        private static void RepaintGameView()
+        private static void TrackGameView()
         {
-            if (!_enabled || !Application.isPlaying) return;
-
-            // Throttle repaints
-            if (EditorApplication.timeSinceStartup - _lastRepaint < 0.5) return;
-
-            _lastRepaint = EditorApplication.timeSinceStartup;
-
-            // Force repaint of Game View by hooking into GUI
-            var gameViewType = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.GameView");
-
-            if (gameViewType != null)
+            if (!Application.isPlaying || !EditorPrefs.GetBool(EnabledPrefKey, true))
             {
-                var gameView = EditorWindow.GetWindow(gameViewType, false, null, false);
-                gameView?.Repaint();
+                if (_registered)
+                {
+                    UnregisterGUI();
+                    _registered = false;
+                }
+
+                return;
+            }
+
+            if (!_registered)
+            {
+                RegisterGUI();
+                _registered = true;
+            }
+
+            if (_gameView != null)
+                _gameView.Repaint();
+        }
+
+        private static void RegisterGUI()
+        {
+            if (_gameViewType == null) return;
+
+            _gameView = EditorWindow.GetWindow(_gameViewType, false, null, false);
+
+            if (_gameView != null)
+            {
+                // Remove first to avoid duplicates
+                _gameView.rootVisualElement.UnregisterCallback<UnityEngine.UIElements.GeometryChangedEvent>(OnGeometryChanged);
+
+                // Use IMGUI container injected into the Game View's root
+                var container = new UnityEngine.UIElements.IMGUIContainer(DrawDropdownGUI);
+                container.name = "SimplyLocalize_LanguageDropdown";
+                container.style.position = UnityEngine.UIElements.Position.Absolute;
+                container.style.width = new UnityEngine.UIElements.Length(100, UnityEngine.UIElements.LengthUnit.Percent);
+                container.style.height = new UnityEngine.UIElements.Length(100, UnityEngine.UIElements.LengthUnit.Percent);
+                container.pickingMode = UnityEngine.UIElements.PickingMode.Ignore;
+
+                // Remove any existing overlay
+                RemoveExistingOverlay(_gameView);
+
+                _gameView.rootVisualElement.Add(container);
             }
         }
 
-        /// <summary>
-        /// Draw the dropdown. Call this from a custom OnGUI or use the PlayModeOverlay approach.
-        /// </summary>
-        [InitializeOnLoadMethod]
-        private static void RegisterOverlay()
+        private static void UnregisterGUI()
         {
-#if UNITY_2021_1_OR_NEWER
-            EditorApplication.update -= CheckAndDrawOverlay;
-            EditorApplication.update += CheckAndDrawOverlay;
-#endif
+            if (_gameView != null)
+                RemoveExistingOverlay(_gameView);
         }
 
-        private static void CheckAndDrawOverlay()
+        private static void RemoveExistingOverlay(EditorWindow window)
         {
-            // The overlay is drawn via HandleUtility in Play mode
-            // We use a simpler approach: a floating EditorWindow
+            var existing = window.rootVisualElement.Q("SimplyLocalize_LanguageDropdown");
+            existing?.RemoveFromHierarchy();
         }
 
-        /// <summary>
-        /// Draws the language dropdown as an IMGUI overlay.
-        /// Can be called from any OnGUI context (e.g. a custom EditorWindow overlay).
-        /// </summary>
-        public static void DrawDropdown(Rect viewRect)
+        private static void OnGeometryChanged(UnityEngine.UIElements.GeometryChangedEvent evt) { }
+
+        private static void DrawDropdownGUI()
         {
-            if (!_enabled || !Application.isPlaying || !Localization.IsInitialized)
-                return;
+            if (!Application.isPlaying || !Localization.IsInitialized) return;
 
             var languages = Localization.AvailableLanguages;
             if (languages == null || languages.Count == 0) return;
 
-            float buttonWidth = _isExpanded ? 120 : 100;
-            float buttonHeight = 22;
-            float padding = 8;
-            float totalHeight = _isExpanded
-                ? buttonHeight + (languages.Count * (buttonHeight + 2)) + padding
-                : buttonHeight + padding;
+            var pos = (Position)EditorPrefs.GetInt(PositionPrefKey, (int)Position.TopRight);
 
-            // Position based on setting
-            float x;
+            float dropdownWidth = 140;
+            float dropdownHeight = 20;
+            float padding = 6;
 
-            switch (_position)
+            // Get the visible rect
+            Rect viewRect = new Rect(0, 0, Screen.width, Screen.height);
+
+            float x, y;
+
+            switch (pos)
             {
-                case DropdownPosition.Left:
+                case Position.TopLeft:
                     x = padding;
+                    y = padding;
                     break;
-                case DropdownPosition.Center:
-                    x = (viewRect.width - buttonWidth) / 2;
+                case Position.TopCenter:
+                    x = (viewRect.width - dropdownWidth) / 2;
+                    y = padding;
                     break;
-                default: // Right
-                    x = viewRect.width - buttonWidth - padding;
+                case Position.BottomLeft:
+                    x = padding;
+                    y = viewRect.height - dropdownHeight - padding - 20;
+                    break;
+                case Position.BottomCenter:
+                    x = (viewRect.width - dropdownWidth) / 2;
+                    y = viewRect.height - dropdownHeight - padding - 20;
+                    break;
+                case Position.BottomRight:
+                    x = viewRect.width - dropdownWidth - padding;
+                    y = viewRect.height - dropdownHeight - padding - 20;
+                    break;
+                default: // TopRight
+                    x = viewRect.width - dropdownWidth - padding;
+                    y = padding;
                     break;
             }
 
-            float y = padding;
-
-            // Main button
-            string currentLang = Localization.CurrentProfile != null
-                ? $"{Localization.CurrentProfile.displayName}"
-                : Localization.CurrentLanguage ?? "?";
-
-            var mainRect = new Rect(x, y, buttonWidth, buttonHeight);
-
-            GUI.color = new Color(0, 0, 0, 0.7f);
-            GUI.DrawTexture(mainRect, Texture2D.whiteTexture);
-            GUI.color = Color.white;
-
-            var labelStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontSize = 11,
-                normal = { textColor = Color.white }
-            };
-
-            if (GUI.Button(mainRect, currentLang, labelStyle))
-                _isExpanded = !_isExpanded;
-
-            // Expanded list
-            if (_isExpanded)
-            {
-                float listY = y + buttonHeight + 2;
-
-                for (int i = 0; i < languages.Count; i++)
-                {
-                    var profile = languages[i];
-                    if (profile == null) continue;
-
-                    var langRect = new Rect(x, listY, buttonWidth, buttonHeight);
-                    bool isCurrent = Localization.CurrentLanguage == profile.Code;
-
-                    GUI.color = isCurrent
-                        ? new Color(0.2f, 0.5f, 0.9f, 0.8f)
-                        : new Color(0, 0, 0, 0.6f);
-
-                    GUI.DrawTexture(langRect, Texture2D.whiteTexture);
-                    GUI.color = Color.white;
-
-                    if (GUI.Button(langRect, $"{profile.displayName} ({profile.Code})", labelStyle))
-                    {
-                        Localization.SetLanguage(profile);
-                        _isExpanded = false;
-                    }
-
-                    listY += buttonHeight + 2;
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Floating overlay window that draws the language dropdown in Play Mode.
-    /// Auto-opens when entering Play Mode, auto-closes when exiting.
-    /// </summary>
-    public class LanguageDropdownOverlay : EditorWindow
-    {
-        private static LanguageDropdownOverlay _instance;
-
-        [InitializeOnLoadMethod]
-        private static void Init()
-        {
-            EditorApplication.playModeStateChanged -= OnPlayModeChanged;
-            EditorApplication.playModeStateChanged += OnPlayModeChanged;
-        }
-
-        private static void OnPlayModeChanged(PlayModeStateChange state)
-        {
-            bool enabled = EditorPrefs.GetBool("SimplyLocalize_GameViewDropdown_Enabled", true);
-
-            if (!enabled) return;
-
-            if (state == PlayModeStateChange.EnteredPlayMode)
-            {
-                if (_instance == null)
-                {
-                    _instance = CreateInstance<LanguageDropdownOverlay>();
-                    _instance.titleContent = new GUIContent("Lang");
-                    _instance.ShowUtility();
-                    _instance.minSize = new Vector2(130, 30);
-                    _instance.maxSize = new Vector2(130, 400);
-
-                    PositionWindow(_instance);
-                }
-            }
-            else if (state == PlayModeStateChange.ExitingPlayMode)
-            {
-                if (_instance != null)
-                {
-                    _instance.Close();
-                    _instance = null;
-                }
-            }
-        }
-
-        private static void PositionWindow(EditorWindow window)
-        {
-            var pos = (GameViewLanguageDropdown.DropdownPosition)
-                EditorPrefs.GetInt("SimplyLocalize_GameViewDropdown_Position",
-                    (int)GameViewLanguageDropdown.DropdownPosition.Right);
-
-            var gameViewType = typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.GameView");
-
-            if (gameViewType != null)
-            {
-                var gameView = GetWindow(gameViewType, false, null, false);
-
-                if (gameView != null)
-                {
-                    var gvRect = gameView.position;
-                    float x;
-
-                    switch (pos)
-                    {
-                        case GameViewLanguageDropdown.DropdownPosition.Left:
-                            x = gvRect.x + 10;
-                            break;
-                        case GameViewLanguageDropdown.DropdownPosition.Center:
-                            x = gvRect.x + (gvRect.width - 130) / 2;
-                            break;
-                        default:
-                            x = gvRect.x + gvRect.width - 140;
-                            break;
-                    }
-
-                    window.position = new Rect(x, gvRect.y + 30, 130, 30);
-                }
-            }
-        }
-
-        private void OnGUI()
-        {
-            if (!Application.isPlaying || !Localization.IsInitialized)
-            {
-                EditorGUILayout.LabelField("Not playing", EditorStyles.centeredGreyMiniLabel);
-                return;
-            }
-
-            var languages = Localization.AvailableLanguages;
-            if (languages == null || languages.Count == 0) return;
-
-            // Build list for popup
+            // Build names array
             var names = new string[languages.Count];
             int currentIndex = 0;
 
             for (int i = 0; i < languages.Count; i++)
             {
                 var p = languages[i];
+                names[i] = p != null ? $"{p.displayName}" : "(null)";
 
-                if (p == null)
-                {
-                    names[i] = "(null)";
-                    continue;
-                }
-
-                names[i] = $"{p.displayName} ({p.Code})";
-
-                if (Localization.CurrentLanguage == p.Code)
+                if (p != null && Localization.CurrentLanguage == p.Code)
                     currentIndex = i;
             }
 
-            int newIndex = EditorGUILayout.Popup(currentIndex, names);
+            // Draw background
+            var bgRect = new Rect(x - 4, y - 2, dropdownWidth + 8, dropdownHeight + 4);
+            GUI.color = new Color(0, 0, 0, 0.5f);
+            GUI.DrawTexture(bgRect, Texture2D.whiteTexture);
+            GUI.color = Color.white;
+
+            // Draw popup
+            var popupRect = new Rect(x, y, dropdownWidth, dropdownHeight);
+
+            var style = new GUIStyle(EditorStyles.popup)
+            {
+                fontSize = 11,
+                fixedHeight = dropdownHeight
+            };
+
+            int newIndex = EditorGUI.Popup(popupRect, currentIndex, names, style);
 
             if (newIndex != currentIndex && languages[newIndex] != null)
-            {
                 Localization.SetLanguage(languages[newIndex]);
-            }
-
-            // Resize window height to fit
-            float h = EditorGUIUtility.singleLineHeight + 8;
-            minSize = new Vector2(130, h);
-            maxSize = new Vector2(130, h);
-        }
-
-        private void Update()
-        {
-            if (!Application.isPlaying)
-            {
-                Close();
-                _instance = null;
-            }
-            else
-            {
-                Repaint();
-            }
         }
     }
 }
