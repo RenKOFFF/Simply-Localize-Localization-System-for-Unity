@@ -103,20 +103,42 @@ namespace SimplyLocalize.Editor.Utilities
                         continue;
                     }
 
-                    // Parameter mismatch
+                    // Parameter mismatch checks
                     var langParams = ExtractParams(value);
 
-                    if (refParams.Count > 0 && !refParams.SetEquals(langParams))
+                    if (!refParams.SetEquals(langParams))
                     {
-                        warnings.Add(new CoverageWarning
+                        // Params missing in translation that are in reference
+                        var missingInLang = new HashSet<string>(refParams);
+                        missingInLang.ExceptWith(langParams);
+
+                        if (missingInLang.Count > 0)
                         {
-                            Level = CoverageWarning.Severity.Error,
-                            Message = $"Parameter mismatch in '{key}': " +
-                                      $"{refLang} has {{{string.Join(", ", refParams)}}} " +
-                                      $"but {profile.Code} has {{{string.Join(", ", langParams)}}}",
-                            Key = key,
-                            LanguageCode = profile.Code
-                        });
+                            warnings.Add(new CoverageWarning
+                            {
+                                Level = CoverageWarning.Severity.Error,
+                                Message = $"Missing params in '{key}' ({profile.Code}): " +
+                                          $"{{{string.Join(", ", missingInLang)}}} present in {refLang} but not in {profile.Code}",
+                                Key = key,
+                                LanguageCode = profile.Code
+                            });
+                        }
+
+                        // Extra params in translation that aren't in reference
+                        var extraInLang = new HashSet<string>(langParams);
+                        extraInLang.ExceptWith(refParams);
+
+                        if (extraInLang.Count > 0)
+                        {
+                            warnings.Add(new CoverageWarning
+                            {
+                                Level = CoverageWarning.Severity.Info,
+                                Message = $"Extra params in '{key}' ({profile.Code}): " +
+                                          $"{{{string.Join(", ", extraInLang)}}} not in {refLang} — may be intentional",
+                                Key = key,
+                                LanguageCode = profile.Code
+                            });
+                        }
                     }
                 }
             }
