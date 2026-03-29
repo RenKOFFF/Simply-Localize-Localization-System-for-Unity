@@ -65,13 +65,16 @@ namespace SimplyLocalize
 
         /// <summary>
         /// Restores originals then applies the profile's enabled overrides to TMP_Text.
+        /// If skipFont is true, font override from profile is skipped (handled by LocalizedFontOverride).
         /// </summary>
-        public void Apply(TMP_Text text, LanguageProfile profile)
+        public void Apply(TMP_Text text, LanguageProfile profile, bool skipFont = false)
         {
             if (text == null || !_cached) return;
 
-            // Always restore originals first
-            text.font = _originalFont;
+            // Always restore originals first (except font if skipFont — FontOverride handles it)
+            if (!skipFont)
+                text.font = _originalFont;
+
             text.fontSize = _originalFontSize;
             text.fontWeight = _originalFontWeight;
             text.fontStyle = _originalFontStyle;
@@ -84,7 +87,7 @@ namespace SimplyLocalize
             if (profile == null) return;
 
             // Apply only enabled overrides
-            if (profile.overrideFont && profile.primaryFont != null)
+            if (!skipFont && profile.overrideFont && profile.primaryFont != null)
             {
                 text.font = profile.primaryFont;
 

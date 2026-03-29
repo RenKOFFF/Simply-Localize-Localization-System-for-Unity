@@ -3,19 +3,21 @@ using UnityEngine;
 namespace SimplyLocalize
 {
     /// <summary>
-    /// Automatically initializes the localization system before scene load
-    /// when LocalizationConfig.autoInitialize is enabled.
-    /// No MonoBehaviour or Bootstrap component needed.
+    /// Automatically initializes localization before scene load.
+    /// Requires LocalizationConfig to be placed in a Resources folder
+    /// (the Settings tab in the editor handles this).
     ///
-    /// Loads the first LocalizationConfig found in Resources.
-    /// If autoDetectLanguage is enabled, tries SystemLanguage matching first.
+    /// Protection: if already initialized (e.g. by Bootstrap), does nothing.
     /// </summary>
     internal static class LocalizationAutoInitializer
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void AutoInitialize()
         {
-            // Find all configs in Resources
+            // Don't double-initialize
+            if (Localization.IsInitialized)
+                return;
+
             var configs = Resources.LoadAll<LocalizationConfig>("");
 
             if (configs == null || configs.Length == 0)
@@ -29,15 +31,9 @@ namespace SimplyLocalize
             Localization.Initialize(config);
 
             if (config.autoDetectLanguage)
-            {
-                var detected = Localization.SetLanguageAuto();
+                Localization.SetLanguageAuto();
 
-                if (detected != null)
-                {
-                    LocalizationLogger.Log(
-                        $"Auto-detected language: {detected.displayName} ({detected.Code})");
-                }
-            }
+            LocalizationLogger.Log("Auto-initialized from config in Resources");
         }
     }
 }

@@ -22,12 +22,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             root.style.paddingLeft = 16;
             root.style.paddingRight = 16;
 
-            var title = new Label("Settings");
-            title.style.fontSize = 14;
-            title.style.unityFontStyleAndWeight = FontStyle.Bold;
-            title.style.marginBottom = 12;
-            root.Add(title);
-
             if (_config == null)
             {
                 root.Add(new Label("No config assigned."));
@@ -35,16 +29,72 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 return;
             }
 
-            var imguiContainer = new IMGUIContainer(() =>
+            var imgui = new IMGUIContainer(() =>
             {
-                // Config section
-                EditorGUILayout.LabelField("Localization config", EditorStyles.boldLabel);
+                // ── Initialization ──
+                EditorGUILayout.LabelField("Initialization", EditorStyles.boldLabel);
 
-                using (new EditorGUI.DisabledScope(true))
+                bool configInResources = IsConfigInResources();
+
+                EditorGUI.BeginChangeCheck();
+
+                bool autoInit = EditorGUILayout.Toggle(
+                    new GUIContent("Auto-initialize",
+                        "Initialize localization automatically before scene load. Config must be in a Resources folder."),
+                    _config.autoInitialize);
+
+                if (autoInit && !configInResources)
                 {
-                    EditorGUILayout.ObjectField("Config asset", _config,
-                        typeof(LocalizationConfig), false);
+                    EditorGUILayout.HelpBox(
+                        "Config is NOT in a Resources folder. Auto-initialize will not work.\n" +
+                        "Move the config asset into any Resources/ folder, or use the button below.",
+                        MessageType.Warning);
+
+                    if (GUILayout.Button("Move config to Resources"))
+                    {
+                        MoveConfigToResources();
+                    }
                 }
+                else if (autoInit && configInResources)
+                {
+                    EditorGUILayout.HelpBox(
+                        "Config found in Resources. Auto-initialization will work.",
+                        MessageType.Info);
+                }
+
+                bool autoDetect = false;
+
+                if (autoInit)
+                {
+                    EditorGUI.indentLevel++;
+
+                    autoDetect = EditorGUILayout.Toggle(
+                        new GUIContent("Auto-detect language",
+                            "Try to match device SystemLanguage to a language profile on startup"),
+                        _config.autoDetectLanguage);
+
+                    if (!autoDetect && _config.defaultLanguage != null)
+                    {
+                        EditorGUILayout.LabelField(
+                            $"  Will start with: {_config.defaultLanguage.displayName} ({_config.defaultLanguage.Code})",
+                            EditorStyles.miniLabel);
+                    }
+
+                    EditorGUI.indentLevel--;
+                }
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Undo.RecordObject(_config, "Change initialization settings");
+                    _config.autoInitialize = autoInit;
+                    _config.autoDetectLanguage = autoDetect;
+                    EditorUtility.SetDirty(_config);
+                }
+
+                EditorGUILayout.Space(12);
+
+                // ── Data ──
+                EditorGUILayout.LabelField("Data", EditorStyles.boldLabel);
 
                 EditorGUI.BeginChangeCheck();
 
@@ -57,16 +107,16 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    Undo.RecordObject(_config, "Change localization settings");
+                    Undo.RecordObject(_config, "Change data settings");
                     _config.resourcesBasePath = newPath;
                     _config.keyConversionMode = newMode;
                     _config.enableLogging = newLogging;
                     EditorUtility.SetDirty(_config);
                 }
 
-                EditorGUILayout.Space(16);
+                EditorGUILayout.Space(12);
 
-                // Game View Dropdown section
+                // ── Game View Dropdown ──
                 EditorGUILayout.LabelField("Game View language dropdown", EditorStyles.boldLabel);
 
                 bool dropdownEnabled = EditorPrefs.GetBool(
@@ -79,7 +129,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 var currentPos = (GameViewLanguageDropdown.Position)EditorPrefs.GetInt(
                     GameViewLanguageDropdown.PositionPrefKey,
-                    (int)GameViewLanguageDropdown.Position.TopRight);
+                    (int)GameViewLanguageDropdown.Position.Right);
 
                 var newPos = (GameViewLanguageDropdown.Position)EditorGUILayout.EnumPopup(
                     "Position", currentPos);
@@ -87,9 +137,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 if (newPos != currentPos)
                     EditorPrefs.SetInt(GameViewLanguageDropdown.PositionPrefKey, (int)newPos);
 
-                EditorGUILayout.Space(16);
+                EditorGUILayout.Space(12);
 
-                // Actions
+                // ── Actions ──
                 EditorGUILayout.LabelField("Actions", EditorStyles.boldLabel);
 
                 if (GUILayout.Button("Open config in Inspector"))
@@ -99,8 +149,39 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     _window.FullRefresh();
             });
 
-            root.Add(imguiContainer);
+            root.Add(imgui);
             container.Add(root);
+        }
+
+        private bool IsConfigInResources()
+        {
+            string path = AssetDatabase.GetAssetPath(_config);
+            return !string.IsNullOrEmpty(path) && path.Contains("/Resources/");
+        }
+
+        private void MoveConfigToResources()
+        {
+            string currentPath = AssetDatabase.GetAssetPath(_config);
+
+            if (string.IsNullOrEmpty(currentPath))
+                return;
+
+            // Find or create a Resources folder near the config
+            string dir = System.IO.Path.GetDirectoryName(currentPath);
+            string resourcesDir = System.IO.Path.Combine(dir, "Resources");
+
+            if (!System.IO.Directory.Exists(resourcesDir))
+                System.IO.Directory.CreateDirectory(resourcesDir);
+
+            string fileName = System.IO.Path.GetFileName(currentPath);
+            string newPath = System.IO.Path.Combine(resourcesDir, fileName);
+            newPath = AssetDatabase.GenerateUniqueAssetPath(newPath);
+
+            AssetDatabase.MoveAsset(currentPath, newPath);
+            AssetDatabase.Refresh();
+
+            EditorUtility.DisplayDialog("Moved",
+                $"Config moved to:\n{newPath}", "OK");
         }
     }
 }

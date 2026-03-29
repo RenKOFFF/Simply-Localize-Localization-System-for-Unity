@@ -15,6 +15,7 @@ namespace SimplyLocalize.Components
     {
         private TMP_Text _tmpText;
         private Text _legacyText;
+        private LocalizedFontOverride _fontOverride;
         private readonly ProfileApplier _profileApplier = new();
 
         protected override void OnEnable()
@@ -40,11 +41,12 @@ namespace SimplyLocalize.Components
             CacheOriginals();
 
             string text = Localization.Get(_key);
+            bool skipFont = _fontOverride != null && _fontOverride.HasOverrideForCurrentLanguage;
 
             if (_tmpText != null)
             {
                 _tmpText.text = text;
-                _profileApplier.Apply(_tmpText, Localization.CurrentProfile);
+                _profileApplier.Apply(_tmpText, Localization.CurrentProfile, skipFont);
             }
             else if (_legacyText != null)
             {
@@ -55,8 +57,10 @@ namespace SimplyLocalize.Components
 
         private void HandleProfileChanged(LanguageProfile profile)
         {
+            bool skipFont = _fontOverride != null && _fontOverride.HasOverrideForCurrentLanguage;
+
             if (_tmpText != null)
-                _profileApplier.Apply(_tmpText, profile);
+                _profileApplier.Apply(_tmpText, profile, skipFont);
             else if (_legacyText != null)
                 _profileApplier.Apply(_legacyText, profile);
         }
@@ -68,6 +72,8 @@ namespace SimplyLocalize.Components
                 _tmpText = GetComponent<TMP_Text>();
                 if (_tmpText == null)
                     _legacyText = GetComponent<Text>();
+
+                _fontOverride = GetComponent<LocalizedFontOverride>();
             }
         }
 

@@ -6,21 +6,20 @@ using UnityEngine;
 namespace SimplyLocalize.Components
 {
     /// <summary>
-    /// Overrides the font and material of a TMP_Text component on a per-language basis.
-    /// When this component is present, the LanguageProfile's font settings are IGNORED
-    /// for this text — only the overrides defined here are applied.
+    /// Overrides font and material per language for a TMP_Text component.
     ///
-    /// Use case: a decorative title that needs a specific font per language,
-    /// with different TMP materials (outline, shadow, etc.) per language.
+    /// Works in two modes:
+    /// - WITH LocalizedText/FormattableLocalizedText: those components detect this component
+    ///   and skip font application from LanguageProfile. This component handles font/material.
+    /// - STANDALONE (no localized text component): just changes font/material on language switch.
     ///
-    /// Works alongside LocalizedText or FormattableLocalizedText — this component
-    /// handles only visual overrides, the other handles the text content.
+    /// Always caches and restores original font/material on language change.
     /// </summary>
+    [DefaultExecutionOrder(10)] // After LocalizedText (default 0)
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("SimplyLocalize/Localized Font Override")]
     public class LocalizedFontOverride : MonoBehaviour
     {
-        [Tooltip("Font/material overrides per language")]
         [SerializeField] private List<FontOverrideEntry> _overrides = new();
 
         private TMP_Text _text;
@@ -28,10 +27,18 @@ namespace SimplyLocalize.Components
         private Material _originalMaterial;
         private bool _cached;
 
+        /// <summary>
+        /// Checked by LocalizedText — if true, profile should NOT apply font.
+        /// </summary>
+        internal bool HasOverrideForCurrentLanguage =>
+            !string.IsNullOrEmpty(Localization.CurrentLanguage) &&
+            GetEntry(Localization.CurrentLanguage) != null;
+
         private void OnEnable()
         {
             _text = GetComponent<TMP_Text>();
             CacheOriginals();
+
             Localization.OnLanguageChanged += OnLanguageChanged;
 
             if (Localization.IsInitialized)
@@ -43,25 +50,17 @@ namespace SimplyLocalize.Components
             Localization.OnLanguageChanged -= OnLanguageChanged;
         }
 
-        private void OnLanguageChanged(string newLanguage)
-        {
-            Apply(newLanguage);
-        }
+        private void OnLanguageChanged(string lang) => Apply(lang);
 
         private void Apply(string languageCode)
         {
             if (_text == null || !_cached) return;
 
-            // Restore originals
+            // Restore originals first
             _text.font = _originalFont;
             _text.fontSharedMaterial = _originalMaterial;
 
-            if (string.IsNullOrEmpty(languageCode))
-                return;
-
-            // Find override for this language
-            var entry = GetOverride(languageCode);
-
+            var entry = GetEntry(languageCode);
             if (entry == null) return;
 
             if (entry.font != null)
@@ -71,14 +70,14 @@ namespace SimplyLocalize.Components
                 _text.fontSharedMaterial = entry.material;
         }
 
-        private FontOverrideEntry GetOverride(string languageCode)
+        private FontOverrideEntry GetEntry(string languageCode)
         {
+            if (string.IsNullOrEmpty(languageCode)) return null;
+
             for (int i = 0; i < _overrides.Count; i++)
             {
-                var entry = _overrides[i];
-
-                if (entry.profile != null && entry.profile.Code == languageCode)
-                    return entry;
+                if (_overrides[i].profile != null && _overrides[i].profile.Code == languageCode)
+                    return _overrides[i];
             }
 
             return null;
@@ -87,7 +86,6 @@ namespace SimplyLocalize.Components
         private void CacheOriginals()
         {
             if (_cached || _text == null) return;
-
             _originalFont = _text.font;
             _originalMaterial = _text.fontSharedMaterial;
             _cached = true;
@@ -96,13 +94,8 @@ namespace SimplyLocalize.Components
         [Serializable]
         public class FontOverrideEntry
         {
-            [Tooltip("The language this override applies to")]
             public LanguageProfile profile;
-
-            [Tooltip("Font to use for this language (null = keep original)")]
             public TMP_FontAsset font;
-
-            [Tooltip("Material to use for this language (null = keep original/font default)")]
             public Material material;
         }
     }

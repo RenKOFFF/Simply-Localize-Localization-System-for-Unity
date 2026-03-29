@@ -16,10 +16,7 @@ namespace SimplyLocalize.Editor.Inspectors
         private string _newKeyInput = "";
         private bool _editMode;
 
-        private void OnEnable()
-        {
-            _keyProp = serializedObject.FindProperty("_key");
-        }
+        private void OnEnable() => _keyProp = serializedObject.FindProperty("_key");
 
         public override void OnInspectorGUI()
         {
@@ -42,55 +39,52 @@ namespace SimplyLocalize.Editor.Inspectors
 
             EditorGUILayout.Space(4);
 
-            // Header with edit toggle
+            // Header + edit toggle
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
 
-            var toggleContent = editMode
-                ? new GUIContent("✎ editing", "Click to lock translations")
-                : new GUIContent("✎", "Click to edit translations");
+            var content = editMode
+                ? new GUIContent("✎ editing", "Lock translations")
+                : new GUIContent("✎", "Edit translations");
 
-            var toggleStyle = new GUIStyle(editMode ? EditorStyles.miniButtonMid : EditorStyles.miniButton);
+            if (editMode) GUI.color = new Color(0.4f, 0.7f, 1f);
 
-            if (editMode)
-                GUI.color = new Color(0.4f, 0.7f, 1f);
-
-            if (GUILayout.Button(toggleContent, toggleStyle, GUILayout.Width(editMode ? 70 : 24)))
+            if (GUILayout.Button(content,
+                editMode ? EditorStyles.miniButtonMid : EditorStyles.miniButton,
+                GUILayout.Width(editMode ? 70 : 24)))
                 editMode = !editMode;
 
             GUI.color = Color.white;
             EditorGUILayout.EndHorizontal();
 
-            // Translation rows
+            // Each language
             foreach (var profile in config.languages)
             {
                 if (profile == null) continue;
 
                 string value = data.GetTranslation(key, profile.Code) ?? "";
-                bool isMissing = string.IsNullOrEmpty(value);
+                bool missing = string.IsNullOrEmpty(value);
 
-                EditorGUILayout.BeginHorizontal();
-
+                // Label
                 EditorGUILayout.LabelField(
                     $"{profile.displayName} ({profile.Code})",
-                    GUILayout.Width(120));
+                    EditorStyles.miniLabel);
 
                 Color prev = GUI.color;
-                if (isMissing) GUI.color = new Color(1f, 0.7f, 0.7f);
+                if (missing) GUI.color = new Color(1f, 0.7f, 0.7f);
 
                 if (editMode)
                 {
-                    // Auto-grow text area based on content
-                    int lineCount = Mathf.Max(1, value.Split('\n').Length);
-                    float height = Mathf.Max(18f, lineCount * 16f + 4f);
-
-                    var textAreaStyle = new GUIStyle(EditorStyles.textArea)
+                    // Editable TextArea that grows with content
+                    var style = new GUIStyle(EditorStyles.textArea)
                     {
                         wordWrap = true,
-                        fontSize = 11
+                        fontSize = 12
                     };
 
-                    string newValue = EditorGUILayout.TextArea(value, textAreaStyle,
+                    float height = CalculateTextHeight(value, style);
+
+                    string newValue = EditorGUILayout.TextArea(value, style,
                         GUILayout.MinHeight(height));
 
                     if (newValue != value)
@@ -107,25 +101,42 @@ namespace SimplyLocalize.Editor.Inspectors
                 }
                 else
                 {
-                    string display = isMissing ? "(missing)" : value;
+                    // Read-only display
+                    string display = missing ? "(missing)" : value;
 
-                    // Auto-grow read-only label
-                    int lineCount = Mathf.Max(1, display.Split('\n').Length);
-                    float height = Mathf.Max(18f, lineCount * 16f + 4f);
-
-                    var readOnlyStyle = new GUIStyle(EditorStyles.helpBox)
+                    var style = new GUIStyle(EditorStyles.helpBox)
                     {
                         wordWrap = true,
-                        fontSize = 11
+                        fontSize = 12,
+                        padding = new RectOffset(6, 6, 4, 4)
                     };
 
-                    EditorGUILayout.LabelField(display, readOnlyStyle,
+                    float height = CalculateTextHeight(display, style);
+
+                    EditorGUILayout.SelectableLabel(display, style,
                         GUILayout.MinHeight(height));
                 }
 
                 GUI.color = prev;
-                EditorGUILayout.EndHorizontal();
             }
+        }
+
+        private static float CalculateTextHeight(string text, GUIStyle style)
+        {
+            if (string.IsNullOrEmpty(text))
+                return EditorGUIUtility.singleLineHeight + 4;
+
+            int lineCount = 1;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] == '\n')
+                    lineCount++;
+            }
+
+            // Approximate: each line ~16px, minimum 1 line
+            float lineHeight = style.fontSize > 0 ? style.fontSize + 4 : 16;
+            return Mathf.Max(lineHeight + 4, lineCount * lineHeight + 8);
         }
     }
 
@@ -149,14 +160,9 @@ namespace SimplyLocalize.Editor.Inspectors
             EditorGUILayout.Space(2);
 
             KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput);
-
             EditorGUILayout.Space(4);
             DrawAutoParams();
-
-            // Editable translations
             LocalizedTextEditor.DrawTranslationsWithEdit(_keyProp.stringValue, ref _editMode);
-
-            // Formatted preview
             DrawFormattedPreview();
 
             serializedObject.ApplyModifiedProperties();
@@ -165,9 +171,7 @@ namespace SimplyLocalize.Editor.Inspectors
         private void DrawAutoParams()
         {
             string key = _keyProp.stringValue;
-
-            if (string.IsNullOrEmpty(key))
-                return;
+            if (string.IsNullOrEmpty(key)) return;
 
             var data = EditorDataCache.Data;
             var config = EditorDataCache.Config;
@@ -175,14 +179,12 @@ namespace SimplyLocalize.Editor.Inspectors
 
             string refLang = config.DefaultLanguageCode
                 ?? (config.languages.Count > 0 ? config.languages[0].Code : null);
-
             if (string.IsNullOrEmpty(refLang)) return;
 
             string rawTemplate = data.GetTranslation(key, refLang) ?? "";
             var templateParams = ExtractParamNames(rawTemplate);
 
-            if (templateParams.Count == 0)
-                return;
+            if (templateParams.Count == 0) return;
 
             SyncParams(templateParams);
 
@@ -196,22 +198,9 @@ namespace SimplyLocalize.Editor.Inspectors
 
                 EditorGUILayout.BeginHorizontal();
 
-                // Name — read-only
-                var nameStyle = new GUIStyle(EditorStyles.label)
-                {
-                    fontStyle = FontStyle.Bold,
-                    fontSize = 11
-                };
-
-                string paramDisplay = nameProp.stringValue;
-
-                // Show {0} style for indexed, {name} style for named
-                if (int.TryParse(paramDisplay, out _))
-                    paramDisplay = "{" + paramDisplay + "}";
-                else
-                    paramDisplay = "{" + paramDisplay + "}";
-
-                EditorGUILayout.LabelField(paramDisplay, nameStyle, GUILayout.Width(120));
+                // Name — read-only label
+                EditorGUILayout.LabelField("{" + nameProp.stringValue + "}",
+                    EditorStyles.boldLabel, GUILayout.Width(120));
 
                 valueProp.stringValue = EditorGUILayout.TextField(valueProp.stringValue);
 
@@ -224,101 +213,74 @@ namespace SimplyLocalize.Editor.Inspectors
         private void SyncParams(List<string> templateParams)
         {
             var existing = new Dictionary<string, int>();
-
             for (int i = 0; i < _namedParamsProp.arraySize; i++)
             {
                 string name = _namedParamsProp.GetArrayElementAtIndex(i)
                     .FindPropertyRelative("name").stringValue;
-
-                if (!string.IsNullOrEmpty(name))
-                    existing[name] = i;
+                if (!string.IsNullOrEmpty(name)) existing[name] = i;
             }
 
+            // Remove params not in template
             for (int i = _namedParamsProp.arraySize - 1; i >= 0; i--)
             {
                 string name = _namedParamsProp.GetArrayElementAtIndex(i)
                     .FindPropertyRelative("name").stringValue;
-
                 if (!templateParams.Contains(name))
                     _namedParamsProp.DeleteArrayElementAtIndex(i);
             }
 
+            // Add missing params
             foreach (var param in templateParams)
             {
                 if (existing.ContainsKey(param)) continue;
 
-                int newIndex = _namedParamsProp.arraySize;
-                _namedParamsProp.InsertArrayElementAtIndex(newIndex);
+                int idx = _namedParamsProp.arraySize;
+                _namedParamsProp.InsertArrayElementAtIndex(idx);
+                var elem = _namedParamsProp.GetArrayElementAtIndex(idx);
+                elem.FindPropertyRelative("name").stringValue = param;
 
-                var newElem = _namedParamsProp.GetArrayElementAtIndex(newIndex);
-                newElem.FindPropertyRelative("name").stringValue = param;
-
-                bool isIndexed = int.TryParse(param, out _);
-                bool isLikelyNumeric = isIndexed || param == "count"
-                    || param == "amount" || param == "level"
-                    || param == "hp" || param == "damage";
-
-                newElem.FindPropertyRelative("value").stringValue =
-                    isLikelyNumeric ? "0" : "";
+                bool numeric = int.TryParse(param, out _) || param is "count" or "amount"
+                    or "level" or "hp" or "damage" or "price";
+                elem.FindPropertyRelative("value").stringValue = numeric ? "0" : "";
             }
         }
 
         private void DrawFormattedPreview()
         {
             string key = _keyProp.stringValue;
-            if (string.IsNullOrEmpty(key)) return;
-            if (_namedParamsProp.arraySize == 0) return;
+            if (string.IsNullOrEmpty(key) || _namedParamsProp.arraySize == 0) return;
 
             var data = EditorDataCache.Data;
             var config = EditorDataCache.Config;
             if (data == null || config == null) return;
 
-            // Build both indexed args and named args from serialized params
             var namedArgs = new Dictionary<string, object>();
-            var indexedArgsList = new SortedDictionary<int, object>();
+            var indexedArgs = new SortedDictionary<int, object>();
 
             for (int i = 0; i < _namedParamsProp.arraySize; i++)
             {
                 var elem = _namedParamsProp.GetArrayElementAtIndex(i);
                 string pName = elem.FindPropertyRelative("name").stringValue;
                 string pValue = elem.FindPropertyRelative("value").stringValue;
-
                 if (string.IsNullOrEmpty(pName)) continue;
 
-                object parsedValue;
+                object parsed = int.TryParse(pValue, out int iv) ? (object)iv : pValue ?? "";
 
-                if (int.TryParse(pValue, out int intVal))
-                    parsedValue = intVal;
+                if (int.TryParse(pName, out int paramIdx))
+                    indexedArgs[paramIdx] = parsed;
                 else
-                    parsedValue = pValue ?? "";
-
-                // If param name is a number, it's an indexed param
-                if (int.TryParse(pName, out int paramIndex))
-                {
-                    indexedArgsList[paramIndex] = parsedValue;
-                }
-                else
-                {
-                    namedArgs[pName] = parsedValue;
-                }
+                    namedArgs[pName] = parsed;
             }
 
-            // Convert indexed args to array
-            object[] indexedArgs = null;
-
-            if (indexedArgsList.Count > 0)
+            object[] idxArr = null;
+            if (indexedArgs.Count > 0)
             {
-                int maxIndex = indexedArgsList.Keys.Max();
-                indexedArgs = new object[maxIndex + 1];
-
-                foreach (var kvp in indexedArgsList)
-                    indexedArgs[kvp.Key] = kvp.Value;
+                idxArr = new object[indexedArgs.Keys.Max() + 1];
+                foreach (var kvp in indexedArgs) idxArr[kvp.Key] = kvp.Value;
             }
 
-            bool hasAnyArgs = (indexedArgs != null && indexedArgs.Length > 0)
-                || namedArgs.Count > 0;
-
-            if (!hasAnyArgs) return;
+            bool hasAny = (idxArr != null && idxArr.Length > 0) || namedArgs.Count > 0;
+            if (!hasAny) return;
 
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Formatted preview", EditorStyles.boldLabel);
@@ -326,19 +288,16 @@ namespace SimplyLocalize.Editor.Inspectors
             foreach (var profile in config.languages)
             {
                 if (profile == null) continue;
+                string raw = data.GetTranslation(key, profile.Code);
+                if (string.IsNullOrEmpty(raw)) continue;
 
-                string rawValue = data.GetTranslation(key, profile.Code);
-                if (string.IsNullOrEmpty(rawValue)) continue;
-
-                var template = TokenParser.Parse(rawValue);
-
+                var template = TokenParser.Parse(raw);
                 string formatted = template != null
-                    ? TextFormatter.Format(template, profile.Code, indexedArgs,
+                    ? TextFormatter.Format(template, profile.Code, idxArr,
                         namedArgs.Count > 0 ? namedArgs : null)
-                    : rawValue;
+                    : raw;
 
-                EditorGUILayout.LabelField(profile.displayName, formatted,
-                    EditorStyles.helpBox);
+                EditorGUILayout.LabelField(profile.displayName, formatted, EditorStyles.helpBox);
             }
         }
 
@@ -355,21 +314,16 @@ namespace SimplyLocalize.Editor.Inspectors
                 if (template[pos] == '{' && pos + 1 < template.Length && template[pos + 1] != '{')
                 {
                     int close = template.IndexOf('}', pos + 1);
-
                     if (close > pos)
                     {
                         string content = template.Substring(pos + 1, close - pos - 1);
                         int pipe = content.IndexOf('|');
                         string id = (pipe >= 0 ? content.Substring(0, pipe) : content).Trim();
-
-                        if (id.Length > 0 && seen.Add(id))
-                            result.Add(id);
-
+                        if (id.Length > 0 && seen.Add(id)) result.Add(id);
                         pos = close + 1;
                         continue;
                     }
                 }
-
                 pos++;
             }
 
@@ -377,114 +331,93 @@ namespace SimplyLocalize.Editor.Inspectors
         }
     }
 
-    /// <summary>
-    /// Shared key selection UI.
-    /// </summary>
+    // ──────────────────────────────────────────────
+    //  Shared key selector UI
+    // ──────────────────────────────────────────────
+
     internal static class KeySelectorUI
     {
         public static void DrawKeySelector(SerializedProperty keyProp, ref string newKeyInput)
         {
             var allKeys = EditorDataCache.AllKeys;
             string currentKey = keyProp.stringValue;
-
             bool keyExists = !string.IsNullOrEmpty(currentKey) && allKeys.Contains(currentKey);
             bool isEmpty = string.IsNullOrEmpty(currentKey);
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PrefixLabel("Key");
 
-            string displayText;
+            string display = isEmpty ? "<None>"
+                : keyExists ? FormatKey(currentKey)
+                : $"<None> : ({currentKey})";
 
-            if (isEmpty)
-                displayText = "<None>";
-            else if (keyExists)
-                displayText = FormatKeyDisplay(currentKey);
-            else
-                displayText = $"<None> : ({currentKey})";
+            Color prev = GUI.color;
+            if (!isEmpty && !keyExists) GUI.color = new Color(1f, 0.35f, 0.35f);
 
-            Color prevColor = GUI.color;
+            if (GUILayout.Button(display, EditorStyles.popup))
+                OpenSearch(keyProp, allKeys, newKeyInput);
 
-            if (!isEmpty && !keyExists)
-                GUI.color = new Color(1f, 0.35f, 0.35f);
-
-            if (GUILayout.Button(displayText, EditorStyles.popup))
-                OpenSearchWindow(keyProp, allKeys, newKeyInput);
-
-            GUI.color = prevColor;
+            GUI.color = prev;
 
             if (!isEmpty && !keyExists)
-            {
                 if (GUILayout.Button("Add", GUILayout.Width(40)))
-                {
-                    AddKeyToData(currentKey);
-                    keyProp.serializedObject.ApplyModifiedProperties();
-                }
-            }
+                    AddKey(currentKey);
 
             EditorGUILayout.EndHorizontal();
 
-            // New key input + Add
+            // New key
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PrefixLabel("Add new key");
 
-            bool isDuplicate = !string.IsNullOrEmpty(newKeyInput) && allKeys.Contains(newKeyInput);
-
-            prevColor = GUI.color;
-            if (isDuplicate) GUI.color = new Color(1f, 0.35f, 0.35f);
-
+            bool dup = !string.IsNullOrEmpty(newKeyInput) && allKeys.Contains(newKeyInput);
+            prev = GUI.color;
+            if (dup) GUI.color = new Color(1f, 0.35f, 0.35f);
             newKeyInput = EditorGUILayout.TextField(newKeyInput);
-            GUI.color = prevColor;
+            GUI.color = prev;
 
-            bool canAdd = !string.IsNullOrEmpty(newKeyInput) && !isDuplicate;
-            GUI.enabled = canAdd;
-
+            GUI.enabled = !string.IsNullOrEmpty(newKeyInput) && !dup;
             if (GUILayout.Button("Add", GUILayout.Width(40)))
             {
-                AddKeyToData(newKeyInput);
+                AddKey(newKeyInput);
                 keyProp.stringValue = newKeyInput;
                 keyProp.serializedObject.ApplyModifiedProperties();
                 newKeyInput = "";
             }
-
             GUI.enabled = true;
+
             EditorGUILayout.EndHorizontal();
 
-            if (isDuplicate)
+            if (dup)
                 EditorGUILayout.HelpBox("This key already exists.", MessageType.Error);
         }
 
-        private static void OpenSearchWindow(SerializedProperty keyProp, List<string> keys, string pendingNew)
+        private static void OpenSearch(SerializedProperty keyProp, List<string> keys, string pending)
         {
-            var searchWindow = ScriptableObject.CreateInstance<KeySearchWindow>();
-
-            searchWindow.Init(new List<string>(keys), selectedKey =>
+            var win = ScriptableObject.CreateInstance<KeySearchWindow>();
+            win.Init(new List<string>(keys), sel =>
             {
                 keyProp.serializedObject.Update();
-                keyProp.stringValue = selectedKey ?? "";
+                keyProp.stringValue = sel ?? "";
                 keyProp.serializedObject.ApplyModifiedProperties();
-
-                if (!string.IsNullOrEmpty(selectedKey) && !keys.Contains(selectedKey))
-                    AddKeyToData(selectedKey);
-
+                if (!string.IsNullOrEmpty(sel) && !keys.Contains(sel)) AddKey(sel);
                 EditorDataCache.Invalidate();
-            }, pendingNew);
+            }, pending);
 
-            var mousePos = GUIUtility.GUIToScreenPoint(Event.current.mousePosition);
-            SearchWindow.Open(new SearchWindowContext(mousePos), searchWindow);
+            SearchWindow.Open(
+                new SearchWindowContext(GUIUtility.GUIToScreenPoint(Event.current.mousePosition)),
+                win);
         }
 
-        private static string FormatKeyDisplay(string key)
+        private static string FormatKey(string key)
         {
             if (!key.Contains('/')) return key;
-            var parts = key.Split('/');
-            return $"{parts[^1]}    ({key})";
+            return $"{key.Split('/')[^1]}    ({key})";
         }
 
-        private static void AddKeyToData(string key)
+        private static void AddKey(string key)
         {
             var data = EditorDataCache.Data;
             if (data == null) return;
-
             string file = data.SourceFiles.Count > 0 ? data.SourceFiles[0] : "global";
             data.AddKey(key, file);
             data.SaveFileAllLanguages(file);
