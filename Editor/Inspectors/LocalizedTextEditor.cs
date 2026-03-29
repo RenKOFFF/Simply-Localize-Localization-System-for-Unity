@@ -3,6 +3,7 @@ using System.Linq;
 using SimplyLocalize.Components;
 using SimplyLocalize.Editor.Data;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 namespace SimplyLocalize.Editor.Inspectors
@@ -11,7 +12,7 @@ namespace SimplyLocalize.Editor.Inspectors
     public class LocalizedTextEditor : UnityEditor.Editor
     {
         private SerializedProperty _keyProp;
-        private string _keyFilter = "";
+        private string _newKeyInput = "";
 
         private void OnEnable()
         {
@@ -23,139 +24,10 @@ namespace SimplyLocalize.Editor.Inspectors
             serializedObject.Update();
             EditorGUILayout.Space(2);
 
-            DrawKeySelector(_keyProp, ref _keyFilter);
-            DrawTranslationPreview(_keyProp.stringValue);
+            KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput);
+            KeySelectorUI.DrawTranslationPreview(_keyProp.stringValue);
 
             serializedObject.ApplyModifiedProperties();
-        }
-
-        // ──────────────────────────────────────────────
-        //  Shared drawing methods
-        // ──────────────────────────────────────────────
-
-        internal static void DrawKeySelector(SerializedProperty keyProp, ref string keyFilter)
-        {
-            var allKeys = EditorDataCache.AllKeys;
-            string currentKey = keyProp.stringValue;
-
-            // Search field
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel("Search");
-            keyFilter = EditorGUILayout.TextField(keyFilter, EditorStyles.toolbarSearchField);
-            EditorGUILayout.EndHorizontal();
-
-            // Filter keys
-            List<string> filtered;
-
-            if (string.IsNullOrEmpty(keyFilter))
-            {
-                filtered = allKeys;
-            }
-            else
-            {
-                string lower = keyFilter.ToLowerInvariant();
-                filtered = allKeys.Where(k => k.ToLowerInvariant().Contains(lower)).ToList();
-            }
-
-            // Dropdown
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel("Key");
-
-            if (filtered.Count > 0)
-            {
-                // Build display array with current key at top if it exists
-                var display = new List<string>(filtered);
-
-                if (!string.IsNullOrEmpty(currentKey) && !display.Contains(currentKey))
-                    display.Insert(0, currentKey + " (custom)");
-
-                int currentIndex = display.IndexOf(currentKey);
-                if (currentIndex < 0) currentIndex = 0;
-
-                int newIndex = EditorGUILayout.Popup(currentIndex, display.ToArray());
-
-                string selected = display[newIndex];
-
-                if (selected.EndsWith(" (custom)"))
-                    selected = selected.Replace(" (custom)", "");
-
-                if (selected != currentKey)
-                    keyProp.stringValue = selected;
-            }
-            else
-            {
-                EditorGUILayout.LabelField("No keys found", EditorStyles.miniLabel);
-            }
-
-            // "+" button — creates a new key
-            if (GUILayout.Button("+", GUILayout.Width(22)))
-            {
-                ShowAddKeyWindow(keyProp);
-            }
-
-            EditorGUILayout.EndHorizontal();
-
-            // Manual entry fallback
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel("Manual key");
-            string manual = EditorGUILayout.TextField(currentKey);
-
-            if (manual != currentKey)
-                keyProp.stringValue = manual;
-
-            EditorGUILayout.EndHorizontal();
-        }
-
-        internal static void DrawTranslationPreview(string key)
-        {
-            if (string.IsNullOrEmpty(key))
-                return;
-
-            var data = EditorDataCache.Data;
-            var config = EditorDataCache.Config;
-
-            if (data == null || config == null)
-                return;
-
-            EditorGUILayout.Space(4);
-            EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
-
-            var style = new GUIStyle(EditorStyles.helpBox)
-            {
-                fontSize = 11,
-                richText = false,
-                wordWrap = true,
-                padding = new RectOffset(8, 8, 4, 4)
-            };
-
-            foreach (var profile in config.languages)
-            {
-                if (profile == null) continue;
-
-                string value = data.GetTranslation(key, profile.Code);
-                string display = string.IsNullOrEmpty(value) ? "(missing)" : value;
-
-                Color prevColor = GUI.color;
-
-                if (string.IsNullOrEmpty(value))
-                    GUI.color = new Color(1f, 0.7f, 0.7f);
-
-                EditorGUILayout.LabelField(
-                    $"{profile.displayName} ({profile.Code})",
-                    display, style);
-
-                GUI.color = prevColor;
-            }
-        }
-
-        private static void ShowAddKeyWindow(SerializedProperty keyProp)
-        {
-            var window = ScriptableObject.CreateInstance<AddKeyFromInspector>();
-            window.Init(keyProp);
-            window.titleContent = new GUIContent("New key");
-            window.ShowUtility();
-            window.position = new Rect(
-                Screen.width / 2f - 150, Screen.height / 2f - 60, 300, 130);
         }
     }
 
@@ -164,7 +36,7 @@ namespace SimplyLocalize.Editor.Inspectors
     {
         private SerializedProperty _keyProp;
         private SerializedProperty _namedParamsProp;
-        private string _keyFilter = "";
+        private string _newKeyInput = "";
 
         private void OnEnable()
         {
@@ -177,16 +49,13 @@ namespace SimplyLocalize.Editor.Inspectors
             serializedObject.Update();
             EditorGUILayout.Space(2);
 
-            LocalizedTextEditor.DrawKeySelector(_keyProp, ref _keyFilter);
+            KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput);
 
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Named parameters", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(_namedParamsProp, true);
 
-            // Translation preview (raw templates)
-            LocalizedTextEditor.DrawTranslationPreview(_keyProp.stringValue);
-
-            // Formatted preview with current params
+            KeySelectorUI.DrawTranslationPreview(_keyProp.stringValue);
             DrawFormattedPreview();
 
             serializedObject.ApplyModifiedProperties();
@@ -201,7 +70,6 @@ namespace SimplyLocalize.Editor.Inspectors
             var config = EditorDataCache.Config;
             if (data == null || config == null) return;
 
-            // Build param dict from serialized data
             var namedArgs = new Dictionary<string, object>();
 
             for (int i = 0; i < _namedParamsProp.arraySize; i++)
@@ -223,13 +91,6 @@ namespace SimplyLocalize.Editor.Inspectors
             EditorGUILayout.Space(4);
             EditorGUILayout.LabelField("Formatted preview", EditorStyles.boldLabel);
 
-            var style = new GUIStyle(EditorStyles.helpBox)
-            {
-                fontSize = 11,
-                wordWrap = true,
-                padding = new RectOffset(8, 8, 4, 4)
-            };
-
             foreach (var profile in config.languages)
             {
                 if (profile == null) continue;
@@ -237,74 +98,179 @@ namespace SimplyLocalize.Editor.Inspectors
                 string rawValue = data.GetTranslation(key, profile.Code);
                 if (string.IsNullOrEmpty(rawValue)) continue;
 
-                // Parse and format
-                var template = SimplyLocalize.TextProcessing.TokenParser.Parse(rawValue);
+                var template = TextProcessing.TokenParser.Parse(rawValue);
 
                 string formatted = template != null
-                    ? SimplyLocalize.TextProcessing.TextFormatter.Format(
-                        template, profile.Code, null, namedArgs)
+                    ? TextProcessing.TextFormatter.Format(template, profile.Code, null, namedArgs)
                     : rawValue;
 
-                EditorGUILayout.LabelField(
-                    $"{profile.displayName}", formatted, style);
+                EditorGUILayout.LabelField(profile.displayName, formatted,
+                    EditorStyles.helpBox);
             }
         }
     }
 
     /// <summary>
-    /// Popup window for creating a new key from the component inspector.
-    /// Creates the key in the data, saves to disk, and assigns to the component.
+    /// Shared key selection UI used by all localized component inspectors.
+    /// Pattern: button opens SearchWindow, text field + "Add" for new keys.
     /// </summary>
-    public class AddKeyFromInspector : EditorWindow
+    internal static class KeySelectorUI
     {
-        private SerializedProperty _keyProp;
-        private string _newKey = "";
-        private int _fileIndex;
-
-        public void Init(SerializedProperty keyProp)
+        public static void DrawKeySelector(SerializedProperty keyProp, ref string newKeyInput)
         {
-            _keyProp = keyProp;
-        }
+            var allKeys = EditorDataCache.AllKeys;
+            string currentKey = keyProp.stringValue;
 
-        private void OnGUI()
-        {
-            EditorGUILayout.Space(4);
-            _newKey = EditorGUILayout.TextField("Key", _newKey);
+            bool keyExists = !string.IsNullOrEmpty(currentKey) && allKeys.Contains(currentKey);
+            bool isEmpty = string.IsNullOrEmpty(currentKey);
 
-            var data = EditorDataCache.Data;
+            // Current key display + search button
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel("Key");
 
-            if (data != null && data.SourceFiles.Count > 0)
+            // Show current key as a button — clicking opens SearchWindow
+            string displayText;
+
+            if (isEmpty)
+                displayText = "<None>";
+            else if (keyExists)
+                displayText = FormatKeyDisplay(currentKey);
+            else
+                displayText = $"<None> : ({currentKey})";
+
+            Color prevColor = GUI.color;
+
+            if (!isEmpty && !keyExists)
+                GUI.color = new Color(1f, 0.35f, 0.35f);
+
+            if (GUILayout.Button(displayText, EditorStyles.popup))
             {
-                var files = data.SourceFiles.ToArray();
-                _fileIndex = Mathf.Clamp(_fileIndex, 0, files.Length - 1);
-                _fileIndex = EditorGUILayout.Popup("File", _fileIndex, files);
+                OpenSearchWindow(keyProp, allKeys, newKeyInput);
             }
 
-            EditorGUILayout.Space(4);
+            GUI.color = prevColor;
 
-            bool canCreate = !string.IsNullOrEmpty(_newKey) && data != null;
-
-            using (new EditorGUI.DisabledScope(!canCreate))
+            // "Add" button — shown only when current key doesn't exist but has a value
+            if (!isEmpty && !keyExists)
             {
-                if (GUILayout.Button("Create & assign"))
+                if (GUILayout.Button("Add", GUILayout.Width(40)))
                 {
-                    string file = data.SourceFiles.Count > 0
-                        ? data.SourceFiles[_fileIndex]
-                        : "global";
-
-                    data.AddKey(_newKey, file);
-                    data.SaveFileAllLanguages(file);
-                    AssetDatabase.Refresh();
-                    EditorDataCache.Invalidate();
-
-                    // Assign to component
-                    _keyProp.serializedObject.Update();
-                    _keyProp.stringValue = _newKey;
-                    _keyProp.serializedObject.ApplyModifiedProperties();
-
-                    Close();
+                    AddKeyToData(currentKey);
+                    keyProp.serializedObject.ApplyModifiedProperties();
                 }
             }
+
+            EditorGUILayout.EndHorizontal();
+
+            // New key input field + Add button
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel("Add new key");
+
+            bool isDuplicate = !string.IsNullOrEmpty(newKeyInput) && allKeys.Contains(newKeyInput);
+
+            prevColor = GUI.color;
+
+            if (isDuplicate)
+                GUI.color = new Color(1f, 0.35f, 0.35f);
+
+            newKeyInput = EditorGUILayout.TextField(newKeyInput);
+            GUI.color = prevColor;
+
+            bool canAdd = !string.IsNullOrEmpty(newKeyInput) && !isDuplicate;
+            GUI.enabled = canAdd;
+
+            if (GUILayout.Button("Add", GUILayout.Width(40)))
+            {
+                AddKeyToData(newKeyInput);
+
+                keyProp.stringValue = newKeyInput;
+                keyProp.serializedObject.ApplyModifiedProperties();
+                newKeyInput = "";
+            }
+
+            GUI.enabled = true;
+            EditorGUILayout.EndHorizontal();
+
+            // Duplicate warning
+            if (isDuplicate)
+            {
+                EditorGUILayout.HelpBox("This key already exists.", MessageType.Error);
+            }
+        }
+
+        public static void DrawTranslationPreview(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return;
+
+            var data = EditorDataCache.Data;
+            var config = EditorDataCache.Config;
+            if (data == null || config == null) return;
+
+            EditorGUILayout.Space(4);
+            EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
+
+            foreach (var profile in config.languages)
+            {
+                if (profile == null) continue;
+
+                string value = data.GetTranslation(key, profile.Code);
+                string display = string.IsNullOrEmpty(value) ? "(missing)" : value;
+
+                Color prev = GUI.color;
+
+                if (string.IsNullOrEmpty(value))
+                    GUI.color = new Color(1f, 0.7f, 0.7f);
+
+                EditorGUILayout.LabelField(
+                    $"{profile.displayName} ({profile.Code})",
+                    display, EditorStyles.helpBox);
+
+                GUI.color = prev;
+            }
+        }
+
+        private static void OpenSearchWindow(SerializedProperty keyProp, List<string> keys, string pendingNew)
+        {
+            var searchWindow = ScriptableObject.CreateInstance<KeySearchWindow>();
+
+            searchWindow.Init(new List<string>(keys), selectedKey =>
+            {
+                keyProp.serializedObject.Update();
+                keyProp.stringValue = selectedKey ?? "";
+                keyProp.serializedObject.ApplyModifiedProperties();
+
+                // If this was a new key (from the "Add:" option), create it
+                if (!string.IsNullOrEmpty(selectedKey) && !keys.Contains(selectedKey))
+                {
+                    AddKeyToData(selectedKey);
+                }
+
+                EditorDataCache.Invalidate();
+            }, pendingNew);
+
+            var mousePos = GUIUtility.GUIToScreenPoint(Event.current.mousePosition);
+            SearchWindow.Open(new SearchWindowContext(mousePos), searchWindow);
+        }
+
+        private static string FormatKeyDisplay(string key)
+        {
+            if (!key.Contains('/'))
+                return key;
+
+            var parts = key.Split('/');
+            return $"{parts[^1]}    ({key})";
+        }
+
+        private static void AddKeyToData(string key)
+        {
+            var data = EditorDataCache.Data;
+            if (data == null) return;
+
+            string file = data.SourceFiles.Count > 0 ? data.SourceFiles[0] : "global";
+            data.AddKey(key, file);
+            data.SaveFileAllLanguages(file);
+            AssetDatabase.Refresh();
+            EditorDataCache.Invalidate();
         }
     }
 }

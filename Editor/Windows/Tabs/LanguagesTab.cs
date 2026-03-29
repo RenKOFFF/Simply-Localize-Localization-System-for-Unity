@@ -38,10 +38,21 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             headerRow.Add(title);
 
+            var btnGroup = new VisualElement();
+            btnGroup.style.flexDirection = FlexDirection.Row;
+
+            var addExistingBtn = new Button(OnAddExistingProfileClicked);
+            addExistingBtn.text = "+ Add existing profile";
+            addExistingBtn.style.fontSize = 12;
+            addExistingBtn.style.marginRight = 4;
+            btnGroup.Add(addExistingBtn);
+
             var addBtn = new Button(OnAddLanguageClicked);
-            addBtn.text = "+ Add language";
+            addBtn.text = "+ Create new language";
             addBtn.style.fontSize = 12;
-            headerRow.Add(addBtn);
+            btnGroup.Add(addBtn);
+
+            headerRow.Add(btnGroup);
 
             root.Add(headerRow);
 
@@ -195,6 +206,79 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             popup.ShowUtility();
             popup.position = new Rect(
                 Screen.width / 2f - 150, Screen.height / 2f - 100, 300, 180);
+        }
+
+        private void OnAddExistingProfileClicked()
+        {
+            // Find all LanguageProfile assets in the project that aren't already in the config
+            var existingCodes = new System.Collections.Generic.HashSet<string>(
+                _config.languages.Where(p => p != null).Select(p => p.Code));
+
+            var guids = AssetDatabase.FindAssets("t:LanguageProfile");
+            var available = new System.Collections.Generic.List<LanguageProfile>();
+
+            foreach (var guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var profile = AssetDatabase.LoadAssetAtPath<LanguageProfile>(path);
+
+                if (profile != null && !existingCodes.Contains(profile.Code))
+                    available.Add(profile);
+            }
+
+            if (available.Count == 0)
+            {
+                EditorUtility.DisplayDialog("No profiles available",
+                    "All existing LanguageProfile assets are already in the config.\n" +
+                    "Use 'Create new language' to make a new one.", "OK");
+                return;
+            }
+
+            // Show a picker menu
+            var menu = new GenericMenu();
+
+            foreach (var profile in available)
+            {
+                var p = profile;
+                string label = $"{p.displayName} ({p.Code})";
+
+                menu.AddItem(new GUIContent(label), false, () =>
+                {
+                    Undo.RecordObject(_config, "Add existing language");
+                    _config.languages.Add(p);
+                    EditorUtility.SetDirty(_config);
+
+                    // Ensure the language folder + JSON files exist
+                    if (!string.IsNullOrEmpty(_data.BasePath))
+                    {
+                        string textDir = System.IO.Path.Combine(_data.BasePath, p.Code, "text");
+
+                        if (!System.IO.Directory.Exists(textDir))
+                            System.IO.Directory.CreateDirectory(textDir);
+
+                        // Create JSON for each existing source file (if missing)
+                        foreach (var fileName in _data.SourceFiles)
+                        {
+                            string jsonPath = System.IO.Path.Combine(textDir, fileName + ".json");
+
+                            if (!System.IO.File.Exists(jsonPath))
+                                System.IO.File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
+                        }
+
+                        if (_data.SourceFiles.Count == 0)
+                        {
+                            string jsonPath = System.IO.Path.Combine(textDir, "global.json");
+                            if (!System.IO.File.Exists(jsonPath))
+                                System.IO.File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
+                        }
+                    }
+
+                    AssetDatabase.Refresh();
+                    _window.FullRefresh();
+                });
+            }
+
+            menu.ShowAsContext();
         }
 
         private void OnRemoveLanguage(LanguageProfile profile)

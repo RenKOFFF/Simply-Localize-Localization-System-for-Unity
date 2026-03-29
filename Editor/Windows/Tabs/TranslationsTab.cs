@@ -110,6 +110,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 if (isSelected || (_viewMode == ViewMode.Single && _selectedFiles.Contains(fileName)))
                     fileBtn.style.backgroundColor = new Color(0.2f, 0.5f, 0.9f, 0.1f);
 
+                // Right-click context menu for file operations
+                string capturedFile = fileName;
+                fileBtn.RegisterCallback<ContextClickEvent>(evt =>
+                {
+                    ShowFileContextMenu(capturedFile);
+                    evt.StopPropagation();
+                });
+
                 _fileList.Add(fileBtn);
             }
 
@@ -376,6 +384,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                                 _data.SetTranslation(capturedKey, capturedLang, newValue);
                                 _data.SaveFile(capturedFile, capturedLang);
                                 AssetDatabase.Refresh();
+                                EditorDataCache.Invalidate();
                                 UpdateStatus();
                             }
                         });
@@ -534,8 +543,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 _data.AddKey(key, file);
                 _data.SaveFileAllLanguages(file);
                 AssetDatabase.Refresh();
+                EditorDataCache.Invalidate();
                 RebuildTable();
-            });
+            }, _data);
 
             var rect = GUIUtility.GUIToScreenRect(new Rect(Event.current?.mousePosition ?? Vector2.zero, Vector2.zero));
             popup.ShowAsDropDown(rect, new Vector2(350, 100));
@@ -580,6 +590,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                     _data.SaveFileAllLanguages(f);
                     AssetDatabase.Refresh();
+                    EditorDataCache.Invalidate();
                     RebuildTable();
                 });
             }
@@ -597,6 +608,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                         _data.SaveFileAllLanguages(file);
 
                     AssetDatabase.Refresh();
+                    EditorDataCache.Invalidate();
                     RebuildTable();
                 }
             });
@@ -606,7 +618,71 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         private void RefreshAll()
         {
+            EditorDataCache.Invalidate();
             _window.RefreshCurrentTab();
+        }
+
+        private void ShowFileContextMenu(string fileName)
+        {
+            var menu = new GenericMenu();
+
+            // Delete file — migrate keys to global
+            bool isOnlyFile = _data.SourceFiles.Count <= 1;
+
+            if (isOnlyFile)
+            {
+                menu.AddDisabledItem(new GUIContent("Cannot delete the only file"));
+            }
+            else
+            {
+                menu.AddItem(new GUIContent("Delete file (move keys to global)"), false, () =>
+                {
+                    int keyCount = _data.GetKeysForFile(fileName).Count();
+
+                    if (!EditorUtility.DisplayDialog("Delete file",
+                        $"Delete '{fileName}.json' and move {keyCount} key(s) to 'global'?\n" +
+                        "JSON files will be deleted from all language folders.",
+                        "Delete & migrate", "Cancel"))
+                        return;
+
+                    // Ensure global exists
+                    if (!_data.SourceFiles.Contains("global"))
+                        _data.CreateSourceFile("global");
+
+                    // Move all keys to global
+                    var keysToMove = _data.GetKeysForFile(fileName).ToList();
+
+                    foreach (var key in keysToMove)
+                        _data.MoveKeyToFile(key, "global");
+
+                    // Save global for all languages
+                    _data.SaveFileAllLanguages("global");
+
+                    // Delete the file from all language folders
+                    if (!string.IsNullOrEmpty(_data.BasePath))
+                    {
+                        foreach (var langCode in _data.LoadedLanguages)
+                        {
+                            string filePath = System.IO.Path.Combine(
+                                _data.BasePath, langCode, "text", fileName + ".json");
+
+                            if (System.IO.File.Exists(filePath))
+                                System.IO.File.Delete(filePath);
+
+                            string metaPath = filePath + ".meta";
+
+                            if (System.IO.File.Exists(metaPath))
+                                System.IO.File.Delete(metaPath);
+                        }
+                    }
+
+                    _selectedFiles.Remove(fileName);
+                    AssetDatabase.Refresh();
+                    _window.FullRefresh();
+                });
+            }
+
+            menu.ShowAsContext();
         }
     }
 
@@ -620,18 +696,39 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private string _selectedFile;
         private string _keyName = "";
         private System.Action<string, string> _onAdd;
+        private EditorLocalizationData _data;
 
-        public void Init(List<string> files, string defaultFile, System.Action<string, string> onAdd)
+        public void Init(List<string> files, string defaultFile, System.Action<string, string> onAdd,
+            EditorLocalizationData data = null)
         {
             _files = files;
             _selectedFile = defaultFile;
             _onAdd = onAdd;
+            _data = data;
         }
 
         private void OnGUI()
         {
             EditorGUILayout.Space(4);
+
+            bool isDuplicate = _data != null
+                && !string.IsNullOrEmpty(_keyName)
+                && _data.GetFileForKey(_keyName) != null;
+
+            Color prev = GUI.color;
+
+            if (isDuplicate)
+                GUI.color = new Color(1f, 0.35f, 0.35f);
+
             _keyName = EditorGUILayout.TextField("Key", _keyName);
+            GUI.color = prev;
+
+            if (isDuplicate)
+            {
+                EditorGUILayout.HelpBox(
+                    $"Key '{_keyName}' already exists in {_data.GetFileForKey(_keyName)}.json",
+                    MessageType.Error);
+            }
 
             if (_files != null && _files.Count > 0)
             {
@@ -642,11 +739,16 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             EditorGUILayout.Space(4);
 
-            if (GUILayout.Button("Add") && !string.IsNullOrEmpty(_keyName))
+            bool canAdd = !string.IsNullOrEmpty(_keyName) && !isDuplicate;
+            GUI.enabled = canAdd;
+
+            if (GUILayout.Button("Add"))
             {
                 _onAdd?.Invoke(_keyName, _selectedFile);
                 Close();
             }
+
+            GUI.enabled = true;
         }
     }
 
@@ -668,13 +770,20 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         {
             EditorGUILayout.Space(4);
             _fileName = EditorGUILayout.TextField("File name", _fileName);
+
+            bool exists = _data.SourceFiles.Contains(_fileName);
+
+            if (exists)
+                EditorGUILayout.HelpBox("File already exists.", MessageType.Error);
+
             EditorGUILayout.Space(4);
 
-            if (GUILayout.Button("Create") && !string.IsNullOrEmpty(_fileName))
+            GUI.enabled = !string.IsNullOrEmpty(_fileName) && !exists;
+
+            if (GUILayout.Button("Create"))
             {
                 _data.CreateSourceFile(_fileName);
 
-                // Create empty JSON for all languages
                 foreach (var profile in _config.languages)
                 {
                     if (profile == null) continue;
@@ -685,6 +794,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 _onCreated?.Invoke();
                 Close();
             }
+
+            GUI.enabled = true;
         }
     }
 }

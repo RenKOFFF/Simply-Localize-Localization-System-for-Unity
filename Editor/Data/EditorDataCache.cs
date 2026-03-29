@@ -5,8 +5,8 @@ using UnityEditor;
 namespace SimplyLocalize.Editor.Data
 {
     /// <summary>
-    /// Shared, lazily loaded localization data for use by inspectors and other editor tools.
-    /// Caches data and auto-refreshes when assets change.
+    /// Shared lazily loaded localization data for inspectors and editor tools.
+    /// Auto-invalidates on asset changes, undo/redo, and manual calls.
     /// </summary>
     [InitializeOnLoad]
     public static class EditorDataCache
@@ -18,7 +18,9 @@ namespace SimplyLocalize.Editor.Data
 
         static EditorDataCache()
         {
-            EditorApplication.projectChanged += () => _dirty = true;
+            EditorApplication.projectChanged += MarkDirty;
+            Undo.undoRedoPerformed += MarkDirty;
+            AssemblyReloadEvents.afterAssemblyReload += MarkDirty;
         }
 
         public static LocalizationConfig Config
@@ -39,7 +41,6 @@ namespace SimplyLocalize.Editor.Data
             }
         }
 
-        /// <summary>Sorted list of all translation keys.</summary>
         public static List<string> AllKeys
         {
             get
@@ -49,8 +50,9 @@ namespace SimplyLocalize.Editor.Data
             }
         }
 
-        /// <summary>Force reload on next access.</summary>
-        public static void Invalidate()
+        public static void Invalidate() => MarkDirty();
+
+        private static void MarkDirty()
         {
             _dirty = true;
         }
@@ -66,6 +68,7 @@ namespace SimplyLocalize.Editor.Data
             {
                 _data = null;
                 _sortedKeys = new List<string>();
+                _dirty = false;
                 return;
             }
 
