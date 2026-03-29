@@ -28,8 +28,8 @@ namespace SimplyLocalize.Editor.Inspectors
         }
 
         /// <summary>
-        /// Compact translation preview with edit toggle.
-        /// Inline TextField for editing — not TextArea (that's for the main window).
+        /// Compact translation display: label + value on same line for short text,
+        /// wraps naturally for longer text. Edit toggle for inline editing.
         /// </summary>
         internal static void DrawTranslations(string key, ref bool editMode)
         {
@@ -41,6 +41,7 @@ namespace SimplyLocalize.Editor.Inspectors
 
             EditorGUILayout.Space(4);
 
+            // Header + edit toggle
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
 
@@ -60,16 +61,27 @@ namespace SimplyLocalize.Editor.Inspectors
                 string value = data.GetTranslation(key, profile.Code) ?? "";
                 bool missing = string.IsNullOrEmpty(value);
 
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"{profile.displayName} ({profile.Code})",
-                    GUILayout.Width(120));
-
                 Color prev = GUI.color;
                 if (missing) GUI.color = new Color(1f, 0.7f, 0.7f);
 
                 if (editMode)
                 {
-                    string newValue = EditorGUILayout.TextField(value);
+                    // Edit mode: label on top, TextArea below (supports multiline)
+                    EditorGUILayout.LabelField($"{profile.displayName} ({profile.Code})",
+                        EditorStyles.miniLabel);
+
+                    var style = new GUIStyle(EditorStyles.textArea)
+                    {
+                        wordWrap = true,
+                        fontSize = 11
+                    };
+
+                    float h = style.CalcHeight(new GUIContent(value),
+                        EditorGUIUtility.currentViewWidth - 40);
+                    h = Mathf.Max(h, EditorGUIUtility.singleLineHeight);
+
+                    string newValue = EditorGUILayout.TextArea(value, style,
+                        GUILayout.MinHeight(h));
 
                     if (newValue != value)
                     {
@@ -84,12 +96,16 @@ namespace SimplyLocalize.Editor.Inspectors
                 }
                 else
                 {
-                    EditorGUILayout.LabelField(missing ? "(missing)" : value,
+                    // Read mode: compact — label : value on one line, wraps if long
+                    string display = missing ? "(missing)" : value;
+
+                    EditorGUILayout.LabelField(
+                        $"{profile.displayName} ({profile.Code})",
+                        display,
                         EditorStyles.helpBox);
                 }
 
                 GUI.color = prev;
-                EditorGUILayout.EndHorizontal();
             }
         }
     }

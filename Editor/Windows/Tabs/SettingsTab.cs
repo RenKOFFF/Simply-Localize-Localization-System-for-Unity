@@ -104,6 +104,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     "Key conversion mode", _config.keyConversionMode);
                 var newLogging = EditorGUILayout.Toggle("Enable logging",
                     _config.enableLogging);
+                var newLoggingBuild = EditorGUILayout.Toggle("Enable logging in build",
+                    _config.enableLoggingInBuild);
 
                 if (EditorGUI.EndChangeCheck())
                 {
@@ -111,6 +113,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     _config.resourcesBasePath = newPath;
                     _config.keyConversionMode = newMode;
                     _config.enableLogging = newLogging;
+                    _config.enableLoggingInBuild = newLoggingBuild;
                     EditorUtility.SetDirty(_config);
                 }
 

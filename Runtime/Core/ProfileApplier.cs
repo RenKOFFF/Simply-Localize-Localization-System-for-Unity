@@ -5,9 +5,8 @@ using UnityEngine.UI;
 namespace SimplyLocalize
 {
     /// <summary>
-    /// Caches original text settings and applies LanguageProfile overrides.
-    /// Supports per-section skip flags so LocalizedProfileOverride can handle
-    /// specific sections while the global profile handles the rest.
+    /// Caches original text settings (including material) and applies LanguageProfile overrides.
+    /// Per-section skip flags allow LocalizedProfileOverride to handle specific sections.
     /// </summary>
     public class ProfileApplier
     {
@@ -15,6 +14,7 @@ namespace SimplyLocalize
 
         // TMP originals
         private TMP_FontAsset _originalFont;
+        private Material _originalMaterial;
         private float _originalFontSize;
         private FontWeight _originalFontWeight;
         private FontStyles _originalFontStyle;
@@ -34,6 +34,7 @@ namespace SimplyLocalize
         {
             if (_cached || text == null) return;
             _originalFont = text.font;
+            _originalMaterial = text.fontSharedMaterial;
             _originalFontSize = text.fontSize;
             _originalFontWeight = text.fontWeight;
             _originalFontStyle = text.fontStyle;
@@ -55,30 +56,33 @@ namespace SimplyLocalize
             _cached = true;
         }
 
-        /// <summary>
-        /// Restores originals, then applies profile overrides.
-        /// Skip flags allow LocalizedProfileOverride to handle those sections instead.
-        /// </summary>
         public void Apply(TMP_Text text, LanguageProfile profile,
             bool skipFont = false, bool skipTypography = false,
             bool skipSpacing = false, bool skipLayout = false)
         {
             if (text == null || !_cached) return;
 
-            // Restore all originals first
-            if (!skipFont) text.font = _originalFont;
-            text.fontSize = _originalFontSize;
+            // Restore originals (except skipped sections)
+            if (!skipFont)
+            {
+                text.font = _originalFont;
+                text.fontSharedMaterial = _originalMaterial;
+            }
+
             if (!skipTypography)
             {
+                text.fontSize = _originalFontSize;
                 text.fontWeight = _originalFontWeight;
                 text.fontStyle = _originalFontStyle;
             }
+
             if (!skipSpacing)
             {
                 text.lineSpacing = _originalLineSpacing;
                 text.characterSpacing = _originalCharSpacing;
                 text.wordSpacing = _originalWordSpacing;
             }
+
             if (!skipLayout)
             {
                 text.alignment = _originalAlignment;
@@ -87,7 +91,7 @@ namespace SimplyLocalize
 
             if (profile == null) return;
 
-            // Apply global profile sections that aren't skipped
+            // Apply global profile for non-skipped sections
             if (!skipFont && profile.overrideFont && profile.primaryFont != null)
             {
                 text.font = profile.primaryFont;

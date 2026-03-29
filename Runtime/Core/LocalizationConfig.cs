@@ -38,6 +38,7 @@ namespace SimplyLocalize
         [Header("Editor")]
         public KeyConversionMode keyConversionMode = KeyConversionMode.ReplaceSpacesWithSlashes;
         public bool enableLogging;
+        public bool enableLoggingInBuild;
 
         // ──────────────────────────────────────────────
         //  Computed helpers
