@@ -4,18 +4,13 @@ using UnityEngine.UI;
 
 namespace SimplyLocalize.Components
 {
-    /// <summary>
-    /// Localizes a static text element (TMP or legacy Text).
-    /// Applies language profile with full caching — switching languages
-    /// always restores originals first, then applies overrides.
-    /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("SimplyLocalize/Localized Text")]
     public class LocalizedText : LocalizedComponentBase
     {
         private TMP_Text _tmpText;
         private Text _legacyText;
-        private LocalizedFontOverride _fontOverride;
+        private LocalizedProfileOverride _profileOverride;
         private readonly ProfileApplier _profileApplier = new();
 
         protected override void OnEnable()
@@ -34,19 +29,17 @@ namespace SimplyLocalize.Components
 
         public override void Refresh()
         {
-            if (string.IsNullOrEmpty(_key))
-                return;
+            if (string.IsNullOrEmpty(_key)) return;
 
             CacheComponents();
             CacheOriginals();
 
             string text = Localization.Get(_key);
-            bool skipFont = _fontOverride != null && _fontOverride.HasOverrideForCurrentLanguage;
 
             if (_tmpText != null)
             {
                 _tmpText.text = text;
-                _profileApplier.Apply(_tmpText, Localization.CurrentProfile, skipFont);
+                ApplyProfile(Localization.CurrentProfile);
             }
             else if (_legacyText != null)
             {
@@ -57,12 +50,22 @@ namespace SimplyLocalize.Components
 
         private void HandleProfileChanged(LanguageProfile profile)
         {
-            bool skipFont = _fontOverride != null && _fontOverride.HasOverrideForCurrentLanguage;
+            ApplyProfile(profile);
+        }
 
+        private void ApplyProfile(LanguageProfile profile)
+        {
             if (_tmpText != null)
-                _profileApplier.Apply(_tmpText, profile, skipFont);
+            {
+                if (_profileOverride != null)
+                    _profileOverride.ApplyMerged(_tmpText, profile, _profileApplier);
+                else
+                    _profileApplier.Apply(_tmpText, profile);
+            }
             else if (_legacyText != null)
+            {
                 _profileApplier.Apply(_legacyText, profile);
+            }
         }
 
         private void CacheComponents()
@@ -70,19 +73,15 @@ namespace SimplyLocalize.Components
             if (_tmpText == null && _legacyText == null)
             {
                 _tmpText = GetComponent<TMP_Text>();
-                if (_tmpText == null)
-                    _legacyText = GetComponent<Text>();
-
-                _fontOverride = GetComponent<LocalizedFontOverride>();
+                if (_tmpText == null) _legacyText = GetComponent<Text>();
+                _profileOverride = GetComponent<LocalizedProfileOverride>();
             }
         }
 
         private void CacheOriginals()
         {
-            if (_tmpText != null)
-                _profileApplier.CacheOriginals(_tmpText);
-            else if (_legacyText != null)
-                _profileApplier.CacheOriginals(_legacyText);
+            if (_tmpText != null) _profileApplier.CacheOriginals(_tmpText);
+            else if (_legacyText != null) _profileApplier.CacheOriginals(_legacyText);
         }
     }
 }

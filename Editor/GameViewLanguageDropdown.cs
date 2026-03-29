@@ -5,10 +5,6 @@ using UnityEngine.UIElements;
 
 namespace SimplyLocalize.Editor
 {
-    /// <summary>
-    /// Draws a compact clickable language dropdown inside the Game View during Play Mode.
-    /// Injected as a small absolutely-positioned IMGUI container.
-    /// </summary>
     [InitializeOnLoad]
     public static class GameViewLanguageDropdown
     {
@@ -22,8 +18,9 @@ namespace SimplyLocalize.Editor
         private static EditorWindow _gameView;
 
         private const float DropdownWidth = 150;
-        private const float DropdownHeight = 22;
+        private const float DropdownHeight = 20;
         private const float Padding = 6;
+        private const float TopOffset = 22; // Clear the Game View toolbar
 
         static GameViewLanguageDropdown()
         {
@@ -63,24 +60,19 @@ namespace SimplyLocalize.Editor
         private static void InjectOverlay()
         {
             if (_gameViewType == null) return;
-
             _gameView = EditorWindow.GetWindow(_gameViewType, false, null, false);
             if (_gameView == null) return;
 
             RemoveOverlay();
 
+            var pos = (Position)EditorPrefs.GetInt(PositionPrefKey, (int)Position.Right);
+
             var container = new IMGUIContainer(DrawDropdown);
             container.name = "SimplyLocalize_LangDropdown";
-
-            // Small container, only the size of the dropdown
             container.style.position = UnityEngine.UIElements.Position.Absolute;
             container.style.width = DropdownWidth + Padding * 2;
             container.style.height = DropdownHeight + Padding * 2;
-
-            // Position based on setting
-            var pos = (Position)EditorPrefs.GetInt(PositionPrefKey, (int)Position.Right);
-
-            container.style.top = 0;
+            container.style.top = TopOffset;
 
             switch (pos)
             {
@@ -88,9 +80,9 @@ namespace SimplyLocalize.Editor
                     container.style.left = 0;
                     break;
                 case Position.Center:
-                    container.style.left = StyleKeyword.Auto;
-                    container.style.right = StyleKeyword.Auto;
                     container.style.alignSelf = Align.Center;
+                    container.style.left = new StyleLength(StyleKeyword.Auto);
+                    container.style.right = new StyleLength(StyleKeyword.Auto);
                     break;
                 default:
                     container.style.right = 0;
@@ -103,8 +95,7 @@ namespace SimplyLocalize.Editor
         private static void RemoveOverlay()
         {
             if (_gameView == null) return;
-            var existing = _gameView.rootVisualElement.Q("SimplyLocalize_LangDropdown");
-            existing?.RemoveFromHierarchy();
+            _gameView.rootVisualElement.Q("SimplyLocalize_LangDropdown")?.RemoveFromHierarchy();
         }
 
         private static void DrawDropdown()
@@ -125,12 +116,10 @@ namespace SimplyLocalize.Editor
                     currentIndex = i;
             }
 
-            var rect = new Rect(Padding, Padding, DropdownWidth, DropdownHeight);
-
-            // Semi-transparent background
             var bgRect = new Rect(0, 0, DropdownWidth + Padding * 2, DropdownHeight + Padding * 2);
             EditorGUI.DrawRect(bgRect, new Color(0, 0, 0, 0.35f));
 
+            var rect = new Rect(Padding, Padding, DropdownWidth, DropdownHeight);
             int newIndex = EditorGUI.Popup(rect, currentIndex, names);
 
             if (newIndex != currentIndex && languages[newIndex] != null)

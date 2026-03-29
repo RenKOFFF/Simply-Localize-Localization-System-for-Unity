@@ -363,7 +363,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                         field.value = value;
                         field.style.width = 180;
                         field.style.fontSize = 11;
-                        field.multiline = false;
+                        field.multiline = true;
+
+                        // Auto-grow height based on newlines
+                        int lineCount = 1;
+                        for (int c = 0; c < value.Length; c++)
+                            if (value[c] == '\n') lineCount++;
+                        field.style.minHeight = Mathf.Max(20, lineCount * 16);
 
                         if (string.IsNullOrEmpty(value))
                         {
