@@ -55,6 +55,7 @@ namespace SimplyLocalize.Components
             else if (_legacyText != null)
             {
                 _legacyText.text = text;
+                ApplyProfile(_legacyText);
             }
         }
 
@@ -62,6 +63,9 @@ namespace SimplyLocalize.Components
         {
             if (_tmpText != null)
                 ApplyProfile(_tmpText);
+            
+            if (_legacyText != null)
+                ApplyProfile(_legacyText);
         }
 
         private void ApplyProfile(TMP_Text text)
@@ -92,14 +96,21 @@ namespace SimplyLocalize.Components
                 text.alignment = profile.alignmentOverride;
         }
 
+        private void ApplyProfile(Text legacyText)
+        {
+            throw new System.NotImplementedException();
+        }
+
         private void CacheComponents()
         {
-            if (_tmpText == null && _legacyText == null)
+            if (_tmpText == null)
             {
                 _tmpText = GetComponent<TMP_Text>();
+            }
 
-                if (_tmpText == null)
-                    _legacyText = GetComponent<Text>();
+            if (_legacyText == null)
+            {
+                _legacyText = GetComponent<Text>();
             }
         }
     }

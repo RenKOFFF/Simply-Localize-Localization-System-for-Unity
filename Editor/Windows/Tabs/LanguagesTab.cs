@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using SimplyLocalize.Editor.Data;
 using UnityEditor;
 using UnityEngine;
@@ -27,7 +28,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             root.style.paddingLeft = 16;
             root.style.paddingRight = 16;
 
-            // Header with add button
             var headerRow = new VisualElement();
             headerRow.style.flexDirection = FlexDirection.Row;
             headerRow.style.justifyContent = Justify.SpaceBetween;
@@ -45,7 +45,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             root.Add(headerRow);
 
-            // Default / Fallback
             if (_config != null)
             {
                 var configSection = new VisualElement();
@@ -77,11 +76,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 configSection.Add(fallbackField);
 
                 root.Add(configSection);
-            }
 
-            // Language list
-            if (_config != null)
-            {
                 foreach (var profile in _config.languages)
                 {
                     if (profile == null) continue;
@@ -102,7 +97,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             card.style.flexDirection = FlexDirection.Row;
             card.style.alignItems = Align.Center;
 
-            // Info
             var info = new VisualElement();
             info.style.flexGrow = 1;
 
@@ -127,7 +121,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             info.Add(nameRow);
 
-            // Asset flags
             var flagsRow = new VisualElement();
             flagsRow.style.flexDirection = FlexDirection.Row;
             flagsRow.style.marginTop = 2;
@@ -148,7 +141,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             info.Add(flagsRow);
             card.Add(info);
 
-            // Actions
             var selectBtn = new Button(() =>
             {
                 Selection.activeObject = profile;
@@ -200,23 +192,63 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         {
             var popup = ScriptableObject.CreateInstance<AddLanguagePopup>();
             popup.Init(_config, _data, () => _window.FullRefresh());
-
             popup.ShowUtility();
             popup.position = new Rect(
-                Screen.width / 2f - 150, Screen.height / 2f - 80, 300, 160);
+                Screen.width / 2f - 150, Screen.height / 2f - 100, 300, 180);
         }
 
         private void OnRemoveLanguage(LanguageProfile profile)
         {
-            if (!EditorUtility.DisplayDialog("Remove language",
-                $"Remove '{profile.displayName}' ({profile.Code}) from the config?\n" +
-                "The profile asset and translation files will NOT be deleted.",
-                "Remove", "Cancel"))
+            // Three-choice dialog: Remove from config only / Delete everything / Cancel
+            int choice = EditorUtility.DisplayDialogComplex(
+                "Remove language",
+                $"Remove '{profile.displayName}' ({profile.Code})?\n\n" +
+                "• 'Remove from config' keeps the profile asset and data files on disk.\n" +
+                "• 'Delete everything' removes the profile asset AND the language data folder.",
+                "Delete everything",
+                "Cancel",
+                "Remove from config only");
+
+            if (choice == 1) // Cancel
                 return;
 
             Undo.RecordObject(_config, "Remove language");
             _config.languages.Remove(profile);
+
+            // If this was default or fallback, clear the reference
+            if (_config.defaultLanguage == profile)
+                _config.defaultLanguage = null;
+            if (_config.fallbackLanguage == profile)
+                _config.fallbackLanguage = null;
+
             EditorUtility.SetDirty(_config);
+
+            if (choice == 0) // Delete everything
+            {
+                // Delete data folder
+                if (!string.IsNullOrEmpty(_data.BasePath))
+                {
+                    string langFolder = Path.Combine(_data.BasePath, profile.Code);
+
+                    if (Directory.Exists(langFolder))
+                    {
+                        Directory.Delete(langFolder, true);
+
+                        // Delete .meta file too
+                        string metaPath = langFolder + ".meta";
+                        if (File.Exists(metaPath))
+                            File.Delete(metaPath);
+                    }
+                }
+
+                // Delete profile asset
+                string profilePath = AssetDatabase.GetAssetPath(profile);
+                if (!string.IsNullOrEmpty(profilePath))
+                    AssetDatabase.DeleteAsset(profilePath);
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
             _window.FullRefresh();
         }
     }
@@ -246,7 +278,19 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _displayName = EditorGUILayout.TextField("Display name", _displayName);
             _systemLanguage = (SystemLanguage)EditorGUILayout.EnumPopup("System language", _systemLanguage);
 
-            EditorGUILayout.Space(8);
+            EditorGUILayout.Space(4);
+
+            // Show what will be created
+            if (!string.IsNullOrEmpty(_code))
+            {
+                EditorGUILayout.HelpBox(
+                    $"Will create:\n" +
+                    $"• Profile_{_code}.asset\n" +
+                    $"• {_code}/text/ folder with JSON files for all existing source files",
+                    MessageType.Info);
+            }
+
+            EditorGUILayout.Space(4);
 
             using (new EditorGUI.DisabledScope(string.IsNullOrEmpty(_code) || string.IsNullOrEmpty(_displayName)))
             {
@@ -279,14 +323,31 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _config.languages.Add(profile);
             EditorUtility.SetDirty(_config);
 
-            // Create text folder with empty JSON
+            // Create text folder and JSON files for ALL existing source files
             if (!string.IsNullOrEmpty(_data.BasePath))
             {
                 string textDir = Path.Combine(_data.BasePath, _code, "text");
                 Directory.CreateDirectory(textDir);
 
-                string jsonPath = Path.Combine(textDir, _code + ".json");
-                File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
+                var existingFiles = _data.SourceFiles;
+
+                if (existingFiles.Count > 0)
+                {
+                    // Create empty JSON for every existing source file
+                    foreach (var fileName in existingFiles)
+                    {
+                        string jsonPath = Path.Combine(textDir, fileName + ".json");
+
+                        if (!File.Exists(jsonPath))
+                            File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
+                    }
+                }
+                else
+                {
+                    // No existing files — create global.json as default
+                    string jsonPath = Path.Combine(textDir, "global.json");
+                    File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
+                }
             }
 
             AssetDatabase.SaveAssets();

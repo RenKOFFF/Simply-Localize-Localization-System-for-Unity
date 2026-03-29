@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using SimplyLocalize.Editor.Data;
-using SimplyLocalize.Editor.Utilities;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -196,18 +195,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             toolbar.style.borderBottomWidth = 1;
             toolbar.style.borderBottomColor = new Color(0, 0, 0, 0.1f);
 
-            var searchField = new TextField();
+            var searchField = new UnityEditor.UIElements.ToolbarSearchField();
             searchField.value = _searchQuery;
             searchField.style.flexGrow = 1;
             searchField.style.fontSize = 12;
 
-            var placeholder = searchField.Q<TextElement>();
-            if (placeholder != null)
-                searchField.SetPlaceholderText("Search keys and translations...");
-
             searchField.RegisterValueChangedCallback(evt =>
             {
-                _searchQuery = evt.newValue;
+                _searchQuery = evt.newValue ?? "";
                 RebuildTable();
             });
             toolbar.Add(searchField);
@@ -532,7 +527,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             string defaultFile = _selectedFiles.Count == 1
                 ? _selectedFiles.First()
-                : (_data.SourceFiles.Count > 0 ? _data.SourceFiles[0] : "default");
+                : (_data.SourceFiles.Count > 0 ? _data.SourceFiles[0] : "global");
 
             popup.Init(_data.SourceFiles.ToList(), defaultFile, (key, file) =>
             {

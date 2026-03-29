@@ -163,11 +163,16 @@ namespace SimplyLocalize.Editor.Data
 
         /// <summary>
         /// Adds a new key assigned to the specified source file.
+        /// Auto-registers the source file if it doesn't exist yet.
         /// </summary>
         public void AddKey(string key, string sourceFile)
         {
             if (_keyToFile.ContainsKey(key))
                 return;
+
+            // Auto-register source file
+            if (!_sourceFiles.Contains(sourceFile))
+                _sourceFiles.Add(sourceFile);
 
             _keyToFile[key] = sourceFile;
 

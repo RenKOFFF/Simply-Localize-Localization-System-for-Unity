@@ -86,7 +86,7 @@ namespace SimplyLocalize.Editor.Data
 
                 // Ensure key exists
                 if (data.GetFileForKey(key) == null)
-                    data.AddKey(key, string.IsNullOrEmpty(file) ? "imported" : file);
+                    data.AddKey(key, string.IsNullOrEmpty(file) ? "global" : file);
 
                 for (int i = 0; i < languageCodes.Count && i + 2 < fields.Count; i++)
                 {
