@@ -48,6 +48,8 @@ namespace SimplyLocalize.Editor.Data
             return sb.ToString();
         }
 
+        public static string EscapeJsonPublic(string value) => EscapeJson(value);
+
         private static string EscapeJson(string value)
         {
             if (string.IsNullOrEmpty(value))

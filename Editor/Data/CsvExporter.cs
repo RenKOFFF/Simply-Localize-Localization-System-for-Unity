@@ -18,8 +18,8 @@ namespace SimplyLocalize.Editor.Data
         {
             var sb = new StringBuilder();
 
-            // Header
-            sb.Append("Key,File");
+            // Header: Key, File, Description, lang1, lang2, ...
+            sb.Append("Key,File,Description");
             foreach (var lang in languageCodes)
                 sb.Append(',').Append(lang);
             sb.AppendLine();
@@ -32,6 +32,8 @@ namespace SimplyLocalize.Editor.Data
                 sb.Append(CsvEscape(key));
                 sb.Append(',');
                 sb.Append(CsvEscape(data.GetFileForKey(key) ?? ""));
+                sb.Append(',');
+                sb.Append(CsvEscape(data.GetDescription(key) ?? ""));
 
                 foreach (var lang in languageCodes)
                 {
@@ -67,9 +69,16 @@ namespace SimplyLocalize.Editor.Data
             var header = lines[0];
             if (header.Count < 3) return 0;
 
-            // header[0] = "Key", header[1] = "File", header[2..] = language codes
+            // Detect if Description column is present
+            // New format: Key, File, Description, lang1, lang2...
+            // Old format: Key, File, lang1, lang2...
+            bool hasDescription = header.Count > 2
+                && header[2].Trim().Equals("Description", System.StringComparison.OrdinalIgnoreCase);
+
+            int langStartIndex = hasDescription ? 3 : 2;
+
             var languageCodes = new List<string>();
-            for (int i = 2; i < header.Count; i++)
+            for (int i = langStartIndex; i < header.Count; i++)
                 languageCodes.Add(header[i].Trim());
 
             int updated = 0;
@@ -77,7 +86,7 @@ namespace SimplyLocalize.Editor.Data
             for (int row = 1; row < lines.Count; row++)
             {
                 var fields = lines[row];
-                if (fields.Count < 3) continue;
+                if (fields.Count < langStartIndex) continue;
 
                 string key = fields[0].Trim();
                 if (string.IsNullOrEmpty(key)) continue;
@@ -88,9 +97,17 @@ namespace SimplyLocalize.Editor.Data
                 if (data.GetFileForKey(key) == null)
                     data.AddKey(key, string.IsNullOrEmpty(file) ? "global" : file);
 
-                for (int i = 0; i < languageCodes.Count && i + 2 < fields.Count; i++)
+                // Import description if present
+                if (hasDescription && fields.Count > 2)
                 {
-                    string value = fields[i + 2];
+                    string desc = fields[2].Trim();
+                    if (!string.IsNullOrEmpty(desc))
+                        data.SetDescription(key, desc);
+                }
+
+                for (int i = 0; i < languageCodes.Count && i + langStartIndex < fields.Count; i++)
+                {
+                    string value = fields[i + langStartIndex];
                     data.SetTranslation(key, languageCodes[i], value);
                 }
 

@@ -415,7 +415,26 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                         evt.StopPropagation();
                     });
 
-                    row.Add(keyLabel);
+                    // Key cell with optional description
+                    var keyCell = new VisualElement();
+                    keyCell.style.width = 200;
+
+                    row.Add(keyCell);
+
+                    keyCell.Add(keyLabel);
+
+                    // Show description if present
+                    string desc = _data.GetDescription(key);
+
+                    if (!string.IsNullOrEmpty(desc))
+                    {
+                        var descLabel = new Label(desc);
+                        descLabel.style.fontSize = 9;
+                        descLabel.style.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+                        descLabel.style.paddingLeft = 20;
+                        descLabel.style.marginTop = -2;
+                        keyCell.Add(descLabel);
+                    }
 
                     // File cell
                     var fileLabel = new Label(sourceFile);
@@ -733,6 +752,47 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 RebuildTable();
             });
 
+            // Single-key operations
+            if (isSingle)
+            {
+                menu.AddSeparator("");
+
+                // Rename key
+                menu.AddItem(new GUIContent("Rename key"), false, () =>
+                {
+                    var popup = ScriptableObject.CreateInstance<RenameKeyPopup>();
+                    popup.Init(keys[0], _data, _config, () =>
+                    {
+                        _selectedKeys.Clear();
+                        _window.FullRefresh();
+                    });
+                    popup.titleContent = new GUIContent("Rename key");
+                    popup.ShowUtility();
+                    popup.position = new Rect(
+                        Screen.width / 2f - 150, Screen.height / 2f - 40, 300, 90);
+                });
+
+                // Edit description
+                string currentDesc = _data.GetDescription(keys[0]) ?? "";
+
+                menu.AddItem(new GUIContent(
+                    string.IsNullOrEmpty(currentDesc) ? "Add description" : "Edit description"),
+                    false, () =>
+                {
+                    var popup = ScriptableObject.CreateInstance<EditDescriptionPopup>();
+                    popup.Init(keys[0], currentDesc, _data, () =>
+                    {
+                        _data.SaveMeta();
+                        EditorDataCache.Invalidate();
+                        RebuildTable();
+                    });
+                    popup.titleContent = new GUIContent("Key description");
+                    popup.ShowUtility();
+                    popup.position = new Rect(
+                        Screen.width / 2f - 175, Screen.height / 2f - 40, 350, 100);
+                });
+            }
+
             menu.ShowAsContext();
         }
 
@@ -916,6 +976,110 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
 
             GUI.enabled = true;
+        }
+    }
+
+    public class RenameKeyPopup : EditorWindow
+    {
+        private string _oldKey;
+        private string _newKey;
+        private EditorLocalizationData _data;
+        private LocalizationConfig _config;
+        private System.Action _onRenamed;
+
+        public void Init(string oldKey, EditorLocalizationData data, LocalizationConfig config,
+            System.Action onRenamed)
+        {
+            _oldKey = oldKey;
+            _newKey = oldKey;
+            _data = data;
+            _config = config;
+            _onRenamed = onRenamed;
+        }
+
+        private void OnGUI()
+        {
+            EditorGUILayout.Space(4);
+
+            using (new EditorGUI.DisabledScope(true))
+                EditorGUILayout.TextField("Current key", _oldKey);
+
+            _newKey = EditorGUILayout.TextField("New key", _newKey);
+
+            bool isDuplicate = _newKey != _oldKey && _data.GetFileForKey(_newKey) != null;
+            bool unchanged = _newKey == _oldKey;
+            bool empty = string.IsNullOrEmpty(_newKey);
+
+            if (isDuplicate)
+                EditorGUILayout.HelpBox("A key with this name already exists.", MessageType.Error);
+
+            EditorGUILayout.Space(4);
+
+            GUI.enabled = !isDuplicate && !unchanged && !empty;
+
+            if (GUILayout.Button("Rename"))
+            {
+                string file = _data.GetFileForKey(_oldKey);
+                _data.RenameKey(_oldKey, _newKey);
+
+                if (!string.IsNullOrEmpty(file))
+                    _data.SaveFileAllLanguages(file);
+
+                _data.SaveMeta();
+                AssetDatabase.Refresh();
+                _onRenamed?.Invoke();
+                Close();
+            }
+
+            GUI.enabled = true;
+        }
+    }
+
+    public class EditDescriptionPopup : EditorWindow
+    {
+        private string _key;
+        private string _description;
+        private EditorLocalizationData _data;
+        private System.Action _onSaved;
+
+        public void Init(string key, string currentDescription, EditorLocalizationData data,
+            System.Action onSaved)
+        {
+            _key = key;
+            _description = currentDescription ?? "";
+            _data = data;
+            _onSaved = onSaved;
+        }
+
+        private void OnGUI()
+        {
+            EditorGUILayout.Space(4);
+
+            using (new EditorGUI.DisabledScope(true))
+                EditorGUILayout.TextField("Key", _key);
+
+            EditorGUILayout.LabelField("Description");
+            _description = EditorGUILayout.TextArea(_description, GUILayout.MinHeight(40));
+
+            EditorGUILayout.Space(4);
+
+            EditorGUILayout.BeginHorizontal();
+
+            if (GUILayout.Button("Save"))
+            {
+                _data.SetDescription(_key, _description);
+                _onSaved?.Invoke();
+                Close();
+            }
+
+            if (GUILayout.Button("Clear"))
+            {
+                _data.SetDescription(_key, null);
+                _onSaved?.Invoke();
+                Close();
+            }
+
+            EditorGUILayout.EndHorizontal();
         }
     }
 }

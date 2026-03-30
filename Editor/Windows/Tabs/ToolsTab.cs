@@ -162,7 +162,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             string headerLine = csv.Substring(0, lineEnd).TrimEnd('\r');
             string[] headers = headerLine.Split(',');
 
-            // headers[0] = Key, headers[1] = File, headers[2..] = language codes
+            // headers[0] = Key, headers[1] = File, optionally headers[2] = Description, then languages
             var existingCodes = new HashSet<string>(
                 _config.languages.Where(p => p != null).Select(p => p.Code));
 
@@ -170,7 +170,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 string code = headers[i].Trim().Trim('"');
 
-                if (!string.IsNullOrEmpty(code) && !existingCodes.Contains(code))
+                if (string.IsNullOrEmpty(code)) continue;
+                if (code.Equals("Description", System.StringComparison.OrdinalIgnoreCase)) continue;
+
+                if (!existingCodes.Contains(code))
                     newLangs.Add(code);
             }
 
