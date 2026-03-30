@@ -22,9 +22,26 @@ namespace SimplyLocalize.Editor.Inspectors
         {
             serializedObject.Update();
             EditorGUILayout.Space(2);
-            KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput);
+
+            // Extract current text from the text component for auto-fill
+            string currentText = GetCurrentText();
+
+            KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput, currentText);
             DrawTranslations(_keyProp.stringValue, ref _editMode);
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private string GetCurrentText()
+        {
+            var go = ((Component)target).gameObject;
+
+            var tmp = go.GetComponent<TMPro.TMP_Text>();
+            if (tmp != null) return tmp.text;
+
+            var legacy = go.GetComponent<UnityEngine.UI.Text>();
+            if (legacy != null) return legacy.text;
+
+            return null;
         }
 
         /// <summary>
@@ -128,12 +145,28 @@ namespace SimplyLocalize.Editor.Inspectors
         {
             serializedObject.Update();
             EditorGUILayout.Space(2);
-            KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput);
+
+            string currentText = GetCurrentText();
+
+            KeySelectorUI.DrawKeySelector(_keyProp, ref _newKeyInput, currentText);
             EditorGUILayout.Space(4);
             DrawAutoParams();
             LocalizedTextEditor.DrawTranslations(_keyProp.stringValue, ref _editMode);
             DrawFormattedPreview();
             serializedObject.ApplyModifiedProperties();
+        }
+
+        private string GetCurrentText()
+        {
+            var go = ((Component)target).gameObject;
+
+            var tmp = go.GetComponent<TMPro.TMP_Text>();
+            if (tmp != null) return tmp.text;
+
+            var legacy = go.GetComponent<UnityEngine.UI.Text>();
+            if (legacy != null) return legacy.text;
+
+            return null;
         }
 
         private void DrawAutoParams()
@@ -286,7 +319,12 @@ namespace SimplyLocalize.Editor.Inspectors
 
     internal static class KeySelectorUI
     {
-        public static void DrawKeySelector(SerializedProperty keyProp, ref string newKeyInput)
+        /// <summary>
+        /// Draws key selector UI. Pass currentTextValue to auto-fill default language
+        /// translation when creating a new key (extracted from the text component).
+        /// </summary>
+        public static void DrawKeySelector(SerializedProperty keyProp, ref string newKeyInput,
+            string currentTextValue = null)
         {
             var allKeys = EditorDataCache.AllKeys;
             string currentKey = keyProp.stringValue;
@@ -302,12 +340,12 @@ namespace SimplyLocalize.Editor.Inspectors
             Color prev = GUI.color;
             if (!isEmpty && !keyExists) GUI.color = new Color(1f, 0.35f, 0.35f);
             if (GUILayout.Button(display, EditorStyles.popup))
-                OpenSearch(keyProp, allKeys, newKeyInput);
+                OpenSearch(keyProp, allKeys, newKeyInput, currentTextValue);
             GUI.color = prev;
 
             if (!isEmpty && !keyExists)
                 if (GUILayout.Button("Add", GUILayout.Width(40)))
-                    AddKey(currentKey);
+                    AddKey(currentKey, currentTextValue);
 
             EditorGUILayout.EndHorizontal();
 
@@ -322,7 +360,7 @@ namespace SimplyLocalize.Editor.Inspectors
             GUI.enabled = !string.IsNullOrEmpty(newKeyInput) && !dup;
             if (GUILayout.Button("Add", GUILayout.Width(40)))
             {
-                AddKey(newKeyInput);
+                AddKey(newKeyInput, currentTextValue);
                 keyProp.stringValue = newKeyInput;
                 keyProp.serializedObject.ApplyModifiedProperties();
                 newKeyInput = "";
@@ -333,7 +371,8 @@ namespace SimplyLocalize.Editor.Inspectors
             if (dup) EditorGUILayout.HelpBox("This key already exists.", MessageType.Error);
         }
 
-        private static void OpenSearch(SerializedProperty keyProp, List<string> keys, string pending)
+        private static void OpenSearch(SerializedProperty keyProp, List<string> keys,
+            string pending, string currentTextValue)
         {
             var win = ScriptableObject.CreateInstance<KeySearchWindow>();
             win.Init(new List<string>(keys), sel =>
@@ -341,7 +380,8 @@ namespace SimplyLocalize.Editor.Inspectors
                 keyProp.serializedObject.Update();
                 keyProp.stringValue = sel ?? "";
                 keyProp.serializedObject.ApplyModifiedProperties();
-                if (!string.IsNullOrEmpty(sel) && !keys.Contains(sel)) AddKey(sel);
+                if (!string.IsNullOrEmpty(sel) && !keys.Contains(sel))
+                    AddKey(sel, currentTextValue);
                 EditorDataCache.Invalidate();
             }, pending);
             SearchWindow.Open(
@@ -351,12 +391,33 @@ namespace SimplyLocalize.Editor.Inspectors
         private static string FormatKey(string key) =>
             key.Contains('/') ? $"{key.Split('/')[^1]}    ({key})" : key;
 
-        private static void AddKey(string key)
+        /// <summary>
+        /// Creates a new key and optionally fills the default language translation
+        /// with currentTextValue (pulled from the text component).
+        /// </summary>
+        private static void AddKey(string key, string currentTextValue = null)
         {
             var data = EditorDataCache.Data;
+            var config = EditorDataCache.Config;
             if (data == null) return;
+
             string file = data.SourceFiles.Count > 0 ? data.SourceFiles[0] : "global";
             data.AddKey(key, file);
+
+            // Auto-fill default language translation from component text
+            if (!string.IsNullOrEmpty(currentTextValue) && config != null)
+            {
+                string defaultLang = config.DefaultLanguageCode;
+
+                if (!string.IsNullOrEmpty(defaultLang))
+                {
+                    string existing = data.GetTranslation(key, defaultLang);
+
+                    if (string.IsNullOrEmpty(existing))
+                        data.SetTranslation(key, defaultLang, currentTextValue);
+                }
+            }
+
             data.SaveFileAllLanguages(file);
             AssetDatabase.Refresh();
             EditorDataCache.Invalidate();

@@ -29,7 +29,6 @@ namespace SimplyLocalize
         /// <summary>
         /// Initializes the localization system with the given config.
         /// Automatically sets the default language.
-        /// Can be called multiple times to reinitialize with a different config.
         /// </summary>
         public static void Initialize(LocalizationConfig config)
         {
@@ -49,6 +48,75 @@ namespace SimplyLocalize
                 _manager.SetLanguage(config.defaultLanguage);
 
             LocalizationLogger.Log("Localization initialized");
+        }
+
+        /// <summary>
+        /// Initializes with config and immediately sets a specific language by code.
+        /// If the language code is not found, falls back to default or throws error
+        /// based on throwOnMissing parameter.
+        /// </summary>
+        /// <param name="config">The localization config asset.</param>
+        /// <param name="languageCode">Language code to set (e.g. "ru", "en").</param>
+        /// <param name="throwOnMissing">If true, throws exception when language not found.
+        /// If false, falls back to default language.</param>
+        public static void Initialize(LocalizationConfig config, string languageCode,
+            bool throwOnMissing = false)
+        {
+            if (config == null)
+            {
+                Debug.LogError("[SimplyLocalize] Cannot initialize: config is null");
+                return;
+            }
+
+            Shutdown();
+
+            _manager = new LocalizationManager(config);
+            _manager.OnLanguageChanged += lang => OnLanguageChanged?.Invoke(lang);
+            _manager.OnProfileChanged += profile => OnProfileChanged?.Invoke(profile);
+
+            var profile = config.GetProfile(languageCode);
+
+            if (profile != null)
+            {
+                _manager.SetLanguage(profile);
+            }
+            else if (throwOnMissing)
+            {
+                throw new ArgumentException(
+                    $"[SimplyLocalize] Language '{languageCode}' not found in config. " +
+                    $"Available: {string.Join(", ", config.languages.ConvertAll(p => p?.Code ?? "null"))}");
+            }
+            else
+            {
+                LocalizationLogger.LogWarning(
+                    $"Language '{languageCode}' not found, using default");
+
+                if (config.defaultLanguage != null)
+                    _manager.SetLanguage(config.defaultLanguage);
+            }
+
+            LocalizationLogger.Log($"Localization initialized with '{_manager.CurrentLanguage}'");
+        }
+
+        /// <summary>
+        /// Initializes by finding config in Resources automatically.
+        /// Sets the default language from config.
+        /// Convenience method — no need to pass config reference.
+        /// </summary>
+        public static void Initialize()
+        {
+            if (IsInitialized) return;
+
+            var configs = Resources.LoadAll<LocalizationConfig>("");
+
+            if (configs == null || configs.Length == 0)
+            {
+                Debug.LogError("[SimplyLocalize] No LocalizationConfig found in Resources. " +
+                    "Create one and place it in a Resources folder.");
+                return;
+            }
+
+            Initialize(configs[0]);
         }
 
         /// <summary>
