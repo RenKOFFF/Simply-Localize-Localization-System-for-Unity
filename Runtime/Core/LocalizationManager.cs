@@ -41,6 +41,7 @@ namespace SimplyLocalize
                 : throw new ArgumentNullException(nameof(config));
 
             LocalizationLogger.Enabled = config.enableLogging;
+            LocalizationLogger.EnabledInBuild = config.enableLoggingInBuild;
             _dataProvider = new ResourcesDataProvider(config.resourcesBasePath);
         }
 
@@ -98,11 +99,14 @@ namespace SimplyLocalize
             // Ensure text data is loaded
             EnsureTextDataLoaded(languageCode);
 
-            // Also preload fallback language
-            string fallbackCode = _config.FallbackLanguageCode;
+            // Preload per-language fallback chain (e.g. uk → ru → en)
+            PreloadFallbackChain(profile);
 
-            if (!string.IsNullOrEmpty(fallbackCode) && fallbackCode != languageCode)
-                EnsureTextDataLoaded(fallbackCode);
+            // Also preload global fallback
+            string globalFallback = _config.FallbackLanguageCode;
+
+            if (!string.IsNullOrEmpty(globalFallback) && globalFallback != languageCode)
+                EnsureTextDataLoaded(globalFallback);
 
             _currentLanguage = languageCode;
             _currentProfile = profile;
@@ -198,46 +202,26 @@ namespace SimplyLocalize
 
         /// <summary>
         /// Loads a localized sprite for the current language.
-        /// Falls back to fallback language if not found.
+        /// Fallback chain: current → per-language → global fallback.
         /// </summary>
         internal Sprite GetSprite(string key)
         {
             if (string.IsNullOrEmpty(key))
                 return null;
 
-            var sprite = _dataProvider.LoadSprite(key, _currentLanguage);
-
-            if (sprite == null)
-            {
-                string fallbackCode = _config.FallbackLanguageCode;
-
-                if (!string.IsNullOrEmpty(fallbackCode) && fallbackCode != _currentLanguage)
-                    sprite = _dataProvider.LoadSprite(key, fallbackCode);
-            }
-
-            return sprite;
+            return ResolveSpriteWithFallback(key);
         }
 
         /// <summary>
         /// Loads a localized audio clip for the current language.
-        /// Falls back to fallback language if not found.
+        /// Fallback chain: current → per-language → global fallback.
         /// </summary>
         internal AudioClip GetAudio(string key)
         {
             if (string.IsNullOrEmpty(key))
                 return null;
 
-            var clip = _dataProvider.LoadAudioClip(key, _currentLanguage);
-
-            if (clip == null)
-            {
-                string fallbackCode = _config.FallbackLanguageCode;
-
-                if (!string.IsNullOrEmpty(fallbackCode) && fallbackCode != _currentLanguage)
-                    clip = _dataProvider.LoadAudioClip(key, fallbackCode);
-            }
-
-            return clip;
+            return ResolveAudioWithFallback(key);
         }
 
         /// <summary>
@@ -248,18 +232,26 @@ namespace SimplyLocalize
             if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(_currentLanguage))
                 return false;
 
-            if (_textCache.TryGetValue(_currentLanguage, out var current) && current.ContainsKey(key))
+            if (TryGetText(key, _currentLanguage, out _))
                 return true;
 
-            string fallbackCode = _config.FallbackLanguageCode;
-
-            if (!string.IsNullOrEmpty(fallbackCode)
-                && _textCache.TryGetValue(fallbackCode, out var fallback))
+            // Per-language fallback chain
+            if (_currentProfile != null)
             {
-                return fallback.ContainsKey(key);
+                var visited = new HashSet<string> { _currentLanguage };
+                var fb = _currentProfile.fallbackProfile;
+
+                while (fb != null && visited.Add(fb.Code))
+                {
+                    if (TryGetText(key, fb.Code, out _))
+                        return true;
+                    fb = fb.fallbackProfile;
+                }
             }
 
-            return false;
+            // Global fallback
+            string gf = _config.FallbackLanguageCode;
+            return !string.IsNullOrEmpty(gf) && TryGetText(key, gf, out _);
         }
 
         /// <summary>
@@ -301,35 +293,134 @@ namespace SimplyLocalize
 
         /// <summary>
         /// Returns the raw translation string before any formatting.
-        /// Implements fallback chain: current → fallback → key.
+        /// Fallback chain: current → per-language fallback → ... → global fallback → key.
+        /// Example: uk → ru (per-language) → en (global) → key as-is.
         /// </summary>
         private string GetRaw(string key)
         {
             // Try current language
-            if (!string.IsNullOrEmpty(_currentLanguage)
-                && _textCache.TryGetValue(_currentLanguage, out var currentData)
-                && currentData.TryGetValue(key, out var value))
-            {
+            if (TryGetText(key, _currentLanguage, out var value))
                 return value;
-            }
 
-            // Try fallback language
-            string fallbackCode = _config.FallbackLanguageCode;
-
-            if (!string.IsNullOrEmpty(fallbackCode)
-                && fallbackCode != _currentLanguage
-                && _textCache.TryGetValue(fallbackCode, out var fallbackData)
-                && fallbackData.TryGetValue(key, out var fallbackValue))
+            // Walk per-language fallback chain
+            if (_currentProfile != null)
             {
-                LocalizationLogger.Log(
-                    $"Key '{key}' missing for '{_currentLanguage}', using fallback '{fallbackCode}'");
-                return fallbackValue;
+                var visited = new HashSet<string> { _currentLanguage };
+                var fallback = _currentProfile.fallbackProfile;
+
+                while (fallback != null && visited.Add(fallback.Code))
+                {
+                    EnsureTextDataLoaded(fallback.Code);
+
+                    if (TryGetText(key, fallback.Code, out var fbValue))
+                    {
+                        LocalizationLogger.Log(
+                            $"Key '{key}' missing for '{_currentLanguage}', found in per-language fallback '{fallback.Code}'");
+                        return fbValue;
+                    }
+
+                    fallback = fallback.fallbackProfile;
+                }
             }
 
-            // Return key as-is
+            // Try global fallback
+            string globalFallback = _config.FallbackLanguageCode;
+
+            if (!string.IsNullOrEmpty(globalFallback) && globalFallback != _currentLanguage)
+            {
+                EnsureTextDataLoaded(globalFallback);
+
+                if (TryGetText(key, globalFallback, out var gfValue))
+                {
+                    LocalizationLogger.Log(
+                        $"Key '{key}' missing for '{_currentLanguage}', using global fallback '{globalFallback}'");
+                    return gfValue;
+                }
+            }
+
             LocalizationLogger.LogWarning(
-                $"Translation not found for key '{key}' in '{_currentLanguage}' or fallback");
+                $"Translation not found for key '{key}' in '{_currentLanguage}' or any fallback");
             return key;
+        }
+
+        private bool TryGetText(string key, string languageCode, out string value)
+        {
+            value = null;
+
+            if (string.IsNullOrEmpty(languageCode))
+                return false;
+
+            return _textCache.TryGetValue(languageCode, out var data)
+                && data.TryGetValue(key, out value);
+        }
+
+        private Sprite ResolveSpriteWithFallback(string key)
+        {
+            // Try current
+            var result = _dataProvider.LoadSprite(key, _currentLanguage);
+            if (result != null) return result;
+
+            // Per-language fallback chain
+            if (_currentProfile != null)
+            {
+                var visited = new HashSet<string> { _currentLanguage };
+                var fb = _currentProfile.fallbackProfile;
+
+                while (fb != null && visited.Add(fb.Code))
+                {
+                    result = _dataProvider.LoadSprite(key, fb.Code);
+                    if (result != null) return result;
+                    fb = fb.fallbackProfile;
+                }
+            }
+
+            // Global fallback
+            string gf = _config.FallbackLanguageCode;
+
+            if (!string.IsNullOrEmpty(gf) && gf != _currentLanguage)
+                result = _dataProvider.LoadSprite(key, gf);
+
+            return result;
+        }
+
+        private AudioClip ResolveAudioWithFallback(string key)
+        {
+            var result = _dataProvider.LoadAudioClip(key, _currentLanguage);
+            if (result != null) return result;
+
+            if (_currentProfile != null)
+            {
+                var visited = new HashSet<string> { _currentLanguage };
+                var fb = _currentProfile.fallbackProfile;
+
+                while (fb != null && visited.Add(fb.Code))
+                {
+                    result = _dataProvider.LoadAudioClip(key, fb.Code);
+                    if (result != null) return result;
+                    fb = fb.fallbackProfile;
+                }
+            }
+
+            string gf = _config.FallbackLanguageCode;
+
+            if (!string.IsNullOrEmpty(gf) && gf != _currentLanguage)
+                result = _dataProvider.LoadAudioClip(key, gf);
+
+            return result;
+        }
+
+        private void PreloadFallbackChain(LanguageProfile profile)
+        {
+            if (profile == null) return;
+
+            var visited = new HashSet<string> { profile.Code };
+            var fb = profile.fallbackProfile;
+
+            while (fb != null && visited.Add(fb.Code))
+            {
+                EnsureTextDataLoaded(fb.Code);
+                fb = fb.fallbackProfile;
+            }
         }
 
         private ParsedTemplate GetOrParseTemplate(string rawText)

@@ -11,6 +11,9 @@ namespace SimplyLocalize.Editor.Inspectors
         private SerializedProperty _displayName;
         private SerializedProperty _systemLanguage;
 
+        // Fallback
+        private SerializedProperty _fallbackProfile;
+
         // Assets
         private SerializedProperty _hasText;
         private SerializedProperty _hasSprites;
@@ -20,6 +23,7 @@ namespace SimplyLocalize.Editor.Inspectors
         private SerializedProperty _overrideFont;
         private SerializedProperty _primaryFont;
         private SerializedProperty _fallbackFont;
+        private SerializedProperty _legacyFont;
 
         // Typography
         private SerializedProperty _overrideTypography;
@@ -45,6 +49,8 @@ namespace SimplyLocalize.Editor.Inspectors
             _displayName = serializedObject.FindProperty("displayName");
             _systemLanguage = serializedObject.FindProperty("systemLanguage");
 
+            _fallbackProfile = serializedObject.FindProperty("fallbackProfile");
+
             _hasText = serializedObject.FindProperty("hasText");
             _hasSprites = serializedObject.FindProperty("hasSprites");
             _hasAudio = serializedObject.FindProperty("hasAudio");
@@ -52,6 +58,7 @@ namespace SimplyLocalize.Editor.Inspectors
             _overrideFont = serializedObject.FindProperty("overrideFont");
             _primaryFont = serializedObject.FindProperty("primaryFont");
             _fallbackFont = serializedObject.FindProperty("fallbackFont");
+            _legacyFont = serializedObject.FindProperty("legacyFont");
 
             _overrideTypography = serializedObject.FindProperty("overrideTypography");
             _fontSizeMultiplier = serializedObject.FindProperty("fontSizeMultiplier");
@@ -81,6 +88,15 @@ namespace SimplyLocalize.Editor.Inspectors
 
             EditorGUILayout.Space(8);
 
+            // Fallback — always shown
+            EditorGUILayout.LabelField("Fallback", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(_fallbackProfile,
+                new GUIContent("Per-language fallback",
+                    "If a key is missing, try this language before the global fallback.\n" +
+                    "Example: Ukrainian → Russian → English (global)"));
+
+            EditorGUILayout.Space(8);
+
             // Assets — always shown
             EditorGUILayout.LabelField("Available Assets", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(_hasText);
@@ -92,8 +108,9 @@ namespace SimplyLocalize.Editor.Inspectors
             // Font — toggle hides content
             DrawOverrideSection("Font", _overrideFont, () =>
             {
-                EditorGUILayout.PropertyField(_primaryFont);
-                EditorGUILayout.PropertyField(_fallbackFont);
+                EditorGUILayout.PropertyField(_primaryFont, new GUIContent("TMP Font"));
+                EditorGUILayout.PropertyField(_fallbackFont, new GUIContent("TMP Fallback"));
+                EditorGUILayout.PropertyField(_legacyFont, new GUIContent("Legacy Font"));
             });
 
             // Typography — toggle hides content

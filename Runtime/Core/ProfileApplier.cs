@@ -136,6 +136,11 @@ namespace SimplyLocalize
 
             if (profile == null) return;
 
+            if (profile.overrideFont && profile.legacyFont != null)
+            {
+                text.font = profile.legacyFont;
+            }
+
             if (profile.overrideTypography)
             {
                 text.fontSize = Mathf.RoundToInt(_originalLegacyFontSize * profile.fontSizeMultiplier);

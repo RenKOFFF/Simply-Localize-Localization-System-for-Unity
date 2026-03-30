@@ -23,6 +23,15 @@ namespace SimplyLocalize
         public SystemLanguage systemLanguage = SystemLanguage.Unknown;
 
         // ──────────────────────────────────────────────
+        //  Fallback
+        // ──────────────────────────────────────────────
+
+        [Header("Fallback")]
+        [Tooltip("Per-language fallback. If a key is missing in this language, try this profile's language before the global fallback.\n" +
+                 "Example: Ukrainian → Russian → English (global)")]
+        public LanguageProfile fallbackProfile;
+
+        // ──────────────────────────────────────────────
         //  Assets
         // ──────────────────────────────────────────────
 
@@ -39,11 +48,14 @@ namespace SimplyLocalize
         [Tooltip("Enable to override the font for this language")]
         public bool overrideFont;
 
-        [Tooltip("Primary font asset for this language")]
+        [Tooltip("TMP font asset")]
         public TMP_FontAsset primaryFont;
 
-        [Tooltip("Fallback font for missing glyphs")]
+        [Tooltip("TMP fallback font for missing glyphs")]
         public TMP_FontAsset fallbackFont;
+
+        [Tooltip("Legacy UI Text font")]
+        public Font legacyFont;
 
         // ──────────────────────────────────────────────
         //  Typography
@@ -88,5 +100,10 @@ namespace SimplyLocalize
 
         public string Code => languageCode;
         public bool IsRTL => textDirection == TextDirection.RTL;
+
+        /// <summary>
+        /// Returns the fallback language code for this profile, or null.
+        /// </summary>
+        public string FallbackCode => fallbackProfile != null ? fallbackProfile.Code : null;
     }
 }
