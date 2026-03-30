@@ -18,9 +18,12 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private ViewMode _viewMode = ViewMode.All;
         private readonly HashSet<string> _selectedFiles = new();
         private readonly HashSet<string> _collapsedGroups = new();
+        private readonly HashSet<string> _selectedKeys = new();
         private string _searchQuery = "";
+        private bool _sidebarCollapsed = true;
 
         private VisualElement _fileList;
+        private VisualElement _sidebarContent;
         private VisualElement _tableBody;
         private Label _statusLabel;
 
@@ -54,19 +57,51 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private VisualElement BuildFileSidebar()
         {
             var sidebar = new VisualElement();
-            sidebar.style.width = 180;
             sidebar.style.borderRightWidth = 1;
             sidebar.style.borderRightColor = new Color(0, 0, 0, 0.15f);
-            sidebar.style.paddingTop = 8;
 
-            // Header
-            var header = new Label("Files");
-            header.style.fontSize = 11;
-            header.style.color = new Color(0.5f, 0.5f, 0.5f);
-            header.style.paddingLeft = 10;
-            header.style.paddingBottom = 6;
-            header.style.unityFontStyleAndWeight = FontStyle.Bold;
-            sidebar.Add(header);
+            // Toggle header — always visible
+            var toggleRow = new VisualElement();
+            toggleRow.style.flexDirection = FlexDirection.Row;
+            toggleRow.style.alignItems = Align.Center;
+            toggleRow.style.paddingTop = 6;
+            toggleRow.style.paddingBottom = 6;
+            toggleRow.style.paddingLeft = 6;
+            toggleRow.style.cursor = StyleKeyword.Auto;
+
+            var arrow = new Label(_sidebarCollapsed ? "▶" : "▼");
+            arrow.style.fontSize = 10;
+            arrow.style.width = 14;
+            arrow.style.color = new Color(0.5f, 0.5f, 0.5f);
+            toggleRow.Add(arrow);
+
+            var headerLabel = new Label(_sidebarCollapsed ? "Files" : "Files");
+            headerLabel.style.fontSize = 11;
+            headerLabel.style.color = new Color(0.5f, 0.5f, 0.5f);
+            headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            toggleRow.Add(headerLabel);
+
+            toggleRow.RegisterCallback<ClickEvent>(evt =>
+            {
+                _sidebarCollapsed = !_sidebarCollapsed;
+                RefreshAll();
+            });
+
+            sidebar.Add(toggleRow);
+
+            // Collapsible content
+            _sidebarContent = new VisualElement();
+
+            if (_sidebarCollapsed)
+            {
+                sidebar.style.width = 50;
+                _sidebarContent.style.display = DisplayStyle.None;
+            }
+            else
+            {
+                sidebar.style.width = 180;
+                _sidebarContent.style.display = DisplayStyle.Flex;
+            }
 
             // "All files" button
             var allBtn = new Button(() =>
@@ -84,7 +119,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             if (_viewMode == ViewMode.All)
                 allBtn.style.backgroundColor = new Color(0.2f, 0.5f, 0.9f, 0.15f);
 
-            sidebar.Add(allBtn);
+            _sidebarContent.Add(allBtn);
 
             // File list
             _fileList = new VisualElement();
@@ -110,7 +145,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 if (isSelected || (_viewMode == ViewMode.Single && _selectedFiles.Contains(fileName)))
                     fileBtn.style.backgroundColor = new Color(0.2f, 0.5f, 0.9f, 0.1f);
 
-                // Right-click context menu for file operations
                 string capturedFile = fileName;
                 fileBtn.RegisterCallback<ContextClickEvent>(evt =>
                 {
@@ -121,7 +155,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 _fileList.Add(fileBtn);
             }
 
-            sidebar.Add(_fileList);
+            _sidebarContent.Add(_fileList);
 
             // Separator
             var sep = new VisualElement();
@@ -131,14 +165,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             sep.style.marginBottom = 8;
             sep.style.marginLeft = 10;
             sep.style.marginRight = 10;
-            sidebar.Add(sep);
+            _sidebarContent.Add(sep);
 
             // View mode selector
             var modeLabel = new Label("View mode");
             modeLabel.style.fontSize = 10;
             modeLabel.style.color = new Color(0.5f, 0.5f, 0.5f);
             modeLabel.style.paddingLeft = 10;
-            sidebar.Add(modeLabel);
+            _sidebarContent.Add(modeLabel);
 
             var modeRow = new VisualElement();
             modeRow.style.flexDirection = FlexDirection.Row;
@@ -169,7 +203,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 modeRow.Add(modeBtn);
             }
 
-            sidebar.Add(modeRow);
+            _sidebarContent.Add(modeRow);
 
             // New file button
             var newFileBtn = new Button(OnNewFileClicked);
@@ -177,7 +211,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             newFileBtn.style.fontSize = 11;
             newFileBtn.style.marginLeft = 10;
             newFileBtn.style.marginRight = 10;
-            sidebar.Add(newFileBtn);
+            _sidebarContent.Add(newFileBtn);
+
+            sidebar.Add(_sidebarContent);
 
             return sidebar;
         }
@@ -324,22 +360,58 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 {
                     string shortKey = key.Substring(key.LastIndexOf('/') + 1);
                     string sourceFile = _data.GetFileForKey(key) ?? "";
+                    bool isSelected = _selectedKeys.Contains(key);
 
                     var row = MakeRow(false);
 
-                    // Key cell
+                    if (isSelected)
+                        row.style.backgroundColor = new Color(0.2f, 0.5f, 0.9f, 0.08f);
+
+                    // Key cell — clickable for selection
                     var keyLabel = new Label(shortKey);
                     keyLabel.style.width = 200;
                     keyLabel.style.fontSize = 11;
                     keyLabel.style.paddingLeft = 20;
                     keyLabel.style.paddingTop = 2;
                     keyLabel.style.paddingBottom = 2;
-                    keyLabel.style.color = new Color(0.4f, 0.4f, 0.4f);
+                    keyLabel.style.color = isSelected
+                        ? new Color(0.2f, 0.5f, 0.9f)
+                        : new Color(0.4f, 0.4f, 0.4f);
                     keyLabel.tooltip = key;
 
+                    // Click to select/deselect (Ctrl for multi-select)
+                    string capturedKey = key;
+                    keyLabel.RegisterCallback<ClickEvent>(evt =>
+                    {
+                        if (evt.ctrlKey || evt.commandKey)
+                        {
+                            // Toggle selection
+                            if (!_selectedKeys.Add(capturedKey))
+                                _selectedKeys.Remove(capturedKey);
+                        }
+                        else
+                        {
+                            // Single select
+                            _selectedKeys.Clear();
+                            _selectedKeys.Add(capturedKey);
+                        }
+
+                        RebuildTable();
+                        evt.StopPropagation();
+                    });
+
+                    // Right-click context menu
                     keyLabel.RegisterCallback<ContextClickEvent>(evt =>
                     {
-                        ShowKeyContextMenu(key);
+                        // If right-clicked key is not in selection, select it alone
+                        if (!_selectedKeys.Contains(capturedKey))
+                        {
+                            _selectedKeys.Clear();
+                            _selectedKeys.Add(capturedKey);
+                            RebuildTable();
+                        }
+
+                        ShowKeyContextMenu();
                         evt.StopPropagation();
                     });
 
@@ -376,18 +448,18 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                             field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
                         }
 
-                        string capturedKey = key;
+                        string newCapturedKey = key;
                         string capturedLang = langCode;
                         string capturedFile = sourceFile;
 
                         field.RegisterCallback<FocusOutEvent>(evt =>
                         {
                             string newValue = field.value;
-                            string oldValue = _data.GetTranslation(capturedKey, capturedLang) ?? "";
+                            string oldValue = _data.GetTranslation(newCapturedKey, capturedLang) ?? "";
 
                             if (newValue != oldValue)
                             {
-                                _data.SetTranslation(capturedKey, capturedLang, newValue);
+                                _data.SetTranslation(newCapturedKey, capturedLang, newValue);
                                 _data.SaveFile(capturedFile, capturedLang);
                                 AssetDatabase.Refresh();
                                 EditorDataCache.Invalidate();
@@ -471,7 +543,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
 
             string missingText = missing > 0 ? $"  |  {missing} missing" : "";
-            _statusLabel.text = $"{totalKeys} keys from {fileCount} file(s){missingText}";
+            string selText = _selectedKeys.Count > 0 ? $"  |  {_selectedKeys.Count} selected" : "";
+            _statusLabel.text = $"{totalKeys} keys from {fileCount} file(s){missingText}{selText}";
         }
 
         private VisualElement MakeRow(bool isHeader)
@@ -570,53 +643,94 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             popup.ShowAsDropDown(rect, new Vector2(300, 80));
         }
 
-        private void ShowKeyContextMenu(string key)
+        private void ShowKeyContextMenu()
         {
             var menu = new GenericMenu();
+            var keys = _selectedKeys.ToList();
+            bool isSingle = keys.Count == 1;
+            string label = isSingle ? keys[0] : $"{keys.Count} keys";
 
-            menu.AddItem(new GUIContent("Copy key"), false, () =>
+            // Copy
+            if (isSingle)
             {
-                EditorGUIUtility.systemCopyBuffer = key;
-            });
+                menu.AddItem(new GUIContent("Copy key"), false, () =>
+                {
+                    EditorGUIUtility.systemCopyBuffer = keys[0];
+                });
+            }
+            else
+            {
+                menu.AddItem(new GUIContent($"Copy {keys.Count} keys"), false, () =>
+                {
+                    EditorGUIUtility.systemCopyBuffer = string.Join("\n", keys);
+                });
+            }
 
             menu.AddSeparator("");
 
+            // Move to file
             foreach (var file in _data.SourceFiles)
             {
                 string f = file;
-                bool isCurrent = _data.GetFileForKey(key) == f;
-                menu.AddItem(new GUIContent($"Move to/{f}.json"), isCurrent, () =>
+
+                menu.AddItem(new GUIContent($"Move to/{f}.json"), false, () =>
                 {
-                    if (isCurrent) return;
-                    string oldFile = _data.GetFileForKey(key);
-                    _data.MoveKeyToFile(key, f);
+                    var affectedFiles = new HashSet<string>();
 
-                    if (!string.IsNullOrEmpty(oldFile))
-                        _data.SaveFileAllLanguages(oldFile);
+                    foreach (var key in keys)
+                    {
+                        string oldFile = _data.GetFileForKey(key);
 
-                    _data.SaveFileAllLanguages(f);
+                        if (oldFile == f) continue;
+
+                        _data.MoveKeyToFile(key, f);
+
+                        if (!string.IsNullOrEmpty(oldFile))
+                            affectedFiles.Add(oldFile);
+                    }
+
+                    // Save all affected source files + target
+                    affectedFiles.Add(f);
+
+                    foreach (var af in affectedFiles)
+                        _data.SaveFileAllLanguages(af);
+
                     AssetDatabase.Refresh();
                     EditorDataCache.Invalidate();
+                    _selectedKeys.Clear();
                     RebuildTable();
                 });
             }
 
             menu.AddSeparator("");
-            menu.AddItem(new GUIContent("Delete key"), false, () =>
+
+            // Delete
+            menu.AddItem(new GUIContent(isSingle
+                ? "Delete key"
+                : $"Delete {keys.Count} keys"), false, () =>
             {
-                if (EditorUtility.DisplayDialog("Delete key",
-                    $"Delete '{key}' from all languages?", "Delete", "Cancel"))
+                if (!EditorUtility.DisplayDialog("Delete keys",
+                    $"Delete {label} from all languages?", "Delete", "Cancel"))
+                    return;
+
+                var affectedFiles = new HashSet<string>();
+
+                foreach (var key in keys)
                 {
                     string file = _data.GetFileForKey(key);
                     _data.RemoveKey(key);
 
                     if (!string.IsNullOrEmpty(file))
-                        _data.SaveFileAllLanguages(file);
-
-                    AssetDatabase.Refresh();
-                    EditorDataCache.Invalidate();
-                    RebuildTable();
+                        affectedFiles.Add(file);
                 }
+
+                foreach (var af in affectedFiles)
+                    _data.SaveFileAllLanguages(af);
+
+                AssetDatabase.Refresh();
+                EditorDataCache.Invalidate();
+                _selectedKeys.Clear();
+                RebuildTable();
             });
 
             menu.ShowAsContext();
