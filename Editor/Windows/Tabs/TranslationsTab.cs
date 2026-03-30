@@ -433,6 +433,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                         descLabel.style.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
                         descLabel.style.paddingLeft = 20;
                         descLabel.style.marginTop = -2;
+                        descLabel.style.whiteSpace = WhiteSpace.Normal;
+                        descLabel.style.width = 180;
                         keyCell.Add(descLabel);
                     }
 
@@ -467,18 +469,18 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                             field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
                         }
 
-                        string newCapturedKey = key;
+                        string againCapturedKey = key;
                         string capturedLang = langCode;
                         string capturedFile = sourceFile;
 
                         field.RegisterCallback<FocusOutEvent>(evt =>
                         {
                             string newValue = field.value;
-                            string oldValue = _data.GetTranslation(newCapturedKey, capturedLang) ?? "";
+                            string oldValue = _data.GetTranslation(againCapturedKey, capturedLang) ?? "";
 
                             if (newValue != oldValue)
                             {
-                                _data.SetTranslation(newCapturedKey, capturedLang, newValue);
+                                _data.SetTranslation(againCapturedKey, capturedLang, newValue);
                                 _data.SaveFile(capturedFile, capturedLang);
                                 AssetDatabase.Refresh();
                                 EditorDataCache.Invalidate();
@@ -764,12 +766,15 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     popup.Init(keys[0], _data, _config, () =>
                     {
                         _selectedKeys.Clear();
+                        EditorDataCache.Invalidate();
+                        // Force all Inspector windows to repaint with updated key
+                        UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
                         _window.FullRefresh();
                     });
                     popup.titleContent = new GUIContent("Rename key");
                     popup.ShowUtility();
                     popup.position = new Rect(
-                        Screen.width / 2f - 150, Screen.height / 2f - 40, 300, 90);
+                        Screen.width / 2f - 175, Screen.height / 2f - 60, 350, 150);
                 });
 
                 // Edit description
@@ -789,7 +794,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     popup.titleContent = new GUIContent("Key description");
                     popup.ShowUtility();
                     popup.position = new Rect(
-                        Screen.width / 2f - 175, Screen.height / 2f - 40, 350, 100);
+                        Screen.width / 2f - 175, Screen.height / 2f - 80, 350, 200);
                 });
             }
 
@@ -986,6 +991,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private EditorLocalizationData _data;
         private LocalizationConfig _config;
         private System.Action _onRenamed;
+        private bool _updateReferences = true;
 
         public void Init(string oldKey, EditorLocalizationData data, LocalizationConfig config,
             System.Action onRenamed)
@@ -1015,6 +1021,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             EditorGUILayout.Space(4);
 
+            _updateReferences = EditorGUILayout.Toggle(
+                new GUIContent("Update references in project",
+                    "Scan all scenes and prefabs and replace the old key with the new one"),
+                _updateReferences);
+
+            EditorGUILayout.Space(4);
+
             GUI.enabled = !isDuplicate && !unchanged && !empty;
 
             if (GUILayout.Button("Rename"))
@@ -1026,7 +1039,25 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     _data.SaveFileAllLanguages(file);
 
                 _data.SaveMeta();
+
+                int updatedRefs = 0;
+
+                if (_updateReferences)
+                {
+                    updatedRefs = Utilities.KeyReferenceUpdater.UpdateReferences(_oldKey, _newKey);
+                }
+
+                AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
+
+                if (_updateReferences && updatedRefs > 0)
+                {
+                    EditorUtility.DisplayDialog("Key renamed",
+                        $"Renamed '{_oldKey}' → '{_newKey}'\n" +
+                        $"Updated {updatedRefs} component reference(s) in scenes/prefabs.",
+                        "OK");
+                }
+
                 _onRenamed?.Invoke();
                 Close();
             }
@@ -1041,6 +1072,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private string _description;
         private EditorLocalizationData _data;
         private System.Action _onSaved;
+        private Vector2 _scroll;
 
         public void Init(string key, string currentDescription, EditorLocalizationData data,
             System.Action onSaved)
@@ -1059,7 +1091,17 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 EditorGUILayout.TextField("Key", _key);
 
             EditorGUILayout.LabelField("Description");
-            _description = EditorGUILayout.TextArea(_description, GUILayout.MinHeight(40));
+
+            var textAreaStyle = new GUIStyle(EditorStyles.textArea)
+            {
+                wordWrap = true,
+                fontSize = 12
+            };
+
+            _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.MinHeight(80));
+            _description = EditorGUILayout.TextArea(_description, textAreaStyle,
+                GUILayout.ExpandHeight(true));
+            EditorGUILayout.EndScrollView();
 
             EditorGUILayout.Space(4);
 

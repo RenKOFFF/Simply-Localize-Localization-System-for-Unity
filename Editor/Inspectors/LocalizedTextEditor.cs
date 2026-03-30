@@ -369,6 +369,33 @@ namespace SimplyLocalize.Editor.Inspectors
             EditorGUILayout.EndHorizontal();
 
             if (dup) EditorGUILayout.HelpBox("This key already exists.", MessageType.Error);
+
+            // Stale key detection — check if key was renamed
+            if (!isEmpty && !keyExists)
+            {
+                var data = EditorDataCache.Data;
+
+                if (data != null)
+                {
+                    string newKey = data.FindKeyByPreviousName(currentKey);
+
+                    if (!string.IsNullOrEmpty(newKey))
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.HelpBox(
+                            $"Key was renamed: '{currentKey}' → '{newKey}'",
+                            MessageType.Warning);
+
+                        if (GUILayout.Button("Fix", GUILayout.Width(40), GUILayout.Height(38)))
+                        {
+                            keyProp.stringValue = newKey;
+                            keyProp.serializedObject.ApplyModifiedProperties();
+                        }
+
+                        EditorGUILayout.EndHorizontal();
+                    }
+                }
+            }
         }
 
         private static void OpenSearch(SerializedProperty keyProp, List<string> keys,
