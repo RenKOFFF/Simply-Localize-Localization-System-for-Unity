@@ -111,6 +111,7 @@ namespace SimplyLocalize.Editor.Windows
             {
                 new TranslationsTab(_data, _config, this),
                 new LanguagesTab(_data, _config, this),
+                new AutoLocalizeTab(_data, _config, this),
                 new ProfilesTab(_config),
                 new CoverageTab(_data, _config),
                 new ToolsTab(_data, _config),
@@ -119,7 +120,7 @@ namespace SimplyLocalize.Editor.Windows
 
             _tabNames = new[]
             {
-                "Translations", "Languages", "Profiles",
+                "Translations", "Languages", "Auto Localize", "Profiles",
                 "Coverage", "Tools", "Settings"
             };
 
