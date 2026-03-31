@@ -368,8 +368,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             Undo.SetCurrentGroupName("Auto-Localize");
             int undoGroup = Undo.GetCurrentGroup();
 
-            // Group entries by prefab asset path for batch prefab editing
-            var prefabGroups = new Dictionary<string, List<(GameObject instanceObj, string key)>>();
+            var prefabGroups = new Dictionary<string, List<(GameObject sceneObj, string key)>>();
 
             foreach (var entry in toApply)
             {
@@ -401,23 +400,21 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 if (_modifyPrefabAssets && PrefabUtility.IsPartOfPrefabInstance(entry.GameObject))
                 {
                     // Get the source prefab asset path
-                    var nearestRoot = PrefabUtility.GetNearestPrefabInstanceRoot(entry.GameObject);
-                    string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(entry.GameObject);
-
+                    GameObject nearestRoot = PrefabUtility.GetNearestPrefabInstanceRoot(entry.GameObject);
+                    string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(nearestRoot);
+                    
                     if (!string.IsNullOrEmpty(prefabPath))
                     {
                         if (!prefabGroups.ContainsKey(prefabPath))
                             prefabGroups[prefabPath] = new List<(GameObject, string)>();
-
+                
                         prefabGroups[prefabPath].Add((entry.GameObject, key));
                         continue;
                     }
                 }
 
                 // Regular: add as instance override or scene object
-                Undo.AddComponent<LocalizedText>(entry.GameObject);
-                var comp = entry.GameObject.GetComponent<LocalizedText>();
-                SetKey(comp, key);
+                AddOrUpdateComponent(entry.GameObject, key);
                 componentsAdded++;
             }
 
@@ -427,50 +424,36 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 string prefabPath = kvp.Key;
                 var entries = kvp.Value;
 
-                var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
                 bool modified = false;
-
-                foreach (var (instanceObj, key) in entries)
+                
+                foreach (var (sceneObj, key) in entries)
                 {
-                    // Find the corresponding object inside the prefab contents
-                    var sourceObj = PrefabUtility.GetCorrespondingObjectFromSource(instanceObj);
+                    GameObject nearestRoot = PrefabUtility.GetNearestPrefabInstanceRoot(sceneObj);
+                    string relativePath = GetRelativePath(sceneObj.transform, nearestRoot.transform);
+            
+                    Transform targetInContent = string.IsNullOrEmpty(relativePath) 
+                        ? prefabRoot.transform 
+                        : prefabRoot.transform.Find(relativePath);
 
-                    if (sourceObj == null) continue;
-
-                    // Build path from source object relative to prefab root
-                    string relativePath = BuildRelativePath(sourceObj.transform,
-                        contents.transform);
-
-                    Transform target;
-
-                    if (string.IsNullOrEmpty(relativePath))
-                        target = contents.transform;
-                    else
-                        target = contents.transform.Find(relativePath);
-
-                    if (target == null) continue;
-
-                    if (target.GetComponent<LocalizedText>() != null)
+                    if (targetInContent != null)
                     {
-                        // Already has component — update key
-                        SetKey(target.GetComponent<LocalizedText>(), key);
+                        var comp = targetInContent.GetComponent<LocalizedText>();
+                        if (comp == null) comp = targetInContent.gameObject.AddComponent<LocalizedText>();
+                        SetKey(comp, key);
+                
                         modified = true;
-                        continue;
+                        componentsAdded++;
                     }
-
-                    var comp = target.gameObject.AddComponent<LocalizedText>();
-                    SetKey(comp, key);
-                    modified = true;
-                    componentsAdded++;
                 }
 
                 if (modified)
                 {
-                    PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
                     prefabsModified++;
                 }
 
-                PrefabUtility.UnloadPrefabContents(contents);
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
 
             _data.SaveFileAllLanguages(_targetFile);
@@ -493,36 +476,29 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             RunScan();
         }
-
-        /// <summary>
-        /// Builds a relative path from a source prefab object to the prefab root.
-        /// Uses the source hierarchy (inside the prefab asset) to find the path,
-        /// then uses that path to locate the object in the loaded prefab contents.
-        /// </summary>
-        private static string BuildRelativePath(Transform sourceObj, Transform contentsRoot)
+        
+        private void AddOrUpdateComponent(GameObject go, string key)
         {
-            // The sourceObj is from GetCorrespondingObjectFromSource — it's inside
-            // the original prefab asset. We need to build a path from root to it.
-            var parts = new List<string>();
-            var current = sourceObj;
+            var comp = go.GetComponent<LocalizedText>();
+            if (comp == null) comp = Undo.AddComponent<LocalizedText>(go);
+            SetKey(comp, key);
+        }
 
-            // Walk up until we hit a root (parent == null or parent is the prefab root)
-            while (current != null && current.parent != null)
+        private string GetRelativePath(Transform child, Transform root)
+        {
+            if (child == root) return "";
+    
+            var pathParts = new List<string>();
+            Transform current = child;
+
+            while (current != null && current != root)
             {
-                parts.Add(current.name);
+                pathParts.Add(current.name);
                 current = current.parent;
             }
 
-            // If current == contentsRoot's corresponding source, path is relative to root
-            // If we walked all the way to null, the path includes the root name — skip it
-            parts.Reverse();
-
-            // The first element might be the root itself — skip if so
-            if (parts.Count > 0 && current != null && current.name == contentsRoot.name)
-                return string.Join("/", parts);
-
-            // Direct child or root itself
-            return parts.Count > 0 ? string.Join("/", parts) : "";
+            pathParts.Reverse();
+            return string.Join("/", pathParts);
         }
 
         private static void SetKey(LocalizedText comp, string key)
