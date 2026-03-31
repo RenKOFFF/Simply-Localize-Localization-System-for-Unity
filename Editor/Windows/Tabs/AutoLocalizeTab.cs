@@ -14,14 +14,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 {
     public class AutoLocalizeTab : IEditorTab
     {
-        private enum ScopeMode { ActiveScene, SelectedObject, PrefabAsset }
+        private enum ScopeMode { ActiveScene, SelectedObjects }
         private enum KeyPattern { SceneParentName, ParentName, ObjectName, Custom }
 
         private readonly EditorLocalizationData _data;
         private readonly LocalizationConfig _config;
         private readonly LocalizationEditorWindow _window;
 
-        // Settings
         private ScopeMode _scope = ScopeMode.ActiveScene;
         private KeyPattern _keyPattern = KeyPattern.ParentName;
         private string _customPattern = "{parent}/{name}";
@@ -31,10 +30,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private int _minTextLength = 1;
         private bool _enterPrefabInstances;
         private bool _modifyPrefabAssets;
-        private GameObject _targetPrefab;
         private string _targetFile = "global";
 
-        // Scan results
         private List<ScanEntry> _scanResults;
         private Vector2 _scrollPos;
 
@@ -58,12 +55,11 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             EditorGUILayout.Space(8);
             EditorGUILayout.LabelField("Auto-Localize", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(
-                "Scan your scene or prefabs for text components without localization.\n" +
+                "Scan your scene or selected objects for text components without localization.\n" +
                 "Preview the results, then apply to bulk-add LocalizedText components and create translation keys.",
                 MessageType.Info);
 
             EditorGUILayout.Space(8);
-
             DrawScopeSettings();
             EditorGUILayout.Space(6);
             DrawFilterSettings();
@@ -82,7 +78,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         }
 
         // ──────────────────────────────────────────────
-        //  Settings panels
+        //  Settings
         // ──────────────────────────────────────────────
 
         private void DrawScopeSettings()
@@ -90,24 +86,27 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             EditorGUILayout.LabelField("Scope", EditorStyles.boldLabel);
             _scope = (ScopeMode)EditorGUILayout.EnumPopup("Scan target", _scope);
 
-            if (_scope == ScopeMode.SelectedObject)
+            if (_scope == ScopeMode.SelectedObjects)
             {
-                EditorGUILayout.HelpBox(
-                    Selection.activeGameObject != null
-                        ? $"Selected: {Selection.activeGameObject.name} (with all children)"
-                        : "Select a GameObject in the Hierarchy first.",
-                    Selection.activeGameObject != null ? MessageType.Info : MessageType.Warning);
-            }
-            else if (_scope == ScopeMode.PrefabAsset)
-            {
-                _targetPrefab = (GameObject)EditorGUILayout.ObjectField(
-                    "Prefab asset", _targetPrefab, typeof(GameObject), false);
+                var selected = Selection.gameObjects;
 
-                if (_targetPrefab != null && !PrefabUtility.IsPartOfPrefabAsset(_targetPrefab))
+                if (selected.Length == 0)
                 {
-                    EditorGUILayout.HelpBox("Drag a prefab asset from the Project window.",
+                    EditorGUILayout.HelpBox(
+                        "Select one or more GameObjects in the Hierarchy or Project.",
                         MessageType.Warning);
-                    _targetPrefab = null;
+                }
+                else if (selected.Length == 1)
+                {
+                    EditorGUILayout.HelpBox(
+                        $"Selected: {selected[0].name} (with all children)",
+                        MessageType.Info);
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox(
+                        $"Selected: {selected.Length} objects (each with all children)",
+                        MessageType.Info);
                 }
             }
         }
@@ -123,17 +122,16 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             _skipNumericOnly = EditorGUILayout.Toggle(
                 new GUIContent("Skip numeric-only text",
-                    "Skip text that contains only digits, punctuation and whitespace"),
+                    "Skip text containing only digits, punctuation and whitespace"),
                 _skipNumericOnly);
 
             _minTextLength = Mathf.Max(1, EditorGUILayout.IntField(
-                new GUIContent("Min text length",
-                    "Skip text shorter than this many characters"),
+                new GUIContent("Min text length", "Skip text shorter than N characters"),
                 _minTextLength));
 
             _enterPrefabInstances = EditorGUILayout.Toggle(
                 new GUIContent("Enter prefab instances",
-                    "Scan inside prefab instances in the scene"),
+                    "Scan inside prefab instances"),
                 _enterPrefabInstances);
 
             if (_enterPrefabInstances)
@@ -157,8 +155,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             if (_keyPattern == KeyPattern.Custom)
             {
                 _customPattern = EditorGUILayout.TextField(
-                    new GUIContent("Custom pattern",
-                        "Tokens: {scene}, {parent}, {name}, {text}"),
+                    new GUIContent("Custom pattern", "Tokens: {scene}, {parent}, {name}, {text}"),
                     _customPattern);
             }
 
@@ -166,7 +163,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 new GUIContent("Prefix", "Prepended to every key, e.g. 'UI/'"),
                 _keyPrefix);
 
-            // Target file
             if (_data.SourceFiles.Count > 0)
             {
                 var files = _data.SourceFiles.ToArray();
@@ -233,14 +229,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                         CollectFromHierarchy(root, results);
                     break;
 
-                case ScopeMode.SelectedObject:
-                    if (Selection.activeGameObject != null)
-                        CollectFromHierarchy(Selection.activeGameObject, results);
-                    break;
-
-                case ScopeMode.PrefabAsset:
-                    if (_targetPrefab != null)
-                        CollectFromHierarchy(_targetPrefab, results);
+                case ScopeMode.SelectedObjects:
+                    // Support multiple selection — each with all children
+                    foreach (var selected in Selection.gameObjects)
+                        CollectFromHierarchy(selected, results);
                     break;
             }
 
@@ -280,26 +272,22 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private void DrawResults()
         {
             int selectedCount = _scanResults.Count(e => e.Selected);
-            int totalCount = _scanResults.Count;
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"Found {totalCount} text components, {selectedCount} selected",
+            EditorGUILayout.LabelField(
+                $"Found {_scanResults.Count} text components, {selectedCount} selected",
                 EditorStyles.boldLabel);
 
             if (GUILayout.Button("All", GUILayout.Width(40)))
                 foreach (var e in _scanResults) e.Selected = true;
-
             if (GUILayout.Button("None", GUILayout.Width(45)))
                 foreach (var e in _scanResults) e.Selected = false;
-
             if (GUILayout.Button("Invert", GUILayout.Width(50)))
                 foreach (var e in _scanResults) e.Selected = !e.Selected;
 
             EditorGUILayout.EndHorizontal();
-
             EditorGUILayout.Space(4);
 
-            // Table header
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
             EditorGUILayout.LabelField("", GUILayout.Width(20));
             EditorGUILayout.LabelField("Object", EditorStyles.miniLabel, GUILayout.Width(160));
@@ -314,7 +302,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 DrawScanEntry(entry);
 
             EditorGUILayout.EndScrollView();
-
             EditorGUILayout.Space(8);
 
             GUI.enabled = selectedCount > 0;
@@ -328,17 +315,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private void DrawScanEntry(ScanEntry entry)
         {
             Color prev = GUI.backgroundColor;
-
-            if (entry.KeyExists)
-                GUI.backgroundColor = new Color(1f, 0.92f, 0.7f);
+            if (entry.KeyExists) GUI.backgroundColor = new Color(1f, 0.92f, 0.7f);
 
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
 
             entry.Selected = EditorGUILayout.Toggle(entry.Selected, GUILayout.Width(20));
 
-            // Object path — clickable, pings in hierarchy
             var pathStyle = new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleLeft };
-
             if (GUILayout.Button(entry.Path, pathStyle, GUILayout.Width(160)))
             {
                 if (entry.GameObject != null)
@@ -348,15 +331,12 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 }
             }
 
-            // Text preview
             string preview = entry.Text.Replace("\n", " ");
             if (preview.Length > 25) preview = preview.Substring(0, 25) + "...";
             EditorGUILayout.LabelField(preview, EditorStyles.miniLabel, GUILayout.Width(130));
 
-            // Editable key
             entry.GeneratedKey = EditorGUILayout.TextField(entry.GeneratedKey, GUILayout.MinWidth(160));
 
-            // Status
             string status = entry.KeyExists ? "key exists"
                 : (entry.GameObject != null && entry.GameObject.GetComponent<LocalizedComponentBase>() != null)
                     ? "localized" : "new";
@@ -383,9 +363,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             string defaultLang = _config?.DefaultLanguageCode;
             int keysCreated = 0;
             int componentsAdded = 0;
+            int prefabsModified = 0;
 
             Undo.SetCurrentGroupName("Auto-Localize");
             int undoGroup = Undo.GetCurrentGroup();
+
+            // Group entries by prefab asset path for batch prefab editing
+            var prefabGroups = new Dictionary<string, List<(GameObject instanceObj, string key)>>();
 
             foreach (var entry in toApply)
             {
@@ -393,7 +377,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 string key = entry.GeneratedKey;
 
-                // Create key if it doesn't exist
+                // Create key
                 if (_data.GetFileForKey(key) == null)
                 {
                     _data.AddKey(key, _targetFile);
@@ -404,28 +388,89 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     keysCreated++;
                 }
 
-                // Add LocalizedText
                 var existing = entry.GameObject.GetComponent<LocalizedText>();
 
-                if (existing == null)
+                if (existing != null)
                 {
-                    if (_modifyPrefabAssets && PrefabUtility.IsPartOfPrefabInstance(entry.GameObject))
+                    // Already has component — just update key
+                    SetKey(existing, key);
+                    continue;
+                }
+
+                // Should we modify the prefab asset?
+                if (_modifyPrefabAssets && PrefabUtility.IsPartOfPrefabInstance(entry.GameObject))
+                {
+                    // Get the source prefab asset path
+                    var nearestRoot = PrefabUtility.GetNearestPrefabInstanceRoot(entry.GameObject);
+                    string prefabPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(entry.GameObject);
+
+                    if (!string.IsNullOrEmpty(prefabPath))
                     {
-                        ApplyToPrefabAsset(entry.GameObject, key);
-                        componentsAdded++;
+                        if (!prefabGroups.ContainsKey(prefabPath))
+                            prefabGroups[prefabPath] = new List<(GameObject, string)>();
+
+                        prefabGroups[prefabPath].Add((entry.GameObject, key));
+                        continue;
                     }
+                }
+
+                // Regular: add as instance override or scene object
+                Undo.AddComponent<LocalizedText>(entry.GameObject);
+                var comp = entry.GameObject.GetComponent<LocalizedText>();
+                SetKey(comp, key);
+                componentsAdded++;
+            }
+
+            // Process prefab groups — open each prefab once, modify all targets, save
+            foreach (var kvp in prefabGroups)
+            {
+                string prefabPath = kvp.Key;
+                var entries = kvp.Value;
+
+                var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+                bool modified = false;
+
+                foreach (var (instanceObj, key) in entries)
+                {
+                    // Find the corresponding object inside the prefab contents
+                    var sourceObj = PrefabUtility.GetCorrespondingObjectFromSource(instanceObj);
+
+                    if (sourceObj == null) continue;
+
+                    // Build path from source object relative to prefab root
+                    string relativePath = BuildRelativePath(sourceObj.transform,
+                        contents.transform);
+
+                    Transform target;
+
+                    if (string.IsNullOrEmpty(relativePath))
+                        target = contents.transform;
                     else
+                        target = contents.transform.Find(relativePath);
+
+                    if (target == null) continue;
+
+                    if (target.GetComponent<LocalizedText>() != null)
                     {
-                        Undo.AddComponent<LocalizedText>(entry.GameObject);
-                        var comp = entry.GameObject.GetComponent<LocalizedText>();
-                        SetKeyViaSerializedObject(comp, key);
-                        componentsAdded++;
+                        // Already has component — update key
+                        SetKey(target.GetComponent<LocalizedText>(), key);
+                        modified = true;
+                        continue;
                     }
+
+                    var comp = target.gameObject.AddComponent<LocalizedText>();
+                    SetKey(comp, key);
+                    modified = true;
+                    componentsAdded++;
                 }
-                else
+
+                if (modified)
                 {
-                    SetKeyViaSerializedObject(existing, key);
+                    PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+                    prefabsModified++;
                 }
+
+                PrefabUtility.UnloadPrefabContents(contents);
             }
 
             _data.SaveFileAllLanguages(_targetFile);
@@ -436,59 +481,55 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             AssetDatabase.Refresh();
             EditorDataCache.Invalidate();
 
+            string prefabInfo = prefabsModified > 0
+                ? $"\nModified {prefabsModified} prefab asset(s)"
+                : "";
+
             EditorUtility.DisplayDialog("Auto-Localize complete",
                 $"Created {keysCreated} translation key(s)\n" +
-                $"Added {componentsAdded} LocalizedText component(s)\n" +
+                $"Added {componentsAdded} LocalizedText component(s){prefabInfo}\n" +
                 $"File: {_targetFile}.json | Language: {defaultLang ?? "(not set)"}",
                 "OK");
 
             RunScan();
         }
 
-        private static void ApplyToPrefabAsset(GameObject instanceObject, string key)
+        /// <summary>
+        /// Builds a relative path from a source prefab object to the prefab root.
+        /// Uses the source hierarchy (inside the prefab asset) to find the path,
+        /// then uses that path to locate the object in the loaded prefab contents.
+        /// </summary>
+        private static string BuildRelativePath(Transform sourceObj, Transform contentsRoot)
         {
-            var prefabRoot = PrefabUtility.GetCorrespondingObjectFromSource(instanceObject);
-            if (prefabRoot == null) return;
-
-            string prefabPath = AssetDatabase.GetAssetPath(prefabRoot);
-            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
-
-            string relativePath = GetRelativePath(instanceObject, prefabRoot);
-            var target = string.IsNullOrEmpty(relativePath)
-                ? contents
-                : contents.transform.Find(relativePath)?.gameObject;
-
-            if (target != null && target.GetComponent<LocalizedText>() == null)
-            {
-                var comp = target.AddComponent<LocalizedText>();
-                SetKeyViaSerializedObject(comp, key);
-                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
-            }
-
-            PrefabUtility.UnloadPrefabContents(contents);
-        }
-
-        private static void SetKeyViaSerializedObject(LocalizedText comp, string key)
-        {
-            var so = new SerializedObject(comp);
-            var prop = so.FindProperty("_key");
-            if (prop != null) { prop.stringValue = key; so.ApplyModifiedProperties(); }
-        }
-
-        private static string GetRelativePath(GameObject obj, GameObject root)
-        {
+            // The sourceObj is from GetCorrespondingObjectFromSource — it's inside
+            // the original prefab asset. We need to build a path from root to it.
             var parts = new List<string>();
-            var current = obj.transform;
-            var rootT = root.transform;
+            var current = sourceObj;
 
-            while (current != null && current != rootT)
+            // Walk up until we hit a root (parent == null or parent is the prefab root)
+            while (current != null && current.parent != null)
             {
                 parts.Add(current.name);
                 current = current.parent;
             }
 
+            // If current == contentsRoot's corresponding source, path is relative to root
+            // If we walked all the way to null, the path includes the root name — skip it
             parts.Reverse();
-            return string.Join("/", parts);
+
+            // The first element might be the root itself — skip if so
+            if (parts.Count > 0 && current != null && current.name == contentsRoot.name)
+                return string.Join("/", parts);
+
+            // Direct child or root itself
+            return parts.Count > 0 ? string.Join("/", parts) : "";
+        }
+
+        private static void SetKey(LocalizedText comp, string key)
+        {
+            var so = new SerializedObject(comp);
+            var prop = so.FindProperty("_key");
+            if (prop != null) { prop.stringValue = key; so.ApplyModifiedProperties(); }
         }
 
         // ──────────────────────────────────────────────
@@ -516,7 +557,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                         .Replace("{scene}", go.scene.IsValid() ? go.scene.name : "Prefab")
                         .Replace("{parent}", GetParentName(go))
                         .Replace("{name}", go.name)
-                        .Replace("{text}", Truncate(GetTextFrom(go), 20));
+                        .Replace("{text}", Truncate(GetText(go), 20));
                     break;
                 default:
                     raw = go.name;
@@ -526,11 +567,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             if (!string.IsNullOrEmpty(_keyPrefix))
                 raw = _keyPrefix.TrimEnd('/') + "/" + raw;
 
-            // Sanitize
             raw = Regex.Replace(raw, @"[^\w/\-]", "_");
             raw = Regex.Replace(raw, @"/+", "/").Trim('/');
 
-            // Deduplicate
             string key = raw;
             int suffix = 1;
 
@@ -547,7 +586,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private static string GetParentName(GameObject go) =>
             go.transform.parent != null ? go.transform.parent.name : "Root";
 
-        private static string GetTextFrom(GameObject go)
+        private static string GetText(GameObject go)
         {
             var tmp = go.GetComponent<TMP_Text>();
             if (tmp != null) return tmp.text;
@@ -561,10 +600,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             s = Regex.Replace(s, @"\s+", "_");
             return s.Length > max ? s.Substring(0, max) : s;
         }
-
-        // ──────────────────────────────────────────────
-        //  Utilities
-        // ──────────────────────────────────────────────
 
         private static bool IsNumericOnly(string text)
         {
