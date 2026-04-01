@@ -113,13 +113,22 @@ namespace SimplyLocalize.Editor.Inspectors
                 }
                 else
                 {
-                    // Read mode: compact — label : value on one line, wraps if long
+                    // Read mode: compact with colored parameters
                     string display = missing ? "(missing)" : value;
+
+                    var richStyle = new GUIStyle(EditorStyles.helpBox)
+                    {
+                        richText = true,
+                        wordWrap = true
+                    };
+
+                    string highlighted = missing ? display
+                        : Utilities.ParameterHighlighter.Highlight(display);
 
                     EditorGUILayout.LabelField(
                         $"{profile.displayName} ({profile.Code})",
-                        display,
-                        EditorStyles.helpBox);
+                        highlighted,
+                        richStyle);
                 }
 
                 GUI.color = prev;

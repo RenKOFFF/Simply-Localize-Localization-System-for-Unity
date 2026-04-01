@@ -458,29 +458,45 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                         field.style.fontSize = 11;
                         field.multiline = true;
 
-                        // Auto-grow height based on newlines
-                        int lineCount = 1;
+                        // Enable word wrap on the inner text element
+                        field.RegisterCallback<AttachToPanelEvent>(evt =>
+                        {
+                            var textInput = field.Q("unity-text-input");
+                            if (textInput != null)
+                            {
+                                textInput.style.whiteSpace = WhiteSpace.Normal;
+                                textInput.style.overflow = Overflow.Hidden;
+                            }
+                        });
+
+                        // Estimate height: ~7 chars per line at width 180, plus explicit \n
+                        int charsPerLine = 22;
+                        int explicitNewlines = 0;
                         for (int c = 0; c < value.Length; c++)
-                            if (value[c] == '\n') lineCount++;
-                        field.style.minHeight = Mathf.Max(20, lineCount * 16);
+                            if (value[c] == '\n') explicitNewlines++;
+
+                        int wrappedLines = value.Length > 0
+                            ? Mathf.CeilToInt((float)value.Length / charsPerLine)
+                            : 1;
+                        int totalLines = Mathf.Max(1, wrappedLines + explicitNewlines);
+                        field.style.minHeight = Mathf.Max(20, totalLines * 15);
 
                         if (string.IsNullOrEmpty(value))
                         {
                             field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
                         }
 
-                        string againCapturedKey = key;
                         string capturedLang = langCode;
                         string capturedFile = sourceFile;
 
                         field.RegisterCallback<FocusOutEvent>(evt =>
                         {
                             string newValue = field.value;
-                            string oldValue = _data.GetTranslation(againCapturedKey, capturedLang) ?? "";
+                            string oldValue = _data.GetTranslation(key, capturedLang) ?? "";
 
                             if (newValue != oldValue)
                             {
-                                _data.SetTranslation(againCapturedKey, capturedLang, newValue);
+                                _data.SetTranslation(key, capturedLang, newValue);
                                 _data.SaveFile(capturedFile, capturedLang);
                                 AssetDatabase.Refresh();
                                 EditorDataCache.Invalidate();
