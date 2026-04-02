@@ -27,6 +27,9 @@ namespace SimplyLocalize
         // Parsed template cache: raw string → parsed template (shared across languages)
         private readonly Dictionary<string, ParsedTemplate> _templateCache = new();
 
+        // Asset tables: languageCode → list of loaded tables
+        private readonly Dictionary<string, List<LocalizationAssetTable>> _assetTableCache = new();
+
         internal event Action<string> OnLanguageChanged;
         internal event Action<LanguageProfile> OnProfileChanged;
 
@@ -225,6 +228,59 @@ namespace SimplyLocalize
         }
 
         /// <summary>
+        /// Gets a localized asset of type T from asset tables.
+        /// Follows the full fallback chain: current → per-language → global.
+        /// </summary>
+        internal T GetAsset<T>(string key) where T : UnityEngine.Object
+        {
+            if (string.IsNullOrEmpty(key)) return null;
+
+            // Try current language
+            var result = GetAssetFromTables<T>(key, _currentLanguage);
+            if (result != null) return result;
+
+            // Per-language fallback chain
+            if (_currentProfile != null)
+            {
+                var visited = new HashSet<string> { _currentLanguage };
+                var fb = _currentProfile.fallbackProfile;
+
+                while (fb != null && visited.Add(fb.Code))
+                {
+                    result = GetAssetFromTables<T>(key, fb.Code);
+                    if (result != null) return result;
+                    fb = fb.fallbackProfile;
+                }
+            }
+
+            // Global fallback
+            string gf = _config.FallbackLanguageCode;
+
+            if (!string.IsNullOrEmpty(gf) && gf != _currentLanguage)
+                result = GetAssetFromTables<T>(key, gf);
+
+            return result;
+        }
+
+        private T GetAssetFromTables<T>(string key, string languageCode) where T : UnityEngine.Object
+        {
+            if (string.IsNullOrEmpty(languageCode)) return null;
+
+            EnsureAssetTablesLoaded(languageCode);
+
+            if (!_assetTableCache.TryGetValue(languageCode, out var tables))
+                return null;
+
+            for (int i = 0; i < tables.Count; i++)
+            {
+                var asset = tables[i].Get<T>(key);
+                if (asset != null) return asset;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Checks whether a key exists in the current language or fallback.
         /// </summary>
         internal bool HasKey(string key)
@@ -288,6 +344,7 @@ namespace SimplyLocalize
         {
             _textCache.Clear();
             _templateCache.Clear();
+            _assetTableCache.Clear();
             LocalizationLogger.Log("All caches cleared");
         }
 
@@ -445,6 +502,15 @@ namespace SimplyLocalize
             var data = _dataProvider.LoadTextData(languageCode);
             _textCache[languageCode] = data;
             LocalizationLogger.Log($"Loaded {data.Count} keys for '{languageCode}'");
+        }
+
+        private void EnsureAssetTablesLoaded(string languageCode)
+        {
+            if (_assetTableCache.ContainsKey(languageCode))
+                return;
+
+            var tables = _dataProvider.LoadAssetTables(languageCode);
+            _assetTableCache[languageCode] = tables;
         }
     }
 }

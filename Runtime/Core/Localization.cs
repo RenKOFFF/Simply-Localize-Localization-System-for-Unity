@@ -292,6 +292,19 @@ namespace SimplyLocalize
             return _manager?.GetAudio(key);
         }
 
+        /// <summary>
+        /// Gets a localized asset of any type from asset tables.
+        /// Follows fallback chain: current → per-language → global.
+        ///
+        /// Usage:
+        ///   var material = Localization.GetAsset&lt;Material&gt;("fx/hit");
+        ///   var clip = Localization.GetAsset&lt;AnimationClip&gt;("anim/idle");
+        /// </summary>
+        public static T GetAsset<T>(string key) where T : UnityEngine.Object
+        {
+            return _manager?.GetAsset<T>(key);
+        }
+
         // ──────────────────────────────────────────────
         //  Queries
         // ──────────────────────────────────────────────

@@ -26,10 +26,13 @@ namespace SimplyLocalize.Data
         /// Returns null if the clip doesn't exist for this language.
         /// </summary>
         AudioClip LoadAudioClip(string key, string languageCode);
+        bool HasTextData(string languageCode);
 
         /// <summary>
-        /// Checks whether text data exists for the given language.
+        /// Loads all asset tables for the specified language.
+        /// Each table is a LocalizationAssetTable SO in the language folder.
+        /// Returns empty list if none found.
         /// </summary>
-        bool HasTextData(string languageCode);
+        List<LocalizationAssetTable> LoadAssetTables(string languageCode);
     }
 }

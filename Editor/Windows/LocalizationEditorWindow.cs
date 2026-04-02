@@ -107,22 +107,61 @@ namespace SimplyLocalize.Editor.Windows
 
         private void RebuildTabs()
         {
-            _tabs = new IEditorTab[]
+            var tabList = new System.Collections.Generic.List<IEditorTab>
             {
                 new TranslationsTab(_data, _config, this),
+                new AssetsTab(_data, _config, this),
                 new LanguagesTab(_data, _config, this),
-                new AutoLocalizeTab(_data, _config, this),
                 new ProfilesTab(_config),
                 new CoverageTab(_data, _config),
+                new AutoLocalizeTab(_data, _config, this),
                 new ToolsTab(_data, _config),
                 new SettingsTab(_config, this),
             };
 
-            _tabNames = new[]
+            var nameList = new System.Collections.Generic.List<string>
             {
-                "Translations", "Languages", "Auto Localize", "Profiles",
-                "Coverage", "Tools", "Settings"
+                "Translations", "Assets", "Languages", "Profiles",
+                "Coverage", "Auto Localize", "Tools", "Settings"
             };
+
+            // Discover custom tabs registered via [LocalizationEditorTab]
+            var customTabTypes = UnityEditor.TypeCache.GetTypesWithAttribute<LocalizationEditorTabAttribute>();
+
+            var customEntries = new System.Collections.Generic.List<(int order, string name, IEditorTab tab)>();
+
+            foreach (var type in customTabTypes)
+            {
+                if (!typeof(IEditorTab).IsAssignableFrom(type)) continue;
+
+                var attr = (LocalizationEditorTabAttribute)
+                    System.Attribute.GetCustomAttribute(type, typeof(LocalizationEditorTabAttribute));
+
+                if (attr == null) continue;
+
+                try
+                {
+                    var tab = (IEditorTab)System.Activator.CreateInstance(type);
+                    customEntries.Add((attr.Order, attr.TabName, tab));
+                }
+                catch (System.Exception e)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"[SimplyLocalize] Failed to create custom tab '{attr.TabName}': {e.Message}");
+                }
+            }
+
+            // Sort custom tabs by order and append
+            customEntries.Sort((a, b) => a.order.CompareTo(b.order));
+
+            foreach (var (_, name, tab) in customEntries)
+            {
+                tabList.Add(tab);
+                nameList.Add(name);
+            }
+
+            _tabs = tabList.ToArray();
+            _tabNames = nameList.ToArray();
 
             RebuildTabBar();
         }

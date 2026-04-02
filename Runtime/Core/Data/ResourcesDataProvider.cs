@@ -111,6 +111,23 @@ namespace SimplyLocalize.Data
             return exists;
         }
 
+        public List<LocalizationAssetTable> LoadAssetTables(string languageCode)
+        {
+            string path = $"{_basePath}/{languageCode}";
+            var tables = Resources.LoadAll<LocalizationAssetTable>(path);
+
+            var result = new List<LocalizationAssetTable>();
+
+            if (tables != null)
+            {
+                result.AddRange(tables);
+                LocalizationLogger.Log(
+                    $"Loaded {tables.Length} asset table(s) for '{languageCode}'");
+            }
+
+            return result;
+        }
+
         private static string SanitizeKey(string key)
         {
             return key.Replace('\\', '/');
