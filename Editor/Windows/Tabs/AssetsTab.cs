@@ -128,6 +128,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     Event.current.Use();
                 }
 
+                // Determine the accepted type for this key
+                var acceptedType = GetObjectTypeForKey(key);
+
                 // Asset cells per language
                 foreach (var lang in languages)
                 {
@@ -135,7 +138,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     Object currentAsset = table?.Get(key);
 
                     var newAsset = EditorGUILayout.ObjectField(
-                        currentAsset, GetObjectType(), false, GUILayout.Width(140));
+                        currentAsset, acceptedType, false, GUILayout.Width(140));
 
                     if (newAsset != currentAsset)
                     {
@@ -317,6 +320,32 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 AssetTypeFilter.AudioClips => typeof(AudioClip),
                 _ => typeof(Object)
             };
+        }
+
+        /// <summary>
+        /// Determines the accepted asset type for a key based on:
+        /// 1. Current filter (if not All, use filter type)
+        /// 2. Existing assets (if key already has a Sprite, only accept Sprites)
+        /// 3. Falls back to Object if nothing is assigned yet
+        /// </summary>
+        private System.Type GetObjectTypeForKey(string key)
+        {
+            // If filter is set, use it
+            if (_filter != AssetTypeFilter.All)
+                return GetObjectType();
+
+            // Auto-detect from existing assets for this key
+            foreach (var table in _tables.Values)
+            {
+                var asset = table.Get(key);
+                if (asset == null) continue;
+
+                if (asset is Sprite) return typeof(Sprite);
+                if (asset is AudioClip) return typeof(AudioClip);
+                return asset.GetType();
+            }
+
+            return typeof(Object);
         }
 
         private void ShowAddKeyPopup()
