@@ -21,6 +21,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private readonly HashSet<string> _selectedKeys = new();
         private string _searchQuery = "";
         private bool _sidebarCollapsed = true;
+        private string _lastClickedKey;
+        private List<string> _flatVisibleKeys = new();
 
         private VisualElement _fileList;
         private VisualElement _sidebarContent;
@@ -307,209 +309,44 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             _tableBody.Add(headerRow);
 
-            // Collect keys
-            var keys = GetFilteredKeys().ToList();
+            // Collect keys and build tree
+            var keys = GetFilteredKeys().OrderBy(k => k).ToList();
+            _flatVisibleKeys = new List<string>();
 
-            // Group by first path segment
-            var groups = keys
-                .GroupBy(k =>
-                {
-                    int lastSlash = k.LastIndexOf('/');
-                    return lastSlash > 0 ? k.Substring(0, lastSlash) : "(root)";
-                })
-                .OrderBy(g => g.Key)
-                .ToList();
+            // Build tree structure
+            var rootNode = new TreeNode("(root)");
 
-            foreach (var group in groups)
+            foreach (var key in keys)
             {
-                string groupName = group.Key;
-                int count = group.Count();
-                bool collapsed = _collapsedGroups.Contains(groupName);
+                var parts = key.Split('/');
 
-                // Group header
-                var groupRow = new VisualElement();
-                groupRow.style.flexDirection = FlexDirection.Row;
-                groupRow.style.backgroundColor = new Color(0, 0, 0, 0.04f);
-                groupRow.style.borderBottomWidth = 1;
-                groupRow.style.borderBottomColor = new Color(0, 0, 0, 0.08f);
-                groupRow.style.paddingTop = 4;
-                groupRow.style.paddingBottom = 4;
-                groupRow.style.paddingLeft = 8;
-                groupRow.style.cursor = StyleKeyword.Auto;
-
-                var groupLabel = new Label($"{(collapsed ? "▶" : "▼")} {groupName} ({count})");
-                groupLabel.style.fontSize = 11;
-                groupLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-                groupLabel.style.color = new Color(0.4f, 0.4f, 0.4f);
-
-                groupRow.Add(groupLabel);
-
-                groupRow.RegisterCallback<ClickEvent>(evt =>
+                if (parts.Length <= 1)
                 {
-                    if (collapsed) _collapsedGroups.Remove(groupName);
-                    else _collapsedGroups.Add(groupName);
-                    RebuildTable();
-                });
-
-                _tableBody.Add(groupRow);
-
-                if (collapsed) continue;
-
-                // Key rows
-                foreach (var key in group.OrderBy(k => k))
+                    // No path — add directly to root
+                    rootNode.Keys.Add(key);
+                }
+                else
                 {
-                    string shortKey = key.Substring(key.LastIndexOf('/') + 1);
-                    string sourceFile = _data.GetFileForKey(key) ?? "";
-                    bool isSelected = _selectedKeys.Contains(key);
+                    // Navigate/create tree nodes for all path segments except the last
+                    var current = rootNode;
 
-                    var row = MakeRow(false);
-
-                    if (isSelected)
-                        row.style.backgroundColor = new Color(0.2f, 0.5f, 0.9f, 0.08f);
-
-                    // Key cell — clickable for selection
-                    var keyLabel = new Label(shortKey);
-                    keyLabel.style.width = 200;
-                    keyLabel.style.fontSize = 11;
-                    keyLabel.style.paddingLeft = 20;
-                    keyLabel.style.paddingTop = 2;
-                    keyLabel.style.paddingBottom = 2;
-                    keyLabel.style.color = isSelected
-                        ? new Color(0.2f, 0.5f, 0.9f)
-                        : new Color(0.4f, 0.4f, 0.4f);
-                    keyLabel.tooltip = key;
-
-                    // Click to select/deselect (Ctrl for multi-select)
-                    string capturedKey = key;
-                    keyLabel.RegisterCallback<ClickEvent>(evt =>
+                    for (int p = 0; p < parts.Length - 1; p++)
                     {
-                        if (evt.ctrlKey || evt.commandKey)
+                        if (!current.Children.TryGetValue(parts[p], out var child))
                         {
-                            // Toggle selection
-                            if (!_selectedKeys.Add(capturedKey))
-                                _selectedKeys.Remove(capturedKey);
-                        }
-                        else
-                        {
-                            // Single select
-                            _selectedKeys.Clear();
-                            _selectedKeys.Add(capturedKey);
+                            child = new TreeNode(parts[p]);
+                            current.Children[parts[p]] = child;
                         }
 
-                        RebuildTable();
-                        evt.StopPropagation();
-                    });
-
-                    // Right-click context menu
-                    keyLabel.RegisterCallback<ContextClickEvent>(evt =>
-                    {
-                        // If right-clicked key is not in selection, select it alone
-                        if (!_selectedKeys.Contains(capturedKey))
-                        {
-                            _selectedKeys.Clear();
-                            _selectedKeys.Add(capturedKey);
-                            RebuildTable();
-                        }
-
-                        ShowKeyContextMenu();
-                        evt.StopPropagation();
-                    });
-
-                    // Key cell with optional description
-                    var keyCell = new VisualElement();
-                    keyCell.style.width = 200;
-
-                    row.Add(keyCell);
-
-                    keyCell.Add(keyLabel);
-
-                    // Show description if present
-                    string desc = _data.GetDescription(key);
-
-                    if (!string.IsNullOrEmpty(desc))
-                    {
-                        var descLabel = new Label(desc);
-                        descLabel.style.fontSize = 9;
-                        descLabel.style.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
-                        descLabel.style.paddingLeft = 20;
-                        descLabel.style.marginTop = -2;
-                        descLabel.style.whiteSpace = WhiteSpace.Normal;
-                        descLabel.style.width = 180;
-                        keyCell.Add(descLabel);
+                        current = child;
                     }
 
-                    // File cell
-                    var fileLabel = new Label(sourceFile);
-                    fileLabel.style.width = 60;
-                    fileLabel.style.fontSize = 10;
-                    fileLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
-                    fileLabel.style.paddingTop = 2;
-                    row.Add(fileLabel);
-
-                    // Translation cells
-                    foreach (var lang in languages)
-                    {
-                        string langCode = lang.Code;
-                        string value = _data.GetTranslation(key, langCode) ?? "";
-
-                        var field = new TextField();
-                        field.value = value;
-                        field.style.width = 180;
-                        field.style.fontSize = 11;
-                        field.multiline = true;
-
-                        // Enable word wrap on the inner text element
-                        field.RegisterCallback<AttachToPanelEvent>(evt =>
-                        {
-                            var textInput = field.Q("unity-text-input");
-                            if (textInput != null)
-                            {
-                                textInput.style.whiteSpace = WhiteSpace.Normal;
-                                textInput.style.overflow = Overflow.Hidden;
-                            }
-                        });
-
-                        // Estimate height: ~7 chars per line at width 180, plus explicit \n
-                        int charsPerLine = 22;
-                        int explicitNewlines = 0;
-                        for (int c = 0; c < value.Length; c++)
-                            if (value[c] == '\n') explicitNewlines++;
-
-                        int wrappedLines = value.Length > 0
-                            ? Mathf.CeilToInt((float)value.Length / charsPerLine)
-                            : 1;
-                        int totalLines = Mathf.Max(1, wrappedLines + explicitNewlines);
-                        field.style.minHeight = Mathf.Max(20, totalLines * 15);
-
-                        if (string.IsNullOrEmpty(value))
-                        {
-                            field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
-                        }
-
-                        string capturedLang = langCode;
-                        string capturedFile = sourceFile;
-
-                        field.RegisterCallback<FocusOutEvent>(evt =>
-                        {
-                            string newValue = field.value;
-                            string oldValue = _data.GetTranslation(key, capturedLang) ?? "";
-
-                            if (newValue != oldValue)
-                            {
-                                _data.SetTranslation(key, capturedLang, newValue);
-                                _data.SaveFile(capturedFile, capturedLang);
-                                AssetDatabase.Refresh();
-                                EditorDataCache.Invalidate();
-                                UpdateStatus();
-                            }
-                        });
-
-                        row.Add(field);
-                    }
-
-                    _tableBody.Add(row);
+                    current.Keys.Add(key);
                 }
             }
+
+            // Render tree recursively
+            RenderTreeNode(rootNode, 0, languages, true);
 
             UpdateStatus();
         }
@@ -517,6 +354,248 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         // ──────────────────────────────────────────────
         //  Helpers
         // ──────────────────────────────────────────────
+
+        private void RenderTreeNode(TreeNode node, int depth,
+            List<LanguageProfile> languages, bool isRoot)
+        {
+            // Render child groups (sorted alphabetically)
+            foreach (var childKvp in node.Children.OrderBy(c => c.Key))
+            {
+                string childName = childKvp.Key;
+                var childNode = childKvp.Value;
+                int totalKeys = CountKeysRecursive(childNode);
+
+                // Build full path for collapse tracking
+                string fullPath = isRoot ? childName : $"{node.FullPath}/{childName}";
+                childNode.FullPath = fullPath;
+
+                bool collapsed = _collapsedGroups.Contains(fullPath);
+
+                // Group header row
+                var groupRow = new VisualElement();
+                groupRow.style.flexDirection = FlexDirection.Row;
+                groupRow.style.backgroundColor = new Color(0, 0, 0, 0.04f);
+                groupRow.style.borderBottomWidth = 1;
+                groupRow.style.borderBottomColor = new Color(0, 0, 0, 0.08f);
+                groupRow.style.paddingTop = 4;
+                groupRow.style.paddingBottom = 4;
+                groupRow.style.paddingLeft = 8 + depth * 16;
+                groupRow.style.cursor = StyleKeyword.Auto;
+
+                var arrow = collapsed ? "\u25b6" : "\u25bc";
+                var groupLabel = new Label($"{arrow} {childName} ({totalKeys})");
+                groupLabel.style.fontSize = 11;
+                groupLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+                groupLabel.style.color = new Color(0.4f, 0.4f, 0.4f);
+                groupRow.Add(groupLabel);
+
+                string capturedPath = fullPath;
+                groupRow.RegisterCallback<ClickEvent>(evt =>
+                {
+                    if (_collapsedGroups.Contains(capturedPath))
+                        _collapsedGroups.Remove(capturedPath);
+                    else
+                        _collapsedGroups.Add(capturedPath);
+                    RebuildTable();
+                });
+
+                _tableBody.Add(groupRow);
+
+                if (!collapsed)
+                    RenderTreeNode(childNode, depth + 1, languages, false);
+            }
+
+            // Render keys at this level (leaf keys)
+            foreach (var key in node.Keys.OrderBy(k => k))
+            {
+                RenderKeyRow(key, depth, languages);
+            }
+        }
+
+        private void RenderKeyRow(string key, int depth, List<LanguageProfile> languages)
+        {
+            string shortKey = key.Substring(key.LastIndexOf('/') + 1);
+            string sourceFile = _data.GetFileForKey(key) ?? "";
+            bool isSelected = _selectedKeys.Contains(key);
+
+            _flatVisibleKeys.Add(key);
+
+            var row = MakeRow(false);
+
+            if (isSelected)
+                row.style.backgroundColor = new Color(0.2f, 0.5f, 0.9f, 0.08f);
+
+            // Key cell — clickable for selection
+            var keyLabel = new Label(shortKey);
+            keyLabel.style.width = 200;
+            keyLabel.style.fontSize = 11;
+            keyLabel.style.paddingLeft = 12 + depth * 16;
+            keyLabel.style.paddingTop = 2;
+            keyLabel.style.paddingBottom = 2;
+            keyLabel.style.color = isSelected
+                ? new Color(0.2f, 0.5f, 0.9f)
+                : new Color(0.4f, 0.4f, 0.4f);
+            keyLabel.tooltip = key;
+
+            // Click: single, Ctrl+toggle, Shift+range
+            string capturedKey = key;
+            keyLabel.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (evt.shiftKey && !string.IsNullOrEmpty(_lastClickedKey))
+                {
+                    // Range select
+                    int idxA = _flatVisibleKeys.IndexOf(_lastClickedKey);
+                    int idxB = _flatVisibleKeys.IndexOf(capturedKey);
+
+                    if (idxA >= 0 && idxB >= 0)
+                    {
+                        int from = Mathf.Min(idxA, idxB);
+                        int to = Mathf.Max(idxA, idxB);
+
+                        if (!evt.ctrlKey && !evt.commandKey)
+                            _selectedKeys.Clear();
+
+                        for (int i = from; i <= to; i++)
+                            _selectedKeys.Add(_flatVisibleKeys[i]);
+                    }
+                }
+                else if (evt.ctrlKey || evt.commandKey)
+                {
+                    if (!_selectedKeys.Add(capturedKey))
+                        _selectedKeys.Remove(capturedKey);
+                }
+                else
+                {
+                    _selectedKeys.Clear();
+                    _selectedKeys.Add(capturedKey);
+                }
+
+                _lastClickedKey = capturedKey;
+                RebuildTable();
+                evt.StopPropagation();
+            });
+
+            // Right-click context menu
+            keyLabel.RegisterCallback<ContextClickEvent>(evt =>
+            {
+                if (!_selectedKeys.Contains(capturedKey))
+                {
+                    _selectedKeys.Clear();
+                    _selectedKeys.Add(capturedKey);
+                    RebuildTable();
+                }
+
+                ShowKeyContextMenu();
+                evt.StopPropagation();
+            });
+
+            // Key cell with optional description
+            var keyCell = new VisualElement();
+            keyCell.style.width = 200;
+            row.Add(keyCell);
+            keyCell.Add(keyLabel);
+
+            string desc = _data.GetDescription(key);
+
+            if (!string.IsNullOrEmpty(desc))
+            {
+                var descLabel = new Label(desc);
+                descLabel.style.fontSize = 9;
+                descLabel.style.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+                descLabel.style.paddingLeft = 12 + depth * 16;
+                descLabel.style.marginTop = -2;
+                descLabel.style.whiteSpace = WhiteSpace.Normal;
+                descLabel.style.maxWidth = 190;
+                keyCell.Add(descLabel);
+            }
+
+            // File cell
+            var fileLabel = new Label(sourceFile);
+            fileLabel.style.width = 60;
+            fileLabel.style.fontSize = 10;
+            fileLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
+            fileLabel.style.paddingTop = 2;
+            row.Add(fileLabel);
+
+            // Translation cells
+            foreach (var lang in languages)
+            {
+                string langCode = lang.Code;
+                string value = _data.GetTranslation(key, langCode) ?? "";
+
+                var field = new TextField();
+                field.value = value;
+                field.style.width = 180;
+                field.style.fontSize = 11;
+                field.multiline = true;
+
+                field.RegisterCallback<AttachToPanelEvent>(evt =>
+                {
+                    var textInput = field.Q("unity-text-input");
+                    if (textInput != null)
+                    {
+                        textInput.style.whiteSpace = WhiteSpace.Normal;
+                        textInput.style.overflow = Overflow.Hidden;
+                    }
+                });
+
+                int charsPerLine = 22;
+                int explicitNewlines = 0;
+                for (int c = 0; c < value.Length; c++)
+                    if (value[c] == '\n') explicitNewlines++;
+
+                int wrappedLines = value.Length > 0
+                    ? Mathf.CeilToInt((float)value.Length / charsPerLine)
+                    : 1;
+                int totalLines = Mathf.Max(1, wrappedLines + explicitNewlines);
+                field.style.minHeight = Mathf.Max(20, totalLines * 15);
+
+                if (string.IsNullOrEmpty(value))
+                    field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
+
+                string capturedLang = langCode;
+                string capturedFile = sourceFile;
+
+                field.RegisterCallback<FocusOutEvent>(evt =>
+                {
+                    string newValue = field.value;
+                    string oldValue = _data.GetTranslation(key, capturedLang) ?? "";
+
+                    if (newValue != oldValue)
+                    {
+                        _data.SetTranslation(key, capturedLang, newValue);
+                        _data.SaveFile(capturedFile, capturedLang);
+                        AssetDatabase.Refresh();
+                        EditorDataCache.Invalidate();
+                        UpdateStatus();
+                    }
+                });
+
+                row.Add(field);
+            }
+
+            _tableBody.Add(row);
+        }
+
+        private static int CountKeysRecursive(TreeNode node)
+        {
+            int count = node.Keys.Count;
+
+            foreach (var child in node.Children.Values)
+                count += CountKeysRecursive(child);
+
+            return count;
+        }
+
+        private class TreeNode
+        {
+            public string Name;
+            public string FullPath;
+            public Dictionary<string, TreeNode> Children = new();
+            public List<string> Keys = new();
+
+            public TreeNode(string name) { Name = name; FullPath = name; }
+        }
 
         private IEnumerable<string> GetFilteredKeys()
         {
