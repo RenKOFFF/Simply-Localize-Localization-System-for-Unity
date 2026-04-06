@@ -3,6 +3,7 @@ using SimplyLocalize.Components;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SimplyLocalize.Editor.Inspectors
 {
@@ -10,17 +11,42 @@ namespace SimplyLocalize.Editor.Inspectors
     public class LocalizedProfileOverrideEditor : UnityEditor.Editor
     {
         private SerializedProperty _entries;
+        private bool _isTMP;
+        private bool _isLegacy;
+        private bool _noText;
 
         private void OnEnable()
         {
             _entries = serializedObject.FindProperty("_entries");
+            DetectTextType();
+        }
+
+        private void DetectTextType()
+        {
+            var go = ((Component)target).gameObject;
+            _isTMP = go.GetComponent<TMP_Text>() != null;
+            _isLegacy = !_isTMP && go.GetComponent<Text>() != null;
+            _noText = !_isTMP && !_isLegacy;
         }
 
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
 
-            EditorGUILayout.LabelField("Profile overrides per language", EditorStyles.boldLabel);
+            // Show detected mode
+            string mode = _isTMP ? "TextMeshPro" : _isLegacy ? "Legacy Text" : "No text component";
+            EditorGUILayout.LabelField($"Profile overrides ({mode})", EditorStyles.boldLabel);
+
+            if (_noText)
+            {
+                EditorGUILayout.HelpBox(
+                    "No TMP_Text or legacy Text component found on this GameObject.\n" +
+                    "Add a text component first.",
+                    MessageType.Warning);
+                serializedObject.ApplyModifiedProperties();
+                return;
+            }
+
             EditorGUILayout.HelpBox(
                 "Override specific parts of the global language profile for this text.\n" +
                 "Checked sections use local values; unchecked sections use the global profile.",
@@ -53,7 +79,6 @@ namespace SimplyLocalize.Editor.Inspectors
                 ? ((LanguageProfile)profileProp.objectReferenceValue).displayName
                 : "(none)";
 
-            // Entry header with foldout
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
             EditorGUILayout.BeginHorizontal();
@@ -79,35 +104,38 @@ namespace SimplyLocalize.Editor.Inspectors
 
             EditorGUI.indentLevel++;
 
-            // Font & Material section
+            // ── Font section ──
             var overrideFont = entry.FindPropertyRelative("overrideFont");
             overrideFont.boolValue = EditorGUILayout.ToggleLeft(
-                "Override font & material", overrideFont.boolValue, EditorStyles.boldLabel);
+                "Override font", overrideFont.boolValue, EditorStyles.boldLabel);
 
             if (overrideFont.boolValue)
             {
                 EditorGUI.indentLevel++;
 
-                var fontProp = entry.FindPropertyRelative("font");
-                EditorGUILayout.PropertyField(fontProp);
-
-                // Material dropdown — shows materials compatible with the selected font
-                var materialProp = entry.FindPropertyRelative("material");
-                var font = fontProp.objectReferenceValue as TMP_FontAsset;
-
-                if (font != null)
+                if (_isTMP)
                 {
-                    DrawMaterialDropdown(materialProp, font);
+                    var tmpFontProp = entry.FindPropertyRelative("tmpFont");
+                    EditorGUILayout.PropertyField(tmpFontProp, new GUIContent("TMP Font"));
+
+                    var tmpMaterialProp = entry.FindPropertyRelative("tmpMaterial");
+                    var font = tmpFontProp.objectReferenceValue as TMP_FontAsset;
+
+                    if (font != null)
+                        DrawMaterialDropdown(tmpMaterialProp, font);
+                    else
+                        EditorGUILayout.PropertyField(tmpMaterialProp, new GUIContent("Material"));
                 }
-                else
+                else // legacy
                 {
-                    EditorGUILayout.PropertyField(materialProp);
+                    EditorGUILayout.PropertyField(
+                        entry.FindPropertyRelative("legacyFont"), new GUIContent("Font"));
                 }
 
                 EditorGUI.indentLevel--;
             }
 
-            // Typography section
+            // ── Typography section ──
             var overrideTypo = entry.FindPropertyRelative("overrideTypography");
             overrideTypo.boolValue = EditorGUILayout.ToggleLeft(
                 "Override typography", overrideTypo.boolValue, EditorStyles.boldLabel);
@@ -116,26 +144,40 @@ namespace SimplyLocalize.Editor.Inspectors
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.PropertyField(entry.FindPropertyRelative("fontSizeMultiplier"));
-                EditorGUILayout.PropertyField(entry.FindPropertyRelative("fontWeight"));
-                EditorGUILayout.PropertyField(entry.FindPropertyRelative("fontStyle"));
+
+                if (_isTMP)
+                {
+                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("fontWeight"));
+                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("fontStyle"),
+                        new GUIContent("TMP Font Style"));
+                }
+                else
+                {
+                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("legacyFontStyle"),
+                        new GUIContent("Font Style"));
+                }
+
                 EditorGUI.indentLevel--;
             }
 
-            // Spacing section
-            var overrideSpacing = entry.FindPropertyRelative("overrideSpacing");
-            overrideSpacing.boolValue = EditorGUILayout.ToggleLeft(
-                "Override spacing", overrideSpacing.boolValue, EditorStyles.boldLabel);
-
-            if (overrideSpacing.boolValue)
+            // ── Spacing section (TMP only) ──
+            if (_isTMP)
             {
-                EditorGUI.indentLevel++;
-                EditorGUILayout.PropertyField(entry.FindPropertyRelative("lineSpacingAdjustment"));
-                EditorGUILayout.PropertyField(entry.FindPropertyRelative("characterSpacingAdjustment"));
-                EditorGUILayout.PropertyField(entry.FindPropertyRelative("wordSpacingAdjustment"));
-                EditorGUI.indentLevel--;
+                var overrideSpacing = entry.FindPropertyRelative("overrideSpacing");
+                overrideSpacing.boolValue = EditorGUILayout.ToggleLeft(
+                    "Override spacing", overrideSpacing.boolValue, EditorStyles.boldLabel);
+
+                if (overrideSpacing.boolValue)
+                {
+                    EditorGUI.indentLevel++;
+                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("lineSpacingAdjustment"));
+                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("characterSpacingAdjustment"));
+                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("wordSpacingAdjustment"));
+                    EditorGUI.indentLevel--;
+                }
             }
 
-            // Layout section
+            // ── Layout section ──
             var overrideLayout = entry.FindPropertyRelative("overrideLayout");
             overrideLayout.boolValue = EditorGUILayout.ToggleLeft(
                 "Override layout", overrideLayout.boolValue, EditorStyles.boldLabel);
@@ -151,7 +193,20 @@ namespace SimplyLocalize.Editor.Inspectors
                 if (overrideAlign.boolValue)
                 {
                     EditorGUI.indentLevel++;
-                    EditorGUILayout.PropertyField(entry.FindPropertyRelative("alignmentOverride"));
+
+                    if (_isTMP)
+                    {
+                        EditorGUILayout.PropertyField(
+                            entry.FindPropertyRelative("tmpAlignmentOverride"),
+                            new GUIContent("Alignment"));
+                    }
+                    else
+                    {
+                        EditorGUILayout.PropertyField(
+                            entry.FindPropertyRelative("legacyAlignmentOverride"),
+                            new GUIContent("Alignment"));
+                    }
+
                     EditorGUI.indentLevel--;
                 }
 
@@ -162,13 +217,8 @@ namespace SimplyLocalize.Editor.Inspectors
             EditorGUILayout.EndVertical();
         }
 
-        /// <summary>
-        /// Draws a dropdown of materials that are compatible with the given TMP font asset.
-        /// Mimics TMP's built-in Material Preset dropdown.
-        /// </summary>
         private static void DrawMaterialDropdown(SerializedProperty materialProp, TMP_FontAsset font)
         {
-            // Find all materials in the project that use this font's atlas
             var fontMaterials = FindFontMaterials(font);
 
             if (fontMaterials.Length == 0)
@@ -177,7 +227,6 @@ namespace SimplyLocalize.Editor.Inspectors
                 return;
             }
 
-            // Build names array
             var names = new string[fontMaterials.Length + 1];
             names[0] = "(default)";
             int currentIndex = 0;
@@ -198,21 +247,15 @@ namespace SimplyLocalize.Editor.Inspectors
             }
         }
 
-        /// <summary>
-        /// Finds all Material assets that reference the same atlas texture as the font.
-        /// </summary>
         private static Material[] FindFontMaterials(TMP_FontAsset font)
         {
             if (font == null || font.atlasTexture == null)
                 return System.Array.Empty<Material>();
 
             var atlasTexture = font.atlasTexture;
-
-            // Search for materials that use this atlas
             var guids = AssetDatabase.FindAssets("t:Material");
             var materials = new System.Collections.Generic.List<Material>();
 
-            // Always include the font's default material first
             if (font.material != null)
                 materials.Add(font.material);
 
@@ -224,7 +267,6 @@ namespace SimplyLocalize.Editor.Inspectors
                 if (mat == null || mat == font.material)
                     continue;
 
-                // Check if this material uses the same atlas texture
                 if (mat.HasTexture("_MainTex") && mat.GetTexture("_MainTex") == atlasTexture)
                     materials.Add(mat);
             }

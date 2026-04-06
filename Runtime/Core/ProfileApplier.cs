@@ -125,23 +125,33 @@ namespace SimplyLocalize
             }
         }
 
-        public void Apply(Text text, LanguageProfile profile)
+        public void Apply(Text text, LanguageProfile profile,
+            bool skipFont = false, bool skipTypography = false,
+            bool skipSpacing = false, bool skipLayout = false)
         {
             if (text == null || !_cached) return;
 
-            text.font = _originalLegacyFont;
-            text.fontSize = _originalLegacyFontSize;
-            text.fontStyle = _originalLegacyFontStyle;
-            text.alignment = _originalLegacyAlignment;
+            // Restore originals (except skipped sections)
+            if (!skipFont)
+                text.font = _originalLegacyFont;
+
+            if (!skipTypography)
+            {
+                text.fontSize = _originalLegacyFontSize;
+                text.fontStyle = _originalLegacyFontStyle;
+            }
+
+            if (!skipLayout)
+                text.alignment = _originalLegacyAlignment;
 
             if (profile == null) return;
 
-            if (profile.overrideFont && profile.legacyFont != null)
+            if (!skipFont && profile.overrideFont && profile.legacyFont != null)
             {
                 text.font = profile.legacyFont;
             }
 
-            if (profile.overrideTypography)
+            if (!skipTypography && profile.overrideTypography)
             {
                 text.fontSize = Mathf.RoundToInt(_originalLegacyFontSize * profile.fontSizeMultiplier);
                 text.fontStyle = profile.fontStyle switch
@@ -152,7 +162,7 @@ namespace SimplyLocalize
                 };
             }
 
-            if (profile.overrideLayout && profile.overrideAlignment)
+            if (!skipLayout && profile.overrideLayout && profile.overrideAlignment)
             {
                 text.alignment = profile.alignmentOverride switch
                 {
