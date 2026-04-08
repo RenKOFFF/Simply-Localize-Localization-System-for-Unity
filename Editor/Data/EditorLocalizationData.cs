@@ -28,6 +28,15 @@ namespace SimplyLocalize.Editor.Data
         /// <summary>key → metadata (description, previousKeys)</summary>
         private readonly Dictionary<string, KeyMeta> _keyMeta = new();
 
+        // ── Caches (for performance) ──
+
+        /// <summary>Cached list of all keys, sorted alphabetically. Invalidated on add/remove/rename.</summary>
+        private List<string> _sortedKeysCache;
+
+        /// <summary>Cached search-index: key → lowercased concatenation of (key + all translations).</summary>
+        private readonly Dictionary<string, string> _searchIndex = new();
+        private bool _searchIndexValid;
+
         /// <summary>The base path to the Localization folder inside Assets/Resources/</summary>
         private string _basePath;
 
@@ -60,6 +69,58 @@ namespace SimplyLocalize.Editor.Data
 
         /// <summary>All unique keys across all languages.</summary>
         public IEnumerable<string> AllKeys => _keyToFile.Keys;
+
+        /// <summary>All keys sorted alphabetically. Cached — fast O(1) on repeat calls.</summary>
+        public IReadOnlyList<string> AllKeysSorted
+        {
+            get
+            {
+                if (_sortedKeysCache == null)
+                {
+                    _sortedKeysCache = _keyToFile.Keys.ToList();
+                    _sortedKeysCache.Sort(System.StringComparer.Ordinal);
+                }
+                return _sortedKeysCache;
+            }
+        }
+
+        /// <summary>Returns the search-index entry for a key (lowercased key + all translations concatenated).</summary>
+        public string GetSearchHaystack(string key)
+        {
+            if (!_searchIndexValid) RebuildSearchIndex();
+            return _searchIndex.TryGetValue(key, out var v) ? v : "";
+        }
+
+        private void RebuildSearchIndex()
+        {
+            _searchIndex.Clear();
+            var sb = new System.Text.StringBuilder();
+
+            foreach (var key in _keyToFile.Keys)
+            {
+                sb.Clear();
+                sb.Append(key.ToLowerInvariant());
+
+                foreach (var langData in _translations.Values)
+                {
+                    if (langData.TryGetValue(key, out var v) && !string.IsNullOrEmpty(v))
+                    {
+                        sb.Append(' ');
+                        sb.Append(v.ToLowerInvariant());
+                    }
+                }
+
+                _searchIndex[key] = sb.ToString();
+            }
+
+            _searchIndexValid = true;
+        }
+
+        private void InvalidateCaches()
+        {
+            _sortedKeysCache = null;
+            _searchIndexValid = false;
+        }
 
         /// <summary>Total number of keys.</summary>
         public int KeyCount => _keyToFile.Count;
@@ -123,6 +184,7 @@ namespace SimplyLocalize.Editor.Data
             _keyMeta.Clear();
             _basePath = null;
             _referenceLanguage = null;
+            InvalidateCaches();
         }
 
         // ──────────────────────────────────────────────
@@ -236,6 +298,7 @@ namespace SimplyLocalize.Editor.Data
             }
 
             langData[key] = value;
+            _searchIndexValid = false; // translation changed → search index stale
         }
 
         /// <summary>
@@ -259,6 +322,8 @@ namespace SimplyLocalize.Editor.Data
                 if (!langData.ContainsKey(key))
                     langData[key] = "";
             }
+
+            InvalidateCaches();
         }
 
         /// <summary>
@@ -271,6 +336,8 @@ namespace SimplyLocalize.Editor.Data
 
             foreach (var langData in _translations.Values)
                 langData.Remove(key);
+
+            InvalidateCaches();
         }
 
         /// <summary>
@@ -307,6 +374,8 @@ namespace SimplyLocalize.Editor.Data
 
             if (!meta.previousKeys.Contains(oldKey))
                 meta.previousKeys.Add(oldKey);
+
+            InvalidateCaches();
         }
 
         /// <summary>

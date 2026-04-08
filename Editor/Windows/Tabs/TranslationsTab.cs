@@ -35,6 +35,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private readonly Stack<EditOperation> _redoStack = new();
         private const int MaxUndoHistory = 100;
 
+        // Search debounce
+        private IVisualElementScheduledItem _searchDebounce;
+
         private VisualElement _fileList;
         private VisualElement _sidebarContent;
         private VisualElement _tableBody;
@@ -260,7 +263,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             searchField.RegisterValueChangedCallback(evt =>
             {
                 _searchQuery = evt.newValue ?? "";
-                RebuildTable();
+
+                // Debounce: wait 150ms after the last keystroke before rebuilding
+                _searchDebounce?.Pause();
+                _searchDebounce = _listView?.schedule.Execute(RebuildTable).StartingIn(150);
             });
             toolbar.Add(searchField);
 
@@ -330,21 +336,28 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             var swTotal = Stopwatch.StartNew();
 
+            bool langCountChanged = _config != null
+                && (_cachedLanguages == null
+                    || _cachedLanguages.Count != _config.languages.Count(p => p != null));
+
             _cachedLanguages = _config != null
                 ? _config.languages.Where(p => p != null).ToList()
                 : new List<LanguageProfile>();
 
-            // Header row (static, single-instance)
+            // Header row (static, single-instance) — only rebuild on language changes
             var swHeader = Stopwatch.StartNew();
-            _tableBody.Clear();
-            var headerRow = MakeRow(true);
-            headerRow.Add(MakeCell("Key", 200, true));
-            headerRow.Add(MakeCell("File", 60, true));
+            if (langCountChanged || _tableBody.childCount == 0)
+            {
+                _tableBody.Clear();
+                var headerRow = MakeRow(true);
+                headerRow.Add(MakeCell("Key", 200, true));
+                headerRow.Add(MakeCell("File", 60, true));
 
-            foreach (var lang in _cachedLanguages)
-                headerRow.Add(MakeCell(lang.Code + " — " + lang.displayName, 180, true));
+                foreach (var lang in _cachedLanguages)
+                    headerRow.Add(MakeCell(lang.Code + " — " + lang.displayName, 180, true));
 
-            _tableBody.Add(headerRow);
+                _tableBody.Add(headerRow);
+            }
             swHeader.Stop();
 
             // Build the flat row model from the tree
@@ -353,8 +366,18 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             swFlat.Stop();
 
             var swListRebuild = Stopwatch.StartNew();
-            _listView.itemsSource = _flatItems;
-            _listView.Rebuild();
+            // Use RefreshItems instead of Rebuild — only re-binds existing pooled elements
+            // (Rebuild() is the slow one because it discards and re-creates the entire row pool)
+            if (langCountChanged)
+            {
+                _listView.itemsSource = _flatItems;
+                _listView.Rebuild();
+            }
+            else
+            {
+                _listView.itemsSource = _flatItems;
+                _listView.RefreshItems();
+            }
             swListRebuild.Stop();
 
             var swStatus = Stopwatch.StartNew();
@@ -362,7 +385,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             swStatus.Stop();
 
             swTotal.Stop();
-            Debug.Log($"[SL.Perf] RebuildTable: total={swTotal.ElapsedMilliseconds}ms | header={swHeader.ElapsedMilliseconds}ms | BuildFlatItems={swFlat.ElapsedMilliseconds}ms | ListView.Rebuild={swListRebuild.ElapsedMilliseconds}ms | UpdateStatus={swStatus.ElapsedMilliseconds}ms | rows={_flatItems.Count} | langs={_cachedLanguages.Count}");
+            Debug.Log($"[SL.Perf] RebuildTable: total={swTotal.ElapsedMilliseconds}ms | header={swHeader.ElapsedMilliseconds}ms | BuildFlatItems={swFlat.ElapsedMilliseconds}ms | ListView refresh={swListRebuild.ElapsedMilliseconds}ms | UpdateStatus={swStatus.ElapsedMilliseconds}ms | rows={_flatItems.Count} | langs={_cachedLanguages.Count}");
         }
 
         /// <summary>
@@ -381,38 +404,42 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _flatItems.Clear();
             _flatVisibleKeys = new List<string>();
 
-            var keys = GetFilteredKeys().OrderBy(k => k).ToList();
+            // Use the cached pre-sorted keys list (instant)
+            var keys = GetFilteredKeysList();
             swFilter.Stop();
 
             var swTree = Stopwatch.StartNew();
-            // Build tree structure
+            // Build tree structure. Since input is already sorted, child Keys lists are sorted too.
             var rootNode = new TreeNode("(root)");
 
             foreach (var key in keys)
             {
-                var parts = key.Split('/');
-
-                if (parts.Length <= 1)
+                int slashIdx = key.IndexOf('/');
+                if (slashIdx < 0)
                 {
                     rootNode.Keys.Add(key);
+                    continue;
                 }
-                else
+
+                var current = rootNode;
+                int start = 0;
+
+                while (slashIdx >= 0)
                 {
-                    var current = rootNode;
-
-                    for (int p = 0; p < parts.Length - 1; p++)
+                    string segment = key.Substring(start, slashIdx - start);
+                    if (!current.Children.TryGetValue(segment, out var child))
                     {
-                        if (!current.Children.TryGetValue(parts[p], out var child))
-                        {
-                            child = new TreeNode(parts[p]);
-                            current.Children[parts[p]] = child;
-                        }
-
-                        current = child;
+                        child = new TreeNode(segment);
+                        current.Children[segment] = child;
                     }
 
-                    current.Keys.Add(key);
+                    current = child;
+                    current.TotalKeyCount++; // pre-count during insertion
+                    start = slashIdx + 1;
+                    slashIdx = key.IndexOf('/', start);
                 }
+
+                current.Keys.Add(key);
             }
             swTree.Stop();
 
@@ -421,39 +448,49 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             FlattenTreeNode(rootNode, 0, true);
             swFlatten.Stop();
 
-            Debug.Log($"[SL.Perf]   BuildFlatItems internals: GetFilteredKeys+OrderBy={swFilter.ElapsedMilliseconds}ms | BuildTree={swTree.ElapsedMilliseconds}ms | Flatten={swFlatten.ElapsedMilliseconds}ms | keys={keys.Count}");
+            Debug.Log($"[SL.Perf]   BuildFlatItems internals: GetFilteredKeys={swFilter.ElapsedMilliseconds}ms | BuildTree={swTree.ElapsedMilliseconds}ms | Flatten={swFlatten.ElapsedMilliseconds}ms | keys={keys.Count}");
         }
 
         private void FlattenTreeNode(TreeNode node, int depth, bool isRoot)
         {
-            // Sub-groups first (alphabetical)
-            foreach (var childKvp in node.Children.OrderBy(c => c.Key))
+            // Sub-groups (already in insertion order; Dictionary preserves it in .NET Core 3+ and Unity Mono)
+            // Sort once into a temp array because Dictionary order is not strictly guaranteed across versions.
+            // For perf: only sort if there are children, and use a small allocation.
+            if (node.Children.Count > 0)
             {
-                string childName = childKvp.Key;
-                var childNode = childKvp.Value;
-                int totalKeys = CountKeysRecursive(childNode);
+                // Build a sorted array of children by name
+                var sortedChildren = new KeyValuePair<string, TreeNode>[node.Children.Count];
+                int idx = 0;
+                foreach (var kvp in node.Children) sortedChildren[idx++] = kvp;
+                System.Array.Sort(sortedChildren, (a, b) => string.CompareOrdinal(a.Key, b.Key));
 
-                string fullPath = isRoot ? childName : $"{node.FullPath}/{childName}";
-                childNode.FullPath = fullPath;
-
-                bool collapsed = _collapsedGroups.Contains(fullPath);
-
-                _flatItems.Add(new RowItem
+                foreach (var childKvp in sortedChildren)
                 {
-                    Type = RowType.GroupHeader,
-                    Depth = depth,
-                    GroupPath = fullPath,
-                    GroupDisplayName = childName,
-                    GroupKeyCount = totalKeys,
-                    IsCollapsed = collapsed
-                });
+                    string childName = childKvp.Key;
+                    var childNode = childKvp.Value;
 
-                if (!collapsed)
-                    FlattenTreeNode(childNode, depth + 1, false);
+                    string fullPath = isRoot ? childName : $"{node.FullPath}/{childName}";
+                    childNode.FullPath = fullPath;
+
+                    bool collapsed = _collapsedGroups.Contains(fullPath);
+
+                    _flatItems.Add(new RowItem
+                    {
+                        Type = RowType.GroupHeader,
+                        Depth = depth,
+                        GroupPath = fullPath,
+                        GroupDisplayName = childName,
+                        GroupKeyCount = childNode.TotalKeyCount,
+                        IsCollapsed = collapsed
+                    });
+
+                    if (!collapsed)
+                        FlattenTreeNode(childNode, depth + 1, false);
+                }
             }
 
-            // Then leaf keys at this level
-            foreach (var key in node.Keys.OrderBy(k => k))
+            // Then leaf keys at this level (already sorted because input was sorted)
+            foreach (var key in node.Keys)
             {
                 _flatItems.Add(new RowItem
                 {
@@ -1063,6 +1100,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             public string FullPath;
             public Dictionary<string, TreeNode> Children = new();
             public List<string> Keys = new();
+            public int TotalKeyCount;
 
             public TreeNode(string name) { Name = name; FullPath = name; }
         }
@@ -1109,41 +1147,54 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
         }
 
-        private IEnumerable<string> GetFilteredKeys()
+        /// <summary>
+        /// Returns a fully-materialized List of keys after applying file filter and search.
+        /// Uses the cached sorted-keys list and pre-built search index for speed.
+        /// </summary>
+        private List<string> GetFilteredKeysList()
         {
-            IEnumerable<string> keys;
+            // Start from the pre-sorted, cached key list
+            IReadOnlyList<string> source;
 
             if (_viewMode == ViewMode.All || _selectedFiles.Count == 0)
             {
-                keys = _data.AllKeys;
+                source = _data.AllKeysSorted;
             }
             else
             {
-                keys = _data.GetKeysForFiles(_selectedFiles);
-            }
-
-            if (!string.IsNullOrEmpty(_searchQuery))
-            {
-                string q = _searchQuery.ToLowerInvariant();
-
-                keys = keys.Where(k =>
+                // File filter — build sorted subset
+                var subset = new List<string>();
+                foreach (var k in _data.AllKeysSorted)
                 {
-                    if (k.ToLowerInvariant().Contains(q))
-                        return true;
-
-                    foreach (var langCode in _data.LoadedLanguages)
-                    {
-                        string val = _data.GetTranslation(k, langCode);
-
-                        if (val != null && val.ToLowerInvariant().Contains(q))
-                            return true;
-                    }
-
-                    return false;
-                });
+                    var f = _data.GetFileForKey(k);
+                    if (f != null && _selectedFiles.Contains(f)) subset.Add(k);
+                }
+                source = subset;
             }
 
-            return keys;
+            // Apply search using the pre-built haystack index
+            if (string.IsNullOrEmpty(_searchQuery))
+            {
+                // Avoid extra allocation when source IS the cache
+                return source is List<string> list ? list : new List<string>(source);
+            }
+
+            string q = _searchQuery.ToLowerInvariant();
+            var result = new List<string>(source.Count);
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                var k = source[i];
+                if (_data.GetSearchHaystack(k).Contains(q))
+                    result.Add(k);
+            }
+
+            return result;
+        }
+
+        private IEnumerable<string> GetFilteredKeys()
+        {
+            return GetFilteredKeysList();
         }
 
         private void UpdateStatus()
@@ -1152,7 +1203,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             var sw = Stopwatch.StartNew();
 
-            int totalKeys = GetFilteredKeys().Count();
+            // Materialize ONCE — reuse the same list for total count and missing iteration
+            var filteredKeys = GetFilteredKeysList();
+            int totalKeys = filteredKeys.Count;
             int fileCount = _viewMode == ViewMode.All
                 ? _data.SourceFiles.Count
                 : _selectedFiles.Count;
@@ -1161,8 +1214,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             if (_config != null)
             {
-                foreach (var key in GetFilteredKeys())
+                for (int i = 0; i < filteredKeys.Count; i++)
                 {
+                    var key = filteredKeys[i];
                     foreach (var profile in _config.languages)
                     {
                         if (profile == null) continue;
