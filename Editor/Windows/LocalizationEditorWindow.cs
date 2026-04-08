@@ -35,14 +35,40 @@ namespace SimplyLocalize.Editor.Windows
                 _data.Load(_config);
 
             BuildUI();
+
+            // Flush pending AssetDatabase.Refresh before entering Play Mode
+            // (edits are deferred for performance — see EditorLocalizationData.MarkPendingAssetRefresh)
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+        }
+
+        private void OnDisable()
+        {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+        }
+
+        private void OnDestroy()
+        {
+            // Window is closing — make sure any pending edits are picked up by AssetDatabase
+            _data?.FlushPendingAssetRefresh();
+        }
+
+        private void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            if (change == PlayModeStateChange.ExitingEditMode)
+                _data?.FlushPendingAssetRefresh();
         }
 
         private void OnFocus()
         {
             if (_config != null && _data != null)
             {
-                _data.Reload(_config);
-                RefreshActiveTab();
+                // Only reload from disk if there are no pending in-memory edits waiting to flush.
+                // Reloading would clobber unsaved-to-AssetDatabase changes with stale cached data.
+                if (!_data.HasPendingAssetRefresh)
+                {
+                    _data.Reload(_config);
+                    RefreshActiveTab();
+                }
             }
         }
 

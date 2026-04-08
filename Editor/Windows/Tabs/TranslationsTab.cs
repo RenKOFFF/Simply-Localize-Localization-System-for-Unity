@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using SimplyLocalize.Editor.Data;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using Debug = UnityEngine.Debug;
 
 namespace SimplyLocalize.Editor.Windows.Tabs
 {
@@ -334,8 +332,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         {
             if (_tableBody == null || _listView == null) return;
 
-            var swTotal = Stopwatch.StartNew();
-
             bool langCountChanged = _config != null
                 && (_cachedLanguages == null
                     || _cachedLanguages.Count != _config.languages.Count(p => p != null));
@@ -345,7 +341,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 : new List<LanguageProfile>();
 
             // Header row (static, single-instance) — only rebuild on language changes
-            var swHeader = Stopwatch.StartNew();
             if (langCountChanged || _tableBody.childCount == 0)
             {
                 _tableBody.Clear();
@@ -358,16 +353,12 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 _tableBody.Add(headerRow);
             }
-            swHeader.Stop();
 
             // Build the flat row model from the tree
-            var swFlat = Stopwatch.StartNew();
             BuildFlatItems();
-            swFlat.Stop();
 
-            var swListRebuild = Stopwatch.StartNew();
-            // Use RefreshItems instead of Rebuild — only re-binds existing pooled elements
-            // (Rebuild() is the slow one because it discards and re-creates the entire row pool)
+            // Use RefreshItems instead of Rebuild — only re-binds existing pooled elements.
+            // Rebuild() is only needed when language count changes (row template shape differs).
             if (langCountChanged)
             {
                 _listView.itemsSource = _flatItems;
@@ -378,14 +369,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 _listView.itemsSource = _flatItems;
                 _listView.RefreshItems();
             }
-            swListRebuild.Stop();
 
-            var swStatus = Stopwatch.StartNew();
             UpdateStatus();
-            swStatus.Stop();
-
-            swTotal.Stop();
-            Debug.Log($"[SL.Perf] RebuildTable: total={swTotal.ElapsedMilliseconds}ms | header={swHeader.ElapsedMilliseconds}ms | BuildFlatItems={swFlat.ElapsedMilliseconds}ms | ListView refresh={swListRebuild.ElapsedMilliseconds}ms | UpdateStatus={swStatus.ElapsedMilliseconds}ms | rows={_flatItems.Count} | langs={_cachedLanguages.Count}");
         }
 
         /// <summary>
@@ -400,15 +385,12 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         private void BuildFlatItems()
         {
-            var swFilter = Stopwatch.StartNew();
             _flatItems.Clear();
             _flatVisibleKeys = new List<string>();
 
             // Use the cached pre-sorted keys list (instant)
             var keys = GetFilteredKeysList();
-            swFilter.Stop();
 
-            var swTree = Stopwatch.StartNew();
             // Build tree structure. Since input is already sorted, child Keys lists are sorted too.
             var rootNode = new TreeNode("(root)");
 
@@ -441,14 +423,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 current.Keys.Add(key);
             }
-            swTree.Stop();
 
-            var swFlatten = Stopwatch.StartNew();
             // Flatten tree into _flatItems, respecting collapsed state
             FlattenTreeNode(rootNode, 0, true);
-            swFlatten.Stop();
-
-            Debug.Log($"[SL.Perf]   BuildFlatItems internals: GetFilteredKeys={swFilter.ElapsedMilliseconds}ms | BuildTree={swTree.ElapsedMilliseconds}ms | Flatten={swFlatten.ElapsedMilliseconds}ms | keys={keys.Count}");
         }
 
         private void FlattenTreeNode(TreeNode node, int depth, bool isRoot)
@@ -869,30 +846,16 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         private void ApplyEdit(string key, string languageCode, string sourceFile, string value)
         {
-            var swTotal = Stopwatch.StartNew();
-
-            var swSet = Stopwatch.StartNew();
             _data.SetTranslation(key, languageCode, value);
-            swSet.Stop();
-
-            var swSave = Stopwatch.StartNew();
             _data.SaveFile(sourceFile, languageCode);
-            swSave.Stop();
 
-            var swRefresh = Stopwatch.StartNew();
-            AssetDatabase.Refresh();
-            swRefresh.Stop();
+            // Mark pending reimport instead of calling AssetDatabase.Refresh() here.
+            // A single Refresh() takes ~90ms, so doing it per FocusOut kills typing responsiveness.
+            // The window flushes pending refreshes on close and before Play Mode.
+            _data.MarkPendingAssetRefresh();
 
-            var swInvalidate = Stopwatch.StartNew();
             EditorDataCache.Invalidate();
-            swInvalidate.Stop();
-
-            var swVisible = Stopwatch.StartNew();
             RefreshVisible();
-            swVisible.Stop();
-
-            swTotal.Stop();
-            Debug.Log($"[SL.Perf] ApplyEdit: total={swTotal.ElapsedMilliseconds}ms | SetTranslation={swSet.ElapsedMilliseconds}ms | SaveFile={swSave.ElapsedMilliseconds}ms | AssetDatabase.Refresh={swRefresh.ElapsedMilliseconds}ms | Cache.Invalidate={swInvalidate.ElapsedMilliseconds}ms | RefreshVisible={swVisible.ElapsedMilliseconds}ms");
         }
 
         private void PushUndo(EditOperation op)
@@ -1201,8 +1164,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         {
             if (_statusLabel == null) return;
 
-            var sw = Stopwatch.StartNew();
-
             // Materialize ONCE — reuse the same list for total count and missing iteration
             var filteredKeys = GetFilteredKeysList();
             int totalKeys = filteredKeys.Count;
@@ -1229,10 +1190,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             string missingText = missing > 0 ? $"  |  {missing} missing" : "";
             string selText = _selectedKeys.Count > 0 ? $"  |  {_selectedKeys.Count} selected" : "";
             _statusLabel.text = $"{totalKeys} keys from {fileCount} file(s){missingText}{selText}";
-
-            sw.Stop();
-            if (sw.ElapsedMilliseconds > 5)
-                Debug.Log($"[SL.Perf] UpdateStatus: {sw.ElapsedMilliseconds}ms | totalKeys={totalKeys} | missing={missing}");
         }
 
         private VisualElement MakeRow(bool isHeader)

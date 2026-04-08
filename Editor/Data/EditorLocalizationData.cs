@@ -37,6 +37,23 @@ namespace SimplyLocalize.Editor.Data
         private readonly Dictionary<string, string> _searchIndex = new();
         private bool _searchIndexValid;
 
+        /// <summary>True if there are pending writes to disk that AssetDatabase hasn't reimported yet.</summary>
+        public bool HasPendingAssetRefresh { get; private set; }
+
+        /// <summary>Marks that JSON files were written and need AssetDatabase reimport.</summary>
+        public void MarkPendingAssetRefresh() => HasPendingAssetRefresh = true;
+
+        /// <summary>
+        /// Flushes all pending AssetDatabase.Refresh() calls accumulated from individual edits.
+        /// Deferring Refresh avoids ~90ms freeze per FocusOut.
+        /// </summary>
+        public void FlushPendingAssetRefresh()
+        {
+            if (!HasPendingAssetRefresh) return;
+            HasPendingAssetRefresh = false;
+            UnityEditor.AssetDatabase.Refresh();
+        }
+
         /// <summary>The base path to the Localization folder inside Assets/Resources/</summary>
         private string _basePath;
 
