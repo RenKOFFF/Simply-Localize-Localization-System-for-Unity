@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using SimplyLocalize.Editor.Data;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Debug = UnityEngine.Debug;
 
 namespace SimplyLocalize.Editor.Windows.Tabs
 {
@@ -326,11 +328,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         {
             if (_tableBody == null || _listView == null) return;
 
+            var swTotal = Stopwatch.StartNew();
+
             _cachedLanguages = _config != null
                 ? _config.languages.Where(p => p != null).ToList()
                 : new List<LanguageProfile>();
 
             // Header row (static, single-instance)
+            var swHeader = Stopwatch.StartNew();
             _tableBody.Clear();
             var headerRow = MakeRow(true);
             headerRow.Add(MakeCell("Key", 200, true));
@@ -340,14 +345,24 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 headerRow.Add(MakeCell(lang.Code + " — " + lang.displayName, 180, true));
 
             _tableBody.Add(headerRow);
+            swHeader.Stop();
 
             // Build the flat row model from the tree
+            var swFlat = Stopwatch.StartNew();
             BuildFlatItems();
+            swFlat.Stop();
 
+            var swListRebuild = Stopwatch.StartNew();
             _listView.itemsSource = _flatItems;
             _listView.Rebuild();
+            swListRebuild.Stop();
 
+            var swStatus = Stopwatch.StartNew();
             UpdateStatus();
+            swStatus.Stop();
+
+            swTotal.Stop();
+            Debug.Log($"[SL.Perf] RebuildTable: total={swTotal.ElapsedMilliseconds}ms | header={swHeader.ElapsedMilliseconds}ms | BuildFlatItems={swFlat.ElapsedMilliseconds}ms | ListView.Rebuild={swListRebuild.ElapsedMilliseconds}ms | UpdateStatus={swStatus.ElapsedMilliseconds}ms | rows={_flatItems.Count} | langs={_cachedLanguages.Count}");
         }
 
         /// <summary>
@@ -362,11 +377,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         private void BuildFlatItems()
         {
+            var swFilter = Stopwatch.StartNew();
             _flatItems.Clear();
             _flatVisibleKeys = new List<string>();
 
             var keys = GetFilteredKeys().OrderBy(k => k).ToList();
+            swFilter.Stop();
 
+            var swTree = Stopwatch.StartNew();
             // Build tree structure
             var rootNode = new TreeNode("(root)");
 
@@ -396,9 +414,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     current.Keys.Add(key);
                 }
             }
+            swTree.Stop();
 
+            var swFlatten = Stopwatch.StartNew();
             // Flatten tree into _flatItems, respecting collapsed state
             FlattenTreeNode(rootNode, 0, true);
+            swFlatten.Stop();
+
+            Debug.Log($"[SL.Perf]   BuildFlatItems internals: GetFilteredKeys+OrderBy={swFilter.ElapsedMilliseconds}ms | BuildTree={swTree.ElapsedMilliseconds}ms | Flatten={swFlatten.ElapsedMilliseconds}ms | keys={keys.Count}");
         }
 
         private void FlattenTreeNode(TreeNode node, int depth, bool isRoot)
@@ -809,11 +832,30 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         private void ApplyEdit(string key, string languageCode, string sourceFile, string value)
         {
+            var swTotal = Stopwatch.StartNew();
+
+            var swSet = Stopwatch.StartNew();
             _data.SetTranslation(key, languageCode, value);
+            swSet.Stop();
+
+            var swSave = Stopwatch.StartNew();
             _data.SaveFile(sourceFile, languageCode);
+            swSave.Stop();
+
+            var swRefresh = Stopwatch.StartNew();
             AssetDatabase.Refresh();
+            swRefresh.Stop();
+
+            var swInvalidate = Stopwatch.StartNew();
             EditorDataCache.Invalidate();
+            swInvalidate.Stop();
+
+            var swVisible = Stopwatch.StartNew();
             RefreshVisible();
+            swVisible.Stop();
+
+            swTotal.Stop();
+            Debug.Log($"[SL.Perf] ApplyEdit: total={swTotal.ElapsedMilliseconds}ms | SetTranslation={swSet.ElapsedMilliseconds}ms | SaveFile={swSave.ElapsedMilliseconds}ms | AssetDatabase.Refresh={swRefresh.ElapsedMilliseconds}ms | Cache.Invalidate={swInvalidate.ElapsedMilliseconds}ms | RefreshVisible={swVisible.ElapsedMilliseconds}ms");
         }
 
         private void PushUndo(EditOperation op)
@@ -1108,6 +1150,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         {
             if (_statusLabel == null) return;
 
+            var sw = Stopwatch.StartNew();
+
             int totalKeys = GetFilteredKeys().Count();
             int fileCount = _viewMode == ViewMode.All
                 ? _data.SourceFiles.Count
@@ -1131,6 +1175,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             string missingText = missing > 0 ? $"  |  {missing} missing" : "";
             string selText = _selectedKeys.Count > 0 ? $"  |  {_selectedKeys.Count} selected" : "";
             _statusLabel.text = $"{totalKeys} keys from {fileCount} file(s){missingText}{selText}";
+
+            sw.Stop();
+            if (sw.ElapsedMilliseconds > 5)
+                Debug.Log($"[SL.Perf] UpdateStatus: {sw.ElapsedMilliseconds}ms | totalKeys={totalKeys} | missing={missing}");
         }
 
         private VisualElement MakeRow(bool isHeader)
