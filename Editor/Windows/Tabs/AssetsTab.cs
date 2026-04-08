@@ -23,6 +23,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private readonly Dictionary<string, LocalizationAssetTable> _tables = new();
         private List<string> _allAssetKeys;
 
+        // Keys whose preview row is currently expanded
+        private readonly HashSet<string> _expandedRows = new();
+
         public AssetsTab(EditorLocalizationData data, LocalizationConfig config,
             LocalizationEditorWindow window)
         {
@@ -30,7 +33,20 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _config = config;
             _window = window;
             RefreshTables();
+
+            // Auto-refresh when asset tables are created/deleted externally
+            AssetDatabase.importPackageCompleted += OnPackageImported;
+            EditorApplication.projectChanged += OnProjectChanged;
         }
+
+        ~AssetsTab()
+        {
+            AssetDatabase.importPackageCompleted -= OnPackageImported;
+            EditorApplication.projectChanged -= OnProjectChanged;
+        }
+
+        private void OnPackageImported(string _) => RefreshTables();
+        private void OnProjectChanged() => RefreshTables();
 
         public void Build(VisualElement container)
         {
@@ -44,18 +60,12 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             EditorGUILayout.Space(8);
 
             // Header
-            EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Localized Assets", EditorStyles.boldLabel);
-
-            if (GUILayout.Button("Refresh", GUILayout.Width(60)))
-                RefreshTables();
-
-            EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.HelpBox(
                 "Manage localized sprites, audio clips, and custom assets.\n" +
                 "Each language has its own AssetTable stored in its folder.\n" +
-                "Drag assets into cells to assign them.",
+                "Drag assets into cells to assign them. Click ▶ to preview.",
                 MessageType.Info);
 
             EditorGUILayout.Space(4);
@@ -104,6 +114,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             // Header
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+            GUILayout.Space(22); // space for the expand arrow
             EditorGUILayout.LabelField("Key", EditorStyles.miniLabel, GUILayout.Width(180));
 
             foreach (var lang in languages)
@@ -116,7 +127,28 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             foreach (var key in keys)
             {
-                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                bool isExpanded = _expandedRows.Contains(key);
+                bool hasPreviewableAsset = KeyHasPreviewableAsset(key);
+
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+
+                // ── Main row ──
+                EditorGUILayout.BeginHorizontal();
+
+                // Expand toggle (only if preview is useful)
+                if (hasPreviewableAsset)
+                {
+                    string arrow = isExpanded ? "\u25bc" : "\u25b6";
+                    if (GUILayout.Button(arrow, EditorStyles.label, GUILayout.Width(18)))
+                    {
+                        if (isExpanded) _expandedRows.Remove(key);
+                        else _expandedRows.Add(key);
+                    }
+                }
+                else
+                {
+                    GUILayout.Space(22);
+                }
 
                 // Key label with context menu
                 var keyRect = EditorGUILayout.GetControlRect(GUILayout.Width(180));
@@ -158,6 +190,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 }
 
                 EditorGUILayout.EndHorizontal();
+
+                // ── Expanded preview row ──
+                if (isExpanded && hasPreviewableAsset)
+                {
+                    DrawExpandedPreviewRow(key, languages);
+                }
+
+                EditorGUILayout.EndVertical();
             }
 
             EditorGUILayout.EndScrollView();
@@ -175,6 +215,172 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             EditorGUILayout.LabelField(
                 $"{keys.Count} keys | {filledCells}/{totalCells} assigned",
                 EditorStyles.centeredGreyMiniLabel);
+        }
+
+        /// <summary>
+        /// Draws a secondary row below the main row showing large previews of the assigned assets.
+        /// One preview per language, aligned with the ObjectField above it.
+        /// </summary>
+        private void DrawExpandedPreviewRow(string key, List<LanguageProfile> languages)
+        {
+            const float previewSize = 96f;
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Space(22 + 180 + 4); // align with first language column
+
+            foreach (var lang in languages)
+            {
+                var table = GetTable(lang.Code);
+                var asset = table?.Get(key);
+
+                var box = EditorGUILayout.BeginVertical(GUILayout.Width(140));
+
+                if (asset == null)
+                {
+                    var rect = GUILayoutUtility.GetRect(140, previewSize);
+                    EditorGUI.DrawRect(rect, new Color(0, 0, 0, 0.05f));
+                    EditorGUI.LabelField(rect, "(not assigned)", new GUIStyle(EditorStyles.centeredGreyMiniLabel)
+                    {
+                        alignment = TextAnchor.MiddleCenter
+                    });
+                }
+                else if (asset is Sprite sprite)
+                {
+                    var rect = GUILayoutUtility.GetRect(140, previewSize);
+                    DrawSpritePreview(rect, sprite);
+                }
+                else if (asset is Texture2D tex2d)
+                {
+                    var rect = GUILayoutUtility.GetRect(140, previewSize);
+                    GUI.DrawTexture(rect, tex2d, ScaleMode.ScaleToFit);
+                }
+                else if (asset is AudioClip clip)
+                {
+                    var rect = GUILayoutUtility.GetRect(140, previewSize);
+                    DrawAudioPreview(rect, clip);
+                }
+                else
+                {
+                    // Generic fallback — mini thumbnail + type name
+                    var rect = GUILayoutUtility.GetRect(140, previewSize);
+                    var thumb = AssetPreview.GetMiniThumbnail(asset);
+                    if (thumb != null)
+                    {
+                        var iconRect = new Rect(rect.x + rect.width / 2f - 24, rect.y + 8, 48, 48);
+                        GUI.DrawTexture(iconRect, thumb, ScaleMode.ScaleToFit);
+                    }
+                    var labelRect = new Rect(rect.x, rect.y + 60, rect.width, 16);
+                    EditorGUI.LabelField(labelRect, asset.GetType().Name,
+                        new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleCenter });
+                }
+
+                EditorGUILayout.EndVertical();
+            }
+
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space(2);
+        }
+
+        private static void DrawSpritePreview(Rect rect, Sprite sprite)
+        {
+            if (sprite == null) return;
+
+            // Checkerboard background to show transparency
+            EditorGUI.DrawRect(rect, new Color(0.2f, 0.2f, 0.2f, 0.3f));
+
+            // Draw the sprite respecting its rect within the texture atlas
+            var tex = sprite.texture;
+            if (tex == null) return;
+
+            var spriteRect = sprite.rect;
+            var uv = new Rect(
+                spriteRect.x / tex.width,
+                spriteRect.y / tex.height,
+                spriteRect.width / tex.width,
+                spriteRect.height / tex.height);
+
+            // Preserve aspect ratio inside the target rect
+            float aspect = spriteRect.width / spriteRect.height;
+            float drawW = rect.width;
+            float drawH = rect.width / aspect;
+
+            if (drawH > rect.height)
+            {
+                drawH = rect.height;
+                drawW = rect.height * aspect;
+            }
+
+            var drawRect = new Rect(
+                rect.x + (rect.width - drawW) / 2f,
+                rect.y + (rect.height - drawH) / 2f,
+                drawW, drawH);
+
+            GUI.DrawTextureWithTexCoords(drawRect, tex, uv);
+        }
+
+        private static void DrawAudioPreview(Rect rect, AudioClip clip)
+        {
+            if (clip == null) return;
+
+            EditorGUI.DrawRect(rect, new Color(0, 0, 0, 0.08f));
+
+            // Icon
+            var iconRect = new Rect(rect.x + 8, rect.y + 8, 32, 32);
+            var thumb = AssetPreview.GetMiniThumbnail(clip);
+            if (thumb != null)
+                GUI.DrawTexture(iconRect, thumb, ScaleMode.ScaleToFit);
+
+            // Metadata
+            var infoRect = new Rect(rect.x + 48, rect.y + 8, rect.width - 56, 16);
+            EditorGUI.LabelField(infoRect, clip.name, EditorStyles.miniLabel);
+
+            var metaRect = new Rect(rect.x + 48, rect.y + 26, rect.width - 56, 14);
+            string meta = $"{clip.length:F2}s | {clip.frequency / 1000}kHz | {clip.channels}ch";
+            EditorGUI.LabelField(metaRect, meta, EditorStyles.miniLabel);
+
+            // Play button
+            var btnRect = new Rect(rect.x + 8, rect.y + rect.height - 24, rect.width - 16, 18);
+            if (GUI.Button(btnRect, "▶ Play", EditorStyles.miniButton))
+            {
+                PlayClipPreview(clip);
+            }
+        }
+
+        private static void PlayClipPreview(AudioClip clip)
+        {
+            // Use Unity's internal AudioUtil via reflection — public API doesn't expose editor preview
+            var audioUtil = System.Type.GetType("UnityEditor.AudioUtil, UnityEditor");
+            if (audioUtil == null) return;
+
+            // Unity 2020+: PlayPreviewClip(AudioClip, int, bool)
+            var playMethod = audioUtil.GetMethod("PlayPreviewClip",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+
+            if (playMethod != null)
+            {
+                playMethod.Invoke(null, new object[] { clip, 0, false });
+                return;
+            }
+
+            // Fallback to older API name
+            var fallback = audioUtil.GetMethod("PlayClip",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public,
+                null, new[] { typeof(AudioClip) }, null);
+            fallback?.Invoke(null, new object[] { clip });
+        }
+
+        /// <summary>
+        /// Returns true if any language has an asset for this key that we know how to preview
+        /// (Sprite, Texture2D, AudioClip). Other types fall back to a generic icon preview.
+        /// </summary>
+        private bool KeyHasPreviewableAsset(string key)
+        {
+            foreach (var table in _tables.Values)
+            {
+                var asset = table?.Get(key);
+                if (asset != null) return true;
+            }
+            return false;
         }
 
         // ──────────────────────────────────────────────
