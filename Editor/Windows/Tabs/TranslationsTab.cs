@@ -24,6 +24,15 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private string _lastClickedKey;
         private List<string> _flatVisibleKeys = new();
 
+        // ListView virtualization
+        private ListView _listView;
+        private List<RowItem> _flatItems = new();
+
+        // Undo/Redo
+        private readonly Stack<EditOperation> _undoStack = new();
+        private readonly Stack<EditOperation> _redoStack = new();
+        private const int MaxUndoHistory = 100;
+
         private VisualElement _fileList;
         private VisualElement _sidebarContent;
         private VisualElement _tableBody;
@@ -261,15 +270,32 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             content.Add(toolbar);
 
-            // Scroll view for the table
-            var scrollView = new ScrollView(ScrollViewMode.VerticalAndHorizontal);
-            scrollView.style.flexGrow = 1;
-
+            // Header row (static, above the ListView)
             _tableBody = new VisualElement();
-            RebuildTable();
-            scrollView.Add(_tableBody);
+            content.Add(_tableBody);
 
-            content.Add(scrollView);
+            // Virtualized ListView for rows
+            _listView = new ListView
+            {
+                fixedItemHeight = 32,
+                virtualizationMethod = CollectionVirtualizationMethod.DynamicHeight,
+                selectionType = SelectionType.None,
+                showAlternatingRowBackgrounds = AlternatingRowBackground.None,
+                showBorder = false,
+                horizontalScrollingEnabled = true,
+                makeItem = MakeListItem,
+                bindItem = BindListItem,
+                unbindItem = UnbindListItem,
+                itemsSource = _flatItems
+            };
+            _listView.style.flexGrow = 1;
+
+            // Keyboard shortcuts (Ctrl+Z / Ctrl+Y) on the ListView itself
+            _listView.RegisterCallback<KeyDownEvent>(OnListKeyDown);
+
+            content.Add(_listView);
+
+            RebuildTable();
 
             // Status bar
             _statusLabel = new Label();
@@ -287,31 +313,59 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         }
 
         // ──────────────────────────────────────────────
-        //  Table
+        //  Table (virtualized)
         // ──────────────────────────────────────────────
 
+        private List<LanguageProfile> _cachedLanguages = new();
+
+        /// <summary>
+        /// Full rebuild: rebuild the header, the flat row model, and refresh the ListView.
+        /// Called on filter/search/collapse changes.
+        /// </summary>
         private void RebuildTable()
         {
-            if (_tableBody == null) return;
-            _tableBody.Clear();
+            if (_tableBody == null || _listView == null) return;
 
-            var languages = _config != null
+            _cachedLanguages = _config != null
                 ? _config.languages.Where(p => p != null).ToList()
                 : new List<LanguageProfile>();
 
-            // Header row
+            // Header row (static, single-instance)
+            _tableBody.Clear();
             var headerRow = MakeRow(true);
             headerRow.Add(MakeCell("Key", 200, true));
             headerRow.Add(MakeCell("File", 60, true));
 
-            foreach (var lang in languages)
+            foreach (var lang in _cachedLanguages)
                 headerRow.Add(MakeCell(lang.Code + " — " + lang.displayName, 180, true));
 
             _tableBody.Add(headerRow);
 
-            // Collect keys and build tree
-            var keys = GetFilteredKeys().OrderBy(k => k).ToList();
+            // Build the flat row model from the tree
+            BuildFlatItems();
+
+            _listView.itemsSource = _flatItems;
+            _listView.Rebuild();
+
+            UpdateStatus();
+        }
+
+        /// <summary>
+        /// Lightweight refresh: rebuild only visible rows. Used after edits.
+        /// </summary>
+        private void RefreshVisible()
+        {
+            if (_listView == null) return;
+            _listView.RefreshItems();
+            UpdateStatus();
+        }
+
+        private void BuildFlatItems()
+        {
+            _flatItems.Clear();
             _flatVisibleKeys = new List<string>();
+
+            var keys = GetFilteredKeys().OrderBy(k => k).ToList();
 
             // Build tree structure
             var rootNode = new TreeNode("(root)");
@@ -322,12 +376,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 if (parts.Length <= 1)
                 {
-                    // No path — add directly to root
                     rootNode.Keys.Add(key);
                 }
                 else
                 {
-                    // Navigate/create tree nodes for all path segments except the last
                     var current = rootNode;
 
                     for (int p = 0; p < parts.Length - 1; p++)
@@ -345,191 +397,146 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 }
             }
 
-            // Render tree recursively
-            RenderTreeNode(rootNode, 0, languages, true);
-
-            UpdateStatus();
+            // Flatten tree into _flatItems, respecting collapsed state
+            FlattenTreeNode(rootNode, 0, true);
         }
 
-        // ──────────────────────────────────────────────
-        //  Helpers
-        // ──────────────────────────────────────────────
-
-        private void RenderTreeNode(TreeNode node, int depth,
-            List<LanguageProfile> languages, bool isRoot)
+        private void FlattenTreeNode(TreeNode node, int depth, bool isRoot)
         {
-            // Render child groups (sorted alphabetically)
+            // Sub-groups first (alphabetical)
             foreach (var childKvp in node.Children.OrderBy(c => c.Key))
             {
                 string childName = childKvp.Key;
                 var childNode = childKvp.Value;
                 int totalKeys = CountKeysRecursive(childNode);
 
-                // Build full path for collapse tracking
                 string fullPath = isRoot ? childName : $"{node.FullPath}/{childName}";
                 childNode.FullPath = fullPath;
 
                 bool collapsed = _collapsedGroups.Contains(fullPath);
 
-                // Group header row
-                var groupRow = new VisualElement();
-                groupRow.style.flexDirection = FlexDirection.Row;
-                groupRow.style.backgroundColor = new Color(0, 0, 0, 0.04f);
-                groupRow.style.borderBottomWidth = 1;
-                groupRow.style.borderBottomColor = new Color(0, 0, 0, 0.08f);
-                groupRow.style.paddingTop = 4;
-                groupRow.style.paddingBottom = 4;
-                groupRow.style.paddingLeft = 8 + depth * 16;
-                groupRow.style.cursor = StyleKeyword.Auto;
-
-                var arrow = collapsed ? "\u25b6" : "\u25bc";
-                var groupLabel = new Label($"{arrow} {childName} ({totalKeys})");
-                groupLabel.style.fontSize = 11;
-                groupLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
-                groupLabel.style.color = new Color(0.4f, 0.4f, 0.4f);
-                groupRow.Add(groupLabel);
-
-                string capturedPath = fullPath;
-                groupRow.RegisterCallback<ClickEvent>(evt =>
+                _flatItems.Add(new RowItem
                 {
-                    if (_collapsedGroups.Contains(capturedPath))
-                        _collapsedGroups.Remove(capturedPath);
-                    else
-                        _collapsedGroups.Add(capturedPath);
-                    RebuildTable();
+                    Type = RowType.GroupHeader,
+                    Depth = depth,
+                    GroupPath = fullPath,
+                    GroupDisplayName = childName,
+                    GroupKeyCount = totalKeys,
+                    IsCollapsed = collapsed
                 });
 
-                _tableBody.Add(groupRow);
-
                 if (!collapsed)
-                    RenderTreeNode(childNode, depth + 1, languages, false);
+                    FlattenTreeNode(childNode, depth + 1, false);
             }
 
-            // Render keys at this level (leaf keys)
+            // Then leaf keys at this level
             foreach (var key in node.Keys.OrderBy(k => k))
             {
-                RenderKeyRow(key, depth, languages);
+                _flatItems.Add(new RowItem
+                {
+                    Type = RowType.KeyRow,
+                    Depth = depth,
+                    Key = key
+                });
+                _flatVisibleKeys.Add(key);
             }
         }
 
-        private void RenderKeyRow(string key, int depth, List<LanguageProfile> languages)
+        // ──────────────────────────────────────────────
+        //  ListView item factory
+        // ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Creates one reusable row VisualElement. Both row types (group header and key row)
+        /// share a single root container. Visibility of inner children is toggled in BindListItem.
+        /// </summary>
+        private VisualElement MakeListItem()
         {
-            string shortKey = key.Substring(key.LastIndexOf('/') + 1);
-            string sourceFile = _data.GetFileForKey(key) ?? "";
-            bool isSelected = _selectedKeys.Contains(key);
+            var root = new VisualElement();
+            root.style.flexDirection = FlexDirection.Row;
+            root.style.alignItems = Align.FlexStart;
+            root.style.borderBottomWidth = 1;
+            root.style.borderBottomColor = new Color(0, 0, 0, 0.08f);
+            root.style.paddingTop = 2;
+            root.style.paddingBottom = 2;
 
-            _flatVisibleKeys.Add(key);
+            // ── Group header container ──
+            var groupContainer = new VisualElement();
+            groupContainer.name = "group-container";
+            groupContainer.style.flexDirection = FlexDirection.Row;
+            groupContainer.style.flexGrow = 1;
+            groupContainer.style.paddingTop = 4;
+            groupContainer.style.paddingBottom = 4;
+            groupContainer.style.display = DisplayStyle.None;
 
-            var row = MakeRow(false);
+            var groupLabel = new Label();
+            groupLabel.name = "group-label";
+            groupLabel.style.fontSize = 11;
+            groupLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            groupLabel.style.color = new Color(0.4f, 0.4f, 0.4f);
+            groupContainer.Add(groupLabel);
 
-            if (isSelected)
-                row.style.backgroundColor = new Color(0.2f, 0.5f, 0.9f, 0.08f);
+            root.Add(groupContainer);
 
-            // Key cell — clickable for selection
-            var keyLabel = new Label(shortKey);
-            keyLabel.style.width = 200;
+            // ── Key row container ──
+            var keyContainer = new VisualElement();
+            keyContainer.name = "key-container";
+            keyContainer.style.flexDirection = FlexDirection.Row;
+            keyContainer.style.flexGrow = 1;
+            keyContainer.style.display = DisplayStyle.None;
+
+            // Key cell (label + optional description)
+            var keyCell = new VisualElement();
+            keyCell.name = "key-cell";
+            keyCell.style.width = 200;
+
+            var keyLabel = new Label();
+            keyLabel.name = "key-label";
             keyLabel.style.fontSize = 11;
-            keyLabel.style.paddingLeft = 12 + depth * 16;
             keyLabel.style.paddingTop = 2;
             keyLabel.style.paddingBottom = 2;
-            keyLabel.style.color = isSelected
-                ? new Color(0.2f, 0.5f, 0.9f)
-                : new Color(0.4f, 0.4f, 0.4f);
-            keyLabel.tooltip = key;
-
-            // Click: single, Ctrl+toggle, Shift+range
-            string capturedKey = key;
-            keyLabel.RegisterCallback<ClickEvent>(evt =>
-            {
-                if (evt.shiftKey && !string.IsNullOrEmpty(_lastClickedKey))
-                {
-                    // Range select
-                    int idxA = _flatVisibleKeys.IndexOf(_lastClickedKey);
-                    int idxB = _flatVisibleKeys.IndexOf(capturedKey);
-
-                    if (idxA >= 0 && idxB >= 0)
-                    {
-                        int from = Mathf.Min(idxA, idxB);
-                        int to = Mathf.Max(idxA, idxB);
-
-                        if (!evt.ctrlKey && !evt.commandKey)
-                            _selectedKeys.Clear();
-
-                        for (int i = from; i <= to; i++)
-                            _selectedKeys.Add(_flatVisibleKeys[i]);
-                    }
-                }
-                else if (evt.ctrlKey || evt.commandKey)
-                {
-                    if (!_selectedKeys.Add(capturedKey))
-                        _selectedKeys.Remove(capturedKey);
-                }
-                else
-                {
-                    _selectedKeys.Clear();
-                    _selectedKeys.Add(capturedKey);
-                }
-
-                _lastClickedKey = capturedKey;
-                RebuildTable();
-                evt.StopPropagation();
-            });
-
-            // Right-click context menu
-            keyLabel.RegisterCallback<ContextClickEvent>(evt =>
-            {
-                if (!_selectedKeys.Contains(capturedKey))
-                {
-                    _selectedKeys.Clear();
-                    _selectedKeys.Add(capturedKey);
-                    RebuildTable();
-                }
-
-                ShowKeyContextMenu();
-                evt.StopPropagation();
-            });
-
-            // Key cell with optional description
-            var keyCell = new VisualElement();
-            keyCell.style.width = 200;
-            row.Add(keyCell);
             keyCell.Add(keyLabel);
 
-            string desc = _data.GetDescription(key);
+            var descLabel = new Label();
+            descLabel.name = "desc-label";
+            descLabel.style.fontSize = 9;
+            descLabel.style.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+            descLabel.style.marginTop = -2;
+            descLabel.style.whiteSpace = WhiteSpace.Normal;
+            descLabel.style.maxWidth = 190;
+            descLabel.style.display = DisplayStyle.None;
+            keyCell.Add(descLabel);
 
-            if (!string.IsNullOrEmpty(desc))
-            {
-                var descLabel = new Label(desc);
-                descLabel.style.fontSize = 9;
-                descLabel.style.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
-                descLabel.style.paddingLeft = 12 + depth * 16;
-                descLabel.style.marginTop = -2;
-                descLabel.style.whiteSpace = WhiteSpace.Normal;
-                descLabel.style.maxWidth = 190;
-                keyCell.Add(descLabel);
-            }
+            keyContainer.Add(keyCell);
 
             // File cell
-            var fileLabel = new Label(sourceFile);
+            var fileLabel = new Label();
+            fileLabel.name = "file-label";
             fileLabel.style.width = 60;
             fileLabel.style.fontSize = 10;
             fileLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
             fileLabel.style.paddingTop = 2;
-            row.Add(fileLabel);
+            keyContainer.Add(fileLabel);
 
-            // Translation cells
-            foreach (var lang in languages)
+            // Translation fields container
+            var fieldsContainer = new VisualElement();
+            fieldsContainer.name = "fields-container";
+            fieldsContainer.style.flexDirection = FlexDirection.Row;
+
+            // Pre-create translation fields for max possible languages (up to 8)
+            // bindItem will hide the unused ones based on _cachedLanguages.Count
+            for (int i = 0; i < 8; i++)
             {
-                string langCode = lang.Code;
-                string value = _data.GetTranslation(key, langCode) ?? "";
-
                 var field = new TextField();
-                field.value = value;
+                field.name = $"trans-field-{i}";
                 field.style.width = 180;
                 field.style.fontSize = 11;
                 field.multiline = true;
+                field.style.display = DisplayStyle.None;
 
-                field.RegisterCallback<AttachToPanelEvent>(evt =>
+                int capturedFieldIdx = i;
+
+                field.RegisterCallback<AttachToPanelEvent>(_ =>
                 {
                     var textInput = field.Q("unity-text-input");
                     if (textInput != null)
@@ -539,6 +546,151 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     }
                 });
 
+                // FocusOut writes the value back to data and pushes an undo entry
+                field.RegisterCallback<FocusOutEvent>(_ =>
+                {
+                    OnFieldFocusOut(field, capturedFieldIdx);
+                });
+
+                // TAB / Shift+TAB navigation between fields and rows
+                field.RegisterCallback<KeyDownEvent>(evt =>
+                {
+                    HandleFieldKeyDown(evt, field, capturedFieldIdx);
+                });
+
+                fieldsContainer.Add(field);
+            }
+
+            keyContainer.Add(fieldsContainer);
+            root.Add(keyContainer);
+
+            // Click handlers (selection + context menu) on the key cell only
+            keyCell.AddManipulator(new ClickWithModifiers(evt => HandleKeyClick(root, evt)));
+            keyCell.RegisterCallback<ContextClickEvent>(evt => OnKeyContextClick(root, evt));
+
+            // Group click handler (collapse/expand)
+            groupContainer.AddManipulator(new ClickWithModifiers(_ =>
+            {
+                var item = root.userData as RowItem;
+                if (item == null || item.Type != RowType.GroupHeader) return;
+
+                if (_collapsedGroups.Contains(item.GroupPath))
+                    _collapsedGroups.Remove(item.GroupPath);
+                else
+                    _collapsedGroups.Add(item.GroupPath);
+
+                RebuildTable();
+            }));
+
+            return root;
+        }
+
+        /// <summary>
+        /// Binds a RowItem (data) to a reused row VisualElement.
+        /// </summary>
+        private void BindListItem(VisualElement element, int index)
+        {
+            if (index < 0 || index >= _flatItems.Count) return;
+
+            var item = _flatItems[index];
+            element.userData = item;
+
+            var groupContainer = element.Q("group-container");
+            var keyContainer = element.Q("key-container");
+
+            if (item.Type == RowType.GroupHeader)
+            {
+                groupContainer.style.display = DisplayStyle.Flex;
+                keyContainer.style.display = DisplayStyle.None;
+                element.style.backgroundColor = new Color(0, 0, 0, 0.04f);
+                groupContainer.style.paddingLeft = 8 + item.Depth * 16;
+
+                var groupLabel = element.Q<Label>("group-label");
+                string arrow = item.IsCollapsed ? "\u25b6" : "\u25bc";
+                groupLabel.text = $"{arrow} {item.GroupDisplayName} ({item.GroupKeyCount})";
+            }
+            else
+            {
+                groupContainer.style.display = DisplayStyle.None;
+                keyContainer.style.display = DisplayStyle.Flex;
+                BindKeyRow(element, item);
+            }
+        }
+
+        private void BindKeyRow(VisualElement element, RowItem item)
+        {
+            string key = item.Key;
+            string shortKey = key.Substring(key.LastIndexOf('/') + 1);
+            string sourceFile = _data.GetFileForKey(key) ?? "";
+            bool isSelected = _selectedKeys.Contains(key);
+
+            element.style.backgroundColor = isSelected
+                ? new Color(0.2f, 0.5f, 0.9f, 0.08f)
+                : new StyleColor(StyleKeyword.Null);
+
+            // Key label
+            var keyCell = element.Q("key-cell");
+            keyCell.style.width = 200;
+            keyCell.style.paddingLeft = 12 + item.Depth * 16;
+
+            var keyLabel = element.Q<Label>("key-label");
+            keyLabel.text = shortKey;
+            keyLabel.tooltip = key;
+            keyLabel.style.color = isSelected
+                ? new Color(0.2f, 0.5f, 0.9f)
+                : new Color(0.4f, 0.4f, 0.4f);
+
+            // Description
+            var descLabel = element.Q<Label>("desc-label");
+            string desc = _data.GetDescription(key);
+
+            if (!string.IsNullOrEmpty(desc))
+            {
+                descLabel.text = desc;
+                descLabel.style.display = DisplayStyle.Flex;
+            }
+            else
+            {
+                descLabel.style.display = DisplayStyle.None;
+            }
+
+            // File label
+            var fileLabel = element.Q<Label>("file-label");
+            fileLabel.text = sourceFile;
+
+            // Translation fields
+            for (int i = 0; i < 8; i++)
+            {
+                var field = element.Q<TextField>($"trans-field-{i}");
+
+                if (i >= _cachedLanguages.Count)
+                {
+                    field.style.display = DisplayStyle.None;
+                    field.userData = null;
+                    continue;
+                }
+
+                var lang = _cachedLanguages[i];
+                string langCode = lang.Code;
+                string value = _data.GetTranslation(key, langCode) ?? "";
+
+                // Bind metadata for this row
+                field.userData = new FieldBinding
+                {
+                    Key = key,
+                    LanguageCode = langCode,
+                    SourceFile = sourceFile
+                };
+
+                field.style.display = DisplayStyle.Flex;
+                field.SetValueWithoutNotify(value);
+
+                if (string.IsNullOrEmpty(value))
+                    field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
+                else
+                    field.style.backgroundColor = new StyleColor(StyleKeyword.Null);
+
+                // Estimate height for word wrap
                 int charsPerLine = 22;
                 int explicitNewlines = 0;
                 for (int c = 0; c < value.Length; c++)
@@ -549,33 +701,276 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     : 1;
                 int totalLines = Mathf.Max(1, wrappedLines + explicitNewlines);
                 field.style.minHeight = Mathf.Max(20, totalLines * 15);
+            }
+        }
 
-                if (string.IsNullOrEmpty(value))
-                    field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
+        /// <summary>
+        /// Clears any per-row state when an element leaves the viewport so reused
+        /// callbacks won't accidentally write into a stale row.
+        /// </summary>
+        private void UnbindListItem(VisualElement element, int index)
+        {
+            element.userData = null;
 
-                string capturedLang = langCode;
-                string capturedFile = sourceFile;
+            for (int i = 0; i < 8; i++)
+            {
+                var field = element.Q<TextField>($"trans-field-{i}");
+                if (field != null) field.userData = null;
+            }
+        }
 
-                field.RegisterCallback<FocusOutEvent>(evt =>
+        // ──────────────────────────────────────────────
+        //  Selection & context menu
+        // ──────────────────────────────────────────────
+
+        private void HandleKeyClick(VisualElement rowElement, ClickWithModifiersEvent evt)
+        {
+            var item = rowElement.userData as RowItem;
+            if (item == null || item.Type != RowType.KeyRow) return;
+
+            string key = item.Key;
+
+            if (evt.Shift && !string.IsNullOrEmpty(_lastClickedKey))
+            {
+                int idxA = _flatVisibleKeys.IndexOf(_lastClickedKey);
+                int idxB = _flatVisibleKeys.IndexOf(key);
+
+                if (idxA >= 0 && idxB >= 0)
                 {
-                    string newValue = field.value;
-                    string oldValue = _data.GetTranslation(key, capturedLang) ?? "";
+                    int from = Mathf.Min(idxA, idxB);
+                    int to = Mathf.Max(idxA, idxB);
 
-                    if (newValue != oldValue)
-                    {
-                        _data.SetTranslation(key, capturedLang, newValue);
-                        _data.SaveFile(capturedFile, capturedLang);
-                        AssetDatabase.Refresh();
-                        EditorDataCache.Invalidate();
-                        UpdateStatus();
-                    }
-                });
+                    if (!evt.Ctrl)
+                        _selectedKeys.Clear();
 
-                row.Add(field);
+                    for (int i = from; i <= to; i++)
+                        _selectedKeys.Add(_flatVisibleKeys[i]);
+                }
+            }
+            else if (evt.Ctrl)
+            {
+                if (!_selectedKeys.Add(key))
+                    _selectedKeys.Remove(key);
+            }
+            else
+            {
+                _selectedKeys.Clear();
+                _selectedKeys.Add(key);
             }
 
-            _tableBody.Add(row);
+            _lastClickedKey = key;
+            RefreshVisible();
         }
+
+        private void OnKeyContextClick(VisualElement rowElement, ContextClickEvent evt)
+        {
+            var item = rowElement.userData as RowItem;
+            if (item == null || item.Type != RowType.KeyRow) return;
+
+            string key = item.Key;
+
+            if (!_selectedKeys.Contains(key))
+            {
+                _selectedKeys.Clear();
+                _selectedKeys.Add(key);
+                RefreshVisible();
+            }
+
+            ShowKeyContextMenu();
+            evt.StopPropagation();
+        }
+
+        // ──────────────────────────────────────────────
+        //  Edit + Undo/Redo
+        // ──────────────────────────────────────────────
+
+        private void OnFieldFocusOut(TextField field, int fieldIndex)
+        {
+            var binding = field.userData as FieldBinding;
+            if (binding == null) return;
+
+            string newValue = field.value;
+            string oldValue = _data.GetTranslation(binding.Key, binding.LanguageCode) ?? "";
+
+            if (newValue == oldValue) return;
+
+            // Push undo entry
+            PushUndo(new EditOperation
+            {
+                Key = binding.Key,
+                LanguageCode = binding.LanguageCode,
+                SourceFile = binding.SourceFile,
+                OldValue = oldValue,
+                NewValue = newValue
+            });
+
+            ApplyEdit(binding.Key, binding.LanguageCode, binding.SourceFile, newValue);
+        }
+
+        private void ApplyEdit(string key, string languageCode, string sourceFile, string value)
+        {
+            _data.SetTranslation(key, languageCode, value);
+            _data.SaveFile(sourceFile, languageCode);
+            AssetDatabase.Refresh();
+            EditorDataCache.Invalidate();
+            RefreshVisible();
+        }
+
+        private void PushUndo(EditOperation op)
+        {
+            _undoStack.Push(op);
+            _redoStack.Clear();
+
+            // Trim history
+            while (_undoStack.Count > MaxUndoHistory)
+            {
+                var arr = _undoStack.ToArray();
+                _undoStack.Clear();
+                for (int i = arr.Length - 2; i >= 0; i--) _undoStack.Push(arr[i]);
+            }
+        }
+
+        private void OnListKeyDown(KeyDownEvent evt)
+        {
+            bool ctrl = evt.ctrlKey || evt.commandKey;
+            if (!ctrl) return;
+
+            if (evt.keyCode == KeyCode.Z && !evt.shiftKey)
+            {
+                PerformUndo();
+                evt.StopPropagation();
+            }
+            else if (evt.keyCode == KeyCode.Y || (evt.keyCode == KeyCode.Z && evt.shiftKey))
+            {
+                PerformRedo();
+                evt.StopPropagation();
+            }
+        }
+
+        private void PerformUndo()
+        {
+            if (_undoStack.Count == 0) return;
+            var op = _undoStack.Pop();
+            _redoStack.Push(op);
+            ApplyEdit(op.Key, op.LanguageCode, op.SourceFile, op.OldValue);
+        }
+
+        private void PerformRedo()
+        {
+            if (_redoStack.Count == 0) return;
+            var op = _redoStack.Pop();
+            _undoStack.Push(op);
+            ApplyEdit(op.Key, op.LanguageCode, op.SourceFile, op.NewValue);
+        }
+
+        // ──────────────────────────────────────────────
+        //  TAB navigation
+        // ──────────────────────────────────────────────
+
+        private void HandleFieldKeyDown(KeyDownEvent evt, TextField field, int fieldIndex)
+        {
+            if (evt.keyCode != KeyCode.Tab && evt.character != '\t')
+                return;
+
+            // Don't intercept TAB inside a multiline edit when Alt is held (let user insert literal tab)
+            if (evt.altKey) return;
+
+            bool reverse = evt.shiftKey;
+            int langCount = _cachedLanguages.Count;
+            if (langCount == 0) return;
+
+            // Find current row in flat items via field's binding
+            var binding = field.userData as FieldBinding;
+            if (binding == null) return;
+
+            int currentRowIdx = -1;
+            for (int i = 0; i < _flatItems.Count; i++)
+            {
+                if (_flatItems[i].Type == RowType.KeyRow && _flatItems[i].Key == binding.Key)
+                {
+                    currentRowIdx = i;
+                    break;
+                }
+            }
+
+            if (currentRowIdx < 0) return;
+
+            int nextField = reverse ? fieldIndex - 1 : fieldIndex + 1;
+
+            if (nextField >= 0 && nextField < langCount)
+            {
+                // Same row, neighboring field
+                var rowElement = field.GetFirstAncestorOfType<VisualElement>();
+                // Walk up until we find an element whose userData is a RowItem
+                while (rowElement != null && !(rowElement.userData is RowItem))
+                    rowElement = rowElement.parent;
+
+                if (rowElement != null)
+                {
+                    var target = rowElement.Q<TextField>($"trans-field-{nextField}");
+                    if (target != null)
+                    {
+                        target.Focus();
+                        evt.StopPropagation();
+                    }
+                }
+            }
+            else
+            {
+                // Move to neighboring row — first or last field
+                int targetFieldIdx = reverse ? langCount - 1 : 0;
+                FindFieldInAdjacentRow(currentRowIdx, reverse, targetFieldIdx);
+                evt.StopPropagation();
+            }
+        }
+
+        private void FindFieldInAdjacentRow(int currentRowIdx, bool reverse, int targetFieldIdx)
+        {
+            int step = reverse ? -1 : 1;
+            int idx = currentRowIdx + step;
+
+            // Skip group headers
+            while (idx >= 0 && idx < _flatItems.Count && _flatItems[idx].Type != RowType.KeyRow)
+                idx += step;
+
+            if (idx < 0 || idx >= _flatItems.Count) return;
+
+            // Scroll the target row into view, then focus its field on the next frame
+            _listView.ScrollToItem(idx);
+
+            int targetIdx = idx;
+            _listView.schedule.Execute(() =>
+            {
+                var rowElement = FindRowElementByIndex(targetIdx);
+                if (rowElement == null) return;
+
+                var target = rowElement.Q<TextField>($"trans-field-{targetFieldIdx}");
+                if (target != null && target.style.display.value == DisplayStyle.Flex)
+                    target.Focus();
+            }).StartingIn(20);
+        }
+
+        private VisualElement FindRowElementByIndex(int index)
+        {
+            // ListView's content container holds rendered rows; we walk it to find one whose userData matches
+            if (index < 0 || index >= _flatItems.Count) return null;
+            var target = _flatItems[index];
+
+            var scrollView = _listView.Q<ScrollView>();
+            if (scrollView == null) return null;
+
+            foreach (var child in scrollView.contentContainer.Children())
+            {
+                if (ReferenceEquals(child.userData, target))
+                    return child;
+            }
+
+            return null;
+        }
+
+        // ──────────────────────────────────────────────
+        //  Tree/row support types
+        // ──────────────────────────────────────────────
 
         private static int CountKeysRecursive(TreeNode node)
         {
@@ -587,6 +982,39 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             return count;
         }
 
+        private enum RowType { GroupHeader, KeyRow }
+
+        private class RowItem
+        {
+            public RowType Type;
+            public int Depth;
+
+            // KeyRow data
+            public string Key;
+
+            // GroupHeader data
+            public string GroupPath;
+            public string GroupDisplayName;
+            public int GroupKeyCount;
+            public bool IsCollapsed;
+        }
+
+        private class FieldBinding
+        {
+            public string Key;
+            public string LanguageCode;
+            public string SourceFile;
+        }
+
+        private class EditOperation
+        {
+            public string Key;
+            public string LanguageCode;
+            public string SourceFile;
+            public string OldValue;
+            public string NewValue;
+        }
+
         private class TreeNode
         {
             public string Name;
@@ -595,6 +1023,48 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             public List<string> Keys = new();
 
             public TreeNode(string name) { Name = name; FullPath = name; }
+        }
+
+        // Custom event that captures modifier keys at click time
+        private class ClickWithModifiersEvent
+        {
+            public bool Ctrl;
+            public bool Shift;
+            public bool Alt;
+        }
+
+        private class ClickWithModifiers : Manipulator
+        {
+            private readonly System.Action<ClickWithModifiersEvent> _onClick;
+
+            public ClickWithModifiers(System.Action<ClickWithModifiersEvent> onClick)
+            {
+                _onClick = onClick;
+            }
+
+            protected override void RegisterCallbacksOnTarget()
+            {
+                target.RegisterCallback<MouseDownEvent>(OnMouseDown);
+            }
+
+            protected override void UnregisterCallbacksFromTarget()
+            {
+                target.UnregisterCallback<MouseDownEvent>(OnMouseDown);
+            }
+
+            private void OnMouseDown(MouseDownEvent evt)
+            {
+                if (evt.button != 0) return;
+
+                _onClick?.Invoke(new ClickWithModifiersEvent
+                {
+                    Ctrl = evt.ctrlKey || evt.commandKey,
+                    Shift = evt.shiftKey,
+                    Alt = evt.altKey
+                });
+
+                evt.StopPropagation();
+            }
         }
 
         private IEnumerable<string> GetFilteredKeys()
