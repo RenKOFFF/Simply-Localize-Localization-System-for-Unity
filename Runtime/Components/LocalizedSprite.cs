@@ -38,7 +38,7 @@ namespace SimplyLocalize.Components
 
         protected override Object LoadFromProvider(string languageCode)
         {
-            return Localization.GetSprite(_key);
+            return Localization.GetAsset<Sprite>(_key);
         }
 
         private void CacheTargets()

@@ -73,6 +73,23 @@ namespace SimplyLocalize
             }
         }
 
+        /// <summary>
+        /// Returns the set of distinct concrete asset types currently stored in this table.
+        /// Used by the editor to show per-language content badges.
+        /// </summary>
+        public HashSet<System.Type> GetContainedTypes()
+        {
+            var types = new HashSet<System.Type>();
+
+            for (int i = 0; i < _entries.Count; i++)
+            {
+                var a = _entries[i].asset;
+                if (a != null) types.Add(a.GetType());
+            }
+
+            return types;
+        }
+
         /// <summary>Number of entries.</summary>
         public int Count => _entries.Count;
 

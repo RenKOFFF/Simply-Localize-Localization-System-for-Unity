@@ -275,30 +275,13 @@ namespace SimplyLocalize
         // ──────────────────────────────────────────────
 
         /// <summary>
-        /// Loads a localized sprite for the current language.
-        /// Falls back to the fallback language if not found.
-        /// </summary>
-        public static Sprite GetSprite(string key)
-        {
-            return _manager?.GetSprite(key);
-        }
-
-        /// <summary>
-        /// Loads a localized audio clip for the current language.
-        /// Falls back to the fallback language if not found.
-        /// </summary>
-        public static AudioClip GetAudio(string key)
-        {
-            return _manager?.GetAudio(key);
-        }
-
-        /// <summary>
         /// Gets a localized asset of any type from asset tables.
-        /// Follows fallback chain: current → per-language → global.
+        /// Follows the fallback chain: current → per-language → global.
         ///
         /// Usage:
+        ///   var sprite = Localization.GetAsset&lt;Sprite&gt;("ui/flag");
+        ///   var clip = Localization.GetAsset&lt;AudioClip&gt;("voice/intro");
         ///   var material = Localization.GetAsset&lt;Material&gt;("fx/hit");
-        ///   var clip = Localization.GetAsset&lt;AnimationClip&gt;("anim/idle");
         /// </summary>
         public static T GetAsset<T>(string key) where T : UnityEngine.Object
         {

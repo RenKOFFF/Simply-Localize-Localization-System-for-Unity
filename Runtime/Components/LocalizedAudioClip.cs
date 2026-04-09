@@ -41,7 +41,7 @@ namespace SimplyLocalize.Components
 
         protected override Object LoadFromProvider(string languageCode)
         {
-            return Localization.GetAudio(_key);
+            return Localization.GetAsset<AudioClip>(_key);
         }
 
         private void CacheTarget()

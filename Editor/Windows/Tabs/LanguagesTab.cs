@@ -136,9 +136,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             flagsRow.style.flexDirection = FlexDirection.Row;
             flagsRow.style.marginTop = 2;
 
-            flagsRow.Add(MakeBadge("Text", profile.hasText));
-            flagsRow.Add(MakeBadge("Sprites", profile.hasSprites));
-            flagsRow.Add(MakeBadge("Audio", profile.hasAudio));
+            //TODO этого тут быть не должно, также метод наверное должен не принимать булки вот так явно
+            flagsRow.Add(MakeBadge("Text", false/*profile.hasText*/));
+            flagsRow.Add(MakeBadge("Sprites", false/*profile.hasSprites*/));
+            flagsRow.Add(MakeBadge("Audio", false/*profile.hasAudio*/));
 
             if (profile.primaryFont != null)
             {
@@ -393,7 +394,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             profile.languageCode = _code;
             profile.displayName = _displayName;
             profile.systemLanguage = _systemLanguage;
-            profile.hasText = true;
+            
+            //TODO этого тут быть не должно
+            // profile.hasText = true;
 
             string configPath = AssetDatabase.GetAssetPath(_config);
             string configDir = Path.GetDirectoryName(configPath);

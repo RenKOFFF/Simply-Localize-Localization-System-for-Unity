@@ -32,15 +32,6 @@ namespace SimplyLocalize
         public LanguageProfile fallbackProfile;
 
         // ──────────────────────────────────────────────
-        //  Assets
-        // ──────────────────────────────────────────────
-
-        [Header("Available Assets")]
-        public bool hasText = true;
-        public bool hasSprites;
-        public bool hasAudio;
-
-        // ──────────────────────────────────────────────
         //  Font
         // ──────────────────────────────────────────────
 

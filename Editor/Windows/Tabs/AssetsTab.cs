@@ -1,30 +1,48 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using SimplyLocalize.Editor.AssetFilters;
+using SimplyLocalize.Editor.AssetPreviews;
 using SimplyLocalize.Editor.Data;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace SimplyLocalize.Editor.Windows.Tabs
 {
+    /// <summary>
+    /// Manages localized assets (sprites, audio, custom types) using UI Toolkit.
+    ///
+    /// - Filter dropdown is populated from AssetTypeFilterRegistry (auto-discovered).
+    /// - Previews use AssetPreviewRegistry — users can add custom renderers by implementing
+    ///   IAssetPreviewRenderer anywhere in their Editor code.
+    /// - Rows are grouped via KeyTreeBuilder. In "All" mode, the tree is grouped by asset
+    ///   type first, then by path. In type-specific filters, grouping is path-only.
+    /// - Unassigned keys appear under every filter so newly-added keys stay visible
+    ///   until the user fills them in.
+    /// </summary>
     public class AssetsTab : IEditorTab
     {
-        private enum AssetTypeFilter { Sprites, AudioClips, All }
-
         private readonly EditorLocalizationData _data;
         private readonly LocalizationConfig _config;
         private readonly LocalizationEditorWindow _window;
 
-        private AssetTypeFilter _filter = AssetTypeFilter.All;
-        private Vector2 _scrollPos;
-
         // Loaded tables: languageCode → table
         private readonly Dictionary<string, LocalizationAssetTable> _tables = new();
-        private List<string> _allAssetKeys;
+        private List<string> _allAssetKeys = new();
 
-        // Keys whose preview row is currently expanded
+        // State
+        private IAssetTypeFilter _activeFilter;
+        private readonly HashSet<string> _collapsedGroups = new();
         private readonly HashSet<string> _expandedRows = new();
+
+        // UI elements
+        private VisualElement _root;
+        private ListView _listView;
+        private Label _statusLabel;
+        private List<KeyTreeBuilder.FlatRow> _flatRows = new();
+        private List<LanguageProfile> _cachedLanguages = new();
 
         public AssetsTab(EditorLocalizationData data, LocalizationConfig config,
             LocalizationEditorWindow window)
@@ -34,353 +52,547 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _window = window;
             RefreshTables();
 
-            // Auto-refresh when asset tables are created/deleted externally
-            AssetDatabase.importPackageCompleted += OnPackageImported;
             EditorApplication.projectChanged += OnProjectChanged;
         }
 
         ~AssetsTab()
         {
-            AssetDatabase.importPackageCompleted -= OnPackageImported;
             EditorApplication.projectChanged -= OnProjectChanged;
         }
 
-        private void OnPackageImported(string _) => RefreshTables();
-        private void OnProjectChanged() => RefreshTables();
+        private void OnProjectChanged()
+        {
+            RefreshTables();
+            if (_listView != null) RebuildRows();
+        }
+
+        // ──────────────────────────────────────────────
+        //  Build UI
+        // ──────────────────────────────────────────────
 
         public void Build(VisualElement container)
         {
-            var imgui = new IMGUIContainer(DrawIMGUI);
-            imgui.style.flexGrow = 1;
-            container.Add(imgui);
-        }
+            _root = new VisualElement();
+            _root.style.flexDirection = FlexDirection.Column;
+            _root.style.flexGrow = 1;
 
-        private void DrawIMGUI()
-        {
-            EditorGUILayout.Space(8);
+            var filters = AssetTypeFilterRegistry.GetAllFilters();
+            if (_activeFilter == null && filters.Count > 0)
+                _activeFilter = filters[0];
 
-            // Header
-            EditorGUILayout.LabelField("Localized Assets", EditorStyles.boldLabel);
+            _root.Add(BuildHeader());
+            _root.Add(BuildToolbar());
+            _root.Add(BuildListView());
+            _root.Add(BuildStatusBar());
 
-            EditorGUILayout.HelpBox(
-                "Manage localized sprites, audio clips, and custom assets.\n" +
-                "Each language has its own AssetTable stored in its folder.\n" +
-                "Drag assets into cells to assign them. Click ▶ to preview.",
-                MessageType.Info);
-
-            EditorGUILayout.Space(4);
-
-            // Filter + Add key
-            EditorGUILayout.BeginHorizontal();
-            _filter = (AssetTypeFilter)EditorGUILayout.EnumPopup("Show", _filter, GUILayout.Width(200));
-
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button("+ Add asset key", GUILayout.Width(120)))
-                ShowAddKeyPopup();
-
-            if (GUILayout.Button("Create missing tables", GUILayout.Width(150)))
-                CreateMissingTables();
-
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.Space(6);
+            container.Add(_root);
 
             if (_config == null || _config.languages.Count == 0)
             {
-                EditorGUILayout.LabelField("No languages configured.", EditorStyles.centeredGreyMiniLabel);
+                ShowNoLanguagesMessage();
                 return;
             }
 
-            // Table
-            DrawAssetTable();
+            RebuildRows();
+        }
+
+        private VisualElement BuildHeader()
+        {
+            var header = new VisualElement();
+            header.style.paddingTop = 8;
+            header.style.paddingBottom = 4;
+            header.style.paddingLeft = 12;
+            header.style.paddingRight = 12;
+
+            var title = new Label("Localized Assets");
+            title.style.fontSize = 13;
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            header.Add(title);
+
+            var help = new HelpBox(
+                "Manage localized sprites, audio clips, and custom assets. " +
+                "Each language has its own AssetTable. Click ▶ to expand a preview.",
+                HelpBoxMessageType.Info);
+            help.style.marginTop = 4;
+            header.Add(help);
+
+            return header;
+        }
+
+        private VisualElement BuildToolbar()
+        {
+            var toolbar = new VisualElement();
+            toolbar.style.flexDirection = FlexDirection.Row;
+            toolbar.style.alignItems = Align.Center;
+            toolbar.style.paddingTop = 6;
+            toolbar.style.paddingBottom = 6;
+            toolbar.style.paddingLeft = 12;
+            toolbar.style.paddingRight = 12;
+            toolbar.style.borderBottomWidth = 1;
+            toolbar.style.borderBottomColor = new Color(0, 0, 0, 0.1f);
+
+            var filterLabel = new Label("Show:");
+            filterLabel.style.fontSize = 11;
+            filterLabel.style.color = new Color(0.5f, 0.5f, 0.5f);
+            filterLabel.style.marginRight = 6;
+            toolbar.Add(filterLabel);
+
+            var filters = AssetTypeFilterRegistry.GetAllFilters();
+            var filterNames = filters.Select(f => f.DisplayName).ToList();
+            int currentIdx = _activeFilter != null
+                ? Mathf.Max(0, filterNames.IndexOf(_activeFilter.DisplayName))
+                : 0;
+
+            var filterPopup = new PopupField<string>(filterNames, currentIdx);
+            filterPopup.style.minWidth = 140;
+            filterPopup.RegisterValueChangedCallback(evt =>
+            {
+                var newIdx = filterNames.IndexOf(evt.newValue);
+                if (newIdx >= 0) _activeFilter = filters[newIdx];
+                _expandedRows.Clear();
+                _collapsedGroups.Clear();
+                RebuildRows();
+            });
+            toolbar.Add(filterPopup);
+
+            var spacer = new VisualElement();
+            spacer.style.flexGrow = 1;
+            toolbar.Add(spacer);
+
+            var addBtn = new Button(ShowAddKeyPopup);
+            addBtn.text = "+ Add asset key";
+            addBtn.style.fontSize = 11;
+            addBtn.style.marginRight = 4;
+            toolbar.Add(addBtn);
+
+            var createBtn = new Button(CreateMissingTables);
+            createBtn.text = "Create missing tables";
+            createBtn.style.fontSize = 11;
+            toolbar.Add(createBtn);
+
+            return toolbar;
+        }
+
+        private VisualElement BuildListView()
+        {
+            _listView = new ListView
+            {
+                fixedItemHeight = 32,
+                virtualizationMethod = CollectionVirtualizationMethod.DynamicHeight,
+                selectionType = SelectionType.None,
+                showAlternatingRowBackgrounds = AlternatingRowBackground.None,
+                showBorder = false,
+                horizontalScrollingEnabled = true,
+                makeItem = MakeListItem,
+                bindItem = BindListItem,
+                unbindItem = UnbindListItem,
+                itemsSource = _flatRows
+            };
+            _listView.style.flexGrow = 1;
+            return _listView;
+        }
+
+        private VisualElement BuildStatusBar()
+        {
+            _statusLabel = new Label();
+            _statusLabel.style.fontSize = 11;
+            _statusLabel.style.color = new Color(0.5f, 0.5f, 0.5f);
+            _statusLabel.style.paddingLeft = 12;
+            _statusLabel.style.paddingTop = 4;
+            _statusLabel.style.paddingBottom = 4;
+            _statusLabel.style.borderTopWidth = 1;
+            _statusLabel.style.borderTopColor = new Color(0, 0, 0, 0.1f);
+            return _statusLabel;
+        }
+
+        private void ShowNoLanguagesMessage()
+        {
+            var msg = new Label("No languages configured.");
+            msg.style.paddingTop = 40;
+            msg.style.paddingLeft = 20;
+            msg.style.color = new Color(0.5f, 0.5f, 0.5f);
+            _root.Add(msg);
         }
 
         // ──────────────────────────────────────────────
-        //  Asset table display
+        //  Rebuild model
         // ──────────────────────────────────────────────
 
-        private void DrawAssetTable()
+        private void RebuildRows()
         {
-            var languages = _config.languages.Where(p => p != null).ToList();
-            var keys = GetFilteredKeys();
+            if (_listView == null) return;
 
-            if (keys.Count == 0)
+            _cachedLanguages = _config != null
+                ? _config.languages.Where(p => p != null).ToList()
+                : new List<LanguageProfile>();
+
+            var filtered = new List<string>();
+            IReadOnlyDictionary<string, LocalizationAssetTable> tablesRo = _tables;
+
+            foreach (var key in _allAssetKeys)
             {
-                EditorGUILayout.LabelField("No asset keys found. Add keys using the button above.",
-                    EditorStyles.centeredGreyMiniLabel);
-                return;
+                if (_activeFilter == null || _activeFilter.MatchesKey(key, tablesRo))
+                    filtered.Add(key);
             }
 
-            // Header
-            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            GUILayout.Space(22); // space for the expand arrow
-            EditorGUILayout.LabelField("Key", EditorStyles.miniLabel, GUILayout.Width(180));
+            filtered.Sort(System.StringComparer.Ordinal);
 
-            foreach (var lang in languages)
-                EditorGUILayout.LabelField(lang.Code, EditorStyles.miniLabel, GUILayout.Width(140));
+            KeyTreeBuilder.TreeNode root;
+            bool isAllFilter = _activeFilter is AllAssetFilter;
 
-            EditorGUILayout.EndHorizontal();
+            if (isAllFilter)
+                root = KeyTreeBuilder.BuildGrouped(filtered, GetTypeGroupForKey);
+            else
+                root = KeyTreeBuilder.Build(filtered);
 
-            // Rows
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
+            _flatRows = KeyTreeBuilder.Flatten(root, _collapsedGroups);
 
-            foreach (var key in keys)
-            {
-                bool isExpanded = _expandedRows.Contains(key);
-                bool hasPreviewableAsset = KeyHasPreviewableAsset(key);
+            _listView.itemsSource = _flatRows;
+            _listView.Rebuild();
 
-                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
-
-                // ── Main row ──
-                EditorGUILayout.BeginHorizontal();
-
-                // Expand toggle (only if preview is useful)
-                if (hasPreviewableAsset)
-                {
-                    string arrow = isExpanded ? "\u25bc" : "\u25b6";
-                    if (GUILayout.Button(arrow, EditorStyles.label, GUILayout.Width(18)))
-                    {
-                        if (isExpanded) _expandedRows.Remove(key);
-                        else _expandedRows.Add(key);
-                    }
-                }
-                else
-                {
-                    GUILayout.Space(22);
-                }
-
-                // Key label with context menu
-                var keyRect = EditorGUILayout.GetControlRect(GUILayout.Width(180));
-                EditorGUI.LabelField(keyRect, key, EditorStyles.miniLabel);
-
-                if (Event.current.type == EventType.ContextClick && keyRect.Contains(Event.current.mousePosition))
-                {
-                    ShowKeyContextMenu(key);
-                    Event.current.Use();
-                }
-
-                // Determine the accepted type for this key
-                var acceptedType = GetObjectTypeForKey(key);
-
-                // Asset cells per language
-                foreach (var lang in languages)
-                {
-                    var table = GetTable(lang.Code);
-                    Object currentAsset = table?.Get(key);
-
-                    var newAsset = EditorGUILayout.ObjectField(
-                        currentAsset, acceptedType, false, GUILayout.Width(140));
-
-                    if (newAsset != currentAsset)
-                    {
-                        EnsureTable(lang.Code);
-                        var t = GetTable(lang.Code);
-
-                        if (t != null)
-                        {
-                            if (newAsset != null)
-                                t.Set(key, newAsset);
-                            else
-                                t.Remove(key);
-
-                            EditorUtility.SetDirty(t);
-                        }
-                    }
-                }
-
-                EditorGUILayout.EndHorizontal();
-
-                // ── Expanded preview row ──
-                if (isExpanded && hasPreviewableAsset)
-                {
-                    DrawExpandedPreviewRow(key, languages);
-                }
-
-                EditorGUILayout.EndVertical();
-            }
-
-            EditorGUILayout.EndScrollView();
-
-            // Status
-            EditorGUILayout.Space(4);
-
-            int totalCells = keys.Count * languages.Count;
-            int filledCells = 0;
-
-            foreach (var key in keys)
-                foreach (var lang in languages)
-                    if (GetTable(lang.Code)?.Get(key) != null) filledCells++;
-
-            EditorGUILayout.LabelField(
-                $"{keys.Count} keys | {filledCells}/{totalCells} assigned",
-                EditorStyles.centeredGreyMiniLabel);
+            UpdateStatus(filtered.Count);
         }
 
-        /// <summary>
-        /// Draws a secondary row below the main row showing large previews of the assigned assets.
-        /// One preview per language, aligned with the ObjectField above it.
-        /// </summary>
-        private void DrawExpandedPreviewRow(string key, List<LanguageProfile> languages)
-        {
-            const float previewSize = 96f;
-
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Space(22 + 180 + 4); // align with first language column
-
-            foreach (var lang in languages)
-            {
-                var table = GetTable(lang.Code);
-                var asset = table?.Get(key);
-
-                var box = EditorGUILayout.BeginVertical(GUILayout.Width(140));
-
-                if (asset == null)
-                {
-                    var rect = GUILayoutUtility.GetRect(140, previewSize);
-                    EditorGUI.DrawRect(rect, new Color(0, 0, 0, 0.05f));
-                    EditorGUI.LabelField(rect, "(not assigned)", new GUIStyle(EditorStyles.centeredGreyMiniLabel)
-                    {
-                        alignment = TextAnchor.MiddleCenter
-                    });
-                }
-                else if (asset is Sprite sprite)
-                {
-                    var rect = GUILayoutUtility.GetRect(140, previewSize);
-                    DrawSpritePreview(rect, sprite);
-                }
-                else if (asset is Texture2D tex2d)
-                {
-                    var rect = GUILayoutUtility.GetRect(140, previewSize);
-                    GUI.DrawTexture(rect, tex2d, ScaleMode.ScaleToFit);
-                }
-                else if (asset is AudioClip clip)
-                {
-                    var rect = GUILayoutUtility.GetRect(140, previewSize);
-                    DrawAudioPreview(rect, clip);
-                }
-                else
-                {
-                    // Generic fallback — mini thumbnail + type name
-                    var rect = GUILayoutUtility.GetRect(140, previewSize);
-                    var thumb = AssetPreview.GetMiniThumbnail(asset);
-                    if (thumb != null)
-                    {
-                        var iconRect = new Rect(rect.x + rect.width / 2f - 24, rect.y + 8, 48, 48);
-                        GUI.DrawTexture(iconRect, thumb, ScaleMode.ScaleToFit);
-                    }
-                    var labelRect = new Rect(rect.x, rect.y + 60, rect.width, 16);
-                    EditorGUI.LabelField(labelRect, asset.GetType().Name,
-                        new GUIStyle(EditorStyles.miniLabel) { alignment = TextAnchor.MiddleCenter });
-                }
-
-                EditorGUILayout.EndVertical();
-            }
-
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.Space(2);
-        }
-
-        private static void DrawSpritePreview(Rect rect, Sprite sprite)
-        {
-            if (sprite == null) return;
-
-            // Checkerboard background to show transparency
-            EditorGUI.DrawRect(rect, new Color(0.2f, 0.2f, 0.2f, 0.3f));
-
-            // Draw the sprite respecting its rect within the texture atlas
-            var tex = sprite.texture;
-            if (tex == null) return;
-
-            var spriteRect = sprite.rect;
-            var uv = new Rect(
-                spriteRect.x / tex.width,
-                spriteRect.y / tex.height,
-                spriteRect.width / tex.width,
-                spriteRect.height / tex.height);
-
-            // Preserve aspect ratio inside the target rect
-            float aspect = spriteRect.width / spriteRect.height;
-            float drawW = rect.width;
-            float drawH = rect.width / aspect;
-
-            if (drawH > rect.height)
-            {
-                drawH = rect.height;
-                drawW = rect.height * aspect;
-            }
-
-            var drawRect = new Rect(
-                rect.x + (rect.width - drawW) / 2f,
-                rect.y + (rect.height - drawH) / 2f,
-                drawW, drawH);
-
-            GUI.DrawTextureWithTexCoords(drawRect, tex, uv);
-        }
-
-        private static void DrawAudioPreview(Rect rect, AudioClip clip)
-        {
-            if (clip == null) return;
-
-            EditorGUI.DrawRect(rect, new Color(0, 0, 0, 0.08f));
-
-            // Icon
-            var iconRect = new Rect(rect.x + 8, rect.y + 8, 32, 32);
-            var thumb = AssetPreview.GetMiniThumbnail(clip);
-            if (thumb != null)
-                GUI.DrawTexture(iconRect, thumb, ScaleMode.ScaleToFit);
-
-            // Metadata
-            var infoRect = new Rect(rect.x + 48, rect.y + 8, rect.width - 56, 16);
-            EditorGUI.LabelField(infoRect, clip.name, EditorStyles.miniLabel);
-
-            var metaRect = new Rect(rect.x + 48, rect.y + 26, rect.width - 56, 14);
-            string meta = $"{clip.length:F2}s | {clip.frequency / 1000}kHz | {clip.channels}ch";
-            EditorGUI.LabelField(metaRect, meta, EditorStyles.miniLabel);
-
-            // Play button
-            var btnRect = new Rect(rect.x + 8, rect.y + rect.height - 24, rect.width - 16, 18);
-            if (GUI.Button(btnRect, "▶ Play", EditorStyles.miniButton))
-            {
-                PlayClipPreview(clip);
-            }
-        }
-
-        private static void PlayClipPreview(AudioClip clip)
-        {
-            // Use Unity's internal AudioUtil via reflection — public API doesn't expose editor preview
-            var audioUtil = System.Type.GetType("UnityEditor.AudioUtil, UnityEditor");
-            if (audioUtil == null) return;
-
-            // Unity 2020+: PlayPreviewClip(AudioClip, int, bool)
-            var playMethod = audioUtil.GetMethod("PlayPreviewClip",
-                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-
-            if (playMethod != null)
-            {
-                playMethod.Invoke(null, new object[] { clip, 0, false });
-                return;
-            }
-
-            // Fallback to older API name
-            var fallback = audioUtil.GetMethod("PlayClip",
-                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public,
-                null, new[] { typeof(AudioClip) }, null);
-            fallback?.Invoke(null, new object[] { clip });
-        }
-
-        /// <summary>
-        /// Returns true if any language has an asset for this key that we know how to preview
-        /// (Sprite, Texture2D, AudioClip). Other types fall back to a generic icon preview.
-        /// </summary>
-        private bool KeyHasPreviewableAsset(string key)
+        private string GetTypeGroupForKey(string key)
         {
             foreach (var table in _tables.Values)
             {
-                var asset = table?.Get(key);
-                if (asset != null) return true;
+                if (table == null) continue;
+                var asset = table.Get(key);
+                if (asset == null) continue;
+                return asset.GetType().Name;
             }
-            return false;
+            return "Unassigned";
+        }
+
+        private void UpdateStatus(int visibleKeyCount)
+        {
+            if (_statusLabel == null) return;
+
+            int totalCells = visibleKeyCount * _cachedLanguages.Count;
+            int filledCells = 0;
+
+            foreach (var row in _flatRows)
+            {
+                if (row.Type != KeyTreeBuilder.FlatRowType.KeyRow) continue;
+
+                foreach (var lang in _cachedLanguages)
+                {
+                    if (GetTable(lang.Code)?.Get(row.Key) != null) filledCells++;
+                }
+            }
+
+            _statusLabel.text = $"{visibleKeyCount} keys  |  {filledCells}/{totalCells} assigned  |  filter: {_activeFilter?.DisplayName ?? "None"}";
+        }
+
+        // ──────────────────────────────────────────────
+        //  ListView item factory
+        // ──────────────────────────────────────────────
+
+        private VisualElement MakeListItem()
+        {
+            var root = new VisualElement();
+            root.style.flexDirection = FlexDirection.Column;
+            root.style.borderBottomWidth = 1;
+            root.style.borderBottomColor = new Color(0, 0, 0, 0.08f);
+
+            var groupContainer = new VisualElement();
+            groupContainer.name = "group-container";
+            groupContainer.style.flexDirection = FlexDirection.Row;
+            groupContainer.style.paddingTop = 4;
+            groupContainer.style.paddingBottom = 4;
+            groupContainer.style.display = DisplayStyle.None;
+            groupContainer.style.backgroundColor = new Color(0, 0, 0, 0.04f);
+
+            var groupLabel = new Label();
+            groupLabel.name = "group-label";
+            groupLabel.style.fontSize = 11;
+            groupLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
+            groupLabel.style.color = new Color(0.4f, 0.4f, 0.4f);
+            groupContainer.Add(groupLabel);
+            root.Add(groupContainer);
+
+            var keyContainer = new VisualElement();
+            keyContainer.name = "key-container";
+            keyContainer.style.flexDirection = FlexDirection.Column;
+            keyContainer.style.display = DisplayStyle.None;
+
+            var mainRow = new VisualElement();
+            mainRow.name = "main-row";
+            mainRow.style.flexDirection = FlexDirection.Row;
+            mainRow.style.alignItems = Align.Center;
+            mainRow.style.paddingTop = 3;
+            mainRow.style.paddingBottom = 3;
+
+            var expandBtn = new Button();
+            expandBtn.name = "expand-btn";
+            expandBtn.text = "▶";
+            expandBtn.style.fontSize = 10;
+            expandBtn.style.width = 18;
+            expandBtn.style.height = 18;
+            expandBtn.style.marginLeft = 4;
+            expandBtn.style.marginRight = 4;
+            expandBtn.style.paddingLeft = 0;
+            expandBtn.style.paddingRight = 0;
+            expandBtn.style.paddingTop = 0;
+            expandBtn.style.paddingBottom = 0;
+            expandBtn.style.backgroundColor = new StyleColor(StyleKeyword.Null);
+            expandBtn.style.borderLeftWidth = 0;
+            expandBtn.style.borderRightWidth = 0;
+            expandBtn.style.borderTopWidth = 0;
+            expandBtn.style.borderBottomWidth = 0;
+            mainRow.Add(expandBtn);
+
+            var keyLabel = new Label();
+            keyLabel.name = "key-label";
+            keyLabel.style.width = 200;
+            keyLabel.style.fontSize = 11;
+            keyLabel.style.paddingTop = 2;
+            mainRow.Add(keyLabel);
+
+            var fieldsContainer = new VisualElement();
+            fieldsContainer.name = "fields-container";
+            fieldsContainer.style.flexDirection = FlexDirection.Row;
+            mainRow.Add(fieldsContainer);
+
+            for (int i = 0; i < 8; i++)
+            {
+                var field = new ObjectField();
+                field.name = $"asset-field-{i}";
+                field.style.width = 150;
+                field.style.marginRight = 4;
+                field.style.display = DisplayStyle.None;
+                field.allowSceneObjects = false;
+
+                int capturedIdx = i;
+                field.RegisterValueChangedCallback(evt =>
+                {
+                    OnAssetFieldChanged(keyContainer, capturedIdx, evt.newValue);
+                });
+
+                fieldsContainer.Add(field);
+            }
+
+            keyContainer.Add(mainRow);
+
+            var previewRow = new VisualElement();
+            previewRow.name = "preview-row";
+            previewRow.style.flexDirection = FlexDirection.Row;
+            previewRow.style.display = DisplayStyle.None;
+            previewRow.style.paddingLeft = 22 + 200 + 4;
+            previewRow.style.paddingBottom = 4;
+
+            for (int i = 0; i < 8; i++)
+            {
+                var previewSlot = new IMGUIContainer();
+                previewSlot.name = $"preview-slot-{i}";
+                previewSlot.style.width = 150;
+                previewSlot.style.height = 96;
+                previewSlot.style.marginRight = 4;
+                previewSlot.style.display = DisplayStyle.None;
+                previewRow.Add(previewSlot);
+            }
+
+            keyContainer.Add(previewRow);
+            root.Add(keyContainer);
+
+            expandBtn.clicked += () =>
+            {
+                var item = root.userData as KeyTreeBuilder.FlatRow;
+                if (item == null || item.Type != KeyTreeBuilder.FlatRowType.KeyRow) return;
+
+                if (_expandedRows.Contains(item.Key))
+                    _expandedRows.Remove(item.Key);
+                else
+                    _expandedRows.Add(item.Key);
+
+                _listView.RefreshItem(_flatRows.IndexOf(item));
+            };
+
+            groupContainer.RegisterCallback<ClickEvent>(_ =>
+            {
+                var item = root.userData as KeyTreeBuilder.FlatRow;
+                if (item == null || item.Type != KeyTreeBuilder.FlatRowType.GroupHeader) return;
+
+                if (_collapsedGroups.Contains(item.GroupPath))
+                    _collapsedGroups.Remove(item.GroupPath);
+                else
+                    _collapsedGroups.Add(item.GroupPath);
+
+                RebuildRows();
+            });
+
+            keyLabel.RegisterCallback<ContextClickEvent>(evt =>
+            {
+                var item = root.userData as KeyTreeBuilder.FlatRow;
+                if (item == null || item.Type != KeyTreeBuilder.FlatRowType.KeyRow) return;
+                ShowKeyContextMenu(item.Key);
+                evt.StopPropagation();
+            });
+
+            return root;
+        }
+
+        private void BindListItem(VisualElement element, int index)
+        {
+            if (index < 0 || index >= _flatRows.Count) return;
+
+            var item = _flatRows[index];
+            element.userData = item;
+
+            var groupContainer = element.Q("group-container");
+            var keyContainer = element.Q("key-container");
+
+            if (item.Type == KeyTreeBuilder.FlatRowType.GroupHeader)
+            {
+                groupContainer.style.display = DisplayStyle.Flex;
+                keyContainer.style.display = DisplayStyle.None;
+                groupContainer.style.paddingLeft = 8 + item.Depth * 16;
+
+                var groupLabel = element.Q<Label>("group-label");
+                string arrow = item.IsCollapsed ? "▶" : "▼";
+                groupLabel.text = $"{arrow} {item.GroupDisplayName} ({item.GroupKeyCount})";
+            }
+            else
+            {
+                groupContainer.style.display = DisplayStyle.None;
+                keyContainer.style.display = DisplayStyle.Flex;
+                BindKeyRow(element, item);
+            }
+        }
+
+        private void BindKeyRow(VisualElement element, KeyTreeBuilder.FlatRow item)
+        {
+            string key = item.Key;
+            bool isExpanded = _expandedRows.Contains(key);
+
+            var expandBtn = element.Q<Button>("expand-btn");
+            expandBtn.text = isExpanded ? "▼" : "▶";
+
+            var keyLabel = element.Q<Label>("key-label");
+            string shortKey = key.Substring(key.LastIndexOf('/') + 1);
+            keyLabel.text = shortKey;
+            keyLabel.tooltip = key;
+            keyLabel.style.paddingLeft = item.Depth * 16;
+
+            var acceptedType = _activeFilter?.AcceptedFieldType ?? typeof(Object);
+
+            if (_activeFilter is AllAssetFilter)
+                acceptedType = GetAutoDetectedType(key);
+
+            for (int i = 0; i < 8; i++)
+            {
+                var field = element.Q<ObjectField>($"asset-field-{i}");
+
+                if (i >= _cachedLanguages.Count)
+                {
+                    field.style.display = DisplayStyle.None;
+                    field.userData = null;
+                    continue;
+                }
+
+                var lang = _cachedLanguages[i];
+                field.style.display = DisplayStyle.Flex;
+                field.objectType = acceptedType;
+                field.userData = new FieldBinding { Key = key, LanguageCode = lang.Code };
+
+                var currentAsset = GetTable(lang.Code)?.Get(key);
+                field.SetValueWithoutNotify(currentAsset);
+            }
+
+            var previewRow = element.Q("preview-row");
+            previewRow.style.display = isExpanded ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (isExpanded)
+            {
+                for (int i = 0; i < 8; i++)
+                {
+                    var slot = (IMGUIContainer)previewRow[i];
+
+                    if (i >= _cachedLanguages.Count)
+                    {
+                        slot.style.display = DisplayStyle.None;
+                        slot.onGUIHandler = null;
+                        continue;
+                    }
+
+                    slot.style.display = DisplayStyle.Flex;
+
+                    var lang = _cachedLanguages[i];
+                    string capturedLang = lang.Code;
+                    string capturedKey = key;
+
+                    slot.onGUIHandler = () =>
+                    {
+                        var asset = GetTable(capturedLang)?.Get(capturedKey);
+                        var rect = new Rect(0, 0, 150, 96);
+                        var renderer = AssetPreviewRegistry.GetRendererFor(asset);
+                        renderer.DrawPreview(rect, asset);
+                    };
+                }
+            }
+        }
+
+        private void UnbindListItem(VisualElement element, int index)
+        {
+            element.userData = null;
+
+            for (int i = 0; i < 8; i++)
+            {
+                var field = element.Q<ObjectField>($"asset-field-{i}");
+                if (field != null) field.userData = null;
+
+                var slot = element.Q<IMGUIContainer>($"preview-slot-{i}");
+                if (slot != null) slot.onGUIHandler = null;
+            }
+        }
+
+        private class FieldBinding
+        {
+            public string Key;
+            public string LanguageCode;
+        }
+
+        // ──────────────────────────────────────────────
+        //  Edit handlers
+        // ──────────────────────────────────────────────
+
+        private void OnAssetFieldChanged(VisualElement keyContainer, int fieldIdx, Object newAsset)
+        {
+            var field = keyContainer.Q<ObjectField>($"asset-field-{fieldIdx}");
+            var binding = field?.userData as FieldBinding;
+            if (binding == null) return;
+
+            EnsureTable(binding.LanguageCode);
+            var table = GetTable(binding.LanguageCode);
+            if (table == null) return;
+
+            var currentAsset = table.Get(binding.Key);
+            if (currentAsset == newAsset) return;
+
+            if (newAsset != null)
+                table.Set(binding.Key, newAsset);
+            else
+                table.Remove(binding.Key);
+
+            EditorUtility.SetDirty(table);
+
+            if (_activeFilter is AllAssetFilter)
+                RebuildRows();
+            else
+                _listView.RefreshItems();
+        }
+
+        private System.Type GetAutoDetectedType(string key)
+        {
+            foreach (var table in _tables.Values)
+            {
+                if (table == null) continue;
+                var asset = table.Get(key);
+                if (asset == null) continue;
+                return asset.GetType();
+            }
+            return typeof(Object);
         }
 
         // ──────────────────────────────────────────────
@@ -404,7 +616,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 if (!string.IsNullOrEmpty(assetPath))
                 {
-                    // Convert to Assets-relative path
                     string relativePath = "Assets" + assetPath.Substring(Application.dataPath.Length);
                     var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(relativePath);
 
@@ -431,14 +642,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         private void EnsureTable(string langCode)
         {
-            if (_tables.ContainsKey(langCode)) return;
+            if (_tables.ContainsKey(langCode) && _tables[langCode] != null) return;
 
             string langDir = Path.Combine(_data.BasePath, langCode);
 
             if (!Directory.Exists(langDir))
                 Directory.CreateDirectory(langDir);
 
-            // Create asset table SO
             var table = ScriptableObject.CreateInstance<LocalizationAssetTable>();
             string relativeLangDir = "Assets" + langDir.Substring(Application.dataPath.Length);
             string tablePath = Path.Combine(relativeLangDir, "AssetTable.asset");
@@ -458,7 +668,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 if (profile == null) continue;
 
-                if (!_tables.ContainsKey(profile.Code))
+                if (!_tables.ContainsKey(profile.Code) || _tables[profile.Code] == null)
                 {
                     EnsureTable(profile.Code);
                     created++;
@@ -468,8 +678,11 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             AssetDatabase.Refresh();
 
             if (created > 0)
+            {
                 EditorUtility.DisplayDialog("Tables created",
                     $"Created {created} asset table(s).", "OK");
+                RebuildRows();
+            }
         }
 
         private static string FindAssetTablePath(string langDir)
@@ -489,70 +702,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         }
 
         // ──────────────────────────────────────────────
-        //  Key management
+        //  Key management popups
         // ──────────────────────────────────────────────
-
-        private List<string> GetFilteredKeys()
-        {
-            if (_allAssetKeys == null) return new List<string>();
-
-            if (_filter == AssetTypeFilter.All)
-                return _allAssetKeys;
-
-            // Filter by checking actual asset types in tables
-            return _allAssetKeys.Where(key =>
-            {
-                foreach (var table in _tables.Values)
-                {
-                    var asset = table.Get(key);
-                    if (asset == null) continue;
-
-                    if (_filter == AssetTypeFilter.Sprites && asset is Sprite)
-                        return true;
-                    if (_filter == AssetTypeFilter.AudioClips && asset is AudioClip)
-                        return true;
-                }
-
-                // Include keys with no assets assigned yet
-                return !_tables.Values.Any(t => t.HasKey(key));
-            }).ToList();
-        }
-
-        private System.Type GetObjectType()
-        {
-            return _filter switch
-            {
-                AssetTypeFilter.Sprites => typeof(Sprite),
-                AssetTypeFilter.AudioClips => typeof(AudioClip),
-                _ => typeof(Object)
-            };
-        }
-
-        /// <summary>
-        /// Determines the accepted asset type for a key based on:
-        /// 1. Current filter (if not All, use filter type)
-        /// 2. Existing assets (if key already has a Sprite, only accept Sprites)
-        /// 3. Falls back to Object if nothing is assigned yet
-        /// </summary>
-        private System.Type GetObjectTypeForKey(string key)
-        {
-            // If filter is set, use it
-            if (_filter != AssetTypeFilter.All)
-                return GetObjectType();
-
-            // Auto-detect from existing assets for this key
-            foreach (var table in _tables.Values)
-            {
-                var asset = table.Get(key);
-                if (asset == null) continue;
-
-                if (asset is Sprite) return typeof(Sprite);
-                if (asset is AudioClip) return typeof(AudioClip);
-                return asset.GetType();
-            }
-
-            return typeof(Object);
-        }
 
         private void ShowAddKeyPopup()
         {
@@ -565,10 +716,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     _allAssetKeys.Sort();
                 }
 
-                // Add empty entry to all existing tables
                 foreach (var table in _tables.Values)
                 {
-                    if (!table.HasKey(key))
+                    if (table != null && !table.HasKey(key))
                     {
                         table.Set(key, null);
                         EditorUtility.SetDirty(table);
@@ -576,6 +726,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 }
 
                 AssetDatabase.SaveAssets();
+                RebuildRows();
             });
 
             popup.titleContent = new GUIContent("Add asset key");
@@ -601,17 +752,23 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 foreach (var table in _tables.Values)
                 {
+                    if (table == null) continue;
                     table.Remove(key);
                     EditorUtility.SetDirty(table);
                 }
 
                 _allAssetKeys.Remove(key);
                 AssetDatabase.SaveAssets();
+                RebuildRows();
             });
 
             menu.ShowAsContext();
         }
     }
+
+    // ──────────────────────────────────────────────
+    //  Popup for adding new asset keys
+    // ──────────────────────────────────────────────
 
     public class AddAssetKeyPopup : EditorWindow
     {

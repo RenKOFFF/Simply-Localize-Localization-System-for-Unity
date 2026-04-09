@@ -204,30 +204,6 @@ namespace SimplyLocalize
         }
 
         /// <summary>
-        /// Loads a localized sprite for the current language.
-        /// Fallback chain: current → per-language → global fallback.
-        /// </summary>
-        internal Sprite GetSprite(string key)
-        {
-            if (string.IsNullOrEmpty(key))
-                return null;
-
-            return ResolveSpriteWithFallback(key);
-        }
-
-        /// <summary>
-        /// Loads a localized audio clip for the current language.
-        /// Fallback chain: current → per-language → global fallback.
-        /// </summary>
-        internal AudioClip GetAudio(string key)
-        {
-            if (string.IsNullOrEmpty(key))
-                return null;
-
-            return ResolveAudioWithFallback(key);
-        }
-
-        /// <summary>
         /// Gets a localized asset of type T from asset tables.
         /// Follows the full fallback chain: current → per-language → global.
         /// </summary>
@@ -409,61 +385,6 @@ namespace SimplyLocalize
 
             return _textCache.TryGetValue(languageCode, out var data)
                 && data.TryGetValue(key, out value);
-        }
-
-        private Sprite ResolveSpriteWithFallback(string key)
-        {
-            // Try current
-            var result = _dataProvider.LoadSprite(key, _currentLanguage);
-            if (result != null) return result;
-
-            // Per-language fallback chain
-            if (_currentProfile != null)
-            {
-                var visited = new HashSet<string> { _currentLanguage };
-                var fb = _currentProfile.fallbackProfile;
-
-                while (fb != null && visited.Add(fb.Code))
-                {
-                    result = _dataProvider.LoadSprite(key, fb.Code);
-                    if (result != null) return result;
-                    fb = fb.fallbackProfile;
-                }
-            }
-
-            // Global fallback
-            string gf = _config.FallbackLanguageCode;
-
-            if (!string.IsNullOrEmpty(gf) && gf != _currentLanguage)
-                result = _dataProvider.LoadSprite(key, gf);
-
-            return result;
-        }
-
-        private AudioClip ResolveAudioWithFallback(string key)
-        {
-            var result = _dataProvider.LoadAudioClip(key, _currentLanguage);
-            if (result != null) return result;
-
-            if (_currentProfile != null)
-            {
-                var visited = new HashSet<string> { _currentLanguage };
-                var fb = _currentProfile.fallbackProfile;
-
-                while (fb != null && visited.Add(fb.Code))
-                {
-                    result = _dataProvider.LoadAudioClip(key, fb.Code);
-                    if (result != null) return result;
-                    fb = fb.fallbackProfile;
-                }
-            }
-
-            string gf = _config.FallbackLanguageCode;
-
-            if (!string.IsNullOrEmpty(gf) && gf != _currentLanguage)
-                result = _dataProvider.LoadAudioClip(key, gf);
-
-            return result;
         }
 
         private void PreloadFallbackChain(LanguageProfile profile)

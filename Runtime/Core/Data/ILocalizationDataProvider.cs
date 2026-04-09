@@ -1,11 +1,13 @@
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace SimplyLocalize.Data
 {
     /// <summary>
     /// Abstraction for loading localization data.
     /// Implement this interface to support different data sources (Resources, Addressables, etc.).
+    ///
+    /// Assets (sprites, audio, materials, custom types) are loaded via asset tables:
+    /// call LoadAssetTables() to get the language's tables, then use LocalizationAssetTable.Get&lt;T&gt;(key).
     /// </summary>
     public interface ILocalizationDataProvider
     {
@@ -16,16 +18,9 @@ namespace SimplyLocalize.Data
         Dictionary<string, string> LoadTextData(string languageCode);
 
         /// <summary>
-        /// Loads a localized sprite by key and language.
-        /// Returns null if the sprite doesn't exist for this language.
+        /// Returns true if text data exists for the specified language.
+        /// Used by diagnostics and the editor without triggering a full load.
         /// </summary>
-        Sprite LoadSprite(string key, string languageCode);
-
-        /// <summary>
-        /// Loads a localized audio clip by key and language.
-        /// Returns null if the clip doesn't exist for this language.
-        /// </summary>
-        AudioClip LoadAudioClip(string key, string languageCode);
         bool HasTextData(string languageCode);
 
         /// <summary>

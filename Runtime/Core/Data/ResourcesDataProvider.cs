@@ -14,30 +14,18 @@ namespace SimplyLocalize.Data
     ///   │   │   ├── en.json
     ///   │   │   ├── items.json
     ///   │   │   └── menu.json
-    ///   │   ├── images/            — sprites, any subfolder nesting allowed
-    ///   │   │   ├── ui/logo
-    ///   │   │   ├── items/sword
-    ///   │   │   └── banner
-    ///   │   └── audio/             — audio clips, any subfolder nesting allowed
-    ///   │       ├── greeting
-    ///   │       └── narration/intro
+    ///   │   └── AssetTable.asset   — per-language asset table (sprites, audio, custom types)
     ///   ├── ru/
     ///   │   ├── text/
-    ///   │   │   ├── ru.json
-    ///   │   │   └── items_ru.json
-    ///   │   └── images/
-    ///   │       └── ui/logo
+    ///   │   └── AssetTable.asset
     ///   ...
     ///
     /// Text:   All .json files inside {basePath}/{lang}/text/ are loaded and merged.
     ///         Duplicate keys across files: last loaded wins (no guaranteed order).
     ///
-    /// Images: Key is the relative path inside the images folder.
-    ///         Key "ui/logo" loads from {basePath}/{lang}/images/ui/logo.
-    ///         Any depth of subfolder nesting is supported.
-    ///
-    /// Audio:  Same convention as images.
-    ///         Key "narration/intro" loads from {basePath}/{lang}/audio/narration/intro.
+    /// Assets: Place one or more LocalizationAssetTable SOs in {basePath}/{lang}/.
+    ///         At runtime, call Localization.GetAsset&lt;T&gt;(key) — the manager searches
+    ///         all tables for the current language, then the fallback chain.
     /// </summary>
     public class ResourcesDataProvider : ILocalizationDataProvider
     {
@@ -84,18 +72,6 @@ namespace SimplyLocalize.Data
             return merged;
         }
 
-        public Sprite LoadSprite(string key, string languageCode)
-        {
-            string path = $"{_basePath}/{languageCode}/images/{SanitizeKey(key)}";
-            return Resources.Load<Sprite>(path);
-        }
-
-        public AudioClip LoadAudioClip(string key, string languageCode)
-        {
-            string path = $"{_basePath}/{languageCode}/audio/{SanitizeKey(key)}";
-            return Resources.Load<AudioClip>(path);
-        }
-
         public bool HasTextData(string languageCode)
         {
             string textFolder = $"{_basePath}/{languageCode}/text";
@@ -126,11 +102,6 @@ namespace SimplyLocalize.Data
             }
 
             return result;
-        }
-
-        private static string SanitizeKey(string key)
-        {
-            return key.Replace('\\', '/');
         }
     }
 }

@@ -185,7 +185,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var profile = ScriptableObject.CreateInstance<LanguageProfile>();
             profile.languageCode = langCode;
             profile.displayName = langCode;
-            profile.hasText = true;
+            
+            //TODO этого тут быть не должно
+            // profile.hasText = true;
 
             string configPath = AssetDatabase.GetAssetPath(_config);
             string configDir = Path.GetDirectoryName(configPath);
