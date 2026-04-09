@@ -136,18 +136,21 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             flagsRow.style.flexDirection = FlexDirection.Row;
             flagsRow.style.marginTop = 2;
 
-            //TODO этого тут быть не должно, также метод наверное должен не принимать булки вот так явно
-            flagsRow.Add(MakeBadge("Text", false/*profile.hasText*/));
-            flagsRow.Add(MakeBadge("Sprites", false/*profile.hasSprites*/));
-            flagsRow.Add(MakeBadge("Audio", false/*profile.hasAudio*/));
-
             if (profile.primaryFont != null)
             {
                 var fontBadge = new Label($"Font: {profile.primaryFont.name}");
                 fontBadge.style.fontSize = 10;
                 fontBadge.style.color = new Color(0.4f, 0.4f, 0.4f);
-                fontBadge.style.marginLeft = 8;
                 flagsRow.Add(fontBadge);
+            }
+
+            if (profile.fallbackProfile != null)
+            {
+                var fbBadge = new Label($"Fallback: {profile.fallbackProfile.Code}");
+                fbBadge.style.fontSize = 10;
+                fbBadge.style.color = new Color(0.4f, 0.4f, 0.4f);
+                fbBadge.style.marginLeft = 8;
+                flagsRow.Add(fbBadge);
             }
 
             info.Add(flagsRow);
@@ -170,34 +173,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             card.Add(removeBtn);
 
             return card;
-        }
-
-        private Label MakeBadge(string text, bool enabled)
-        {
-            var badge = new Label(text);
-            badge.style.fontSize = 10;
-            badge.style.paddingLeft = 6;
-            badge.style.paddingRight = 6;
-            badge.style.paddingTop = 1;
-            badge.style.paddingBottom = 1;
-            badge.style.marginRight = 4;
-            badge.style.borderTopLeftRadius = 4;
-            badge.style.borderTopRightRadius = 4;
-            badge.style.borderBottomLeftRadius = 4;
-            badge.style.borderBottomRightRadius = 4;
-
-            if (enabled)
-            {
-                badge.style.backgroundColor = new Color(0.2f, 0.7f, 0.3f, 0.15f);
-                badge.style.color = new Color(0.2f, 0.6f, 0.2f);
-            }
-            else
-            {
-                badge.style.backgroundColor = new Color(0, 0, 0, 0.05f);
-                badge.style.color = new Color(0.6f, 0.6f, 0.6f);
-            }
-
-            return badge;
         }
 
         private void OnAddLanguageClicked()
@@ -394,9 +369,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             profile.languageCode = _code;
             profile.displayName = _displayName;
             profile.systemLanguage = _systemLanguage;
-            
-            //TODO этого тут быть не должно
-            // profile.hasText = true;
 
             string configPath = AssetDatabase.GetAssetPath(_config);
             string configDir = Path.GetDirectoryName(configPath);

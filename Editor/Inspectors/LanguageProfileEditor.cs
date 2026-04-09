@@ -14,11 +14,6 @@ namespace SimplyLocalize.Editor.Inspectors
         // Fallback
         private SerializedProperty _fallbackProfile;
 
-        // Assets
-        private SerializedProperty _hasText;
-        private SerializedProperty _hasSprites;
-        private SerializedProperty _hasAudio;
-
         // Font
         private SerializedProperty _overrideFont;
         private SerializedProperty _primaryFont;
@@ -50,10 +45,6 @@ namespace SimplyLocalize.Editor.Inspectors
             _systemLanguage = serializedObject.FindProperty("systemLanguage");
 
             _fallbackProfile = serializedObject.FindProperty("fallbackProfile");
-
-            _hasText = serializedObject.FindProperty("hasText");
-            _hasSprites = serializedObject.FindProperty("hasSprites");
-            _hasAudio = serializedObject.FindProperty("hasAudio");
 
             _overrideFont = serializedObject.FindProperty("overrideFont");
             _primaryFont = serializedObject.FindProperty("primaryFont");
@@ -94,14 +85,6 @@ namespace SimplyLocalize.Editor.Inspectors
                 new GUIContent("Per-language fallback",
                     "If a key is missing, try this language before the global fallback.\n" +
                     "Example: Ukrainian → Russian → English (global)"));
-
-            EditorGUILayout.Space(8);
-
-            // Assets — always shown
-            EditorGUILayout.LabelField("Available Assets", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(_hasText);
-            EditorGUILayout.PropertyField(_hasSprites);
-            EditorGUILayout.PropertyField(_hasAudio);
 
             EditorGUILayout.Space(8);
 
