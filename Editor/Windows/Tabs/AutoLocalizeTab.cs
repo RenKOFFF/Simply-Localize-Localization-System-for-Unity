@@ -27,7 +27,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private string _keyPrefix = "";
         private bool _skipNumericOnly = true;
         private bool _skipAlreadyLocalized = true;
-        private int _minTextLength = 1;
+        private int _minTextLength = 2;
         private bool _enterPrefabInstances;
         private bool _modifyPrefabAssets;
         private string _targetFile = "global";

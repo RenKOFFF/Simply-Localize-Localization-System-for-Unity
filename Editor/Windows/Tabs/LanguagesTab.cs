@@ -161,13 +161,16 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 flagsRow.Add(fontBadge);
             }
 
-            if (profile.fallbackProfile != null)
+            // Fallback chain display
+            string fallbackChain = BuildFallbackChainText(profile);
+
+            if (!string.IsNullOrEmpty(fallbackChain))
             {
-                var fbBadge = new Label($"Fallback: {profile.fallbackProfile.Code}");
-                fbBadge.style.fontSize = 10;
-                fbBadge.style.color = new Color(0.4f, 0.4f, 0.4f);
-                fbBadge.style.marginLeft = 8;
-                flagsRow.Add(fbBadge);
+                var fbLabel = new Label(fallbackChain);
+                fbLabel.style.fontSize = 10;
+                fbLabel.style.color = new Color(0.4f, 0.4f, 0.4f);
+                fbLabel.style.marginLeft = 8;
+                flagsRow.Add(fbLabel);
             }
 
             info.Add(flagsRow);
@@ -218,6 +221,46 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
 
             return badge;
+        }
+
+        /// <summary>
+        /// Builds a human-readable fallback chain string for a language profile.
+        /// Shows per-language chain first, then global fallback if not already in chain.
+        /// Example: "Fallback: ru → en (global)"
+        /// Returns empty string if no fallback is configured.
+        /// </summary>
+        private string BuildFallbackChainText(LanguageProfile profile)
+        {
+            var chain = new List<string>();
+            var visited = new HashSet<string> { profile.Code };
+
+            // Walk per-language fallback chain
+            var fb = profile.fallbackProfile;
+
+            while (fb != null && visited.Add(fb.Code))
+            {
+                chain.Add(fb.Code);
+                fb = fb.fallbackProfile;
+            }
+
+            // Append global fallback if configured and not already in chain
+            string globalCode = _config?.fallbackLanguage?.Code;
+
+            if (!string.IsNullOrEmpty(globalCode) && globalCode != profile.Code && !visited.Contains(globalCode))
+            {
+                chain.Add($"{globalCode} (global)");
+            }
+            else if (!string.IsNullOrEmpty(globalCode) && visited.Contains(globalCode) && chain.Count > 0)
+            {
+                // Mark the last matching entry as global
+                int idx = chain.FindIndex(c => c == globalCode);
+                if (idx >= 0)
+                    chain[idx] = $"{globalCode} (global)";
+            }
+
+            if (chain.Count == 0) return "";
+
+            return "Fallback: " + string.Join(" \u2192 ", chain);
         }
 
         /// <summary>

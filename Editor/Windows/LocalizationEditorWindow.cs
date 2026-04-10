@@ -277,12 +277,21 @@ namespace SimplyLocalize.Editor.Windows
         {
             if (_config != null) return;
 
+            // Search by type name. If the user's project has a different class named
+            // "LocalizationConfig" in another namespace, LoadAssetAtPath<LocalizationConfig>
+            // will return null for it — we skip and try the next match.
             var guids = AssetDatabase.FindAssets("t:LocalizationConfig");
 
-            if (guids.Length > 0)
+            foreach (var guid in guids)
             {
-                string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                _config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(path);
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var candidate = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(path);
+
+                if (candidate != null)
+                {
+                    _config = candidate;
+                    return;
+                }
             }
         }
     }
