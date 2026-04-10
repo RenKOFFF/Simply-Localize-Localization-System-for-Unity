@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using SimplyLocalize.Editor.Data;
@@ -136,11 +137,27 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             flagsRow.style.flexDirection = FlexDirection.Row;
             flagsRow.style.marginTop = 2;
 
+            // Asset type badges — scanned from the language's asset table
+            var assetTypes = GetAssetTypesForLanguage(profile);
+
+            if (assetTypes.Count > 0)
+            {
+                foreach (var typeName in assetTypes.OrderBy(t => t))
+                {
+                    flagsRow.Add(MakeBadge(typeName, true));
+                }
+            }
+            else
+            {
+                flagsRow.Add(MakeBadge("No assets", false));
+            }
+
             if (profile.primaryFont != null)
             {
                 var fontBadge = new Label($"Font: {profile.primaryFont.name}");
                 fontBadge.style.fontSize = 10;
                 fontBadge.style.color = new Color(0.4f, 0.4f, 0.4f);
+                fontBadge.style.marginLeft = 8;
                 flagsRow.Add(fontBadge);
             }
 
@@ -173,6 +190,65 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             card.Add(removeBtn);
 
             return card;
+        }
+
+        private Label MakeBadge(string text, bool enabled)
+        {
+            var badge = new Label(text);
+            badge.style.fontSize = 10;
+            badge.style.paddingLeft = 6;
+            badge.style.paddingRight = 6;
+            badge.style.paddingTop = 1;
+            badge.style.paddingBottom = 1;
+            badge.style.marginRight = 4;
+            badge.style.borderTopLeftRadius = 4;
+            badge.style.borderTopRightRadius = 4;
+            badge.style.borderBottomLeftRadius = 4;
+            badge.style.borderBottomRightRadius = 4;
+
+            if (enabled)
+            {
+                badge.style.backgroundColor = new Color(0.2f, 0.7f, 0.3f, 0.15f);
+                badge.style.color = new Color(0.2f, 0.6f, 0.2f);
+            }
+            else
+            {
+                badge.style.backgroundColor = new Color(0, 0, 0, 0.05f);
+                badge.style.color = new Color(0.6f, 0.6f, 0.6f);
+            }
+
+            return badge;
+        }
+
+        /// <summary>
+        /// Scans the asset table for a language and returns human-readable type names.
+        /// Uses ObjectNames.NicifyVariableName for nice display ("AudioClip" → "Audio Clip").
+        /// </summary>
+        private List<string> GetAssetTypesForLanguage(LanguageProfile profile)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrEmpty(_data?.BasePath)) return result;
+
+            string langDir = Path.Combine(_data.BasePath, profile.Code);
+            if (!Directory.Exists(langDir)) return result;
+
+            var assetFiles = Directory.GetFiles(langDir, "*.asset");
+
+            foreach (var file in assetFiles)
+            {
+                string relativePath = "Assets" + file.Substring(UnityEngine.Application.dataPath.Length);
+                var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(relativePath);
+                if (table == null) continue;
+
+                foreach (var type in table.GetContainedTypes())
+                {
+                    string niceName = ObjectNames.NicifyVariableName(type.Name);
+                    if (!result.Contains(niceName))
+                        result.Add(niceName);
+                }
+            }
+
+            return result;
         }
 
         private void OnAddLanguageClicked()

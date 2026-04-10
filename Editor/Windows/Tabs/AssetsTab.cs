@@ -41,6 +41,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private VisualElement _root;
         private ListView _listView;
         private Label _statusLabel;
+        private PopupField<string> _filterPopup;
         private List<KeyTreeBuilder.FlatRow> _flatRows = new();
         private List<LanguageProfile> _cachedLanguages = new();
 
@@ -76,7 +77,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _root.style.flexDirection = FlexDirection.Column;
             _root.style.flexGrow = 1;
 
-            var filters = AssetTypeFilterRegistry.GetAllFilters();
+            // Refresh dynamic filters from actual table contents
+            var filters = AssetTypeFilterRegistry.RefreshFromTables(_tables);
             if (_activeFilter == null && filters.Count > 0)
                 _activeFilter = filters[0];
 
@@ -143,17 +145,18 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 ? Mathf.Max(0, filterNames.IndexOf(_activeFilter.DisplayName))
                 : 0;
 
-            var filterPopup = new PopupField<string>(filterNames, currentIdx);
-            filterPopup.style.minWidth = 140;
-            filterPopup.RegisterValueChangedCallback(evt =>
+            _filterPopup = new PopupField<string>(filterNames, currentIdx);
+            _filterPopup.style.minWidth = 140;
+            _filterPopup.RegisterValueChangedCallback(evt =>
             {
-                var newIdx = filterNames.IndexOf(evt.newValue);
-                if (newIdx >= 0) _activeFilter = filters[newIdx];
+                var currentFilters = AssetTypeFilterRegistry.GetAllFilters();
+                var idx = currentFilters.Select(f => f.DisplayName).ToList().IndexOf(evt.newValue);
+                if (idx >= 0) _activeFilter = currentFilters[idx];
                 _expandedRows.Clear();
                 _collapsedGroups.Clear();
                 RebuildRows();
             });
-            toolbar.Add(filterPopup);
+            toolbar.Add(_filterPopup);
 
             var spacer = new VisualElement();
             spacer.style.flexGrow = 1;
@@ -226,6 +229,18 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 ? _config.languages.Where(p => p != null).ToList()
                 : new List<LanguageProfile>();
 
+            // Refresh dynamic filters from current table contents
+            var freshFilters = AssetTypeFilterRegistry.RefreshFromTables(_tables);
+            RefreshFilterPopup(freshFilters);
+
+            // Ensure active filter is still valid
+            if (_activeFilter != null && !freshFilters.Contains(_activeFilter))
+            {
+                // Try to find filter with the same display name (after refresh it's a new instance)
+                var match = freshFilters.FirstOrDefault(f => f.DisplayName == _activeFilter.DisplayName);
+                _activeFilter = match ?? (freshFilters.Count > 0 ? freshFilters[0] : null);
+            }
+
             var filtered = new List<string>();
             IReadOnlyDictionary<string, LocalizationAssetTable> tablesRo = _tables;
 
@@ -283,6 +298,28 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
 
             _statusLabel.text = $"{visibleKeyCount} keys  |  {filledCells}/{totalCells} assigned  |  filter: {_activeFilter?.DisplayName ?? "None"}";
+        }
+
+        private void RefreshFilterPopup(IReadOnlyList<IAssetTypeFilter> filters)
+        {
+            if (_filterPopup == null) return;
+
+            var newNames = filters.Select(f => f.DisplayName).ToList();
+            var currentNames = _filterPopup.choices;
+
+            // Only update if choices actually changed
+            if (currentNames != null && currentNames.Count == newNames.Count
+                && currentNames.SequenceEqual(newNames))
+                return;
+
+            string currentValue = _filterPopup.value;
+            _filterPopup.choices = newNames;
+
+            // Restore selection if possible
+            if (newNames.Contains(currentValue))
+                _filterPopup.SetValueWithoutNotify(currentValue);
+            else if (newNames.Count > 0)
+                _filterPopup.SetValueWithoutNotify(newNames[0]);
         }
 
         // ──────────────────────────────────────────────
