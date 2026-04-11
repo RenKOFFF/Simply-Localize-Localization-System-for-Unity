@@ -1,9 +1,8 @@
 {
     "name": "SimplyLocalize.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "SimplyLocalize",
     "references": [
         "SimplyLocalize",
-        "Unity.EditorCoroutines.Editor",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [

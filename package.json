@@ -1,14 +1,20 @@
 {
   "name": "com.renkoff.simply-localize",
-  "version": "1.6.5",
+  "version": "2.0.0-alpha.1",
   "displayName": "Simply Localize",
-  "description": "A simple localization system for Unity",
+  "description": "A powerful localization system for Unity with pluralization, language profiles, and modular asset loading.",
+  "unity": "2021.3",
   "license": "MIT",
   "dependencies": {
     "com.unity.textmeshpro": "3.0.9",
-    "com.unity.editorcoroutines": "1.0.0",
     "com.unity.nuget.newtonsoft-json": "3.2.1"
   },
+  "keywords": [
+    "localization",
+    "i18n",
+    "translation",
+    "pluralization"
+  ],
   "author": {
     "name": "Lex Renkoff",
     "email": "lex.renkoff@gmail.com",

@@ -1,5 +1,58 @@
 # Журнал изменений
 
+## [2.0.0-alpha.1] — 2026
+
+Полная переработка пакета. Несовместима с веткой 1.x — путь обновления см. в [Миграция](README_RU.md#миграция-с-v1).
+
+### Что нового
+
+- **Структура папок на язык** — заменяет единый `localization.json`. У каждого языка своя папка с несколькими JSON-файлами, которые объединяются в runtime.
+- **`LanguageProfile` ScriptableObject** — единый источник правды для языка: identity, шрифт (TMP + legacy), font fallback, типографика, spacing, layout/направление, per-language fallback chain.
+- **Generic API ассетов** — `Localization.GetAsset<T>(key)` работает для любого `UnityEngine.Object`. Больше нет отдельных `GetSprite`/`GetAudio`.
+- **`LocalizationAssetTable` ScriptableObject** — одна таблица ассетов на язык, drag-and-drop, поддерживает любой тип ассета per-entry.
+- **Per-language fallback chains** — `uk → ru → en (global)` с защитой от циклов.
+- **Плюрализация** — встроенные правила для германских, славянских, романских, восточноазиатских языков и арабского через синтаксис `{N|форма1|форма2|...}`.
+- **Индексированные и именованные параметры** — `{0}`, `{playerName}`, смешанные.
+- **DI-friendly** — `LocalizationManager` полностью публичный, его можно создавать и инжектить через VContainer / Zenject без статического фасада `Localization`.
+- **Полностью переписанное окно редактора** с 8 табами:
+  - **Translations** — виртуализированное дерево, поиск, multi-select, inline-редактирование, undo/redo, переименование ключей с автоматическим обновлением ссылок в сценах/префабах.
+  - **Assets** — виртуализированное дерево, динамические фильтры по типам, inline-превью на каждый язык, поиск, undo/redo, переименование.
+  - **Languages** — список языков с badge'ами типов контента и отображением fallback chain, создание / добавление существующего / удаление.
+  - **Profiles** — встроенный inspector для редактирования профилей языков на месте.
+  - **Coverage** — прогресс-бары покрытия по языкам и предупреждения (отсутствующие переводы, несоответствие параметров).
+  - **Auto Localize** — массовое добавление `LocalizedText` ко всем text-компонентам в сцене.
+  - **Tools** — экспорт/импорт CSV, сортировка, поиск неиспользуемых ключей.
+  - **Settings** — режим конвертации ключей, логирование.
+- **Расширяемость через интерфейсы и TypeCache-обнаружение:**
+  - `IAssetPreviewRenderer` — кастомные превью для любых типов ассетов
+  - `IAssetTypeFilter` — кастомные фильтры в табе Assets
+  - `ILocalizationDataProvider` — кастомные источники данных (Addressables, удалённые серверы и т.д.)
+  - Атрибут `[LocalizationEditorTab]` — добавление кастомных табов в окно редактора
+
+### Компоненты
+
+- `LocalizedText` — TextMeshPro и legacy `Text`
+- `FormattableLocalizedText` — runtime-параметры через `SetArgs` / `SetArg` / `SetParam` / `SetParams`
+- `LocalizedSprite` — `Image` и `SpriteRenderer`
+- `LocalizedAudioClip` — `AudioSource`
+- `LocalizedEvent` — вызов language-specific `UnityEvent`'ов
+- `LocalizedProfileOverride` — per-component override секций профиля
+- `LocalizedAsset<T>` — generic-база для своих локализованных ассет-компонентов
+
+### Удалено
+
+- Старые компоненты `LocalizationText`, `FormattableLocalizationText`, `LocalizationImage` (переименованы в `Localized*`)
+- `Localization.SetLocalization()` (переименован в `SetLanguage`)
+- `Localization.GetSprite()` / `GetAudio()` (заменены на generic `GetAsset<T>()`)
+- Runtime-методы `text.TranslateByKey()` / `text.SetValue()` (заменены на ключ в Inspector + property `Key` + методы параметров)
+- Per-language флаги `hasText` / `hasSprites` / `hasAudio` (теперь сканируются автоматически из реальных таблиц)
+
+---
+
+## История версий 1.x
+
+Серия 1.x была другой архитектурой (один JSON-файл, enum-ключи, отдельные API для спрайтов и аудио). История сохранена для пользователей которые мигрируют со старых версий.
+
 ## [1.6.5] - 04.10.2025
 - Оптимизирован метод `SetLanguage(string)`
 - Исправлена ошибка с `FormattalbeLocalizationText`
@@ -112,8 +165,6 @@
 ## [1.3.3] - 09.10.2024
 ### Добавлено
 - Настройка значений по умолчанию для Formattable компонентов
-
-[... сокращено для краткости ...]
 
 ## [1.2.0] - 23.07.2024
 ### Архитектурные изменения

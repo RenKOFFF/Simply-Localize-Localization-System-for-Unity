@@ -1,6 +1,6 @@
 {
     "name": "SimplyLocalize",
-    "rootNamespace": "",
+    "rootNamespace": "SimplyLocalize",
     "references": [
         "Unity.TextMeshPro"
     ],

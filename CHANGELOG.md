@@ -1,5 +1,58 @@
 # Changelog
 
+## [2.0.0-alpha.1] — 2026
+
+A complete rewrite of the package. Not backward compatible with the 1.x line — see [Migration](README.md#migration-from-v1) for the upgrade path.
+
+### What's new
+
+- **Per-language folder structure** — replaces the single `localization.json`. Each language has its own folder with multiple JSON files that get merged at runtime.
+- **`LanguageProfile` ScriptableObject** — single source of truth for a language: identity, font (TMP + legacy), font fallback, typography, spacing, layout/direction, per-language fallback chain.
+- **Generic asset API** — `Localization.GetAsset<T>(key)` works for any `UnityEngine.Object` type. No more separate `GetSprite`/`GetAudio` methods.
+- **`LocalizationAssetTable` ScriptableObject** — one asset table per language, drag-and-drop, supports any asset type per entry.
+- **Per-language fallback chains** — `uk → ru → en (global)`, with cycle protection.
+- **Pluralization** — built-in rules for Germanic, Slavic, Romance, East Asian and Arabic plural forms via `{N|form1|form2|...}` syntax.
+- **Indexed and named parameters** — `{0}`, `{playerName}`, mixed.
+- **DI-friendly** — `LocalizationManager` is fully public; can be instantiated and injected via VContainer / Zenject without using the static `Localization` facade.
+- **Rewritten editor window** with 8 tabs:
+  - **Translations** — virtualized tree, search, multi-select, inline editing, undo/redo, key rename with reference updates in scenes/prefabs.
+  - **Assets** — virtualized tree, dynamic type filters, inline previews per language, search, undo/redo, rename.
+  - **Languages** — language list with content type badges and fallback chain display, create / add existing / remove.
+  - **Profiles** — embedded inspector for editing language profiles in place.
+  - **Coverage** — per-language coverage bars and warnings (missing translations, parameter mismatches).
+  - **Auto Localize** — bulk-add `LocalizedText` to all text components in a scene.
+  - **Tools** — CSV import/export, sort, find unused keys.
+  - **Settings** — key conversion mode, logging.
+- **Extensibility via interfaces and TypeCache discovery:**
+  - `IAssetPreviewRenderer` — custom previews for any asset type
+  - `IAssetTypeFilter` — custom filters in the Assets tab
+  - `ILocalizationDataProvider` — custom data sources (Addressables, remote, etc.)
+  - `[LocalizationEditorTab]` attribute — add custom tabs to the editor window
+
+### Components
+
+- `LocalizedText` — TextMeshPro and legacy `Text`
+- `FormattableLocalizedText` — runtime parameters via `SetArgs` / `SetArg` / `SetParam` / `SetParams`
+- `LocalizedSprite` — `Image` and `SpriteRenderer`
+- `LocalizedAudioClip` — `AudioSource`
+- `LocalizedEvent` — invoke language-specific `UnityEvent`s
+- `LocalizedProfileOverride` — per-component override of profile sections
+- `LocalizedAsset<T>` — generic base for custom localized asset components
+
+### Removed
+
+- Old `LocalizationText`, `FormattableLocalizationText`, `LocalizationImage` components (renamed to `Localized*`)
+- `Localization.SetLocalization()` (renamed to `SetLanguage`)
+- `Localization.GetSprite()` / `GetAudio()` (replaced by generic `GetAsset<T>()`)
+- `text.TranslateByKey()` / `text.SetValue()` runtime methods (replaced by Inspector key + `Key` property + parameter methods)
+- Per-language `hasText` / `hasSprites` / `hasAudio` flags (now scanned automatically from real table contents)
+
+---
+
+## Legacy 1.x history
+
+The 1.x series of Simply Localize was a different architecture (single JSON file, enum-based keys, separate sprite/audio APIs). The history is kept here for users migrating from older versions.
+
 ## [1.6.5] - 04.10.2025
 - Optimized the `SetLanguage(string)` method
 - Fixed a bug with `FormattalbeLocalizationText`
