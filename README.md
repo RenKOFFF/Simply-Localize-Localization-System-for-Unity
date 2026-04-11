@@ -318,26 +318,37 @@ Localizes a TextMeshPro or legacy `Text` component.
 3. Done — the text updates automatically when the language changes
 
 ```csharp
-// Optional: change the key from code
-GetComponent<LocalizedText>().SetKey("UI/NewKey");
+// Optional: change the key from code at runtime
+GetComponent<LocalizedText>().Key = "UI/NewKey";
 ```
 
 ### FormattableLocalizedText
 
-Same as `LocalizedText`, but supports runtime parameters.
+Same as `LocalizedText`, but supports runtime parameters (indexed and/or named).
 
 ```csharp
-// "Score: {0}" in JSON
-GetComponent<FormattableLocalizedText>().SetValue(100);
+var text = GetComponent<FormattableLocalizedText>();
 
-// "{playerName} has {count} {count|coin|coins}" in JSON
-GetComponent<FormattableLocalizedText>().SetValues(
-    new Dictionary<string, object>
-    {
-        { "playerName", "Alex" },
-        { "count", 5 }
-    });
+// Indexed: "Score: {0}" in JSON
+text.SetArgs(100);
+// or set just one index
+text.SetArg(0, 100);
+
+// Named: "Hello, {playerName}!" in JSON
+text.SetParam("playerName", "Alex");
+
+// Multiple named at once
+text.SetParams(new Dictionary<string, object>
+{
+    { "playerName", "Alex" },
+    { "count", 5 }
+});
+
+// Clear all parameters
+text.ClearParams();
 ```
+
+Default parameter values can also be set in the Inspector via the **Parameters** list — handy for static text with placeholders that don't need code at all. Use a numeric name (`0`, `1`, ...) for indexed parameters, or any string for named ones.
 
 ### LocalizedSprite
 
@@ -725,8 +736,8 @@ If you're upgrading from an earlier version of Simply Localize, the following th
 | `FormattableLocalizationText` | `FormattableLocalizedText` |
 | `LocalizationImage` | `LocalizedSprite` |
 | `Localization.SetLocalization("ru")` | `Localization.SetLanguage("ru")` |
-| `text.TranslateByKey("key")` | Key set in Inspector or via `component.SetKey("key")` |
-| `text.SetValue(param)` | `component.SetValue(param)` on `FormattableLocalizedText` |
+| `text.TranslateByKey("key")` | Set in Inspector or via `component.Key = "key"` |
+| `text.SetValue(param)` | `component.SetArgs(param)` / `SetParam(name, value)` on `FormattableLocalizedText` |
 | `Localization.GetSprite(key)` | `Localization.GetAsset<Sprite>(key)` |
 | `Localization.GetAudio(key)` | `Localization.GetAsset<AudioClip>(key)` |
 | Per-language `hasText` / `hasSprites` flags | Automatic — scanned from actual tables |
