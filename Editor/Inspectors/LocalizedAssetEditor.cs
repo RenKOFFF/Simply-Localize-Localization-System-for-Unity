@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using SimplyLocalize.Components;
+using SimplyLocalize.Editor.AssetPreviews;
 using SimplyLocalize.Editor.Data;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
@@ -18,7 +19,7 @@ namespace SimplyLocalize.Editor.Inspectors
     {
         private SerializedProperty _keyProp;
         private string _newKeyInput = "";
-        private bool _showPreview = true;
+        private bool _showPreview;
 
         private void OnEnable()
         {
@@ -38,8 +39,8 @@ namespace SimplyLocalize.Editor.Inspectors
             // Key selector with search
             DrawAssetKeySelector(assetType, typeName);
 
-            // Preview of assigned assets
-            if (_showPreview && !string.IsNullOrEmpty(_keyProp.stringValue))
+            // Preview of assigned assets (collapsed by default)
+            if (!string.IsNullOrEmpty(_keyProp.stringValue))
             {
                 DrawAssetPreview(assetType);
             }
@@ -123,49 +124,64 @@ namespace SimplyLocalize.Editor.Inspectors
 
             if (!_showPreview) return;
 
+            DrawLargePreviewRow(config, basePath, key);
+        }
+
+        /// <summary>
+        /// Draws large per-language previews using the same registry-based rendering
+        /// as the Assets tab. Uses AssetPreviewRegistry so custom IAssetPreviewRenderer
+        /// implementations work here too.
+        /// </summary>
+        private void DrawLargePreviewRow(LocalizationConfig config, string basePath, string key)
+        {
+            const float cellWidth = 140f;
+            const float cellHeight = 96f;
+            const float labelHeight = 14f;
+            const float spacing = 6f;
+
             EditorGUI.indentLevel++;
+
+            // Compute how many cells fit on one row, then wrap
+            float available = EditorGUIUtility.currentViewWidth - 40f;
+            int perRow = Mathf.Max(1, Mathf.FloorToInt((available + spacing) / (cellWidth + spacing)));
+
+            int idx = 0;
+            EditorGUILayout.BeginHorizontal();
 
             foreach (var profile in config.languages)
             {
                 if (profile == null) continue;
 
-                // Load table for this language
+                if (idx > 0 && idx % perRow == 0)
+                {
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUILayout.BeginHorizontal();
+                }
+
+                EditorGUILayout.BeginVertical(GUILayout.Width(cellWidth));
+
+                // Language label above the preview
+                var langRect = GUILayoutUtility.GetRect(cellWidth, labelHeight);
+                EditorGUI.LabelField(langRect, $"{profile.Code} \u2014 {profile.displayName}",
+                    EditorStyles.miniLabel);
+
+                // Preview area dispatched through the registry
+                var previewRect = GUILayoutUtility.GetRect(cellWidth, cellHeight);
+
                 string langPath = System.IO.Path.Combine(basePath, profile.Code);
                 var table = FindTableAtPath(langPath);
-
                 Object asset = table?.Get(key);
 
-                EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"{profile.displayName} ({profile.Code})",
-                    GUILayout.Width(EditorGUIUtility.labelWidth));
+                var renderer = AssetPreviewRegistry.GetRendererFor(asset);
+                renderer.DrawPreview(previewRect, asset);
 
-                if (asset != null)
-                {
-                    // Show thumbnail + name
-                    var thumbnail = AssetPreview.GetMiniThumbnail(asset);
-                    var rect = EditorGUILayout.GetControlRect(GUILayout.Height(20));
+                EditorGUILayout.EndVertical();
 
-                    if (thumbnail != null)
-                    {
-                        var iconRect = new Rect(rect.x, rect.y, 20, 20);
-                        GUI.DrawTexture(iconRect, thumbnail, ScaleMode.ScaleToFit);
-                        rect.x += 24;
-                        rect.width -= 24;
-                    }
-
-                    EditorGUI.LabelField(rect, asset.name, EditorStyles.miniLabel);
-                }
-                else
-                {
-                    var prev = GUI.color;
-                    GUI.color = new Color(1f, 0.5f, 0.5f);
-                    EditorGUILayout.LabelField("(not assigned)", EditorStyles.miniLabel);
-                    GUI.color = prev;
-                }
-
-                EditorGUILayout.EndHorizontal();
+                GUILayout.Space(spacing);
+                idx++;
             }
 
+            EditorGUILayout.EndHorizontal();
             EditorGUI.indentLevel--;
         }
 

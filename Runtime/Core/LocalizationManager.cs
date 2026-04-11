@@ -11,9 +11,13 @@ namespace SimplyLocalize
     /// Manages loaded translation data, template caching, language switching,
     /// and asset loading through the configured data provider.
     ///
-    /// Not a MonoBehaviour — lifetime is managed by the static Localization class.
+    /// Not a MonoBehaviour — lifetime is managed by the static Localization class
+    /// or by your DI container of choice.
+    ///
+    /// For DI usage: register an instance bound to your LocalizationConfig and inject
+    /// LocalizationManager directly into consumers instead of using the static facade.
     /// </summary>
-    internal class LocalizationManager
+    public class LocalizationManager
     {
         private readonly LocalizationConfig _config;
         private ILocalizationDataProvider _dataProvider;
@@ -30,14 +34,14 @@ namespace SimplyLocalize
         // Asset tables: languageCode → list of loaded tables
         private readonly Dictionary<string, List<LocalizationAssetTable>> _assetTableCache = new();
 
-        internal event Action<string> OnLanguageChanged;
-        internal event Action<LanguageProfile> OnProfileChanged;
+        public event Action<string> OnLanguageChanged;
+        public event Action<LanguageProfile> OnProfileChanged;
 
-        internal string CurrentLanguage => _currentLanguage;
-        internal LanguageProfile CurrentProfile => _currentProfile;
-        internal LocalizationConfig Config => _config;
+        public string CurrentLanguage => _currentLanguage;
+        public LanguageProfile CurrentProfile => _currentProfile;
+        public LocalizationConfig Config => _config;
 
-        internal LocalizationManager(LocalizationConfig config)
+        public LocalizationManager(LocalizationConfig config)
         {
             _config = config != null
                 ? config
@@ -52,7 +56,7 @@ namespace SimplyLocalize
         /// Replaces the data provider (e.g. to switch from Resources to Addressables).
         /// Clears all cached data.
         /// </summary>
-        internal void SetDataProvider(ILocalizationDataProvider provider)
+        public void SetDataProvider(ILocalizationDataProvider provider)
         {
             _dataProvider = provider ?? throw new ArgumentNullException(nameof(provider));
             _textCache.Clear();
@@ -64,7 +68,7 @@ namespace SimplyLocalize
         /// Sets the active language by profile. Loads data if not already cached.
         /// Fires OnLanguageChanged and OnProfileChanged events.
         /// </summary>
-        internal void SetLanguage(LanguageProfile profile)
+        public void SetLanguage(LanguageProfile profile)
         {
             if (profile == null)
             {
@@ -79,7 +83,7 @@ namespace SimplyLocalize
         /// Sets the active language by code. Loads data if not already cached.
         /// Fires OnLanguageChanged and OnProfileChanged events.
         /// </summary>
-        internal void SetLanguage(string languageCode)
+        public void SetLanguage(string languageCode)
         {
             if (string.IsNullOrEmpty(languageCode))
             {
@@ -126,7 +130,7 @@ namespace SimplyLocalize
         /// Gets a translated string by key, with no parameter substitution.
         /// Falls back to fallback language, then to the raw key.
         /// </summary>
-        internal string Get(string key)
+        public string Get(string key)
         {
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
@@ -155,7 +159,7 @@ namespace SimplyLocalize
         /// <summary>
         /// Gets a translated string by key with indexed parameter substitution and pluralization.
         /// </summary>
-        internal string Get(string key, object[] args)
+        public string Get(string key, object[] args)
         {
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
@@ -172,7 +176,7 @@ namespace SimplyLocalize
         /// <summary>
         /// Gets a translated string with named parameter substitution and pluralization.
         /// </summary>
-        internal string Get(string key, Dictionary<string, object> namedArgs)
+        public string Get(string key, Dictionary<string, object> namedArgs)
         {
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
@@ -189,7 +193,7 @@ namespace SimplyLocalize
         /// <summary>
         /// Gets a translated string with both indexed and named parameters.
         /// </summary>
-        internal string Get(string key, object[] args, Dictionary<string, object> namedArgs)
+        public string Get(string key, object[] args, Dictionary<string, object> namedArgs)
         {
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
@@ -207,7 +211,7 @@ namespace SimplyLocalize
         /// Gets a localized asset of type T from asset tables.
         /// Follows the full fallback chain: current → per-language → global.
         /// </summary>
-        internal T GetAsset<T>(string key) where T : UnityEngine.Object
+        public T GetAsset<T>(string key) where T : UnityEngine.Object
         {
             if (string.IsNullOrEmpty(key)) return null;
 
@@ -259,7 +263,7 @@ namespace SimplyLocalize
         /// <summary>
         /// Checks whether a key exists in the current language or fallback.
         /// </summary>
-        internal bool HasKey(string key)
+        public bool HasKey(string key)
         {
             if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(_currentLanguage))
                 return false;
@@ -289,7 +293,7 @@ namespace SimplyLocalize
         /// <summary>
         /// Checks whether a specific language has a translation for the given key.
         /// </summary>
-        internal bool HasTranslation(string key, string languageCode)
+        public bool HasTranslation(string key, string languageCode)
         {
             if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(languageCode))
                 return false;
@@ -302,7 +306,7 @@ namespace SimplyLocalize
         /// <summary>
         /// Returns all keys loaded for the current language.
         /// </summary>
-        internal IEnumerable<string> GetAllKeys()
+        public IEnumerable<string> GetAllKeys()
         {
             if (!string.IsNullOrEmpty(_currentLanguage)
                 && _textCache.TryGetValue(_currentLanguage, out var data))
@@ -316,7 +320,7 @@ namespace SimplyLocalize
         /// <summary>
         /// Clears all caches. Call when reloading data at runtime.
         /// </summary>
-        internal void ClearCaches()
+        public void ClearCaches()
         {
             _textCache.Clear();
             _templateCache.Clear();

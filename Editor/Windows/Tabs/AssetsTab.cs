@@ -4,6 +4,7 @@ using System.Linq;
 using SimplyLocalize.Editor.AssetFilters;
 using SimplyLocalize.Editor.AssetPreviews;
 using SimplyLocalize.Editor.Data;
+using SimplyLocalize.Editor.Utilities;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -21,9 +22,15 @@ namespace SimplyLocalize.Editor.Windows.Tabs
     ///   type first, then by path. In type-specific filters, grouping is path-only.
     /// - Unassigned keys appear under every filter so newly-added keys stay visible
     ///   until the user fills them in.
+    /// - Search with debounce, Undo/Redo (Ctrl+Z/Y), header row with language names,
+    ///   rename with KeyReferenceUpdater — matching the TranslationsTab polish level.
     /// </summary>
     public class AssetsTab : IEditorTab
     {
+        private const int KeyColumnWidth = 200;
+        private const int FieldColumnWidth = 150;
+        private const int ExpandButtonWidth = 26; // 18 + 4 left + 4 right
+
         private readonly EditorLocalizationData _data;
         private readonly LocalizationConfig _config;
         private readonly LocalizationEditorWindow _window;
@@ -36,14 +43,24 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private IAssetTypeFilter _activeFilter;
         private readonly HashSet<string> _collapsedGroups = new();
         private readonly HashSet<string> _expandedRows = new();
+        private string _searchQuery = "";
 
         // UI elements
         private VisualElement _root;
+        private VisualElement _headerRow;
         private ListView _listView;
         private Label _statusLabel;
         private PopupField<string> _filterPopup;
         private List<KeyTreeBuilder.FlatRow> _flatRows = new();
         private List<LanguageProfile> _cachedLanguages = new();
+
+        // Search debounce
+        private IVisualElementScheduledItem _searchDebounce;
+
+        // Undo/Redo
+        private readonly Stack<AssetEditOp> _undoStack = new();
+        private readonly Stack<AssetEditOp> _redoStack = new();
+        private const int MaxUndoHistory = 100;
 
         public AssetsTab(EditorLocalizationData data, LocalizationConfig config,
             LocalizationEditorWindow window)
@@ -77,13 +94,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _root.style.flexDirection = FlexDirection.Column;
             _root.style.flexGrow = 1;
 
-            // Refresh dynamic filters from actual table contents
             var filters = AssetTypeFilterRegistry.RefreshFromTables(_tables);
             if (_activeFilter == null && filters.Count > 0)
                 _activeFilter = filters[0];
 
             _root.Add(BuildHeader());
             _root.Add(BuildToolbar());
+            _root.Add(BuildColumnHeaderRow());
             _root.Add(BuildListView());
             _root.Add(BuildStatusBar());
 
@@ -133,6 +150,23 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             toolbar.style.borderBottomWidth = 1;
             toolbar.style.borderBottomColor = new Color(0, 0, 0, 0.1f);
 
+            // Search field
+            var searchField = new ToolbarSearchField();
+            searchField.value = _searchQuery;
+            searchField.style.flexGrow = 1;
+            searchField.style.fontSize = 12;
+            searchField.style.marginRight = 8;
+            searchField.RegisterValueChangedCallback(evt =>
+            {
+                _searchQuery = evt.newValue ?? "";
+
+                // Debounce: wait 150ms after the last keystroke before rebuilding
+                _searchDebounce?.Pause();
+                _searchDebounce = _listView?.schedule.Execute(RebuildRows).StartingIn(150);
+            });
+            toolbar.Add(searchField);
+
+            // Filter dropdown
             var filterLabel = new Label("Show:");
             filterLabel.style.fontSize = 11;
             filterLabel.style.color = new Color(0.5f, 0.5f, 0.5f);
@@ -147,6 +181,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             _filterPopup = new PopupField<string>(filterNames, currentIdx);
             _filterPopup.style.minWidth = 140;
+            _filterPopup.style.marginRight = 8;
             _filterPopup.RegisterValueChangedCallback(evt =>
             {
                 var currentFilters = AssetTypeFilterRegistry.GetAllFilters();
@@ -157,10 +192,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 RebuildRows();
             });
             toolbar.Add(_filterPopup);
-
-            var spacer = new VisualElement();
-            spacer.style.flexGrow = 1;
-            toolbar.Add(spacer);
 
             var addBtn = new Button(ShowAddKeyPopup);
             addBtn.text = "+ Add asset key";
@@ -174,6 +205,51 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             toolbar.Add(createBtn);
 
             return toolbar;
+        }
+
+        /// <summary>
+        /// Builds a sticky column-header row with language names aligned above the
+        /// ObjectField columns in each data row.
+        /// </summary>
+        private VisualElement BuildColumnHeaderRow()
+        {
+            _headerRow = new VisualElement();
+            _headerRow.style.flexDirection = FlexDirection.Row;
+            _headerRow.style.alignItems = Align.Center;
+            _headerRow.style.paddingTop = 4;
+            _headerRow.style.paddingBottom = 4;
+            _headerRow.style.backgroundColor = new Color(0, 0, 0, 0.04f);
+            _headerRow.style.borderBottomWidth = 1;
+            _headerRow.style.borderBottomColor = new Color(0, 0, 0, 0.1f);
+            return _headerRow;
+        }
+
+        private void RefreshColumnHeader()
+        {
+            if (_headerRow == null) return;
+            _headerRow.Clear();
+
+            // Spacer matching expand button + key column
+            var keySpacer = new Label("Key");
+            keySpacer.style.width = ExpandButtonWidth + KeyColumnWidth;
+            keySpacer.style.fontSize = 11;
+            keySpacer.style.unityFontStyleAndWeight = FontStyle.Bold;
+            keySpacer.style.color = new Color(0.5f, 0.5f, 0.5f);
+            keySpacer.style.paddingLeft = ExpandButtonWidth;
+            _headerRow.Add(keySpacer);
+
+            foreach (var lang in _cachedLanguages)
+            {
+                var cell = new Label(lang.Code + " — " + lang.displayName);
+                cell.style.width = FieldColumnWidth;
+                cell.style.marginRight = 4;
+                cell.style.fontSize = 11;
+                cell.style.unityFontStyleAndWeight = FontStyle.Bold;
+                cell.style.color = new Color(0.5f, 0.5f, 0.5f);
+                cell.style.overflow = Overflow.Hidden;
+                cell.style.textOverflow = TextOverflow.Ellipsis;
+                _headerRow.Add(cell);
+            }
         }
 
         private VisualElement BuildListView()
@@ -192,6 +268,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 itemsSource = _flatRows
             };
             _listView.style.flexGrow = 1;
+
+            // Undo/Redo shortcuts
+            _listView.RegisterCallback<KeyDownEvent>(OnListKeyDown);
+
             return _listView;
         }
 
@@ -229,18 +309,18 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 ? _config.languages.Where(p => p != null).ToList()
                 : new List<LanguageProfile>();
 
-            // Refresh dynamic filters from current table contents
+            RefreshColumnHeader();
+
             var freshFilters = AssetTypeFilterRegistry.RefreshFromTables(_tables);
             RefreshFilterPopup(freshFilters);
 
-            // Ensure active filter is still valid
             if (_activeFilter != null && !freshFilters.Contains(_activeFilter))
             {
-                // Try to find filter with the same display name (after refresh it's a new instance)
                 var match = freshFilters.FirstOrDefault(f => f.DisplayName == _activeFilter.DisplayName);
                 _activeFilter = match ?? (freshFilters.Count > 0 ? freshFilters[0] : null);
             }
 
+            // Apply filter
             var filtered = new List<string>();
             IReadOnlyDictionary<string, LocalizationAssetTable> tablesRo = _tables;
 
@@ -248,6 +328,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 if (_activeFilter == null || _activeFilter.MatchesKey(key, tablesRo))
                     filtered.Add(key);
+            }
+
+            // Apply search
+            if (!string.IsNullOrEmpty(_searchQuery))
+            {
+                string q = _searchQuery.ToLowerInvariant();
+                filtered = filtered.Where(k => k.ToLowerInvariant().Contains(q)).ToList();
             }
 
             filtered.Sort(System.StringComparer.Ordinal);
@@ -275,7 +362,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 if (table == null) continue;
                 var asset = table.Get(key);
                 if (asset == null) continue;
-                return asset.GetType().Name;
+                return ObjectNames.NicifyVariableName(asset.GetType().Name);
             }
             return "Unassigned";
         }
@@ -297,7 +384,11 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 }
             }
 
-            _statusLabel.text = $"{visibleKeyCount} keys  |  {filledCells}/{totalCells} assigned  |  filter: {_activeFilter?.DisplayName ?? "None"}";
+            string searchText = !string.IsNullOrEmpty(_searchQuery)
+                ? $"  |  search: \"{_searchQuery}\""
+                : "";
+
+            _statusLabel.text = $"{visibleKeyCount} keys  |  {filledCells}/{totalCells} assigned  |  filter: {_activeFilter?.DisplayName ?? "None"}{searchText}";
         }
 
         private void RefreshFilterPopup(IReadOnlyList<IAssetTypeFilter> filters)
@@ -307,7 +398,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var newNames = filters.Select(f => f.DisplayName).ToList();
             var currentNames = _filterPopup.choices;
 
-            // Only update if choices actually changed
             if (currentNames != null && currentNames.Count == newNames.Count
                 && currentNames.SequenceEqual(newNames))
                 return;
@@ -315,7 +405,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             string currentValue = _filterPopup.value;
             _filterPopup.choices = newNames;
 
-            // Restore selection if possible
             if (newNames.Contains(currentValue))
                 _filterPopup.SetValueWithoutNotify(currentValue);
             else if (newNames.Count > 0)
@@ -382,7 +471,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             var keyLabel = new Label();
             keyLabel.name = "key-label";
-            keyLabel.style.width = 200;
+            keyLabel.style.width = KeyColumnWidth;
             keyLabel.style.fontSize = 11;
             keyLabel.style.paddingTop = 2;
             mainRow.Add(keyLabel);
@@ -396,7 +485,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 var field = new ObjectField();
                 field.name = $"asset-field-{i}";
-                field.style.width = 150;
+                field.style.width = FieldColumnWidth;
                 field.style.marginRight = 4;
                 field.style.display = DisplayStyle.None;
                 field.allowSceneObjects = false;
@@ -404,7 +493,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 int capturedIdx = i;
                 field.RegisterValueChangedCallback(evt =>
                 {
-                    OnAssetFieldChanged(keyContainer, capturedIdx, evt.newValue);
+                    OnAssetFieldChanged(keyContainer, capturedIdx, evt.previousValue, evt.newValue);
                 });
 
                 fieldsContainer.Add(field);
@@ -416,14 +505,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             previewRow.name = "preview-row";
             previewRow.style.flexDirection = FlexDirection.Row;
             previewRow.style.display = DisplayStyle.None;
-            previewRow.style.paddingLeft = 22 + 200 + 4;
+            previewRow.style.paddingLeft = ExpandButtonWidth + KeyColumnWidth;
             previewRow.style.paddingBottom = 4;
 
             for (int i = 0; i < 8; i++)
             {
                 var previewSlot = new IMGUIContainer();
                 previewSlot.name = $"preview-slot-{i}";
-                previewSlot.style.width = 150;
+                previewSlot.style.width = FieldColumnWidth;
                 previewSlot.style.height = 96;
                 previewSlot.style.marginRight = 4;
                 previewSlot.style.display = DisplayStyle.None;
@@ -562,7 +651,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     slot.onGUIHandler = () =>
                     {
                         var asset = GetTable(capturedLang)?.Get(capturedKey);
-                        var rect = new Rect(0, 0, 150, 96);
+                        var rect = new Rect(0, 0, FieldColumnWidth, 96);
                         var renderer = AssetPreviewRegistry.GetRendererFor(asset);
                         renderer.DrawPreview(rect, asset);
                     };
@@ -591,33 +680,104 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         }
 
         // ──────────────────────────────────────────────
-        //  Edit handlers
+        //  Edit handlers + Undo/Redo
         // ──────────────────────────────────────────────
 
-        private void OnAssetFieldChanged(VisualElement keyContainer, int fieldIdx, Object newAsset)
+        private class AssetEditOp
+        {
+            public string Key;
+            public string LanguageCode;
+            public Object OldAsset;
+            public Object NewAsset;
+        }
+
+        private void OnAssetFieldChanged(VisualElement keyContainer, int fieldIdx,
+            Object oldAsset, Object newAsset)
         {
             var field = keyContainer.Q<ObjectField>($"asset-field-{fieldIdx}");
             var binding = field?.userData as FieldBinding;
             if (binding == null) return;
 
-            EnsureTable(binding.LanguageCode);
-            var table = GetTable(binding.LanguageCode);
+            if (oldAsset == newAsset) return;
+
+            PushUndo(new AssetEditOp
+            {
+                Key = binding.Key,
+                LanguageCode = binding.LanguageCode,
+                OldAsset = oldAsset,
+                NewAsset = newAsset
+            });
+
+            ApplyAssetEdit(binding.Key, binding.LanguageCode, newAsset);
+        }
+
+        private void ApplyAssetEdit(string key, string languageCode, Object newAsset)
+        {
+            EnsureTable(languageCode);
+            var table = GetTable(languageCode);
             if (table == null) return;
 
-            var currentAsset = table.Get(binding.Key);
-            if (currentAsset == newAsset) return;
-
             if (newAsset != null)
-                table.Set(binding.Key, newAsset);
+                table.Set(key, newAsset);
             else
-                table.Remove(binding.Key);
+                table.Remove(key);
 
             EditorUtility.SetDirty(table);
+            AssetDatabase.SaveAssets();
+
+            // Defer AssetDatabase.Refresh via the shared flag
+            _data?.MarkPendingAssetRefresh();
 
             if (_activeFilter is AllAssetFilter)
                 RebuildRows();
             else
                 _listView.RefreshItems();
+        }
+
+        private void PushUndo(AssetEditOp op)
+        {
+            _undoStack.Push(op);
+            _redoStack.Clear();
+
+            while (_undoStack.Count > MaxUndoHistory)
+            {
+                var arr = _undoStack.ToArray();
+                _undoStack.Clear();
+                for (int i = arr.Length - 2; i >= 0; i--) _undoStack.Push(arr[i]);
+            }
+        }
+
+        private void OnListKeyDown(KeyDownEvent evt)
+        {
+            bool ctrl = evt.ctrlKey || evt.commandKey;
+            if (!ctrl) return;
+
+            if (evt.keyCode == KeyCode.Z && !evt.shiftKey)
+            {
+                PerformUndo();
+                evt.StopPropagation();
+            }
+            else if (evt.keyCode == KeyCode.Y || (evt.keyCode == KeyCode.Z && evt.shiftKey))
+            {
+                PerformRedo();
+                evt.StopPropagation();
+            }
+        }
+
+        private void PerformUndo()
+        {
+            if (_undoStack.Count == 0) return;
+            var op = _undoStack.Pop();
+            _redoStack.Push(op);
+            ApplyAssetEdit(op.Key, op.LanguageCode, op.OldAsset);
+        }
+
+        private void PerformRedo()
+        {
+            if (_redoStack.Count == 0) return;
+            var op = _redoStack.Pop();
+            _undoStack.Push(op);
+            ApplyAssetEdit(op.Key, op.LanguageCode, op.NewAsset);
         }
 
         private System.Type GetAutoDetectedType(string key)
@@ -781,6 +941,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             menu.AddSeparator("");
 
+            menu.AddItem(new GUIContent("Rename key"), false, () => ShowRenameKeyPopup(key));
+
+            menu.AddSeparator("");
+
             menu.AddItem(new GUIContent("Delete key from all tables"), false, () =>
             {
                 if (!EditorUtility.DisplayDialog("Delete asset key",
@@ -800,6 +964,55 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             });
 
             menu.ShowAsContext();
+        }
+
+        private void ShowRenameKeyPopup(string oldKey)
+        {
+            var popup = ScriptableObject.CreateInstance<RenameAssetKeyPopup>();
+            popup.Init(oldKey, _allAssetKeys, (newKey, updateRefs) =>
+            {
+                foreach (var table in _tables.Values)
+                {
+                    if (table == null) continue;
+                    if (table.HasKey(oldKey))
+                    {
+                        table.RenameKey(oldKey, newKey);
+                        EditorUtility.SetDirty(table);
+                    }
+                }
+
+                _allAssetKeys.Remove(oldKey);
+                if (!_allAssetKeys.Contains(newKey))
+                {
+                    _allAssetKeys.Add(newKey);
+                    _allAssetKeys.Sort();
+                }
+
+                // Preserve expanded-row state across rename
+                if (_expandedRows.Remove(oldKey))
+                    _expandedRows.Add(newKey);
+
+                int updatedRefs = 0;
+                if (updateRefs)
+                    updatedRefs = KeyReferenceUpdater.UpdateReferences(oldKey, newKey);
+
+                AssetDatabase.SaveAssets();
+
+                if (updateRefs && updatedRefs > 0)
+                {
+                    EditorUtility.DisplayDialog("Key renamed",
+                        $"Renamed '{oldKey}' → '{newKey}'\n" +
+                        $"Updated {updatedRefs} component reference(s) in scenes/prefabs.",
+                        "OK");
+                }
+
+                RebuildRows();
+            });
+
+            popup.titleContent = new GUIContent("Rename asset key");
+            popup.ShowUtility();
+            popup.position = new Rect(
+                Screen.width / 2f - 175, Screen.height / 2f - 75, 350, 150);
         }
     }
 
@@ -834,6 +1047,65 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             if (GUILayout.Button("Add"))
             {
                 _onAdd?.Invoke(_key);
+                Close();
+            }
+
+            GUI.enabled = true;
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    //  Popup for renaming asset keys
+    // ──────────────────────────────────────────────
+
+    public class RenameAssetKeyPopup : EditorWindow
+    {
+        private string _oldKey;
+        private string _newKey;
+        private List<string> _existing;
+        private System.Action<string, bool> _onRenamed;
+        private bool _updateReferences = true;
+
+        public void Init(string oldKey, List<string> existing, System.Action<string, bool> onRenamed)
+        {
+            _oldKey = oldKey;
+            _newKey = oldKey;
+            _existing = existing;
+            _onRenamed = onRenamed;
+        }
+
+        private void OnGUI()
+        {
+            EditorGUILayout.Space(4);
+
+            using (new EditorGUI.DisabledScope(true))
+                EditorGUILayout.TextField("Current key", _oldKey);
+
+            _newKey = EditorGUILayout.TextField("New key", _newKey);
+
+            bool isDuplicate = _newKey != _oldKey
+                && _existing != null
+                && _existing.Contains(_newKey);
+            bool unchanged = _newKey == _oldKey;
+            bool empty = string.IsNullOrEmpty(_newKey);
+
+            if (isDuplicate)
+                EditorGUILayout.HelpBox("A key with this name already exists.", MessageType.Error);
+
+            EditorGUILayout.Space(4);
+
+            _updateReferences = EditorGUILayout.Toggle(
+                new GUIContent("Update references in project",
+                    "Scan all scenes and prefabs and replace the old key with the new one"),
+                _updateReferences);
+
+            EditorGUILayout.Space(4);
+
+            GUI.enabled = !isDuplicate && !unchanged && !empty;
+
+            if (GUILayout.Button("Rename"))
+            {
+                _onRenamed?.Invoke(_newKey, _updateReferences);
                 Close();
             }
 

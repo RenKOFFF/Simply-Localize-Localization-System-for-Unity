@@ -136,6 +136,15 @@ namespace SimplyLocalize
         /// </summary>
         public static bool IsInitialized => _manager != null;
 
+        /// <summary>
+        /// The underlying LocalizationManager instance, or null if not initialized.
+        /// Exposed for advanced scenarios; most code should use the static methods on this class.
+        ///
+        /// If you use a DI container, prefer registering and injecting LocalizationManager directly
+        /// instead of relying on this static facade.
+        /// </summary>
+        public static LocalizationManager Manager => _manager;
+
         // ──────────────────────────────────────────────
         //  Language
         // ──────────────────────────────────────────────
