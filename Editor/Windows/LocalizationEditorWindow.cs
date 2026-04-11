@@ -18,11 +18,11 @@ namespace SimplyLocalize.Editor.Windows
         private IEditorTab[] _tabs;
         private string[] _tabNames;
 
-        [MenuItem("Window/SimplyLocalize/Localization Editor")]
+        [MenuItem("Window/Simply Localize/Localization Editor", priority = 100)]
         public static void Open()
         {
             var window = GetWindow<LocalizationEditorWindow>();
-            window.titleContent = new GUIContent("SimplyLocalize");
+            window.titleContent = new GUIContent("Simply Localize");
             window.minSize = new Vector2(700, 400);
         }
 
@@ -94,7 +94,7 @@ namespace SimplyLocalize.Editor.Windows
             header.style.borderBottomWidth = 1;
             header.style.borderBottomColor = new Color(0, 0, 0, 0.15f);
 
-            var title = new Label("SimplyLocalize");
+            var title = new Label("Simply Localize");
             title.style.fontSize = 14;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             header.Add(title);
@@ -102,7 +102,7 @@ namespace SimplyLocalize.Editor.Windows
             var configField = new UnityEditor.UIElements.ObjectField("Config");
             configField.objectType = typeof(LocalizationConfig);
             configField.value = _config;
-            configField.style.width = 250;
+            configField.style.width = 300;
             configField.RegisterValueChangedCallback(evt =>
             {
                 _config = evt.newValue as LocalizationConfig;
