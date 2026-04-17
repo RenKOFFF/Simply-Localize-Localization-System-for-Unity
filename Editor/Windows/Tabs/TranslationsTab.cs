@@ -283,8 +283,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             modeBtn.name = "mode-toggle-btn";
             modeBtn.style.fontSize = 11;
             modeBtn.style.marginLeft = 6;
-            modeBtn.style.width = _readOnlyMode ? 24 : 90;
-            modeBtn.text = _readOnlyMode ? "\u270e" : "\u270e editing";
+            modeBtn.style.width = 90;
+            modeBtn.text = _readOnlyMode ? "\u270e edit" : "\u270e editing";
             modeBtn.tooltip = _readOnlyMode
                 ? "Currently read-only. Click to enable editing."
                 : "Currently editable. Click to switch to read-only preview.";
@@ -292,8 +292,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             modeBtn.clicked += () =>
             {
                 _readOnlyMode = !_readOnlyMode;
-                modeBtn.text = _readOnlyMode ? "\u270e" : "\u270e editing";
-                modeBtn.style.width = _readOnlyMode ? 24 : 90;
+                modeBtn.text = _readOnlyMode ? "\u270e edit" : "\u270e editing";
+                modeBtn.style.width = 90;
                 modeBtn.tooltip = _readOnlyMode
                     ? "Currently read-only. Click to enable editing."
                     : "Currently editable. Click to switch to read-only preview.";
@@ -380,7 +380,12 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 _headerRow.Add(MakeCell("File", 60, true));
 
                 foreach (var lang in _cachedLanguages)
-                    _headerRow.Add(MakeCell(lang.Code + " — " + lang.displayName, 180, true));
+                {
+                    var langCell = MakeCell(lang.Code + " — " + lang.displayName, 180, true);
+                    // Match the data-row slot's right margin so columns stay aligned
+                    langCell.style.marginRight = 4;
+                    _headerRow.Add(langCell);
+                }
 
                 // Header is the only thing in _tableBody. Clip overflow on the parent
                 // so that translating the header during scroll doesn't bleed past the edge.
@@ -563,6 +568,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var keyCell = new VisualElement();
             keyCell.name = "key-cell";
             keyCell.style.width = 200;
+            keyCell.style.flexShrink = 0;
 
             var keyLabel = new Label();
             keyLabel.name = "key-label";
@@ -587,6 +593,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var fileLabel = new Label();
             fileLabel.name = "file-label";
             fileLabel.style.width = 60;
+            fileLabel.style.flexShrink = 0;
             fileLabel.style.fontSize = 10;
             fileLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
             fileLabel.style.paddingTop = 2;
@@ -606,8 +613,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 var slot = new VisualElement();
                 slot.name = $"trans-slot-{i}";
                 slot.style.width = 180;
+                slot.style.flexShrink = 0;
                 slot.style.marginLeft = 0;
-                slot.style.marginRight = 0;
+                slot.style.marginRight = 4;
                 slot.style.marginTop = 0;
                 slot.style.marginBottom = 0;
                 slot.style.flexDirection = FlexDirection.Row;
@@ -1388,8 +1396,11 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         {
             // Wrapper — fixes column stride to exactly `width + margins` regardless of
             // inner Label's border/padding. The data-row TextFields use the same pattern.
+            // flexShrink=0 prevents the header from shrinking when the window is narrow,
+            // keeping it aligned with fixed-width data rows (which never shrink).
             var wrapper = new VisualElement();
             wrapper.style.width = width;
+            wrapper.style.flexShrink = 0;
             wrapper.style.marginLeft = 0;
             wrapper.style.marginRight = 0;
             wrapper.style.marginTop = 0;

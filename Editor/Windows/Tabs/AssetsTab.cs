@@ -239,6 +239,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             // Spacer matching expand button + key column
             var keySpacer = new Label("Key");
             keySpacer.style.width = ExpandButtonWidth + KeyColumnWidth;
+            keySpacer.style.flexShrink = 0;
             keySpacer.style.marginLeft = 0;
             keySpacer.style.marginRight = 0;
             keySpacer.style.marginTop = 0;
@@ -256,6 +257,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 var slot = new VisualElement();
                 slot.style.width = FieldColumnWidth;
+                slot.style.flexShrink = 0;
                 slot.style.marginLeft = 0;
                 slot.style.marginRight = 4;
                 slot.style.marginTop = 0;
@@ -533,6 +535,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             expandBtn.style.fontSize = 10;
             expandBtn.style.width = 18;
             expandBtn.style.height = 18;
+            expandBtn.style.flexShrink = 0;
             expandBtn.style.marginLeft = 4;
             expandBtn.style.marginRight = 4;
             expandBtn.style.paddingLeft = 0;
@@ -549,6 +552,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var keyLabel = new Label();
             keyLabel.name = "key-label";
             keyLabel.style.width = KeyColumnWidth;
+            keyLabel.style.flexShrink = 0;
             keyLabel.style.fontSize = 11;
             keyLabel.style.paddingTop = 2;
             mainRow.Add(keyLabel);
@@ -566,6 +570,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 var slot = new VisualElement();
                 slot.name = $"asset-slot-{i}";
                 slot.style.width = FieldColumnWidth;
+                slot.style.flexShrink = 0;
                 slot.style.marginLeft = 0;
                 slot.style.marginRight = 4;
                 slot.style.marginTop = 0;
@@ -607,6 +612,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 previewSlot.name = $"preview-slot-{i}";
                 previewSlot.style.width = FieldColumnWidth;
                 previewSlot.style.height = 96;
+                previewSlot.style.flexShrink = 0;
                 previewSlot.style.marginLeft = 0;
                 previewSlot.style.marginRight = 4;
                 previewSlot.style.marginTop = 0;

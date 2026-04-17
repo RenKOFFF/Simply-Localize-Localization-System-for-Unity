@@ -63,9 +63,9 @@ namespace SimplyLocalize.Editor.Inspectors
             EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
 
             if (editMode) GUI.color = new Color(0.4f, 0.7f, 1f);
-            if (GUILayout.Button(editMode ? "✎ editing" : "✎",
+            if (GUILayout.Button(editMode ? "✎ editing" : "✎ edit",
                 editMode ? EditorStyles.miniButtonMid : EditorStyles.miniButton,
-                GUILayout.Width(editMode ? 70 : 24)))
+                GUILayout.Width(70)))
                 editMode = !editMode;
             GUI.color = Color.white;
 
