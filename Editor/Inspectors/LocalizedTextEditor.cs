@@ -315,16 +315,48 @@ namespace SimplyLocalize.Editor.Inspectors
             foreach (var profile in config.languages)
             {
                 if (profile == null) continue;
+
                 string raw = data.GetTranslation(key, profile.Code);
-                if (string.IsNullOrEmpty(raw)) continue;
+                bool missing = string.IsNullOrEmpty(raw);
+                string sourceLang = profile.Code;
+                bool isFallback = false;
+
+                if (missing)
+                {
+                    var fb = Utilities.FallbackResolver.ResolveTranslation(
+                        data, config, key, profile.Code);
+
+                    if (!string.IsNullOrEmpty(fb.Value))
+                    {
+                        raw = fb.Value;
+                        sourceLang = fb.FromLanguage;
+                        isFallback = true;
+                    }
+                    else
+                    {
+                        // Nothing to format anywhere — skip this language
+                        continue;
+                    }
+                }
 
                 var template = TokenParser.Parse(raw);
                 string formatted = template != null
-                    ? TextFormatter.Format(template, profile.Code, idxArr,
+                    ? TextFormatter.Format(template, sourceLang, idxArr,
                         namedArgs.Count > 0 ? namedArgs : null)
                     : raw;
 
-                EditorGUILayout.LabelField(profile.displayName, formatted, EditorStyles.helpBox);
+                Color prev = GUI.color;
+                var style = new GUIStyle(EditorStyles.helpBox) { wordWrap = true };
+
+                if (isFallback)
+                {
+                    style.fontStyle = FontStyle.Italic;
+                    GUI.color = new Color(1f, 0.85f, 0.7f);
+                    formatted = $"{formatted}  \u2014 from {sourceLang}";
+                }
+
+                EditorGUILayout.LabelField(profile.displayName, formatted, style);
+                GUI.color = prev;
             }
         }
 

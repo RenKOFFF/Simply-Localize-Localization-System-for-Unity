@@ -3,6 +3,7 @@ using System.Linq;
 using SimplyLocalize.Components;
 using SimplyLocalize.Editor.AssetPreviews;
 using SimplyLocalize.Editor.Data;
+using SimplyLocalize.Editor.Utilities;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -157,7 +158,15 @@ namespace SimplyLocalize.Editor.Inspectors
                 // If missing, try to resolve through the asset fallback chain
                 string fallbackLang = null;
                 if (asset == null)
-                    asset = ResolveFallbackAsset(config, basePath, key, profile, out fallbackLang);
+                {
+                    var fb = FallbackResolver.ResolveAsset(config, key, profile.Code,
+                        code => FindTableAtPath(System.IO.Path.Combine(basePath, code)));
+                    if (fb.Asset != null)
+                    {
+                        asset = fb.Asset;
+                        fallbackLang = fb.FromLanguage;
+                    }
+                }
 
                 DrawLanguageRow(profile, asset, fallbackLang);
             }
