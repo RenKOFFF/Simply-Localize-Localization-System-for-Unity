@@ -39,6 +39,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private VisualElement _fileList;
         private VisualElement _sidebarContent;
         private VisualElement _tableBody;
+        private VisualElement _headerRow;
+        private ScrollView _listScrollView;
         private Label _statusLabel;
 
         public TranslationsTab(EditorLocalizationData data, LocalizationConfig config,
@@ -301,6 +303,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             content.Add(_listView);
 
+            // After the ListView is attached, hook into its internal ScrollView
+            // so the header row can mirror the horizontal scroll position.
+            _listView.schedule.Execute(AttachHeaderScrollSync).StartingIn(0);
+
             RebuildTable();
 
             // Status bar
@@ -344,14 +350,17 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             if (langCountChanged || _tableBody.childCount == 0)
             {
                 _tableBody.Clear();
-                var headerRow = MakeRow(true);
-                headerRow.Add(MakeCell("Key", 200, true));
-                headerRow.Add(MakeCell("File", 60, true));
+                _headerRow = MakeRow(true);
+                _headerRow.Add(MakeCell("Key", 200, true));
+                _headerRow.Add(MakeCell("File", 60, true));
 
                 foreach (var lang in _cachedLanguages)
-                    headerRow.Add(MakeCell(lang.Code + " — " + lang.displayName, 180, true));
+                    _headerRow.Add(MakeCell(lang.Code + " — " + lang.displayName, 180, true));
 
-                _tableBody.Add(headerRow);
+                // Header is the only thing in _tableBody. Clip overflow on the parent
+                // so that translating the header during scroll doesn't bleed past the edge.
+                _tableBody.style.overflow = Overflow.Hidden;
+                _tableBody.Add(_headerRow);
             }
 
             // Build the flat row model from the tree
@@ -363,6 +372,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 _listView.itemsSource = _flatItems;
                 _listView.Rebuild();
+
+                // Rebuild() may recreate the internal ScrollView — re-attach the scroll sync
+                _listView.schedule.Execute(AttachHeaderScrollSync).StartingIn(0);
             }
             else
             {
@@ -1008,6 +1020,48 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
 
             return null;
+        }
+
+        // ──────────────────────────────────────────────
+        //  Header / ListView horizontal scroll sync
+        // ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Hooks the header row to the ListView's internal horizontal scrollbar so the
+        /// header columns stay aligned with the data columns when scrolling sideways.
+        /// Called after the ListView is attached / rebuilt.
+        /// </summary>
+        private void AttachHeaderScrollSync()
+        {
+            if (_listView == null || _headerRow == null) return;
+
+            // The internal ScrollView holds the actual scroll state
+            var newScrollView = _listView.Q<ScrollView>();
+            if (newScrollView == null) return;
+
+            // If we already cached this exact ScrollView, no need to re-subscribe
+            if (newScrollView == _listScrollView) return;
+
+            // Detach old subscription if any
+            if (_listScrollView?.horizontalScroller != null)
+                _listScrollView.horizontalScroller.valueChanged -= OnHorizontalScrollChanged;
+
+            _listScrollView = newScrollView;
+            _listScrollView.horizontalScroller.valueChanged += OnHorizontalScrollChanged;
+
+            // Apply current value immediately so the header is in sync after rebuilds
+            OnHorizontalScrollChanged(_listScrollView.horizontalScroller.value);
+        }
+
+        private void OnHorizontalScrollChanged(float value)
+        {
+            if (_headerRow == null || _listScrollView == null) return;
+
+            // Use the actual content container transform instead of the raw scroll value.
+            // This automatically accounts for ScrollView's internal padding/margins so the
+            // header stays pixel-perfect aligned with data columns regardless of language count.
+            var contentX = _listScrollView.contentContainer.transform.position.x;
+            _headerRow.style.translate = new Translate(contentX, 0);
         }
 
         // ──────────────────────────────────────────────

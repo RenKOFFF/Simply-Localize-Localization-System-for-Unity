@@ -78,6 +78,11 @@ namespace SimplyLocalize.Editor.Inspectors
                 string value = data.GetTranslation(key, profile.Code) ?? "";
                 bool missing = string.IsNullOrEmpty(value);
 
+                // If missing, try to resolve through fallback chain for display
+                Utilities.FallbackResolver.FallbackResult fallback = default;
+                if (missing)
+                    fallback = Utilities.FallbackResolver.ResolveTranslation(data, config, key, profile.Code);
+
                 Color prev = GUI.color;
                 if (missing) GUI.color = new Color(1f, 0.7f, 0.7f);
 
@@ -114,20 +119,44 @@ namespace SimplyLocalize.Editor.Inspectors
                 else
                 {
                     // Read mode: compact with colored parameters
-                    string display = missing ? "(missing)" : value;
+                    string display;
+                    GUIStyle richStyle;
 
-                    var richStyle = new GUIStyle(EditorStyles.helpBox)
+                    if (missing && !string.IsNullOrEmpty(fallback.Value))
                     {
-                        richText = true,
-                        wordWrap = true
-                    };
-
-                    string highlighted = missing ? display
-                        : Utilities.ParameterHighlighter.Highlight(display);
+                        // Show fallback translation in grey italic with origin marker
+                        display = $"{fallback.Value}  \u2014 from {fallback.FromLanguage}";
+                        richStyle = new GUIStyle(EditorStyles.helpBox)
+                        {
+                            richText = true,
+                            wordWrap = true,
+                            fontStyle = FontStyle.Italic
+                        };
+                        // Override to a dimmer color; keep the warning background
+                        GUI.color = new Color(1f, 0.85f, 0.7f);
+                    }
+                    else if (missing)
+                    {
+                        display = "(missing)";
+                        richStyle = new GUIStyle(EditorStyles.helpBox)
+                        {
+                            richText = true,
+                            wordWrap = true
+                        };
+                    }
+                    else
+                    {
+                        display = Utilities.ParameterHighlighter.Highlight(value);
+                        richStyle = new GUIStyle(EditorStyles.helpBox)
+                        {
+                            richText = true,
+                            wordWrap = true
+                        };
+                    }
 
                     EditorGUILayout.LabelField(
                         $"{profile.displayName} ({profile.Code})",
-                        highlighted,
+                        display,
                         richStyle);
                 }
 
