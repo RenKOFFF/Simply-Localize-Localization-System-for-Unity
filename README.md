@@ -1,5 +1,7 @@
 # Simply Localize
 
+![Simply Localize Banner](docs/images/simply-localize-banner.png)
+
 A modern, flexible localization system for Unity. Manages translations, localized assets (sprites, audio, any `UnityEngine.Object`), fonts per language, pluralization across languages, runtime language switching, and a rich editor workflow — all without external dependencies.
 
 *Read in other languages: [Russian](README_RU.md).*
@@ -92,7 +94,7 @@ Fill in the `languageCode`, `displayName`, `systemLanguage` fields and add the p
 
 The window has 8 tabs: **Translations**, **Assets**, **Languages**, **Profiles**, **Coverage**, **Auto Localize**, **Tools**, **Settings**.
 
-![Editor window overview](docs/images/editor-overview.png)
+![Editor window overview](docs/images/editor-overview.gif)
 <!-- TODO: replace with actual screenshot -->
 
 ### 4. Add Your First Keys
@@ -186,7 +188,7 @@ Multiple JSON files per language are **merged** at runtime — split your keys b
 
 ### Translations Tab
 
-![Translations tab](docs/images/translations-tab.png)
+![Translations tab](docs/images/translations-tab.gif)
 <!-- TODO: screenshot of Translations tab -->
 
 - **Virtualized list** — handles thousands of keys without lag
@@ -202,7 +204,7 @@ Multiple JSON files per language are **merged** at runtime — split your keys b
 
 ### Assets Tab
 
-![Assets tab](docs/images/assets-tab.png)
+![Assets tab](docs/images/assets-tab.gif)
 <!-- TODO: screenshot of Assets tab -->
 
 - Manage localized assets (sprites, audio, materials, meshes, anything)
@@ -215,7 +217,7 @@ Multiple JSON files per language are **merged** at runtime — split your keys b
 
 ### Languages Tab
 
-![Languages tab](docs/images/languages-tab.png)
+![Languages tab](docs/images/languages-tab.gif)
 <!-- TODO: screenshot of Languages tab -->
 
 - List of all configured languages with content badges (shows which asset types each language has)
