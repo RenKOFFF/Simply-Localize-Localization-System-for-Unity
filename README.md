@@ -53,7 +53,7 @@ A modern, flexible localization system for Unity. Manages translations, localize
 3. Paste:
 
 ```
-https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git
+https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=src/SimplyLocalize
 ```
 
 ### Via manifest.json
@@ -63,7 +63,7 @@ Add to your `Packages/manifest.json`:
 ```json
 {
   "dependencies": {
-    "com.renkoff.simplylocalize": "https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git"
+    "com.renkoff.simplylocalize": "https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=src/SimplyLocalize"
   }
 }
 ```
