@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.0-alpha.2]
+
+### Изменения
+- Reworked editor and inspector of localization components.
+
 ## [2.0.0-alpha.1] — 2026
 
 A complete rewrite of the package. Not backward compatible with the 1.x line — see [Migration](README.md#migration-from-v1) for the upgrade path.
