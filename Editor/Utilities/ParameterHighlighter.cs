@@ -17,7 +17,7 @@ namespace SimplyLocalize.Editor.Utilities
         private const string SimpleColor = "#5BA4CF";
 
         // Plural/gender params: {0|coin|coins}, {gender|He|She}
-        private const string PluralColor = "#C78FD1";
+        private const string PluralColor = "#67c783";
 
         /// <summary>
         /// Returns the input string with all {param} tokens wrapped in rich text color tags.

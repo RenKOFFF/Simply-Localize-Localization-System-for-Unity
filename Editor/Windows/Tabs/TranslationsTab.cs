@@ -23,6 +23,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private bool _sidebarCollapsed = true;
         private string _lastClickedKey;
         private List<string> _flatVisibleKeys = new();
+        private bool _readOnlyMode;
 
         // ListView virtualization
         private ListView _listView;
@@ -39,6 +40,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private VisualElement _fileList;
         private VisualElement _sidebarContent;
         private VisualElement _tableBody;
+        private VisualElement _headerRow;
+        private ScrollView _listScrollView;
         private Label _statusLabel;
 
         public TranslationsTab(EditorLocalizationData data, LocalizationConfig config,
@@ -274,6 +277,30 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             addKeyBtn.style.marginLeft = 6;
             toolbar.Add(addKeyBtn);
 
+            // Read-only toggle — mirrors the ✎ button in the component inspector.
+            // In read-only mode, fields become rich-text Labels with fallback display.
+            var modeBtn = new Button();
+            modeBtn.name = "mode-toggle-btn";
+            modeBtn.style.fontSize = 11;
+            modeBtn.style.marginLeft = 6;
+            modeBtn.style.width = 90;
+            modeBtn.text = _readOnlyMode ? "\u270e edit" : "\u270e editing";
+            modeBtn.tooltip = _readOnlyMode
+                ? "Currently read-only. Click to enable editing."
+                : "Currently editable. Click to switch to read-only preview.";
+
+            modeBtn.clicked += () =>
+            {
+                _readOnlyMode = !_readOnlyMode;
+                modeBtn.text = _readOnlyMode ? "\u270e edit" : "\u270e editing";
+                modeBtn.style.width = 90;
+                modeBtn.tooltip = _readOnlyMode
+                    ? "Currently read-only. Click to enable editing."
+                    : "Currently editable. Click to switch to read-only preview.";
+                _listView?.RefreshItems();
+            };
+            toolbar.Add(modeBtn);
+
             content.Add(toolbar);
 
             // Header row (static, above the ListView)
@@ -300,6 +327,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _listView.RegisterCallback<KeyDownEvent>(OnListKeyDown);
 
             content.Add(_listView);
+
+            // After the ListView is attached, hook into its internal ScrollView
+            // so the header row can mirror the horizontal scroll position.
+            _listView.schedule.Execute(AttachHeaderScrollSync).StartingIn(0);
 
             RebuildTable();
 
@@ -344,14 +375,22 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             if (langCountChanged || _tableBody.childCount == 0)
             {
                 _tableBody.Clear();
-                var headerRow = MakeRow(true);
-                headerRow.Add(MakeCell("Key", 200, true));
-                headerRow.Add(MakeCell("File", 60, true));
+                _headerRow = MakeRow(true);
+                _headerRow.Add(MakeCell("Key", 200, true));
+                _headerRow.Add(MakeCell("File", 60, true));
 
                 foreach (var lang in _cachedLanguages)
-                    headerRow.Add(MakeCell(lang.Code + " — " + lang.displayName, 180, true));
+                {
+                    var langCell = MakeCell(lang.Code + " — " + lang.displayName, 180, true);
+                    // Match the data-row slot's right margin so columns stay aligned
+                    langCell.style.marginRight = 4;
+                    _headerRow.Add(langCell);
+                }
 
-                _tableBody.Add(headerRow);
+                // Header is the only thing in _tableBody. Clip overflow on the parent
+                // so that translating the header during scroll doesn't bleed past the edge.
+                _tableBody.style.overflow = Overflow.Hidden;
+                _tableBody.Add(_headerRow);
             }
 
             // Build the flat row model from the tree
@@ -363,6 +402,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 _listView.itemsSource = _flatItems;
                 _listView.Rebuild();
+
+                // Rebuild() may recreate the internal ScrollView — re-attach the scroll sync
+                _listView.schedule.Execute(AttachHeaderScrollSync).StartingIn(0);
             }
             else
             {
@@ -526,6 +568,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var keyCell = new VisualElement();
             keyCell.name = "key-cell";
             keyCell.style.width = 200;
+            keyCell.style.flexShrink = 0;
 
             var keyLabel = new Label();
             keyLabel.name = "key-label";
@@ -550,6 +593,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var fileLabel = new Label();
             fileLabel.name = "file-label";
             fileLabel.style.width = 60;
+            fileLabel.style.flexShrink = 0;
             fileLabel.style.fontSize = 10;
             fileLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
             fileLabel.style.paddingTop = 2;
@@ -560,16 +604,32 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             fieldsContainer.name = "fields-container";
             fieldsContainer.style.flexDirection = FlexDirection.Row;
 
-            // Pre-create translation fields for max possible languages (up to 8)
-            // bindItem will hide the unused ones based on _cachedLanguages.Count
+            // Pre-create translation slots for max possible languages (up to 8).
+            // Each slot is a wrapper of FIXED width — the TextField inside flexGrows
+            // to fill it, so its internal borders/paddings don't affect column stride.
+            // bindItem will hide the unused ones based on _cachedLanguages.Count.
             for (int i = 0; i < 8; i++)
             {
+                var slot = new VisualElement();
+                slot.name = $"trans-slot-{i}";
+                slot.style.width = 180;
+                slot.style.flexShrink = 0;
+                slot.style.marginLeft = 0;
+                slot.style.marginRight = 4;
+                slot.style.marginTop = 0;
+                slot.style.marginBottom = 0;
+                slot.style.flexDirection = FlexDirection.Row;
+                slot.style.display = DisplayStyle.None;
+
                 var field = new TextField();
                 field.name = $"trans-field-{i}";
-                field.style.width = 180;
+                field.style.flexGrow = 1;
+                field.style.marginLeft = 0;
+                field.style.marginRight = 0;
+                field.style.marginTop = 0;
+                field.style.marginBottom = 0;
                 field.style.fontSize = 11;
                 field.multiline = true;
-                field.style.display = DisplayStyle.None;
 
                 int capturedFieldIdx = i;
 
@@ -595,7 +655,27 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     HandleFieldKeyDown(evt, field, capturedFieldIdx);
                 });
 
-                fieldsContainer.Add(field);
+                // Read-only Label — mutually exclusive with the TextField.
+                // BindKeyRow flips display to match _readOnlyMode.
+                var readLabel = new Label();
+                readLabel.name = $"trans-read-{i}";
+                readLabel.style.flexGrow = 1;
+                readLabel.style.marginLeft = 0;
+                readLabel.style.marginRight = 0;
+                readLabel.style.marginTop = 0;
+                readLabel.style.marginBottom = 0;
+                readLabel.style.paddingLeft = 6;
+                readLabel.style.paddingRight = 4;
+                readLabel.style.paddingTop = 2;
+                readLabel.style.paddingBottom = 2;
+                readLabel.style.fontSize = 11;
+                readLabel.style.whiteSpace = WhiteSpace.Normal;
+                readLabel.enableRichText = true;
+                readLabel.style.display = DisplayStyle.None;
+
+                slot.Add(field);
+                slot.Add(readLabel);
+                fieldsContainer.Add(slot);
             }
 
             keyContainer.Add(fieldsContainer);
@@ -698,11 +778,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             // Translation fields
             for (int i = 0; i < 8; i++)
             {
+                var slot = element.Q($"trans-slot-{i}");
                 var field = element.Q<TextField>($"trans-field-{i}");
+                var readLabel = element.Q<Label>($"trans-read-{i}");
 
                 if (i >= _cachedLanguages.Count)
                 {
-                    field.style.display = DisplayStyle.None;
+                    slot.style.display = DisplayStyle.None;
                     field.userData = null;
                     continue;
                 }
@@ -719,26 +801,82 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     SourceFile = sourceFile
                 };
 
-                field.style.display = DisplayStyle.Flex;
-                field.SetValueWithoutNotify(value);
+                slot.style.display = DisplayStyle.Flex;
 
-                if (string.IsNullOrEmpty(value))
-                    field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
+                if (_readOnlyMode)
+                {
+                    // Read-only: show rich-text Label with parameter highlight + fallback display
+                    field.style.display = DisplayStyle.None;
+                    readLabel.style.display = DisplayStyle.Flex;
+
+                    bool missing = string.IsNullOrEmpty(value);
+
+                    if (!missing)
+                    {
+                        // Normal translation — highlight parameters, default color
+                        readLabel.text = Utilities.ParameterHighlighter.Highlight(value);
+                        readLabel.style.unityFontStyleAndWeight = FontStyle.Normal;
+                        readLabel.style.color = new StyleColor(StyleKeyword.Null);
+                        readLabel.style.backgroundColor = new StyleColor(StyleKeyword.Null);
+                    }
+                    else
+                    {
+                        // Try fallback chain
+                        var fb = Utilities.FallbackResolver.ResolveTranslation(
+                            _data, _config, key, langCode);
+
+                        if (!string.IsNullOrEmpty(fb.Value))
+                        {
+                            readLabel.text = $"<i><color=#A8A8A8>{EscapeRichText(fb.Value)}</color>  <color=#888888>\u2014 from {fb.FromLanguage}</color></i>";
+                            readLabel.style.unityFontStyleAndWeight = FontStyle.Italic;
+                            readLabel.style.color = new StyleColor(StyleKeyword.Null);
+                            readLabel.style.backgroundColor = new Color(1f, 0.85f, 0.7f, 0.08f);
+                        }
+                        else
+                        {
+                            readLabel.text = "<color=#CC5555>(missing)</color>";
+                            readLabel.style.unityFontStyleAndWeight = FontStyle.Normal;
+                            readLabel.style.color = new StyleColor(StyleKeyword.Null);
+                            readLabel.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.08f);
+                        }
+                    }
+                }
                 else
-                    field.style.backgroundColor = new StyleColor(StyleKeyword.Null);
+                {
+                    // Edit mode: TextField visible, Label hidden
+                    field.style.display = DisplayStyle.Flex;
+                    readLabel.style.display = DisplayStyle.None;
 
-                // Estimate height for word wrap
-                int charsPerLine = 22;
-                int explicitNewlines = 0;
-                for (int c = 0; c < value.Length; c++)
-                    if (value[c] == '\n') explicitNewlines++;
+                    field.SetValueWithoutNotify(value);
 
-                int wrappedLines = value.Length > 0
-                    ? Mathf.CeilToInt((float)value.Length / charsPerLine)
-                    : 1;
-                int totalLines = Mathf.Max(1, wrappedLines + explicitNewlines);
-                field.style.minHeight = Mathf.Max(20, totalLines * 15);
+                    if (string.IsNullOrEmpty(value))
+                        field.style.backgroundColor = new Color(0.9f, 0.3f, 0.3f, 0.1f);
+                    else
+                        field.style.backgroundColor = new StyleColor(StyleKeyword.Null);
+
+                    // Estimate height for word wrap
+                    int charsPerLine = 22;
+                    int explicitNewlines = 0;
+                    for (int c = 0; c < value.Length; c++)
+                        if (value[c] == '\n') explicitNewlines++;
+
+                    int wrappedLines = value.Length > 0
+                        ? Mathf.CeilToInt((float)value.Length / charsPerLine)
+                        : 1;
+                    int totalLines = Mathf.Max(1, wrappedLines + explicitNewlines);
+                    field.style.minHeight = Mathf.Max(20, totalLines * 15);
+                }
             }
+        }
+
+        /// <summary>
+        /// Escapes characters that would be interpreted as rich-text tags when
+        /// wrapping fallback values in &lt;i&gt;&lt;color&gt; for read-only display.
+        /// </summary>
+        private static string EscapeRichText(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return s;
+            return s.Replace("<", "&lt;").Replace(">", "&gt;");
         }
 
         /// <summary>
@@ -753,6 +891,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 var field = element.Q<TextField>($"trans-field-{i}");
                 if (field != null) field.userData = null;
+
+                // Also null out slot userData if someone used it
+                var slot = element.Q($"trans-slot-{i}");
+                if (slot != null) slot.userData = null;
             }
         }
 
@@ -1011,6 +1153,48 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         }
 
         // ──────────────────────────────────────────────
+        //  Header / ListView horizontal scroll sync
+        // ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Hooks the header row to the ListView's internal horizontal scrollbar so the
+        /// header columns stay aligned with the data columns when scrolling sideways.
+        /// Called after the ListView is attached / rebuilt.
+        /// </summary>
+        private void AttachHeaderScrollSync()
+        {
+            if (_listView == null || _headerRow == null) return;
+
+            // The internal ScrollView holds the actual scroll state
+            var newScrollView = _listView.Q<ScrollView>();
+            if (newScrollView == null) return;
+
+            // If we already cached this exact ScrollView, no need to re-subscribe
+            if (newScrollView == _listScrollView) return;
+
+            // Detach old subscription if any
+            if (_listScrollView?.horizontalScroller != null)
+                _listScrollView.horizontalScroller.valueChanged -= OnHorizontalScrollChanged;
+
+            _listScrollView = newScrollView;
+            _listScrollView.horizontalScroller.valueChanged += OnHorizontalScrollChanged;
+
+            // Apply current value immediately so the header is in sync after rebuilds
+            OnHorizontalScrollChanged(_listScrollView.horizontalScroller.value);
+        }
+
+        private void OnHorizontalScrollChanged(float value)
+        {
+            if (_headerRow == null || _listScrollView == null) return;
+
+            // Use the actual content container transform instead of the raw scroll value.
+            // This automatically accounts for ScrollView's internal padding/margins so the
+            // header stays pixel-perfect aligned with data columns regardless of language count.
+            var contentX = _listScrollView.contentContainer.transform.position.x;
+            _headerRow.style.translate = new Translate(contentX, 0);
+        }
+
+        // ──────────────────────────────────────────────
         //  Tree/row support types
         // ──────────────────────────────────────────────
 
@@ -1210,8 +1394,26 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         private VisualElement MakeCell(string text, int width, bool isHeader)
         {
+            // Wrapper — fixes column stride to exactly `width + margins` regardless of
+            // inner Label's border/padding. The data-row TextFields use the same pattern.
+            // flexShrink=0 prevents the header from shrinking when the window is narrow,
+            // keeping it aligned with fixed-width data rows (which never shrink).
+            var wrapper = new VisualElement();
+            wrapper.style.width = width;
+            wrapper.style.flexShrink = 0;
+            wrapper.style.marginLeft = 0;
+            wrapper.style.marginRight = 0;
+            wrapper.style.marginTop = 0;
+            wrapper.style.marginBottom = 0;
+            wrapper.style.flexDirection = FlexDirection.Row;
+            wrapper.style.overflow = Overflow.Hidden;
+
             var label = new Label(text);
-            label.style.width = width;
+            label.style.flexGrow = 1;
+            label.style.marginLeft = 0;
+            label.style.marginRight = 0;
+            label.style.marginTop = 0;
+            label.style.marginBottom = 0;
             label.style.fontSize = isHeader ? 11 : 12;
             label.style.paddingLeft = 8;
             label.style.paddingTop = 4;
@@ -1223,7 +1425,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 label.style.color = new Color(0.5f, 0.5f, 0.5f);
             }
 
-            return label;
+            wrapper.Add(label);
+            return wrapper;
         }
 
         // ──────────────────────────────────────────────

@@ -48,6 +48,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         // UI elements
         private VisualElement _root;
         private VisualElement _headerRow;
+        private ScrollView _listScrollView;
         private ListView _listView;
         private Label _statusLabel;
         private PopupField<string> _filterPopup;
@@ -213,15 +214,21 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         /// </summary>
         private VisualElement BuildColumnHeaderRow()
         {
+            // Outer wrapper clips overflow when the header is translated horizontally
+            var wrapper = new VisualElement();
+            wrapper.style.overflow = Overflow.Hidden;
+            wrapper.style.borderBottomWidth = 1;
+            wrapper.style.borderBottomColor = new Color(0, 0, 0, 0.1f);
+            wrapper.style.backgroundColor = new Color(0, 0, 0, 0.04f);
+
             _headerRow = new VisualElement();
             _headerRow.style.flexDirection = FlexDirection.Row;
             _headerRow.style.alignItems = Align.Center;
             _headerRow.style.paddingTop = 4;
             _headerRow.style.paddingBottom = 4;
-            _headerRow.style.backgroundColor = new Color(0, 0, 0, 0.04f);
-            _headerRow.style.borderBottomWidth = 1;
-            _headerRow.style.borderBottomColor = new Color(0, 0, 0, 0.1f);
-            return _headerRow;
+
+            wrapper.Add(_headerRow);
+            return wrapper;
         }
 
         private void RefreshColumnHeader()
@@ -232,23 +239,48 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             // Spacer matching expand button + key column
             var keySpacer = new Label("Key");
             keySpacer.style.width = ExpandButtonWidth + KeyColumnWidth;
+            keySpacer.style.flexShrink = 0;
+            keySpacer.style.marginLeft = 0;
+            keySpacer.style.marginRight = 0;
+            keySpacer.style.marginTop = 0;
+            keySpacer.style.marginBottom = 0;
             keySpacer.style.fontSize = 11;
             keySpacer.style.unityFontStyleAndWeight = FontStyle.Bold;
             keySpacer.style.color = new Color(0.5f, 0.5f, 0.5f);
             keySpacer.style.paddingLeft = ExpandButtonWidth;
             _headerRow.Add(keySpacer);
 
+            // One wrapper per language — identical stride to data-row slots.
+            // The Label inside just fills the wrapper; its own margins/paddings
+            // no longer affect column positions.
             foreach (var lang in _cachedLanguages)
             {
+                var slot = new VisualElement();
+                slot.style.width = FieldColumnWidth;
+                slot.style.flexShrink = 0;
+                slot.style.marginLeft = 0;
+                slot.style.marginRight = 4;
+                slot.style.marginTop = 0;
+                slot.style.marginBottom = 0;
+                slot.style.flexDirection = FlexDirection.Row;
+                slot.style.overflow = Overflow.Hidden;
+
                 var cell = new Label(lang.Code + " — " + lang.displayName);
-                cell.style.width = FieldColumnWidth;
-                cell.style.marginRight = 4;
+                cell.style.flexGrow = 1;
+                cell.style.marginLeft = 0;
+                cell.style.marginRight = 0;
+                cell.style.marginTop = 0;
+                cell.style.marginBottom = 0;
+                cell.style.paddingLeft = 0;
+                cell.style.paddingRight = 0;
                 cell.style.fontSize = 11;
                 cell.style.unityFontStyleAndWeight = FontStyle.Bold;
                 cell.style.color = new Color(0.5f, 0.5f, 0.5f);
                 cell.style.overflow = Overflow.Hidden;
                 cell.style.textOverflow = TextOverflow.Ellipsis;
-                _headerRow.Add(cell);
+
+                slot.Add(cell);
+                _headerRow.Add(slot);
             }
         }
 
@@ -271,6 +303,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             // Undo/Redo shortcuts
             _listView.RegisterCallback<KeyDownEvent>(OnListKeyDown);
+
+            // Hook into ListView's internal ScrollView so the header row can mirror
+            // the horizontal scroll position. Deferred until after attach.
+            _listView.schedule.Execute(AttachHeaderScrollSync).StartingIn(0);
 
             return _listView;
         }
@@ -352,6 +388,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             _listView.itemsSource = _flatRows;
             _listView.Rebuild();
 
+            // Rebuild may recreate the internal ScrollView — re-attach the scroll sync
+            _listView.schedule.Execute(AttachHeaderScrollSync).StartingIn(0);
+
             UpdateStatus(filtered.Count);
         }
 
@@ -411,6 +450,46 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 _filterPopup.SetValueWithoutNotify(newNames[0]);
         }
 
+        // ────────────────────────────────────────────
+        //  Header / ListView horizontal scroll sync
+        // ────────────────────────────────────────────
+
+        /// <summary>
+        /// Hooks the header row to the ListView's internal horizontal scrollbar so the
+        /// header columns stay aligned with the data columns when scrolling sideways.
+        /// </summary>
+        private void AttachHeaderScrollSync()
+        {
+            if (_listView == null || _headerRow == null) return;
+
+            var newScrollView = _listView.Q<ScrollView>();
+            if (newScrollView == null) return;
+
+            // Already subscribed to this exact ScrollView — nothing to do
+            if (newScrollView == _listScrollView) return;
+
+            // Detach previous subscription if the ScrollView was recreated
+            if (_listScrollView?.horizontalScroller != null)
+                _listScrollView.horizontalScroller.valueChanged -= OnHorizontalScrollChanged;
+
+            _listScrollView = newScrollView;
+            _listScrollView.horizontalScroller.valueChanged += OnHorizontalScrollChanged;
+
+            // Apply current value immediately so header stays in sync after rebuilds
+            OnHorizontalScrollChanged(_listScrollView.horizontalScroller.value);
+        }
+
+        private void OnHorizontalScrollChanged(float value)
+        {
+            if (_headerRow == null || _listScrollView == null) return;
+
+            // Use the actual content container transform instead of the raw scroll value.
+            // This automatically accounts for ScrollView's internal padding/margins so the
+            // header stays pixel-perfect aligned with data columns regardless of language count.
+            var contentX = _listScrollView.contentContainer.transform.position.x;
+            _headerRow.style.translate = new Translate(contentX, 0);
+        }
+
         // ──────────────────────────────────────────────
         //  ListView item factory
         // ──────────────────────────────────────────────
@@ -456,6 +535,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             expandBtn.style.fontSize = 10;
             expandBtn.style.width = 18;
             expandBtn.style.height = 18;
+            expandBtn.style.flexShrink = 0;
             expandBtn.style.marginLeft = 4;
             expandBtn.style.marginRight = 4;
             expandBtn.style.paddingLeft = 0;
@@ -472,6 +552,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var keyLabel = new Label();
             keyLabel.name = "key-label";
             keyLabel.style.width = KeyColumnWidth;
+            keyLabel.style.flexShrink = 0;
             keyLabel.style.fontSize = 11;
             keyLabel.style.paddingTop = 2;
             mainRow.Add(keyLabel);
@@ -483,11 +564,27 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             for (int i = 0; i < 8; i++)
             {
+                // Wrapper slot — FIXED stride of FieldColumnWidth+4px.
+                // The ObjectField inside flexGrows to fill it, so its own
+                // borders/paddings don't affect column position.
+                var slot = new VisualElement();
+                slot.name = $"asset-slot-{i}";
+                slot.style.width = FieldColumnWidth;
+                slot.style.flexShrink = 0;
+                slot.style.marginLeft = 0;
+                slot.style.marginRight = 4;
+                slot.style.marginTop = 0;
+                slot.style.marginBottom = 0;
+                slot.style.flexDirection = FlexDirection.Row;
+                slot.style.display = DisplayStyle.None;
+
                 var field = new ObjectField();
                 field.name = $"asset-field-{i}";
-                field.style.width = FieldColumnWidth;
-                field.style.marginRight = 4;
-                field.style.display = DisplayStyle.None;
+                field.style.flexGrow = 1;
+                field.style.marginLeft = 0;
+                field.style.marginRight = 0;
+                field.style.marginTop = 0;
+                field.style.marginBottom = 0;
                 field.allowSceneObjects = false;
 
                 int capturedIdx = i;
@@ -496,7 +593,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     OnAssetFieldChanged(keyContainer, capturedIdx, evt.previousValue, evt.newValue);
                 });
 
-                fieldsContainer.Add(field);
+                slot.Add(field);
+                fieldsContainer.Add(slot);
             }
 
             keyContainer.Add(mainRow);
@@ -514,7 +612,11 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 previewSlot.name = $"preview-slot-{i}";
                 previewSlot.style.width = FieldColumnWidth;
                 previewSlot.style.height = 96;
+                previewSlot.style.flexShrink = 0;
+                previewSlot.style.marginLeft = 0;
                 previewSlot.style.marginRight = 4;
+                previewSlot.style.marginTop = 0;
+                previewSlot.style.marginBottom = 0;
                 previewSlot.style.display = DisplayStyle.None;
                 previewRow.Add(previewSlot);
             }
@@ -608,17 +710,18 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             for (int i = 0; i < 8; i++)
             {
+                var slot = element.Q($"asset-slot-{i}");
                 var field = element.Q<ObjectField>($"asset-field-{i}");
 
                 if (i >= _cachedLanguages.Count)
                 {
-                    field.style.display = DisplayStyle.None;
+                    slot.style.display = DisplayStyle.None;
                     field.userData = null;
                     continue;
                 }
 
                 var lang = _cachedLanguages[i];
-                field.style.display = DisplayStyle.Flex;
+                slot.style.display = DisplayStyle.Flex;
                 field.objectType = acceptedType;
                 field.userData = new FieldBinding { Key = key, LanguageCode = lang.Code };
 
@@ -647,16 +750,88 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     var lang = _cachedLanguages[i];
                     string capturedLang = lang.Code;
                     string capturedKey = key;
+                    var capturedProfile = lang;
 
                     slot.onGUIHandler = () =>
                     {
                         var asset = GetTable(capturedLang)?.Get(capturedKey);
+
+                        // Fallback chain resolution when language has no asset
+                        bool isFallback = false;
+                        string fromLang = null;
+
+                        if (asset == null && capturedProfile != null)
+                        {
+                            asset = ResolvePreviewFallbackAsset(
+                                capturedProfile, capturedKey, out fromLang);
+                            isFallback = asset != null;
+                        }
+
                         var rect = new Rect(0, 0, FieldColumnWidth, 96);
+
+                        var prevColor = GUI.color;
+                        if (isFallback) GUI.color = new Color(1f, 1f, 1f, 0.55f);
+
                         var renderer = AssetPreviewRegistry.GetRendererFor(asset);
                         renderer.DrawPreview(rect, asset);
+
+                        GUI.color = prevColor;
+
+                        // Origin marker at bottom-left for fallback-sourced previews
+                        if (isFallback && !string.IsNullOrEmpty(fromLang))
+                        {
+                            var labelRect = new Rect(2, 96 - 14, FieldColumnWidth - 4, 12);
+                            var labelStyle = new GUIStyle(EditorStyles.miniLabel)
+                            {
+                                fontStyle = FontStyle.Italic,
+                                alignment = TextAnchor.LowerLeft
+                            };
+                            labelStyle.normal.textColor = new Color(1f, 0.85f, 0.7f);
+                            GUI.Label(labelRect, $"\u2014 from {fromLang}", labelStyle);
+                        }
                     };
                 }
             }
+        }
+
+        /// <summary>
+        /// Walks the fallback chain for an asset when the target language's table has nothing.
+        /// Mirrors runtime behaviour (per-language chain -> global fallback) with cycle guard.
+        /// </summary>
+        private Object ResolvePreviewFallbackAsset(LanguageProfile target, string key,
+            out string fromLanguage)
+        {
+            fromLanguage = null;
+
+            if (_config == null || target == null) return null;
+
+            var visited = new HashSet<string> { target.Code };
+            var fb = target.fallbackProfile;
+
+            while (fb != null && visited.Add(fb.Code))
+            {
+                var candidate = GetTable(fb.Code)?.Get(key);
+                if (candidate != null)
+                {
+                    fromLanguage = fb.Code;
+                    return candidate;
+                }
+                fb = fb.fallbackProfile;
+            }
+
+            // Global fallback
+            string globalCode = _config.FallbackLanguageCode;
+            if (!string.IsNullOrEmpty(globalCode) && visited.Add(globalCode))
+            {
+                var candidate = GetTable(globalCode)?.Get(key);
+                if (candidate != null)
+                {
+                    fromLanguage = globalCode;
+                    return candidate;
+                }
+            }
+
+            return null;
         }
 
         private void UnbindListItem(VisualElement element, int index)

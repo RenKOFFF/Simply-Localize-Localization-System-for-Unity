@@ -3,6 +3,7 @@ using System.Linq;
 using SimplyLocalize.Components;
 using SimplyLocalize.Editor.AssetPreviews;
 using SimplyLocalize.Editor.Data;
+using SimplyLocalize.Editor.Utilities;
 using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -19,7 +20,7 @@ namespace SimplyLocalize.Editor.Inspectors
     {
         private SerializedProperty _keyProp;
         private string _newKeyInput = "";
-        private bool _showPreview;
+        private readonly HashSet<string> _expandedLanguages = new();
 
         private void OnEnable()
         {
@@ -42,7 +43,7 @@ namespace SimplyLocalize.Editor.Inspectors
             // Preview of assigned assets (collapsed by default)
             if (!string.IsNullOrEmpty(_keyProp.stringValue))
             {
-                DrawAssetPreview(assetType);
+                DrawAssetPreview();
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -110,7 +111,7 @@ namespace SimplyLocalize.Editor.Inspectors
                 EditorGUILayout.HelpBox("This key already exists.", MessageType.Error);
         }
 
-        private void DrawAssetPreview(System.Type assetType)
+        private void DrawAssetPreview()
         {
             var config = EditorDataCache.Config;
             if (config == null) return;
@@ -120,69 +121,201 @@ namespace SimplyLocalize.Editor.Inspectors
             if (string.IsNullOrEmpty(basePath)) return;
 
             EditorGUILayout.Space(4);
-            _showPreview = EditorGUILayout.Foldout(_showPreview, "Asset Preview", true);
 
-            if (!_showPreview) return;
-
-            DrawLargePreviewRow(config, basePath, key);
-        }
-
-        /// <summary>
-        /// Draws large per-language previews using the same registry-based rendering
-        /// as the Assets tab. Uses AssetPreviewRegistry so custom IAssetPreviewRenderer
-        /// implementations work here too.
-        /// </summary>
-        private void DrawLargePreviewRow(LocalizationConfig config, string basePath, string key)
-        {
-            const float cellWidth = 140f;
-            const float cellHeight = 96f;
-            const float labelHeight = 14f;
-            const float spacing = 6f;
-
-            EditorGUI.indentLevel++;
-
-            // Compute how many cells fit on one row, then wrap
-            float available = EditorGUIUtility.currentViewWidth - 40f;
-            int perRow = Mathf.Max(1, Mathf.FloorToInt((available + spacing) / (cellWidth + spacing)));
-
-            int idx = 0;
+            // Foldout header row: toggle + "Expand/Collapse all" button aligned to the right
             EditorGUILayout.BeginHorizontal();
+            
+            EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
+            
+            bool anyExpanded = _expandedLanguages.Count > 0;
+            string btnLabel = anyExpanded ? "Collapse all" : "Expand all";
+            
+            if (GUILayout.Button(btnLabel, EditorStyles.miniButton, GUILayout.Width(90)))
+            {
+                if (anyExpanded)
+                {
+                    _expandedLanguages.Clear();
+                }
+                else
+                {
+                    foreach (var p in config.languages)
+                    {
+                        if (p != null) _expandedLanguages.Add(p.Code);
+                    }
+                }
+            }
 
+            EditorGUILayout.EndHorizontal();
+            
             foreach (var profile in config.languages)
             {
                 if (profile == null) continue;
-
-                if (idx > 0 && idx % perRow == 0)
-                {
-                    EditorGUILayout.EndHorizontal();
-                    EditorGUILayout.BeginHorizontal();
-                }
-
-                EditorGUILayout.BeginVertical(GUILayout.Width(cellWidth));
-
-                // Language label above the preview
-                var langRect = GUILayoutUtility.GetRect(cellWidth, labelHeight);
-                EditorGUI.LabelField(langRect, $"{profile.Code} \u2014 {profile.displayName}",
-                    EditorStyles.miniLabel);
-
-                // Preview area dispatched through the registry
-                var previewRect = GUILayoutUtility.GetRect(cellWidth, cellHeight);
 
                 string langPath = System.IO.Path.Combine(basePath, profile.Code);
                 var table = FindTableAtPath(langPath);
                 Object asset = table?.Get(key);
 
-                var renderer = AssetPreviewRegistry.GetRendererFor(asset);
-                renderer.DrawPreview(previewRect, asset);
+                // If missing, try to resolve through the asset fallback chain
+                string fallbackLang = null;
+                if (asset == null)
+                {
+                    var fb = FallbackResolver.ResolveAsset(config, key, profile.Code,
+                        code => FindTableAtPath(System.IO.Path.Combine(basePath, code)));
+                    if (fb.Asset != null)
+                    {
+                        asset = fb.Asset;
+                        fallbackLang = fb.FromLanguage;
+                    }
+                }
 
-                EditorGUILayout.EndVertical();
+                DrawLanguageRow(profile, asset, fallbackLang);
+            }
+        }
 
-                GUILayout.Space(spacing);
-                idx++;
+        /// <summary>
+        /// Walks the fallback chain (per-language -> global) to find an asset when the
+        /// target language's table has nothing. Returns null if no fallback has the key either.
+        /// </summary>
+        private static Object ResolveFallbackAsset(
+            LocalizationConfig config,
+            string basePath,
+            string key,
+            LanguageProfile targetProfile,
+            out string fromLanguage)
+        {
+            fromLanguage = null;
+
+            var visited = new HashSet<string> { targetProfile.Code };
+            var fb = targetProfile.fallbackProfile;
+
+            while (fb != null && visited.Add(fb.Code))
+            {
+                string langPath = System.IO.Path.Combine(basePath, fb.Code);
+                var table = FindTableAtPath(langPath);
+                var candidate = table?.Get(key);
+
+                if (candidate != null)
+                {
+                    fromLanguage = fb.Code;
+                    return candidate;
+                }
+
+                fb = fb.fallbackProfile;
+            }
+
+            // Try global fallback
+            string globalCode = config.FallbackLanguageCode;
+
+            if (!string.IsNullOrEmpty(globalCode) && visited.Add(globalCode))
+            {
+                string langPath = System.IO.Path.Combine(basePath, globalCode);
+                var table = FindTableAtPath(langPath);
+                var candidate = table?.Get(key);
+
+                if (candidate != null)
+                {
+                    fromLanguage = globalCode;
+                    return candidate;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Draws a single per-language row in the asset preview foldout:
+        ///   [mini-thumb] {asset name}   [▶/▼]
+        /// Clicking the thumbnail or name pings the asset in the Project window.
+        /// Clicking ▶ expands a large preview rendered through AssetPreviewRegistry,
+        /// independently per language so the user can compare multiple expanded at once.
+        ///
+        /// If <paramref name="fallbackLang"/> is non-null, the asset came from a fallback
+        /// language and is rendered dimmed with an origin marker.
+        /// </summary>
+        private void DrawLanguageRow(LanguageProfile profile, Object asset, string fallbackLang = null)
+        {
+            bool expanded = _expandedLanguages.Contains(profile.Code);
+            bool isFallback = asset != null && !string.IsNullOrEmpty(fallbackLang);
+
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField($"{profile.displayName} ({profile.Code})",
+                GUILayout.Width(EditorGUIUtility.labelWidth));
+
+            if (asset != null)
+            {
+                // Dim the row if this asset came from a fallback language
+                Color prevColor = GUI.color;
+                if (isFallback) GUI.color = new Color(1f, 1f, 1f, 0.55f);
+
+                // Clickable thumbnail + name — pings asset in Project window on click
+                var thumbnail = AssetPreview.GetMiniThumbnail(asset);
+                var rowRect = EditorGUILayout.GetControlRect(GUILayout.Height(20));
+
+                if (thumbnail != null)
+                {
+                    var iconRect = new Rect(rowRect.x, rowRect.y, 20, 20);
+                    GUI.DrawTexture(iconRect, thumbnail, ScaleMode.ScaleToFit);
+                }
+
+                var nameRect = new Rect(rowRect.x + 24, rowRect.y, rowRect.width - 24, rowRect.height);
+                string nameText = isFallback
+                    ? $"{asset.name}  \u2014 from {fallbackLang}"
+                    : asset.name;
+                EditorGUI.LabelField(nameRect, nameText, EditorStyles.miniLabel);
+
+                // Full row (thumb + name) is clickable to ping
+                EditorGUIUtility.AddCursorRect(rowRect, MouseCursor.Link);
+
+                if (Event.current.type == EventType.MouseDown
+                    && Event.current.button == 0
+                    && rowRect.Contains(Event.current.mousePosition))
+                {
+                    EditorGUIUtility.PingObject(asset);
+                    Selection.activeObject = asset;
+                    Event.current.Use();
+                }
+
+                GUI.color = prevColor;
+
+                // Preview toggle button (not dimmed)
+                string toggleLabel = expanded ? "▼" : "▶";
+                if (GUILayout.Button(new GUIContent(toggleLabel, "Show large preview"),
+                    EditorStyles.miniButton, GUILayout.Width(22), GUILayout.Height(18)))
+                {
+                    if (expanded) _expandedLanguages.Remove(profile.Code);
+                    else _expandedLanguages.Add(profile.Code);
+                }
+            }
+            else
+            {
+                Color prev = GUI.color;
+                GUI.color = new Color(1f, 0.5f, 0.5f);
+                EditorGUILayout.LabelField("(not assigned)", EditorStyles.miniLabel);
+                GUI.color = prev;
             }
 
             EditorGUILayout.EndHorizontal();
-            EditorGUI.indentLevel--;
+
+            // Large preview — only when this language is expanded and has an asset
+            if (expanded && asset != null)
+            {
+                const float previewWidth = 200f;
+                const float previewHeight = 140f;
+
+                var previewRect = GUILayoutUtility.GetRect(
+                    previewWidth, previewHeight, GUILayout.ExpandWidth(false));
+
+                previewRect.x += EditorGUIUtility.labelWidth;
+
+                // Dim the large preview too for fallback sources
+                var prevGUI = GUI.color;
+                if (isFallback) GUI.color = new Color(1f, 1f, 1f, 0.55f);
+
+                var renderer = AssetPreviewRegistry.GetRendererFor(asset);
+                renderer.DrawPreview(previewRect, asset);
+
+                GUI.color = prevGUI;
+            }
         }
 
         private void OpenAssetKeySearch(List<string> keys, System.Type assetType)

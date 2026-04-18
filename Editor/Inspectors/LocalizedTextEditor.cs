@@ -63,9 +63,9 @@ namespace SimplyLocalize.Editor.Inspectors
             EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
 
             if (editMode) GUI.color = new Color(0.4f, 0.7f, 1f);
-            if (GUILayout.Button(editMode ? "✎ editing" : "✎",
+            if (GUILayout.Button(editMode ? "✎ editing" : "✎ edit",
                 editMode ? EditorStyles.miniButtonMid : EditorStyles.miniButton,
-                GUILayout.Width(editMode ? 70 : 24)))
+                GUILayout.Width(70)))
                 editMode = !editMode;
             GUI.color = Color.white;
 
@@ -77,6 +77,11 @@ namespace SimplyLocalize.Editor.Inspectors
 
                 string value = data.GetTranslation(key, profile.Code) ?? "";
                 bool missing = string.IsNullOrEmpty(value);
+
+                // If missing, try to resolve through fallback chain for display
+                Utilities.FallbackResolver.FallbackResult fallback = default;
+                if (missing)
+                    fallback = Utilities.FallbackResolver.ResolveTranslation(data, config, key, profile.Code);
 
                 Color prev = GUI.color;
                 if (missing) GUI.color = new Color(1f, 0.7f, 0.7f);
@@ -114,20 +119,44 @@ namespace SimplyLocalize.Editor.Inspectors
                 else
                 {
                     // Read mode: compact with colored parameters
-                    string display = missing ? "(missing)" : value;
+                    string display;
+                    GUIStyle richStyle;
 
-                    var richStyle = new GUIStyle(EditorStyles.helpBox)
+                    if (missing && !string.IsNullOrEmpty(fallback.Value))
                     {
-                        richText = true,
-                        wordWrap = true
-                    };
-
-                    string highlighted = missing ? display
-                        : Utilities.ParameterHighlighter.Highlight(display);
+                        // Show fallback translation in grey italic with origin marker
+                        display = $"{fallback.Value}  \u2014 from {fallback.FromLanguage}";
+                        richStyle = new GUIStyle(EditorStyles.helpBox)
+                        {
+                            richText = true,
+                            wordWrap = true,
+                            fontStyle = FontStyle.Italic
+                        };
+                        // Override to a dimmer color; keep the warning background
+                        GUI.color = new Color(1f, 0.85f, 0.7f);
+                    }
+                    else if (missing)
+                    {
+                        display = "(missing)";
+                        richStyle = new GUIStyle(EditorStyles.helpBox)
+                        {
+                            richText = true,
+                            wordWrap = true
+                        };
+                    }
+                    else
+                    {
+                        display = Utilities.ParameterHighlighter.Highlight(value);
+                        richStyle = new GUIStyle(EditorStyles.helpBox)
+                        {
+                            richText = true,
+                            wordWrap = true
+                        };
+                    }
 
                     EditorGUILayout.LabelField(
                         $"{profile.displayName} ({profile.Code})",
-                        highlighted,
+                        display,
                         richStyle);
                 }
 
@@ -286,16 +315,48 @@ namespace SimplyLocalize.Editor.Inspectors
             foreach (var profile in config.languages)
             {
                 if (profile == null) continue;
+
                 string raw = data.GetTranslation(key, profile.Code);
-                if (string.IsNullOrEmpty(raw)) continue;
+                bool missing = string.IsNullOrEmpty(raw);
+                string sourceLang = profile.Code;
+                bool isFallback = false;
+
+                if (missing)
+                {
+                    var fb = Utilities.FallbackResolver.ResolveTranslation(
+                        data, config, key, profile.Code);
+
+                    if (!string.IsNullOrEmpty(fb.Value))
+                    {
+                        raw = fb.Value;
+                        sourceLang = fb.FromLanguage;
+                        isFallback = true;
+                    }
+                    else
+                    {
+                        // Nothing to format anywhere — skip this language
+                        continue;
+                    }
+                }
 
                 var template = TokenParser.Parse(raw);
                 string formatted = template != null
-                    ? TextFormatter.Format(template, profile.Code, idxArr,
+                    ? TextFormatter.Format(template, sourceLang, idxArr,
                         namedArgs.Count > 0 ? namedArgs : null)
                     : raw;
 
-                EditorGUILayout.LabelField(profile.displayName, formatted, EditorStyles.helpBox);
+                Color prev = GUI.color;
+                var style = new GUIStyle(EditorStyles.helpBox) { wordWrap = true };
+
+                if (isFallback)
+                {
+                    style.fontStyle = FontStyle.Italic;
+                    GUI.color = new Color(1f, 0.85f, 0.7f);
+                    formatted = $"{formatted}  \u2014 from {sourceLang}";
+                }
+
+                EditorGUILayout.LabelField(profile.displayName, formatted, style);
+                GUI.color = prev;
             }
         }
 
