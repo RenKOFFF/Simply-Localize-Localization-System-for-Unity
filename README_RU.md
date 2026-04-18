@@ -1,5 +1,7 @@
 # Simply Localize
 
+![Simply Localize Баннер](docs/images/simply-localize-banner.png)
+
 Современная гибкая система локализации для Unity. Управляет переводами, локализованными ассетами (спрайты, звуки, любые `UnityEngine.Object`), шрифтами для разных языков, плюрализацией, переключением языка во время игры и удобным редактором — всё без внешних зависимостей.
 
 *На других языках: [English](README.md).*
@@ -10,6 +12,9 @@
 
 - [Возможности](#возможности)
 - [Установка](#установка)
+  - [Через OpenUPM](#через-openupm)
+  - [Через Package Manager (Git URL)](#через-package-manager-git-url)
+  - [Через manifest.json](#через-manifestjson)
 - [Быстрый старт](#быстрый-старт)
 - [Структура папок](#структура-папок)
 - [Окно редактора](#окно-редактора)
@@ -46,6 +51,36 @@
 
 ## Установка
 
+### Через OpenUPM
+
+**Вариант A — OpenUPM CLI** (рекомендуется):
+
+```bash
+npm install -g openupm-cli
+openupm add com.renkoff.simply-localize
+```
+
+**Вариант B — вручную через `Packages/manifest.json`**:
+
+1. Добавь scoped registry:
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.renkoff"
+      ]
+    }
+  ],
+  "dependencies": {
+    "com.renkoff.simply-localize": "2.0.0-alpha.2"
+  }
+}
+```
+
 ### Через Package Manager (Git URL)
 
 1. Открой `Window → Package Manager`
@@ -53,7 +88,7 @@
 3. Вставь:
 
 ```
-https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git
+https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=src/SimplyLocalize
 ```
 
 ### Через manifest.json
@@ -63,7 +98,7 @@ https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git
 ```json
 {
   "dependencies": {
-    "com.renkoff.simplylocalize": "https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git"
+    "com.renkoff.simply-localize": "https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=src/SimplyLocalize"
   }
 }
 ```
@@ -92,7 +127,7 @@ https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git
 
 В окне 8 табов: **Translations**, **Assets**, **Languages**, **Profiles**, **Coverage**, **Auto Localize**, **Tools**, **Settings**.
 
-![Обзор окна редактора](docs/images/editor-overview.png)
+![Обзор окна редактора](docs/images/editor-overview.gif)
 <!-- TODO: добавить скриншот -->
 
 ### 4. Добавь первые ключи
@@ -186,7 +221,7 @@ Assets/
 
 ### Таб Translations
 
-![Translations tab](docs/images/translations-tab.png)
+![Translations tab](docs/images/translations-tab.gif)
 <!-- TODO: скриншот таба Translations -->
 
 - **Виртуализированный список** — без лагов даже на тысячах ключей
@@ -202,7 +237,7 @@ Assets/
 
 ### Таб Assets
 
-![Assets tab](docs/images/assets-tab.png)
+![Assets tab](docs/images/assets-tab.gif)
 <!-- TODO: скриншот таба Assets -->
 
 - Управление локализованными ассетами (спрайты, аудио, материалы, меши, что угодно)
@@ -215,7 +250,7 @@ Assets/
 
 ### Таб Languages
 
-![Languages tab](docs/images/languages-tab.png)
+![Languages tab](docs/images/languages-tab.gif)
 <!-- TODO: скриншот таба Languages -->
 
 - Список всех настроенных языков с badge'ами типов контента (показывает какие типы ассетов есть в каждом языке)

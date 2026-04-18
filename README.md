@@ -1,5 +1,7 @@
 # Simply Localize
 
+![Simply Localize Banner](docs/images/simply-localize-banner.png)
+
 A modern, flexible localization system for Unity. Manages translations, localized assets (sprites, audio, any `UnityEngine.Object`), fonts per language, pluralization across languages, runtime language switching, and a rich editor workflow — all without external dependencies.
 
 *Read in other languages: [Russian](README_RU.md).*
@@ -10,6 +12,9 @@ A modern, flexible localization system for Unity. Manages translations, localize
 
 - [Features](#features)
 - [Installation](#installation)
+  - [Via OpenUPM](#via-openupm)
+  - [Via Package Manager (Git URL)](#via-package-manager-git-url)
+  - [Via manifest.json](#via-manifestjson)
 - [Quick Start](#quick-start)
 - [Folder Structure](#folder-structure)
 - [Editor Window](#editor-window)
@@ -46,6 +51,36 @@ A modern, flexible localization system for Unity. Manages translations, localize
 
 ## Installation
 
+### Via OpenUPM
+
+**Option A — OpenUPM CLI** (recommended):
+
+```bash
+npm install -g openupm-cli
+openupm add com.renkoff.simply-localize
+```
+
+**Option B — manually via `Packages/manifest.json`**:
+
+1. Add a scoped registry entry:
+
+```json
+{
+  "scopedRegistries": [
+    {
+      "name": "OpenUPM",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.renkoff"
+      ]
+    }
+  ],
+  "dependencies": {
+    "com.renkoff.simply-localize": "2.0.0-alpha.2"
+  }
+}
+```
+
 ### Via Package Manager (Git URL)
 
 1. Open `Window → Package Manager`
@@ -53,7 +88,7 @@ A modern, flexible localization system for Unity. Manages translations, localize
 3. Paste:
 
 ```
-https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git
+https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=src/SimplyLocalize
 ```
 
 ### Via manifest.json
@@ -63,7 +98,7 @@ Add to your `Packages/manifest.json`:
 ```json
 {
   "dependencies": {
-    "com.renkoff.simplylocalize": "https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git"
+    "com.renkoff.simply-localize": "https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=src/SimplyLocalize"
   }
 }
 ```
@@ -92,7 +127,7 @@ Fill in the `languageCode`, `displayName`, `systemLanguage` fields and add the p
 
 The window has 8 tabs: **Translations**, **Assets**, **Languages**, **Profiles**, **Coverage**, **Auto Localize**, **Tools**, **Settings**.
 
-![Editor window overview](docs/images/editor-overview.png)
+![Editor window overview](docs/images/editor-overview.gif)
 <!-- TODO: replace with actual screenshot -->
 
 ### 4. Add Your First Keys
@@ -186,7 +221,7 @@ Multiple JSON files per language are **merged** at runtime — split your keys b
 
 ### Translations Tab
 
-![Translations tab](docs/images/translations-tab.png)
+![Translations tab](docs/images/translations-tab.gif)
 <!-- TODO: screenshot of Translations tab -->
 
 - **Virtualized list** — handles thousands of keys without lag
@@ -202,7 +237,7 @@ Multiple JSON files per language are **merged** at runtime — split your keys b
 
 ### Assets Tab
 
-![Assets tab](docs/images/assets-tab.png)
+![Assets tab](docs/images/assets-tab.gif)
 <!-- TODO: screenshot of Assets tab -->
 
 - Manage localized assets (sprites, audio, materials, meshes, anything)
@@ -215,7 +250,7 @@ Multiple JSON files per language are **merged** at runtime — split your keys b
 
 ### Languages Tab
 
-![Languages tab](docs/images/languages-tab.png)
+![Languages tab](docs/images/languages-tab.gif)
 <!-- TODO: screenshot of Languages tab -->
 
 - List of all configured languages with content badges (shows which asset types each language has)
