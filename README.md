@@ -290,6 +290,8 @@ Scan a scene for all `TMP_Text` / `Text` components and bulk-add `LocalizedText`
 
 - Key conversion mode (how spaces in new keys are handled)
 - Logging toggles
+- **Game View / Simulator language dropdown → Show in Play Mode** — displays a language selector during Play Mode. In Game View, the selector appears over the game preview; in Device Simulator, it is located under **Control Panel → Simply Localize**. Language selection is available after localization is initialized.
+- **Game View position** — position of the Game View dropdown: left, center, or right.
 
 ---
 

@@ -290,6 +290,8 @@ Assets/
 
 - Режим конвертации ключей (как обрабатываются пробелы при создании новых ключей)
 - Тогглы логирования
+- **Game View / Simulator language dropdown → Show in Play Mode** — отображение меню выбора языка в режиме Play Mode. В Game View меню расположено поверх изображения игры, в Device Simulator — в **Control Panel → Simply Localize**. Выбор языка доступен после инициализации локализации.
+- **Game View position** — положение меню Game View: слева, по центру или справа.
 
 ---
 

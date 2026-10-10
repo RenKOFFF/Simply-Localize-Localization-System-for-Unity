@@ -119,8 +119,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 EditorGUILayout.Space(12);
 
-                // ── Game View Dropdown ──
-                EditorGUILayout.LabelField("Game View language dropdown", EditorStyles.boldLabel);
+                // ── Play Mode Language Dropdown ──
+                EditorGUILayout.LabelField("Game View / Simulator language dropdown", EditorStyles.boldLabel);
 
                 bool dropdownEnabled = EditorPrefs.GetBool(
                     GameViewLanguageDropdown.EnabledPrefKey, true);
@@ -135,10 +135,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     (int)GameViewLanguageDropdown.Position.Right);
 
                 var newPos = (GameViewLanguageDropdown.Position)EditorGUILayout.EnumPopup(
-                    "Position", currentPos);
+                    "Game View position", currentPos);
 
                 if (newPos != currentPos)
                     EditorPrefs.SetInt(GameViewLanguageDropdown.PositionPrefKey, (int)newPos);
+
+                EditorGUILayout.HelpBox(
+                    "Switch languages in Game View or in Device Simulator's Control Panel under Simply Localize.",
+                    MessageType.Info);
 
                 EditorGUILayout.Space(12);
 

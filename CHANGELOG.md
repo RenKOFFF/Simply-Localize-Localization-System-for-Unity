@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.0.2] — 2026-10-10
+
+- Fixed the Play Mode language dropdown creating and focusing a Game View when only Device Simulator was open.
+- Added a language selector to Device Simulator's Control Panel.
+- Recover Game View menus after window changes, prevent duplicate elements, clean up on Play Mode exit and assembly reload, and apply position changes while playing.
+
 ## [2.0.0] — 2026-08-27
 
 ### Изменения
