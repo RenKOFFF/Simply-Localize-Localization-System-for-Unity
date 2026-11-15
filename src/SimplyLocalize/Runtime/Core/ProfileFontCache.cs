@@ -23,7 +23,11 @@ namespace SimplyLocalize
             if (!Fonts.TryGetValue(key, out var entry))
             {
                 var font = Object.Instantiate(source);
+#if UNITY_6000_6_OR_NEWER
+                font.name = source.name + " (SimplyLocalize " + fallback.GetEntityId() + ")";
+#else
                 font.name = source.name + " (SimplyLocalize " + fallback.GetInstanceID() + ")";
+#endif
                 font.hideFlags = HideFlags.HideAndDontSave;
                 // The variant borrows atlas textures/materials. Only the source can grow its atlas.
                 font.atlasPopulationMode = AtlasPopulationMode.Static;
