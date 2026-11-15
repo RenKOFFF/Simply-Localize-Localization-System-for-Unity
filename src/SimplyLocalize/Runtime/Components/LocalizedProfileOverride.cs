@@ -21,6 +21,8 @@ namespace SimplyLocalize.Components
         private Text _legacyText;
         private ProfileApplier _applier;
         private bool _standalone;
+        private LocalizedText _localizedText;
+        private FormattableLocalizedText _formattableText;
 
         public IReadOnlyList<OverrideEntry> Entries => _entries;
 
@@ -35,11 +37,13 @@ namespace SimplyLocalize.Components
             _tmpText = GetComponent<TMP_Text>();
             _legacyText = GetComponent<Text>();
 
-            _standalone = GetComponent<LocalizedComponentBase>() == null;
+            _localizedText = GetComponent<LocalizedText>();
+            _formattableText = GetComponent<FormattableLocalizedText>();
+            _standalone = _localizedText == null && _formattableText == null;
 
             if (_standalone)
             {
-                _applier = new ProfileApplier();
+                _applier ??= new ProfileApplier();
 
                 if (_tmpText != null)
                     _applier.CacheOriginals(_tmpText);
@@ -51,12 +55,25 @@ namespace SimplyLocalize.Components
                 if (Localization.IsInitialized)
                     ApplyForLanguage(Localization.CurrentLanguage);
             }
+            else RefreshOwner();
         }
 
         private void OnDisable()
         {
             if (_standalone)
+            {
                 Localization.OnLanguageChanged -= OnLanguageChanged;
+                _applier?.Restore();
+            }
+            else RefreshOwner();
+        }
+
+        private void OnDestroy() => _applier?.Dispose();
+
+        private void RefreshOwner()
+        {
+            if (_localizedText != null && _localizedText.isActiveAndEnabled) _localizedText.Refresh();
+            if (_formattableText != null && _formattableText.isActiveAndEnabled) _formattableText.Refresh();
         }
 
         private void OnLanguageChanged(string lang) => ApplyForLanguage(lang);
@@ -80,6 +97,13 @@ namespace SimplyLocalize.Components
                 return;
             }
 
+            // Reset the locally overridden sections too. Their offsets/multipliers must start
+            // from the captured baseline, never from the previous language or previous refresh.
+            applier.Apply(text, null,
+                skipFont: !entry.overrideFont,
+                skipTypography: !entry.overrideTypography,
+                skipSpacing: !entry.overrideSpacing,
+                skipLayout: !entry.overrideLayout);
             applier.Apply(text, globalProfile,
                 skipFont: entry.overrideFont,
                 skipTypography: entry.overrideTypography,
@@ -108,6 +132,10 @@ namespace SimplyLocalize.Components
                 return;
             }
 
+            applier.Apply(text, null,
+                skipFont: !entry.overrideFont,
+                skipTypography: !entry.overrideTypography,
+                skipLayout: !entry.overrideLayout);
             applier.Apply(text, globalProfile,
                 skipFont: entry.overrideFont,
                 skipTypography: entry.overrideTypography,
@@ -140,8 +168,11 @@ namespace SimplyLocalize.Components
         {
             if (entry.overrideFont)
             {
-                if (entry.tmpFont != null)
+                if (entry.tmpFont != null && entry.tmpFont != text.font)
+                {
                     text.font = entry.tmpFont;
+                    text.fontSharedMaterial = entry.tmpFont.material;
+                }
 
                 if (entry.tmpMaterial != null)
                     text.fontSharedMaterial = entry.tmpMaterial;
@@ -149,8 +180,7 @@ namespace SimplyLocalize.Components
 
             if (entry.overrideTypography)
             {
-                if (entry.fontSizeMultiplier != 1f)
-                    text.fontSize *= entry.fontSizeMultiplier;
+                ProfileApplier.ScaleTypography(text, entry.fontSizeMultiplier);
 
                 text.fontWeight = entry.fontWeight;
                 text.fontStyle = entry.fontStyle;
@@ -181,8 +211,7 @@ namespace SimplyLocalize.Components
 
             if (entry.overrideTypography)
             {
-                if (entry.fontSizeMultiplier != 1f)
-                    text.fontSize = Mathf.RoundToInt(text.fontSize * entry.fontSizeMultiplier);
+                ProfileApplier.ScaleTypography(text, entry.fontSizeMultiplier);
 
                 text.fontStyle = entry.legacyFontStyle;
             }
@@ -199,11 +228,11 @@ namespace SimplyLocalize.Components
 
         internal OverrideEntry GetEntry(string languageCode)
         {
-            if (string.IsNullOrEmpty(languageCode)) return null;
+            if (string.IsNullOrEmpty(languageCode) || _entries == null) return null;
 
             for (int i = 0; i < _entries.Count; i++)
             {
-                if (_entries[i].profile != null && _entries[i].profile.Code == languageCode)
+                if (_entries[i] != null && _entries[i].profile != null && _entries[i].profile.Code == languageCode)
                     return _entries[i];
             }
 

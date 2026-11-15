@@ -11,7 +11,7 @@ namespace SimplyLocalize.Pluralization
     ///   "{0} {0|コイン}"
     ///    Form 0: other → "コイン" (always)
     /// </summary>
-    public class EastAsianPluralRule : IPluralRule
+    public class EastAsianPluralRule : IDecimalPluralRule
     {
         public int FormCount => 1;
 
@@ -19,5 +19,6 @@ namespace SimplyLocalize.Pluralization
         {
             return 0;
         }
+        public int Evaluate(decimal count) => 0;
     }
 }

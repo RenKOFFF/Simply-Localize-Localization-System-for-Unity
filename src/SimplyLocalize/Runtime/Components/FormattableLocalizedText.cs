@@ -73,13 +73,20 @@ namespace SimplyLocalize.Components
         {
             base.OnDisable();
             Localization.OnProfileChanged -= HandleProfileChanged;
+            _profileApplier.Restore();
         }
+
+        protected virtual void OnDestroy() => _profileApplier.Dispose();
 
         public override void Refresh()
         {
-            if (string.IsNullOrEmpty(_key)) return;
             CacheComponents();
             CacheOriginals();
+            if (string.IsNullOrEmpty(_key))
+            {
+                ApplyProfile(Localization.CurrentProfile);
+                return;
+            }
 
             bool hasIdx = _indexedArgs is { Length: > 0 };
             bool hasNamed = _namedArgs is { Count: > 0 };
@@ -96,7 +103,7 @@ namespace SimplyLocalize.Components
             else if (_legacyText != null)
             {
                 _legacyText.text = text;
-                _profileApplier.Apply(_legacyText, Localization.CurrentProfile);
+                ApplyProfile(Localization.CurrentProfile);
             }
         }
 
@@ -106,14 +113,17 @@ namespace SimplyLocalize.Components
         {
             if (_tmpText != null)
             {
-                if (_profileOverride != null)
+                if (_profileOverride != null && _profileOverride.isActiveAndEnabled)
                     _profileOverride.ApplyMerged(_tmpText, profile, _profileApplier);
                 else
                     _profileApplier.Apply(_tmpText, profile);
             }
             else if (_legacyText != null)
             {
-                _profileApplier.Apply(_legacyText, profile);
+                if (_profileOverride != null && _profileOverride.isActiveAndEnabled)
+                    _profileOverride.ApplyMerged(_legacyText, profile, _profileApplier);
+                else
+                    _profileApplier.Apply(_legacyText, profile);
             }
         }
 
@@ -162,8 +172,8 @@ namespace SimplyLocalize.Components
             {
                 _tmpText = GetComponent<TMP_Text>();
                 if (_tmpText == null) _legacyText = GetComponent<Text>();
-                _profileOverride = GetComponent<LocalizedProfileOverride>();
             }
+            _profileOverride = GetComponent<LocalizedProfileOverride>();
         }
 
         private void CacheOriginals()

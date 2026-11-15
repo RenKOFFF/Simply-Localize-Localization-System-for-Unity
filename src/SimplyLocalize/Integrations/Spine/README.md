@@ -32,6 +32,17 @@ page are localized together; an identically named region on another page is left
 `Advanced/Spine Target` is normally resolved automatically. `Monitor Skin Changes`
 reapplies the localized overlay when another runtime system replaces the active Spine skin.
 
+Use one `Localized Spine Attachment` owner per target skeleton. Independent attachment
+components targeting the same skeleton each maintain their own combined skin; their skin
+monitors can interpret each other's overlays as external changes. That combination is not
+currently supported. This restriction does not prevent separate atlas-page material overrides.
+
+The stage 4 lifecycle regression run was made in a Unity project without Spine Runtime.
+Skeleton rendering, skin changes, multi-page atlases and Spine resource cleanup therefore
+remain unverified in that run. Before shipping this optional integration, test these cases
+with the installed Spine version and production skeletons, including missing translations,
+component disable/enable, and destruction. No Spine dependency is installed automatically.
+
 ## Full atlas page replacement
 
 Use `Localized Spine Texture` when most or all of an atlas page is localized. The component

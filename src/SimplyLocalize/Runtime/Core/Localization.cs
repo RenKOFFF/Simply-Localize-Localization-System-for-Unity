@@ -32,22 +32,7 @@ namespace SimplyLocalize
         /// </summary>
         public static void Initialize(LocalizationConfig config)
         {
-            if (config == null)
-            {
-                Debug.LogError("[SimplyLocalize] Cannot initialize: config is null");
-                return;
-            }
-
-            Shutdown();
-
-            _manager = new LocalizationManager(config);
-            _manager.OnLanguageChanged += lang => OnLanguageChanged?.Invoke(lang);
-            _manager.OnProfileChanged += profile => OnProfileChanged?.Invoke(profile);
-
-            if (config.defaultLanguage != null)
-                _manager.SetLanguage(config.defaultLanguage);
-
-            LocalizationLogger.Log("Localization initialized");
+            InitializeCore(config, config != null ? config.DefaultLanguageCode : null, false);
         }
 
         /// <summary>
@@ -62,40 +47,61 @@ namespace SimplyLocalize
         public static void Initialize(LocalizationConfig config, string languageCode,
             bool throwOnMissing = false)
         {
+            InitializeCore(config, languageCode, throwOnMissing);
+        }
+
+        internal static LocalizationManager InitializeForBootstrap(LocalizationConfig config, LanguageProfile profile) =>
+            InitializeCore(config, profile != null ? profile.Code : null, profile != null);
+
+        private static LocalizationManager InitializeCore(LocalizationConfig config, string languageCode, bool throwOnMissing)
+        {
             if (config == null)
             {
                 Debug.LogError("[SimplyLocalize] Cannot initialize: config is null");
-                return;
+                return null;
             }
-
-            Shutdown();
-
-            _manager = new LocalizationManager(config);
-            _manager.OnLanguageChanged += lang => OnLanguageChanged?.Invoke(lang);
-            _manager.OnProfileChanged += profile => OnProfileChanged?.Invoke(profile);
 
             var profile = config.GetProfile(languageCode);
-
-            if (profile != null)
-            {
-                _manager.SetLanguage(profile);
-            }
-            else if (throwOnMissing)
+            if (profile == null && throwOnMissing)
             {
                 throw new ArgumentException(
-                    $"[SimplyLocalize] Language '{languageCode}' not found in config. " +
-                    $"Available: {string.Join(", ", config.languages.ConvertAll(p => p?.Code ?? "null"))}");
+                    $"[SimplyLocalize] Language '{languageCode}' not found in config '{config.name}'. " +
+                    $"Available: {string.Join(", ", config.GetLanguageCodes())}");
             }
-            else
+            if (profile == null)
             {
-                LocalizationLogger.LogWarning(
-                    $"Language '{languageCode}' not found, using default");
-
-                if (config.defaultLanguage != null)
-                    _manager.SetLanguage(config.defaultLanguage);
+                if (!string.IsNullOrEmpty(languageCode))
+                    LocalizationLogger.LogWarning($"Language '{languageCode}' not found in config '{config.name}', using default");
+                profile = config.defaultLanguage;
             }
 
-            LocalizationLogger.Log($"Localization initialized with '{_manager.CurrentLanguage}'");
+            // Prepare completely before replacing a working instance. Events see only committed state.
+            bool logging = LocalizationLogger.Enabled, loggingInBuild = LocalizationLogger.EnabledInBuild;
+            LocalizationManager candidate;
+            try
+            {
+                candidate = new LocalizationManager(config);
+                if (profile != null) candidate.SetLanguage(profile);
+            }
+            catch
+            {
+                LocalizationLogger.Enabled = logging;
+                LocalizationLogger.EnabledInBuild = loggingInBuild;
+                throw;
+            }
+            Shutdown();
+            _manager = candidate;
+            _manager.OnLanguageChanged += ForwardLanguageChanged;
+            _manager.OnProfileChanged += ForwardProfileChanged;
+            if (candidate.CurrentProfile != null)
+            {
+                ForwardLanguageChanged(candidate.CurrentLanguage);
+                if (ReferenceEquals(_manager, candidate)) ForwardProfileChanged(candidate.CurrentProfile);
+            }
+            LocalizationLogger.Log($"Localization initialized with '{candidate.CurrentLanguage}'");
+            // Subscribers can replace the manager while handling startup events. The caller
+            // owns this candidate, never a replacement created by another initializer.
+            return candidate;
         }
 
         /// <summary>
@@ -107,16 +113,8 @@ namespace SimplyLocalize
         {
             if (IsInitialized) return;
 
-            var configs = Resources.LoadAll<LocalizationConfig>("");
-
-            if (configs == null || configs.Length == 0)
-            {
-                Debug.LogError("[SimplyLocalize] No LocalizationConfig found in Resources. " +
-                    "Create one and place it in a Resources folder.");
-                return;
-            }
-
-            Initialize(configs[0]);
+            var config = FindResourceConfig(false);
+            if (config != null) Initialize(config);
         }
 
         /// <summary>
@@ -127,8 +125,40 @@ namespace SimplyLocalize
             if (_manager == null)
                 return;
 
+            _manager.OnLanguageChanged -= ForwardLanguageChanged;
+            _manager.OnProfileChanged -= ForwardProfileChanged;
             _manager.ClearCaches();
             _manager = null;
+        }
+
+        private static void ForwardLanguageChanged(string language) => OnLanguageChanged?.Invoke(language);
+        private static void ForwardProfileChanged(LanguageProfile profile) => OnProfileChanged?.Invoke(profile);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRuntimeState()
+        {
+            Shutdown();
+            OnLanguageChanged = null;
+            OnProfileChanged = null;
+            LocalizationLogger.Enabled = LocalizationLogger.EnabledInBuild = false;
+            Pluralization.PluralRuleProvider.ResetRuntimeState();
+        }
+
+        internal static LocalizationConfig FindResourceConfig(bool automaticOnly)
+        {
+            var candidates = new List<LocalizationConfig>();
+            foreach (var config in Resources.LoadAll<LocalizationConfig>(""))
+                if (config != null && (!automaticOnly || config.autoInitialize)) candidates.Add(config);
+            if (candidates.Count == 1) return candidates[0];
+            if (candidates.Count == 0)
+            {
+                if (!automaticOnly) Debug.LogError("[SimplyLocalize] No LocalizationConfig found in Resources. Create one and place it in a Resources folder.");
+                return null;
+            }
+            var names = candidates.ConvertAll(config => config.name);
+            names.Sort(StringComparer.Ordinal);
+            Debug.LogError($"[SimplyLocalize] Conflicting {(automaticOnly ? "auto-initialize " : "")}LocalizationConfigs in Resources: {string.Join(", ", names)}. Assign a config explicitly or enable autoInitialize on only one config.");
+            return null;
         }
 
         /// <summary>
@@ -302,7 +332,8 @@ namespace SimplyLocalize
         // ──────────────────────────────────────────────
 
         /// <summary>
-        /// Checks whether a translation exists for the key in the current or fallback language.
+        /// Checks whether an entry exists for the key in the current or fallback language,
+        /// including null/empty values. Get skips empty translations when resolving fallback.
         /// </summary>
         public static bool HasKey(string key)
         {
@@ -310,7 +341,7 @@ namespace SimplyLocalize
         }
 
         /// <summary>
-        /// Checks whether a specific language has a translation for the given key.
+        /// Checks whether a specific language has an entry for the key, including null/empty values.
         /// Loads the language data if not already cached.
         /// </summary>
         public static bool HasTranslation(string key, string languageCode)
@@ -332,7 +363,9 @@ namespace SimplyLocalize
 
         /// <summary>
         /// Replaces the data provider at runtime (e.g. to switch to Addressables).
-        /// Clears all cached translation data.
+        /// Reloads the active language and fallbacks, then notifies consumers.
+        /// A loading failure preserves the previous provider and cached state.
+        /// Providers and their assets remain caller-owned.
         /// </summary>
         public static void SetDataProvider(ILocalizationDataProvider provider)
         {
@@ -341,18 +374,12 @@ namespace SimplyLocalize
         }
 
         /// <summary>
-        /// Clears all cached data and reloads the current language.
+        /// Reloads current and fallback data and notifies consumers even if the language is unchanged.
+        /// A loading failure preserves the last successful state and propagates the exception.
         /// </summary>
         public static void Reload()
         {
-            if (_manager == null)
-                return;
-
-            string lang = _manager.CurrentLanguage;
-            _manager.ClearCaches();
-
-            if (!string.IsNullOrEmpty(lang))
-                _manager.SetLanguage(lang);
+            _manager?.Reload();
         }
 
         // ──────────────────────────────────────────────
@@ -360,13 +387,15 @@ namespace SimplyLocalize
         // ──────────────────────────────────────────────
 
         /// <summary>
-        /// Fired when the active language changes. Passes the new language code.
+        /// Fired when the active language changes or its data is successfully reloaded/replaced.
+        /// Passes the active language code after loading has completed.
         /// All localized components subscribe to this automatically.
         /// </summary>
         public static event Action<string> OnLanguageChanged;
 
         /// <summary>
-        /// Fired when the language profile changes (font, sizing, direction, etc.).
+        /// Fired after OnLanguageChanged, including successful reloads and provider changes.
+        /// Passes the active language profile (font, sizing, direction, etc.).
         /// Components use this to apply visual settings.
         /// </summary>
         public static event Action<LanguageProfile> OnProfileChanged;

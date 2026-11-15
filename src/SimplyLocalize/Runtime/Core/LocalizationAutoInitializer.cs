@@ -18,20 +18,12 @@ namespace SimplyLocalize
             if (Localization.IsInitialized)
                 return;
 
-            var configs = Resources.LoadAll<LocalizationConfig>("");
-
-            if (configs == null || configs.Length == 0)
-                return;
-
-            var config = configs[0];
-
-            if (!config.autoInitialize)
-                return;
-
-            Localization.Initialize(config);
-
-            if (config.autoDetectLanguage)
-                Localization.SetLanguageAuto();
+            var config = Localization.FindResourceConfig(true);
+            if (config == null) return;
+            var profile = config.autoDetectLanguage
+                ? config.GetProfileBySystemLanguage(Application.systemLanguage) ?? config.defaultLanguage
+                : config.defaultLanguage;
+            Localization.Initialize(config, profile != null ? profile.Code : null);
 
             LocalizationLogger.Log("Auto-initialized from config in Resources");
         }

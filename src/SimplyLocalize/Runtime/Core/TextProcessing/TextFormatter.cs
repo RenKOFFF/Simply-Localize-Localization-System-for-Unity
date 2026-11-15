@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using SimplyLocalize.Pluralization;
 
@@ -24,7 +26,9 @@ namespace SimplyLocalize.TextProcessing
 
         private static StringBuilder GetBuilder()
         {
-            var sb = _sb ??= new StringBuilder(256);
+            var sb = _sb ?? new StringBuilder(256);
+            // Take ownership until formatting completes. User ToString/rules may reenter Format.
+            _sb = null;
             sb.Clear();
             return sb;
         }
@@ -57,7 +61,7 @@ namespace SimplyLocalize.TextProcessing
 
             var tokens = template.Tokens;
 
-            if (tokens.Count == 0)
+            if (tokens == null || tokens.Count == 0)
                 return string.Empty;
 
             // Fast path: single text token
@@ -67,53 +71,41 @@ namespace SimplyLocalize.TextProcessing
             var sb = GetBuilder();
             IPluralRule pluralRule = null;
 
-            for (int i = 0; i < tokens.Count; i++)
+            try
             {
-                var token = tokens[i];
-
-                switch (token.Type)
+                for (int i = 0; i < tokens.Count; i++)
                 {
-                    case TokenType.Text:
+                    var token = tokens[i];
+                    if (token.Type == TokenType.Text)
+                    {
                         sb.Append(token.Text);
-                        break;
-
-                    case TokenType.IndexedParam:
-                    {
-                        object value = GetIndexedValue(args, token.Index);
-
-                        if (token.HasForms)
-                        {
-                            pluralRule ??= PluralRuleProvider.GetRule(languageCode);
-                            AppendForm(sb, token.Forms, value, pluralRule);
-                        }
-                        else
-                        {
-                            AppendValue(sb, value, token.Index);
-                        }
-
-                        break;
+                        continue;
                     }
-
-                    case TokenType.NamedParam:
+                    object value = token.Type == TokenType.IndexedParam
+                        ? GetIndexedValue(args, token.Index)
+                        : GetNamedValue(namedArgs, token.Name);
+                    if (token.HasForms)
                     {
-                        object value = GetNamedValue(namedArgs, token.Name);
-
-                        if (token.HasForms)
-                        {
+                        if (value is not FormSelector)
                             pluralRule ??= PluralRuleProvider.GetRule(languageCode);
-                            AppendForm(sb, token.Forms, value, pluralRule);
-                        }
-                        else
-                        {
-                            AppendValue(sb, value, token.Name);
-                        }
-
-                        break;
+                        AppendForm(sb, token.Forms, value, pluralRule);
                     }
+                    else if (value == null && token.RawText != null)
+                    {
+                        sb.Append(token.RawText);
+                    }
+                    else if (token.Type == TokenType.IndexedParam)
+                        AppendValue(sb, value, token.Index);
+                    else
+                        AppendValue(sb, value, token.Name);
                 }
+                return sb.ToString();
             }
-
-            return sb.ToString();
+            finally
+            {
+                // Avoid retaining a one-off giant translation for the lifetime of the thread.
+                if (sb.Capacity <= 16384) _sb = sb;
+            }
         }
 
         private static void AppendForm(StringBuilder sb, string[] forms, object value, IPluralRule rule)
@@ -121,8 +113,19 @@ namespace SimplyLocalize.TextProcessing
             if (forms.Length == 0)
                 return;
 
-            int count = ToInt(value);
-            int formIndex = rule.Evaluate(count);
+            int formIndex;
+            if (value is FormSelector selector)
+                formIndex = selector.Index;
+            else if (value is int integer)
+                formIndex = rule.Evaluate(integer);
+            else
+            {
+                decimal count = ToNumber(value);
+                formIndex = rule is IDecimalPluralRule numericRule
+                    ? numericRule.Evaluate(count)
+                    // Legacy custom rules accept only Int32. Keep truncation, avoid wraparound.
+                    : rule.Evaluate(count > int.MaxValue ? int.MaxValue : count < int.MinValue ? int.MinValue : (int)count);
+            }
 
             // Clamp to available forms
             if (formIndex >= forms.Length)
@@ -158,25 +161,31 @@ namespace SimplyLocalize.TextProcessing
 
         private static object GetNamedValue(Dictionary<string, object> namedArgs, string name)
         {
-            if (namedArgs != null && namedArgs.TryGetValue(name, out var value))
+            if (name != null && namedArgs != null && namedArgs.TryGetValue(name, out var value))
                 return value;
             return null;
         }
 
-        private static int ToInt(object value)
+        private static decimal ToNumber(object value)
         {
             if (value == null) return 0;
 
-            return value switch
+            switch (value)
             {
-                int i => i,
-                long l => (int)l,
-                float f => (int)f,
-                double d => (int)d,
-                short s => s,
-                byte b => b,
-                _ => int.TryParse(value.ToString(), out int parsed) ? parsed : 0
-            };
+                case decimal number: return number;
+                case sbyte or byte or short or ushort or int or uint or long or ulong:
+                    return Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+                case float number:
+                    return ParseNumber(number.ToString("R", CultureInfo.InvariantCulture));
+                case double number:
+                    return ParseNumber(number.ToString("R", CultureInfo.InvariantCulture));
+                default: return ParseNumber(value.ToString());
+            }
         }
+
+        // Preserve the legacy zero default for missing/non-numeric values. NaN, infinity,
+        // and values outside Decimal's range use that same deterministic default.
+        private static decimal ParseNumber(string value) =>
+            decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? number : 0;
     }
 }

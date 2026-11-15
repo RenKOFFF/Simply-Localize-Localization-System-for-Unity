@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace SimplyLocalize.Pluralization
@@ -9,12 +10,26 @@ namespace SimplyLocalize.Pluralization
     public static class PluralRuleProvider
     {
         private static readonly Dictionary<string, IPluralRule> Cache = new();
+        private static readonly Dictionary<string, IPluralRule> Overrides = new();
+        private static readonly object Sync = new();
 
         private static readonly GermanicPluralRule Germanic = new();
         private static readonly SlavicPluralRule Slavic = new();
         private static readonly RomancePluralRule Romance = new();
         private static readonly EastAsianPluralRule EastAsian = new();
         private static readonly ArabicPluralRule Arabic = new();
+        private static readonly IPluralRule ExactlyOne = new CardinalPluralRule(CardinalKind.ExactlyOne);
+        private static readonly IPluralRule Danish = new CardinalPluralRule(CardinalKind.Danish);
+        private static readonly IPluralRule Icelandic = new CardinalPluralRule(CardinalKind.Icelandic);
+        private static readonly IPluralRule Belarusian = new CardinalPluralRule(CardinalKind.Belarusian);
+        private static readonly IPluralRule Polish = new CardinalPluralRule(CardinalKind.Polish);
+        private static readonly IPluralRule Czech = new CardinalPluralRule(CardinalKind.Czech);
+        private static readonly IPluralRule Slovenian = new CardinalPluralRule(CardinalKind.Slovenian);
+        private static readonly IPluralRule Serbian = new CardinalPluralRule(CardinalKind.Serbian);
+        private static readonly IPluralRule Romanian = new CardinalPluralRule(CardinalKind.Romanian);
+        private static readonly IPluralRule Italian = new CardinalPluralRule(CardinalKind.Italian);
+        private static readonly IPluralRule Spanish = new CardinalPluralRule(CardinalKind.Spanish);
+        private static readonly IPluralRule Occitan = new LegacyOccitanRule();
 
         /// <summary>
         /// Returns the plural rule for the given language code.
@@ -23,67 +38,101 @@ namespace SimplyLocalize.Pluralization
         /// </summary>
         public static IPluralRule GetRule(string languageCode)
         {
-            if (string.IsNullOrEmpty(languageCode))
+            if (string.IsNullOrWhiteSpace(languageCode))
                 return Germanic;
 
-            if (Cache.TryGetValue(languageCode, out var cached))
-                return cached;
-
-            string baseCode = GetBaseCode(languageCode);
-            IPluralRule rule = ResolveRule(baseCode);
-            Cache[languageCode] = rule;
-            return rule;
+            string code = Normalize(languageCode);
+            lock (Sync)
+            {
+                if (Cache.TryGetValue(code, out var cached)) return cached;
+                // Exact override first, then parent tags, then the built-in rule.
+                string parent = code;
+                while (true)
+                {
+                    if (Overrides.TryGetValue(parent, out var custom)) return Cache[code] = custom;
+                    int separator = parent.LastIndexOf('-');
+                    if (separator < 0) break;
+                    parent = parent.Substring(0, separator);
+                }
+                var rule = ResolveRule(parent, code);
+                Cache[code] = rule;
+                return rule;
+            }
         }
 
         /// <summary>
         /// Registers a custom plural rule for a language code.
         /// Use this to override built-in rules or add support for new languages.
+        /// Codes are case-insensitive; '-' and '_' are equivalent. Parent overrides apply
+        /// to regional codes unless a more specific override exists. Invalidates cached lookups.
         /// </summary>
         public static void RegisterRule(string languageCode, IPluralRule rule)
         {
-            Cache[languageCode] = rule;
+            if (string.IsNullOrWhiteSpace(languageCode)) throw new ArgumentException("A language code is required.", nameof(languageCode));
+            if (rule == null) throw new ArgumentNullException(nameof(rule));
+            lock (Sync)
+            {
+                Overrides[Normalize(languageCode)] = rule;
+                Cache.Clear();
+            }
         }
 
-        private static IPluralRule ResolveRule(string baseCode)
+        private static IPluralRule ResolveRule(string baseCode, string code)
         {
             return baseCode switch
             {
-                // Germanic
-                "en" or "de" or "nl" or "sv" or "da" or "no" or "nb" or "nn"
-                    or "is" or "fo" or "af" or "fy" => Germanic,
-
-                // Slavic
-                "ru" or "uk" or "be" or "pl" or "hr" or "sr" or "bs"
-                    or "cs" or "sk" or "sl" => Slavic,
-
-                // Romance
-                "fr" or "es" or "it" or "pt" or "ca" or "gl" or "ro"
-                    or "oc" => Romance,
-
-                // East Asian and no-plural languages
+                "en" or "de" or "nl" or "sv" or "fy" or "fi" or "et" or "gl" => Germanic,
+                "no" or "nb" or "nn" or "fo" or "af" or "ka" or "tr" or "hu" => ExactlyOne,
+                "da" => Danish,
+                "is" => Icelandic,
+                "ru" or "uk" => Slavic,
+                "be" => Belarusian,
+                "pl" => Polish,
+                "cs" or "sk" => Czech,
+                "sl" => Slovenian,
+                "hr" or "sr" or "bs" => Serbian,
+                "ro" => Romanian,
+                "fr" => Romance,
+                "pt" => UsesEuropeanPortuguese(code) ? Italian : Romance,
+                "it" or "ca" => Italian,
+                "es" => Spanish,
+                // Preserve the previous Occitan rule; it has no entry in CLDR 48 plurals.xml.
+                "oc" => Occitan,
                 "ja" or "zh" or "ko" or "vi" or "th" or "id" or "ms"
-                    or "my" or "lo" or "km" or "ka" or "tr" or "hu"
-                    or "fi" or "et" => EastAsian,
-
-                // Arabic
+                    or "my" or "lo" or "km" => EastAsian,
                 "ar" => Arabic,
-
-                // Default fallback
                 _ => Germanic
             };
         }
 
-        private static string GetBaseCode(string languageCode)
+        private static bool UsesEuropeanPortuguese(string code)
         {
-            int dashIndex = languageCode.IndexOf('-');
-            if (dashIndex > 0)
-                return languageCode.Substring(0, dashIndex).ToLowerInvariant();
+            var parts = code.Split('-');
+            for (int i = 1; i < parts.Length; i++)
+            {
+                if (parts[i].Length == 1) break; // Stop before BCP-47 extensions/private use.
+                if (parts[i].Length == 2)
+                    return parts[i] is "pt" or "ao" or "ch" or "cv" or "fr" or "gq" or "gw"
+                        or "lu" or "mo" or "mz" or "st" or "tl";
+            }
+            return false;
+        }
 
-            int underscoreIndex = languageCode.IndexOf('_');
-            if (underscoreIndex > 0)
-                return languageCode.Substring(0, underscoreIndex).ToLowerInvariant();
+        private static string Normalize(string code) => code.Trim().Replace('_', '-').ToLowerInvariant();
 
-            return languageCode.ToLowerInvariant();
+        internal static void ResetRuntimeState()
+        {
+            lock (Sync)
+            {
+                Cache.Clear();
+                Overrides.Clear();
+            }
+        }
+
+        private sealed class LegacyOccitanRule : IPluralRule
+        {
+            public int FormCount => 2;
+            public int Evaluate(int count) => count >= -1 && count <= 1 ? 0 : 1;
         }
     }
 }

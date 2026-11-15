@@ -1,21 +1,23 @@
 namespace SimplyLocalize.Pluralization
 {
     /// <summary>
-    /// Plural rule for Germanic languages: English, German, Dutch, Swedish, Danish, Norwegian.
-    /// Forms: one (n = 1), other.
+    /// English-style cardinal rule (also German, Dutch, Swedish, Finnish, Estonian).
+    /// Forms: one (absolute integer 1 without fractional digits), other.
     ///
     /// Usage in translation strings:
     ///   "{0} {0|coin|coins}"
     ///    Form 0: one   → "coin"
     ///    Form 1: other → "coins"
     /// </summary>
-    public class GermanicPluralRule : IPluralRule
+    public class GermanicPluralRule : IDecimalPluralRule
     {
+        private static readonly CardinalPluralRule Rule = new(CardinalKind.English);
         public int FormCount => 2;
 
         public int Evaluate(int count)
         {
-            return count == 1 ? 0 : 1;
+            return Rule.Evaluate(count);
         }
+        public int Evaluate(decimal count) => Rule.Evaluate(count);
     }
 }

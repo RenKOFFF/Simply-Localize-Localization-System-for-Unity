@@ -1,22 +1,23 @@
 namespace SimplyLocalize.Pluralization
 {
     /// <summary>
-    /// Plural rule for Romance languages: French, Spanish, Italian, Portuguese.
-    /// Forms: one (n = 0 or n = 1), other.
+    /// French-style cardinal rule (also Portuguese except European Portuguese).
+    /// Forms: one, other, many. The optional many form is appended to preserve two-form data.
     ///
     /// Usage in translation strings:
     ///   "{0} {0|pièce|pièces}"
     ///    Form 0: one   → "pièce"  (0, 1)
     ///    Form 1: other → "pièces" (2, 3, 4...)
     /// </summary>
-    public class RomancePluralRule : IPluralRule
+    public class RomancePluralRule : IDecimalPluralRule
     {
-        public int FormCount => 2;
+        private static readonly CardinalPluralRule Rule = new(CardinalKind.French);
+        public int FormCount => Rule.FormCount;
 
         public int Evaluate(int count)
         {
-            int abs = count < 0 ? -count : count;
-            return abs <= 1 ? 0 : 1;
+            return Rule.Evaluate(count);
         }
+        public int Evaluate(decimal count) => Rule.Evaluate(count);
     }
 }

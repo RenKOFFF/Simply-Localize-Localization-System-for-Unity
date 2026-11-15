@@ -37,7 +37,7 @@ A modern, flexible localization system for Unity. Manages translations, localize
 - **Text localization** — JSON-based, one folder per language, multiple files per language merged automatically
 - **Asset localization** — localize sprites, audio clips, materials, prefabs, or any `UnityEngine.Object` type through asset tables; `Localization.GetAsset<T>(key)` is the single runtime API for all types
 - **Pluralization** — built-in rules for Germanic, Slavic, Romance, East Asian, and Arabic language families, via simple inline syntax (`{0|apple|apples}`)
-- **Parameter substitution** — indexed (`{0}`), named (`{playerName}`), or mixed; both `string.Format`-compatible and self-describing
+- **Parameter substitution** — indexed (`{0}`), named (`{playerName}`), or mixed, with escaped braces and explicit form selectors
 - **Language profiles** — per-language font (TMP + legacy), font size multiplier, weight, spacing, text direction (LTR/RTL), alignment overrides
 - **Per-language fallback chains** — e.g. `Ukrainian → Russian → English`; each profile points to its own fallback, resolved lazily with cycle protection
 - **Per-component profile overrides** — individual UI elements can override specific sections (font only, spacing only, etc.) of the language profile
@@ -172,6 +172,10 @@ Sprite flag = Localization.GetAsset<Sprite>("flags/current");
 
 Or drop a `LocalizedText` component onto any TextMeshPro / legacy Text element and pick a key in the Inspector — no code needed.
 
+Startup ownership: the first successful initializer wins for scene bootstraps. Duplicate bootstraps leave the current manager and language intact; a conflicting config is reported. Only the bootstrap that created the active manager shuts it down on destruction. `DontDestroyOnLoad` keeps that owner alive across scene loads. A manually or automatically initialized manager remains caller-owned. Use `Localization.Initialize(config, ...)` explicitly to replace it; a validation/loading failure preserves the previous working manager. Normal `Shutdown()`/reinitialization preserves facade subscribers and disconnects the old manager's event forwarding.
+
+Each new Play session resets the static manager, facade events and custom plural registrations, including with Domain Reload disabled (tested with Scene Reload enabled). Register custom rules again during startup, after subsystem registration. Disabling both Domain Reload and Scene Reload is outside the verified lifecycle matrix. Config validation reports duplicate codes, conflicting profile references, invalid language/path values and a default profile missing from `languages`. Empty slots are ignored; external fallback profiles and cycle-safe chains remain supported. `GetValidationErrors()` inspects a config without changing it. A config without a default requires an explicit language selection. Automatic startup considers only configs with `autoInitialize`; multiple candidates are reported rather than selected arbitrarily.
+
 ---
 
 ## Folder Structure
@@ -271,9 +275,11 @@ Embedded inspector for any LanguageProfile asset — edit fonts, typography, spa
 ![Coverage tab](docs/images/coverage-tab.png)
 <!-- TODO: screenshot of Coverage tab -->
 
-- Per-language coverage bars (translated / total)
+- Per-language text and asset coverage: direct values and availability through fallback
 - Warnings for missing translations
-- Warnings for parameter mismatches (e.g. reference has `{playerName}` but translation doesn't)
+- Runtime token parsing for parameter mismatches and insufficient plural forms, including reference-language strings; escaped braces are literals. Form-count warnings are conditional because `FormSelector` uses the same syntax.
+
+Coverage reads all files and asset tables visible to the Resources provider, including files unique to another language, nested folders and multiple Resources roots. Current editor values overlay this read-only snapshot. This does not change discovery or save behavior in the other editor tabs. Empty datasets show no data, not 100%; failed reads mark the check incomplete. Asset availability means an object of any type exists; it does not prove compatibility with every component's requested type. Duplicate asset keys are reported; duplicate text keys are logged with their source names.
 
 ### Auto Localize Tab
 
@@ -488,7 +494,7 @@ Localization.Get("Greeting",
 
 ### Pluralization
 
-The syntax `{N|singular|plural|...}` selects a form based on the value of parameter `N` using the current language's plural rule.
+The syntax `{N|singular|plural|...}` selects a form based on the value of parameter `N` using the language of the resolved translation, including fallback translations.
 
 ```json
 "Items": "{0} {0|item|items}",
@@ -506,17 +512,44 @@ Localization.Get("ItemsRu", 3); // "3 предмета"
 Localization.Get("ItemsRu", 5); // "5 предметов"
 ```
 
-### Supported Plural Rule Families
+### Plural rules and compatibility
 
-| Family      | Languages                                    | Forms    |
-|-------------|----------------------------------------------|----------|
-| Germanic    | English, German, Dutch, Swedish, Danish      | 2        |
-| Romance     | French, Spanish, Italian, Portuguese         | 2        |
-| Slavic      | Russian, Ukrainian, Polish, Czech, Serbian   | 3        |
-| East Asian  | Japanese, Chinese, Korean, Thai, Vietnamese  | 1        |
-| Arabic      | Arabic                                       | 6        |
+Rules use [Unicode CLDR 48 cardinals](https://www.unicode.org/cldr/charts/48/supplemental/language_plural_rules.html) for ordinary numbers. The table lists **positional order in this package**, not CLDR category order. Existing slots stay in place; newly supported categories are appended.
 
-The rule is selected automatically from the current `LanguageProfile.systemLanguage`. You can override it by implementing `IPluralRule` and registering it through `PluralRuleProvider`.
+| Language codes | Forms in template order |
+|---|---|
+| `en de nl sv fy fi et gl` | one, other |
+| `af fo no nb nn ka tr hu` | one, other (including decimal 1.0) |
+| `da is` | one, other, using their respective fractional rules |
+| `fr pt pt-BR` | one, other, **many** |
+| `es it ca pt-PT` | one, other, **many** (language-specific one rules) |
+| `ru uk be pl` | one, few, many, **other** |
+| `hr sr bs` | one, few, other |
+| `cs sk` | one, few, other, **many** |
+| `sl` | one, few, other, **two** |
+| `ro` | one, other, **few** |
+| `ja zh ko vi th id ms my lo km` | other |
+| `ar` | zero, one, two, few, many, other |
+
+No JSON or asset migration is required. Short templates still clamp to their last available form. For example, old French `{0|pièce|pièces}` remains valid; a third form can be appended for `many`. Corrected language rules intentionally change previously incorrect choices, such as Polish 21 or Spanish 0. Occitan (`oc`) retains its legacy two-form rule; unknown codes use the English-style rule.
+
+Rules are selected by `LanguageProfile.languageCode`, including regional codes (`pt-PT` differs from `pt-BR`); `systemLanguage` is used for device language detection. Code matching ignores case and accepts `_` as well as `-`. A custom `IPluralRule` registered with `PluralRuleProvider.RegisterRule` applies to that code and its regional variants unless a more specific override exists. Registration invalidates previous cached resolutions.
+
+Built-in rules accept all standard integer types and fractions without Int32 wraparound. Use `decimal` or an invariant numeric string to preserve visible fractional digits (`1m` and `1.0m` can have different rules). Float/double use their round-trip decimal representation. Missing, non-numeric, non-finite, and out-of-Decimal-range values retain the zero default. Existing custom `IPluralRule.Evaluate(int)` implementations remain valid: fractions truncate and out-of-range counts saturate to Int32 bounds. Implement the optional `IDecimalPluralRule` to handle the full supported range. Compact-number exponents and ordinal/range plural rules are not supported.
+
+### Explicit selectors and template handling
+
+Ordinary numeric parameters always use plural rules, preserving existing templates. For a choice by index, pass `FormSelector`; the template itself stays unchanged:
+
+```csharp
+using SimplyLocalize.TextProcessing;
+// Translation: "{gender|He|She} plays as {0|Warrior|Mage|Rogue}"
+Localization.Get("Character", new object[] { new FormSelector(2) },
+    new Dictionary<string, object> { ["gender"] = new FormSelector(1) });
+// "She plays as Rogue", in every language
+```
+
+Selectors are zero-based and clamp to the first/last available form. Escapes `{{` and `}}` produce literal braces in every `Get` overload and inside form text. For compatibility, three consecutive closing braces end the token first and then append a literal `}`: `{0|one|other}}}` with 1 produces `one}`. Missing simple parameters keep their original spelling. Malformed or nested token expressions remain literal text; recursive expressions, `string.Format` alignment and format specifiers are not part of this syntax. Literal parameter values are not parsed again as templates.
 
 ---
 
@@ -533,7 +566,15 @@ A `LanguageProfile` holds **everything about one language**:
 
 Each section has an **override toggle**. Sections with the toggle disabled keep the original component values — so you can have a Chinese profile that only changes the font without touching spacing or size.
 
-`ProfileApplier` automatically caches the original component values (font, size, material, spacing, alignment, RTL flag) on first access and restores them whenever you switch to a profile that doesn't override that section.
+The text components cache their original font, material, typography, spacing and layout once. Every profile application starts from this baseline, including repeated `Reload` calls and disable/enable cycles. The size multiplier also scales TMP Auto Size and legacy Best Fit bounds. Legacy Text supports its native fonts, Bold/Italic combinations and nine alignment positions; character/word spacing and RTL settings apply to TMP only.
+
+RTL support sets TMP's native direction flag and optional alignment while preserving the source text and rich-text tags. It does not implement Arabic shaping or the Unicode bidirectional algorithm. Mixed Arabic/Latin text, numbers and punctuation therefore need a suitable font and a text renderer/shaping solution appropriate to the language. The Unity diagnostic checks glyph generation, line breaks and layout restoration; it is not a typography acceptance test.
+
+An enabled `LocalizedProfileOverride` replaces each selected section of the global profile, starting from the same original values. Unselected sections use the global profile. Empty font/material fields retain the originals for a locally overridden font section; explicitly selecting the original font also preserves its material preset. This works with TMP and legacy Text, with either localized text component or standalone, and even with an empty translation key. Disabling a local override returns control to the global profile when an enabled localized text component is present; otherwise it restores the originals.
+
+Profile fallback fonts use shared temporary font variants without modifying the source font assets. A fallback can also be added to the component's original font when `primaryFont` is empty. Existing source fallbacks keep priority. Temporary variants are released when no component uses them; their source materials and atlases remain intact. Disabling a text localization component restores its original settings and releases its variant.
+
+For custom integrations using `ProfileApplier` directly, call `CacheOriginals(text)` before `Apply(...)`, and `Restore()` or `Dispose()` when finished. `Restore()` retains the baseline for reuse; `Dispose()` also forgets the targets. Built-in components handle this lifecycle automatically. Existing profile/override assets require no migration.
 
 ---
 

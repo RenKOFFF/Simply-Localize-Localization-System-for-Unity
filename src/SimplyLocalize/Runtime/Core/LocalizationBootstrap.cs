@@ -25,11 +25,10 @@ namespace SimplyLocalize
         [Tooltip("Override the default language from config (ignored if auto-detect is on). Drag a LanguageProfile here.")]
         [SerializeField] private LanguageProfile _overrideLanguage;
 
+        private LocalizationManager _ownedManager;
+
         private void Awake()
         {
-            if (_dontDestroyOnLoad)
-                DontDestroyOnLoad(gameObject);
-
             if (_config == null)
             {
                 Debug.LogError(
@@ -37,17 +36,27 @@ namespace SimplyLocalize
                 return;
             }
 
-            Localization.Initialize(_config);
-
-            if (_autoDetectLanguage)
-                Localization.SetLanguageAuto();
-            else if (_overrideLanguage != null)
-                Localization.SetLanguage(_overrideLanguage);
+            // An existing manual/automatic/scene owner wins. A duplicate must neither
+            // reset the chosen language nor acquire shutdown rights over that manager.
+            if (Localization.IsInitialized)
+            {
+                if (Localization.Config != _config)
+                    Debug.LogWarning($"[SimplyLocalize] Bootstrap '{name}' config '{_config.name}' ignored: active config is '{Localization.Config.name}'. Use Localization.Initialize explicitly to replace it.", this);
+                return;
+            }
+            var profile = _autoDetectLanguage
+                ? _config.GetProfileBySystemLanguage(Application.systemLanguage) ?? _config.defaultLanguage
+                : _overrideLanguage != null ? _overrideLanguage : _config.defaultLanguage;
+            _ownedManager = Localization.InitializeForBootstrap(_config, profile);
+            if (_dontDestroyOnLoad)
+                DontDestroyOnLoad(gameObject);
         }
 
         private void OnDestroy()
         {
-            Localization.Shutdown();
+            if (_ownedManager != null && ReferenceEquals(Localization.Manager, _ownedManager))
+                Localization.Shutdown();
+            _ownedManager = null;
         }
     }
 }

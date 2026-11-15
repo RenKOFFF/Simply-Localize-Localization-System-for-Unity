@@ -31,16 +31,17 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 return;
             }
 
-            var coverages = CoverageAnalyzer.ComputeCoverage(_data, _config);
-            var warnings = CoverageAnalyzer.ComputeWarnings(_data, _config);
+            var report = CoverageAnalyzer.Analyze(_config, _data);
+            var coverages = report.TextCoverage;
+            var warnings = report.Warnings;
 
             // Summary cards
             var cards = new VisualElement();
             cards.style.flexDirection = FlexDirection.Row;
             cards.style.marginBottom = 16;
 
-            cards.Add(MakeMetricCard("Total keys", _data.KeyCount.ToString()));
-            cards.Add(MakeMetricCard("Languages", _config.languages.Count.ToString()));
+            cards.Add(MakeMetricCard("Text keys", (coverages.Count > 0 ? coverages[0].TotalCount : 0).ToString()));
+            cards.Add(MakeMetricCard("Languages", coverages.Count.ToString()));
 
             int totalMissing = 0;
             foreach (var c in coverages) totalMissing += c.MissingKeys.Count;
@@ -62,6 +63,10 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
 
             // Warnings
+            root.Add(new Label("Asset coverage (any asset type)"));
+            foreach (var coverage in report.AssetCoverage) root.Add(BuildCoverageBar(coverage));
+            if (!report.IsComplete) root.Add(new Label("Check incomplete: resolve the errors below before relying on coverage totals."));
+
             if (warnings.Count > 0)
             {
                 var warnTitle = new Label($"Warnings ({warnings.Count})");
@@ -121,8 +126,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             barBg.Add(barFill);
             row.Add(barBg);
 
-            var countLabel = new Label($"{coverage.TranslatedCount}/{coverage.TotalCount}");
-            countLabel.style.width = 60;
+            var countLabel = new Label(coverage.TotalCount == 0 ? "No data" :
+                $"Direct {coverage.TranslatedCount}/{coverage.TotalCount}; with fallback {coverage.AvailableCount}/{coverage.TotalCount}");
+            countLabel.style.width = 255;
             countLabel.style.fontSize = 11;
             countLabel.style.unityTextAlign = TextAnchor.MiddleRight;
             countLabel.style.color = pct >= 1f

@@ -8,12 +8,15 @@ namespace SimplyLocalize.Data
     ///
     /// Assets (sprites, audio, materials, custom types) are loaded via asset tables:
     /// call LoadAssetTables() to get the language's tables, then use LocalizationAssetTable.Get&lt;T&gt;(key).
+    /// Providers and Unity assets remain caller-owned; the manager does not dispose/unload them.
+    /// Loading errors should throw. The manager snapshots returned collections, but does not
+    /// clone Unity assets: providers must not mutate active tables during a failed load.
     /// </summary>
     public interface ILocalizationDataProvider
     {
         /// <summary>
         /// Loads all text translations for the specified language.
-        /// Returns a dictionary of key → translated string.
+        /// Returns a non-null dictionary of key → translated string (empty if no data exists).
         /// </summary>
         Dictionary<string, string> LoadTextData(string languageCode);
 
@@ -26,7 +29,7 @@ namespace SimplyLocalize.Data
         /// <summary>
         /// Loads all asset tables for the specified language.
         /// Each table is a LocalizationAssetTable SO in the language folder.
-        /// Returns empty list if none found.
+        /// Returns a non-null list, empty if none found.
         /// </summary>
         List<LocalizationAssetTable> LoadAssetTables(string languageCode);
     }

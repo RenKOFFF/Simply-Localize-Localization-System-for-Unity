@@ -1,0 +1,13 @@
+{
+    "name": "SimplyLocalize.Tests.EditMode",
+    "rootNamespace": "SimplyLocalize.Tests",
+    "references": [
+        "SimplyLocalize",
+        "SimplyLocalize.Editor",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": ["Editor"],
+    "optionalUnityReferences": ["TestAssemblies"],
+    "autoReferenced": false
+}

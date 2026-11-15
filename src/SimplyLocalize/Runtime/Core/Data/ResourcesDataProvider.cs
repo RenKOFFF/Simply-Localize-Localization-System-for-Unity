@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -33,12 +34,21 @@ namespace SimplyLocalize.Data
 
         public ResourcesDataProvider(string basePath)
         {
+            if (!LocalizationConfig.IsResourcePathValid(basePath))
+                throw new ArgumentException($"Invalid Resources base path '{basePath}': use a relative path with '/'.", nameof(basePath));
             _basePath = basePath.TrimEnd('/');
+        }
+
+        private string LanguagePath(string languageCode)
+        {
+            if (!LocalizationConfig.IsLanguageCodeValid(languageCode))
+                throw new ArgumentException($"Invalid language code '{languageCode}' for Resources/{_basePath}.", nameof(languageCode));
+            return string.IsNullOrEmpty(_basePath) ? languageCode : $"{_basePath}/{languageCode}";
         }
 
         public Dictionary<string, string> LoadTextData(string languageCode)
         {
-            string textFolder = $"{_basePath}/{languageCode}/text";
+            string textFolder = $"{LanguagePath(languageCode)}/text";
             var allTextAssets = Resources.LoadAll<TextAsset>(textFolder);
 
             if (allTextAssets == null || allTextAssets.Length == 0)
@@ -49,22 +59,38 @@ namespace SimplyLocalize.Data
             }
 
             var merged = new Dictionary<string, string>();
+            var sources = new Dictionary<string, string>();
 
-            for (int i = 0; i < allTextAssets.Length; i++)
+            try
             {
-                var asset = allTextAssets[i];
-                var parsed = LocalizationFileParser.Parse(asset.text);
+                for (int i = 0; i < allTextAssets.Length; i++)
+                {
+                    var asset = allTextAssets[i];
+                    Dictionary<string, string> parsed;
+                    try { parsed = LocalizationFileParser.Parse(asset.text); }
+                    catch (Exception error) when (error is FormatException || error is OverflowException || error is ArgumentOutOfRangeException)
+                    {
+                        throw new FormatException($"Invalid localization JSON at Resources/{textFolder}/{asset.name} (language '{languageCode}'): {error.Message}", error);
+                    }
 
-                foreach (var kvp in parsed)
-                    merged[kvp.Key] = kvp.Value;
+                    foreach (var kvp in parsed)
+                    {
+                        if (sources.TryGetValue(kvp.Key, out var previous))
+                            LocalizationLogger.LogWarning($"Duplicate key '{kvp.Key}' for '{languageCode}' in Resources/{textFolder}: '{previous}' and '{asset.name}'. Last loaded value wins; remove the duplicate to avoid load-order dependence.");
+                        merged[kvp.Key] = kvp.Value;
+                        sources[kvp.Key] = asset.name;
+                    }
 
-                LocalizationLogger.Log(
-                    $"Loaded {parsed.Count} keys from '{asset.name}.json' ({languageCode})");
+                    LocalizationLogger.Log(
+                        $"Loaded {parsed.Count} keys from '{asset.name}.json' ({languageCode})");
+                }
             }
-
-            // Unload all text assets
-            for (int i = 0; i < allTextAssets.Length; i++)
-                Resources.UnloadAsset(allTextAssets[i]);
+            finally
+            {
+                // Release loaded text assets even if parsing one of the files fails.
+                for (int i = 0; i < allTextAssets.Length; i++)
+                    Resources.UnloadAsset(allTextAssets[i]);
+            }
 
             LocalizationLogger.Log(
                 $"Total: {merged.Count} keys from {allTextAssets.Length} file(s) for '{languageCode}'");
@@ -74,7 +100,7 @@ namespace SimplyLocalize.Data
 
         public bool HasTextData(string languageCode)
         {
-            string textFolder = $"{_basePath}/{languageCode}/text";
+            string textFolder = $"{LanguagePath(languageCode)}/text";
             var assets = Resources.LoadAll<TextAsset>(textFolder);
             bool exists = assets != null && assets.Length > 0;
 
@@ -89,7 +115,7 @@ namespace SimplyLocalize.Data
 
         public List<LocalizationAssetTable> LoadAssetTables(string languageCode)
         {
-            string path = $"{_basePath}/{languageCode}";
+            string path = LanguagePath(languageCode);
             var tables = Resources.LoadAll<LocalizationAssetTable>(path);
 
             var result = new List<LocalizationAssetTable>();

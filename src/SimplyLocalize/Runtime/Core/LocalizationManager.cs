@@ -26,13 +26,14 @@ namespace SimplyLocalize
         private LanguageProfile _currentProfile;
 
         // Translation data: languageCode → (key → value)
-        private readonly Dictionary<string, Dictionary<string, string>> _textCache = new();
+        private Dictionary<string, Dictionary<string, string>> _textCache = new();
 
         // Parsed template cache: raw string → parsed template (shared across languages)
         private readonly Dictionary<string, ParsedTemplate> _templateCache = new();
 
         // Asset tables: languageCode → list of loaded tables
-        private readonly Dictionary<string, List<LocalizationAssetTable>> _assetTableCache = new();
+        private Dictionary<string, List<LocalizationAssetTable>> _assetTableCache = new();
+        private bool _usesAssetTables;
 
         public event Action<string> OnLanguageChanged;
         public event Action<LanguageProfile> OnProfileChanged;
@@ -47,6 +48,8 @@ namespace SimplyLocalize
                 ? config
                 : throw new ArgumentNullException(nameof(config));
 
+            config.ValidateOrThrow();
+
             LocalizationLogger.Enabled = config.enableLogging;
             LocalizationLogger.EnabledInBuild = config.enableLoggingInBuild;
             _dataProvider = new ResourcesDataProvider(config.resourcesBasePath);
@@ -54,14 +57,40 @@ namespace SimplyLocalize
 
         /// <summary>
         /// Replaces the data provider (e.g. to switch from Resources to Addressables).
-        /// Clears all cached data.
+        /// Reloads the active language and its fallbacks before notifying consumers.
+        /// If loading fails, the previous provider and caches remain active.
+        /// Providers and their Unity assets remain owned by the caller.
         /// </summary>
         public void SetDataProvider(ILocalizationDataProvider provider)
         {
-            _dataProvider = provider ?? throw new ArgumentNullException(nameof(provider));
-            _textCache.Clear();
+            if (provider == null) throw new ArgumentNullException(nameof(provider));
+            ReloadFrom(provider);
+            LocalizationLogger.Log("Data provider changed");
+        }
+
+        /// <summary>
+        /// Reloads the current language and fallback data, even when the language is unchanged.
+        /// Publishes both change events once after successful loading. On failure, keeps
+        /// the last successful state and propagates the exception without publishing events.
+        /// Asset tables are preloaded only after this manager has been used to request assets.
+        /// </summary>
+        public void Reload()
+        {
+            ReloadFrom(_dataProvider);
+        }
+
+        private void ReloadFrom(ILocalizationDataProvider provider)
+        {
+            var text = new Dictionary<string, Dictionary<string, string>>();
+            var assets = new Dictionary<string, List<LocalizationAssetTable>>();
+            if (!string.IsNullOrEmpty(_currentLanguage))
+                PrepareData(provider, _currentLanguage, _currentProfile, text, assets);
+
+            _dataProvider = provider;
+            _textCache = text;
+            _assetTableCache = assets;
             _templateCache.Clear();
-            LocalizationLogger.Log("Data provider changed, caches cleared");
+            NotifyCurrentState();
         }
 
         /// <summary>
@@ -99,31 +128,23 @@ namespace SimplyLocalize
             if (profile == null)
             {
                 LocalizationLogger.LogWarning(
-                    $"Language '{languageCode}' is not defined in LocalizationConfig");
+                    $"Language '{languageCode}' is not defined in LocalizationConfig '{_config.name}'. Available: {string.Join(", ", _config.GetLanguageCodes())}");
                 return;
             }
 
-            // Ensure text data is loaded
-            EnsureTextDataLoaded(languageCode);
+            // Stage missing data separately: a failed fallback must not leave a partial load.
+            var text = new Dictionary<string, Dictionary<string, string>>(_textCache);
+            var assets = new Dictionary<string, List<LocalizationAssetTable>>(_assetTableCache);
+            PrepareData(_dataProvider, languageCode, profile, text, assets);
 
-            // Preload per-language fallback chain (e.g. uk → ru → en)
-            PreloadFallbackChain(profile);
-
-            // Also preload global fallback
-            string globalFallback = _config.FallbackLanguageCode;
-
-            if (!string.IsNullOrEmpty(globalFallback) && globalFallback != languageCode)
-                EnsureTextDataLoaded(globalFallback);
-
+            _textCache = text;
+            _assetTableCache = assets;
             _currentLanguage = languageCode;
             _currentProfile = profile;
 
             LocalizationLogger.Log($"Language set to '{languageCode}' ({profile.displayName})");
 
-            OnLanguageChanged?.Invoke(languageCode);
-
-            if (_currentProfile != null)
-                OnProfileChanged?.Invoke(_currentProfile);
+            NotifyCurrentState();
         }
 
         /// <summary>
@@ -135,25 +156,14 @@ namespace SimplyLocalize
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
 
-            string raw = GetRaw(key);
+            string raw = GetRaw(key, out var sourceLanguage);
             var template = GetOrParseTemplate(raw);
 
-            // If template has no tokens beyond text, return raw directly
             if (template == null)
                 return raw;
 
-            bool hasOnlyText = true;
-
-            for (int i = 0; i < template.Tokens.Count; i++)
-            {
-                if (template.Tokens[i].Type != TokenType.Text)
-                {
-                    hasOnlyText = false;
-                    break;
-                }
-            }
-
-            return hasOnlyText ? raw : TextFormatter.Format(template, _currentLanguage, (object[])null);
+            // Text tokens may already contain decoded {{ / }} escapes.
+            return TextFormatter.Format(template, sourceLanguage, (object[])null);
         }
 
         /// <summary>
@@ -164,13 +174,13 @@ namespace SimplyLocalize
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
 
-            string raw = GetRaw(key);
+            string raw = GetRaw(key, out var sourceLanguage);
             var template = GetOrParseTemplate(raw);
 
             if (template == null)
                 return raw;
 
-            return TextFormatter.Format(template, _currentLanguage, args);
+            return TextFormatter.Format(template, sourceLanguage, args);
         }
 
         /// <summary>
@@ -181,13 +191,13 @@ namespace SimplyLocalize
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
 
-            string raw = GetRaw(key);
+            string raw = GetRaw(key, out var sourceLanguage);
             var template = GetOrParseTemplate(raw);
 
             if (template == null)
                 return raw;
 
-            return TextFormatter.Format(template, _currentLanguage, namedArgs);
+            return TextFormatter.Format(template, sourceLanguage, namedArgs);
         }
 
         /// <summary>
@@ -198,13 +208,13 @@ namespace SimplyLocalize
             if (string.IsNullOrEmpty(key))
                 return string.Empty;
 
-            string raw = GetRaw(key);
+            string raw = GetRaw(key, out var sourceLanguage);
             var template = GetOrParseTemplate(raw);
 
             if (template == null)
                 return raw;
 
-            return TextFormatter.Format(template, _currentLanguage, args, namedArgs);
+            return TextFormatter.Format(template, sourceLanguage, args, namedArgs);
         }
 
         /// <summary>
@@ -215,31 +225,16 @@ namespace SimplyLocalize
         {
             if (string.IsNullOrEmpty(key)) return null;
 
-            // Try current language
-            var result = GetAssetFromTables<T>(key, _currentLanguage);
-            if (result != null) return result;
-
-            // Per-language fallback chain
-            if (_currentProfile != null)
+            _usesAssetTables = true;
+            var current = GetAssetFromTables<T>(key, _currentLanguage);
+            if (current != null) return current;
+            foreach (var code in GetLanguageChain(_currentLanguage, _currentProfile))
             {
-                var visited = new HashSet<string> { _currentLanguage };
-                var fb = _currentProfile.fallbackProfile;
-
-                while (fb != null && visited.Add(fb.Code))
-                {
-                    result = GetAssetFromTables<T>(key, fb.Code);
-                    if (result != null) return result;
-                    fb = fb.fallbackProfile;
-                }
+                if (code == _currentLanguage) continue;
+                var result = GetAssetFromTables<T>(key, code);
+                if (result != null) return result;
             }
-
-            // Global fallback
-            string gf = _config.FallbackLanguageCode;
-
-            if (!string.IsNullOrEmpty(gf) && gf != _currentLanguage)
-                result = GetAssetFromTables<T>(key, gf);
-
-            return result;
+            return null;
         }
 
         private T GetAssetFromTables<T>(string key, string languageCode) where T : UnityEngine.Object
@@ -253,6 +248,7 @@ namespace SimplyLocalize
 
             for (int i = 0; i < tables.Count; i++)
             {
+                if (tables[i] == null) continue;
                 var asset = tables[i].Get<T>(key);
                 if (asset != null) return asset;
             }
@@ -261,37 +257,22 @@ namespace SimplyLocalize
         }
 
         /// <summary>
-        /// Checks whether a key exists in the current language or fallback.
+        /// Checks whether a key exists in the current language or fallback, including empty entries.
+        /// Get skips null/empty translations, but this query checks entry presence for compatibility.
         /// </summary>
         public bool HasKey(string key)
         {
             if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(_currentLanguage))
                 return false;
 
-            if (TryGetText(key, _currentLanguage, out _))
-                return true;
-
-            // Per-language fallback chain
-            if (_currentProfile != null)
-            {
-                var visited = new HashSet<string> { _currentLanguage };
-                var fb = _currentProfile.fallbackProfile;
-
-                while (fb != null && visited.Add(fb.Code))
-                {
-                    if (TryGetText(key, fb.Code, out _))
-                        return true;
-                    fb = fb.fallbackProfile;
-                }
-            }
-
-            // Global fallback
-            string gf = _config.FallbackLanguageCode;
-            return !string.IsNullOrEmpty(gf) && TryGetText(key, gf, out _);
+            if (TryGetText(key, _currentLanguage, out _)) return true;
+            foreach (var code in GetLanguageChain(_currentLanguage, _currentProfile))
+                if (code != _currentLanguage && TryGetText(key, code, out _)) return true;
+            return false;
         }
 
         /// <summary>
-        /// Checks whether a specific language has a translation for the given key.
+        /// Checks whether a specific language has an entry for the key, including null/empty values.
         /// </summary>
         public bool HasTranslation(string key, string languageCode)
         {
@@ -318,7 +299,8 @@ namespace SimplyLocalize
         }
 
         /// <summary>
-        /// Clears all caches. Call when reloading data at runtime.
+        /// Clears all caches without notifying consumers or changing the selected language.
+        /// Subsequent lookups load data on demand. Use Reload to refresh active consumers atomically.
         /// </summary>
         public void ClearCaches()
         {
@@ -333,45 +315,21 @@ namespace SimplyLocalize
         /// Fallback chain: current → per-language fallback → ... → global fallback → key.
         /// Example: uk → ru (per-language) → en (global) → key as-is.
         /// </summary>
-        private string GetRaw(string key)
+        private string GetRaw(string key, out string sourceLanguage)
         {
-            // Try current language
-            if (TryGetText(key, _currentLanguage, out var value))
-                return value;
+            // Keep the common current-language lookup free of fallback iterator allocations.
+            sourceLanguage = _currentLanguage;
+            if (TryGetText(key, _currentLanguage, out var current) && !string.IsNullOrEmpty(current))
+                return current;
 
-            // Walk per-language fallback chain
-            if (_currentProfile != null)
+            foreach (var code in GetLanguageChain(_currentLanguage, _currentProfile))
             {
-                var visited = new HashSet<string> { _currentLanguage };
-                var fallback = _currentProfile.fallbackProfile;
-
-                while (fallback != null && visited.Add(fallback.Code))
+                if (code == _currentLanguage) continue;
+                if (TryGetText(key, code, out var value) && !string.IsNullOrEmpty(value))
                 {
-                    EnsureTextDataLoaded(fallback.Code);
-
-                    if (TryGetText(key, fallback.Code, out var fbValue))
-                    {
-                        LocalizationLogger.Log(
-                            $"Key '{key}' missing for '{_currentLanguage}', found in per-language fallback '{fallback.Code}'");
-                        return fbValue;
-                    }
-
-                    fallback = fallback.fallbackProfile;
-                }
-            }
-
-            // Try global fallback
-            string globalFallback = _config.FallbackLanguageCode;
-
-            if (!string.IsNullOrEmpty(globalFallback) && globalFallback != _currentLanguage)
-            {
-                EnsureTextDataLoaded(globalFallback);
-
-                if (TryGetText(key, globalFallback, out var gfValue))
-                {
-                    LocalizationLogger.Log(
-                        $"Key '{key}' missing for '{_currentLanguage}', using global fallback '{globalFallback}'");
-                    return gfValue;
+                    sourceLanguage = code;
+                    LocalizationLogger.Log($"Key '{key}' missing for '{_currentLanguage}', using fallback '{code}'");
+                    return value;
                 }
             }
 
@@ -387,22 +345,46 @@ namespace SimplyLocalize
             if (string.IsNullOrEmpty(languageCode))
                 return false;
 
+            EnsureTextDataLoaded(languageCode);
             return _textCache.TryGetValue(languageCode, out var data)
                 && data.TryGetValue(key, out value);
         }
 
-        private void PreloadFallbackChain(LanguageProfile profile)
+        private IEnumerable<string> GetLanguageChain(string languageCode, LanguageProfile profile)
         {
-            if (profile == null) return;
+            if (!string.IsNullOrEmpty(languageCode)) yield return languageCode;
 
-            var visited = new HashSet<string> { profile.Code };
-            var fb = profile.fallbackProfile;
-
-            while (fb != null && visited.Add(fb.Code))
+            var visited = new HashSet<string> { languageCode };
+            var fallback = profile != null ? profile.fallbackProfile : null;
+            while (fallback != null && visited.Add(fallback.Code))
             {
-                EnsureTextDataLoaded(fb.Code);
-                fb = fb.fallbackProfile;
+                if (!string.IsNullOrEmpty(fallback.Code)) yield return fallback.Code;
+                fallback = fallback.fallbackProfile;
             }
+
+            string globalFallback = _config.FallbackLanguageCode;
+            if (!string.IsNullOrEmpty(globalFallback) && visited.Add(globalFallback))
+                yield return globalFallback;
+        }
+
+        private void PrepareData(ILocalizationDataProvider provider, string languageCode,
+            LanguageProfile profile, Dictionary<string, Dictionary<string, string>> text,
+            Dictionary<string, List<LocalizationAssetTable>> assets)
+        {
+            foreach (var code in GetLanguageChain(languageCode, profile))
+            {
+                if (!text.ContainsKey(code)) text[code] = LoadTextData(provider, code);
+                // Once assets have consumers, prepare them before publishing any change event.
+                if (_usesAssetTables && !assets.ContainsKey(code))
+                    assets[code] = LoadAssetTables(provider, code);
+            }
+        }
+
+        private void NotifyCurrentState()
+        {
+            if (string.IsNullOrEmpty(_currentLanguage)) return;
+            OnLanguageChanged?.Invoke(_currentLanguage);
+            if (_currentProfile != null) OnProfileChanged?.Invoke(_currentProfile);
         }
 
         private ParsedTemplate GetOrParseTemplate(string rawText)
@@ -423,10 +405,7 @@ namespace SimplyLocalize
             if (_textCache.ContainsKey(languageCode))
                 return;
 
-            LocalizationLogger.Log($"Loading text data for '{languageCode}'...");
-            var data = _dataProvider.LoadTextData(languageCode);
-            _textCache[languageCode] = data;
-            LocalizationLogger.Log($"Loaded {data.Count} keys for '{languageCode}'");
+            _textCache[languageCode] = LoadTextData(_dataProvider, languageCode);
         }
 
         private void EnsureAssetTablesLoaded(string languageCode)
@@ -434,8 +413,25 @@ namespace SimplyLocalize
             if (_assetTableCache.ContainsKey(languageCode))
                 return;
 
-            var tables = _dataProvider.LoadAssetTables(languageCode);
-            _assetTableCache[languageCode] = tables;
+            _assetTableCache[languageCode] = LoadAssetTables(_dataProvider, languageCode);
+        }
+
+        private static Dictionary<string, string> LoadTextData(ILocalizationDataProvider provider, string code)
+        {
+            LocalizationLogger.Log($"Loading text data for '{code}'...");
+            var data = provider.LoadTextData(code)
+                ?? throw new InvalidOperationException($"Data provider returned null text data for '{code}'. Return an empty dictionary when no data exists.");
+            // Snapshot collections so a provider reusing its buffers cannot alter the active cache.
+            var snapshot = new Dictionary<string, string>(data, data.Comparer);
+            LocalizationLogger.Log($"Loaded {snapshot.Count} keys for '{code}'");
+            return snapshot;
+        }
+
+        private static List<LocalizationAssetTable> LoadAssetTables(ILocalizationDataProvider provider, string code)
+        {
+            var tables = provider.LoadAssetTables(code)
+                ?? throw new InvalidOperationException($"Data provider returned null asset tables for '{code}'. Return an empty list when no tables exist.");
+            return new List<LocalizationAssetTable>(tables);
         }
     }
 }
