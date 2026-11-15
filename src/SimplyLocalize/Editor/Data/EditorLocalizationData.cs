@@ -27,6 +27,8 @@ namespace SimplyLocalize.Editor.Data
 
         /// <summary>key → metadata (description, previousKeys)</summary>
         private readonly Dictionary<string, KeyMeta> _keyMeta = new();
+        private string _metaLoadError;
+        private string _metaSnapshot;
 
         // ── Caches (for performance) ──
 
@@ -69,10 +71,12 @@ namespace SimplyLocalize.Editor.Data
         {
             public string description;
             public List<string> previousKeys;
+            internal Newtonsoft.Json.Linq.JObject AdditionalFields;
 
             public bool IsEmpty =>
                 string.IsNullOrEmpty(description)
-                && (previousKeys == null || previousKeys.Count == 0);
+                && (previousKeys == null || previousKeys.Count == 0)
+                && (AdditionalFields == null || !AdditionalFields.HasValues);
         }
 
         // ──────────────────────────────────────────────
@@ -199,6 +203,8 @@ namespace SimplyLocalize.Editor.Data
             _translations.Clear();
             _sourceFiles.Clear();
             _keyMeta.Clear();
+            _metaLoadError = null;
+            _metaSnapshot = null;
             _basePath = null;
             _referenceLanguage = null;
             InvalidateCaches();
@@ -575,224 +581,84 @@ namespace SimplyLocalize.Editor.Data
         private void LoadMeta()
         {
             _keyMeta.Clear();
+            _metaLoadError = null;
+            _metaSnapshot = null;
             string path = GetMetaFilePath();
-
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                return;
+            if (string.IsNullOrEmpty(path)) return;
 
             try
             {
-                string json = File.ReadAllText(path);
-
-                // Simple parser: top-level object with key → {description, previousKeys}
-                // Format: { "key": { "description": "...", "previousKeys": ["old1"] } }
-                var parsed = LocalizationFileParser.Parse(json);
-
-                // The parser gives us flat key-value. We need a deeper parse.
-                // Use regex-free approach: find each top-level key and parse its object.
-                ParseMetaJson(json);
+                if (!File.Exists(path)) return;
+                string json = File.ReadAllText(path, new System.Text.UTF8Encoding(false, true));
+                // Parse and validate the entire document before publishing any entries.
+                var parsed = EditorMetadataJson.Parse(json);
+                foreach (var pair in parsed) _keyMeta.Add(pair.Key, pair.Value);
+                _metaSnapshot = json;
             }
-            catch (Exception e)
+            catch (Exception error)
             {
-                Debug.LogWarning($"[SimplyLocalize Editor] Failed to load meta: {e.Message}");
+                _metaLoadError = error.Message;
+                Debug.LogWarning($"[SimplyLocalize Editor] Failed to load meta '{path}': {error.Message}. Metadata saving is blocked; repair the file and reload.");
             }
-        }
-
-        private void ParseMetaJson(string json)
-        {
-            // Simple state machine to parse { "key": { "description": "...", "previousKeys": [...] } }
-            int i = 0;
-            SkipWhitespace(json, ref i);
-            if (i >= json.Length || json[i] != '{') return;
-            i++;
-
-            while (i < json.Length)
-            {
-                SkipWhitespace(json, ref i);
-                if (i >= json.Length || json[i] == '}') break;
-                if (json[i] == ',') { i++; continue; }
-
-                string key = ParseString(json, ref i);
-                if (key == null) break;
-
-                SkipWhitespace(json, ref i);
-                if (i >= json.Length || json[i] != ':') break;
-                i++;
-
-                SkipWhitespace(json, ref i);
-                if (i >= json.Length || json[i] != '{') break;
-
-                var meta = ParseMetaObject(json, ref i);
-                if (meta != null)
-                    _keyMeta[key] = meta;
-            }
-        }
-
-        private KeyMeta ParseMetaObject(string json, ref int i)
-        {
-            i++; // skip {
-            var meta = new KeyMeta();
-
-            while (i < json.Length)
-            {
-                SkipWhitespace(json, ref i);
-                if (i >= json.Length || json[i] == '}') { i++; break; }
-                if (json[i] == ',') { i++; continue; }
-
-                string fieldName = ParseString(json, ref i);
-                if (fieldName == null) break;
-
-                SkipWhitespace(json, ref i);
-                if (i >= json.Length || json[i] != ':') break;
-                i++;
-
-                SkipWhitespace(json, ref i);
-
-                if (fieldName == "description")
-                {
-                    meta.description = ParseString(json, ref i);
-                }
-                else if (fieldName == "previousKeys")
-                {
-                    meta.previousKeys = ParseStringArray(json, ref i);
-                }
-                else
-                {
-                    SkipValue(json, ref i);
-                }
-            }
-
-            return meta;
-        }
-
-        private static string ParseString(string json, ref int i)
-        {
-            SkipWhitespace(json, ref i);
-            if (i >= json.Length || json[i] != '"') return null;
-            i++;
-
-            var sb = new System.Text.StringBuilder();
-            while (i < json.Length && json[i] != '"')
-            {
-                if (json[i] == '\\' && i + 1 < json.Length)
-                {
-                    i++;
-                    switch (json[i])
-                    {
-                        case '"': sb.Append('"'); break;
-                        case '\\': sb.Append('\\'); break;
-                        case 'n': sb.Append('\n'); break;
-                        case 'r': sb.Append('\r'); break;
-                        case 't': sb.Append('\t'); break;
-                        default: sb.Append(json[i]); break;
-                    }
-                }
-                else
-                {
-                    sb.Append(json[i]);
-                }
-                i++;
-            }
-
-            if (i < json.Length) i++; // skip closing "
-            return sb.ToString();
-        }
-
-        private static List<string> ParseStringArray(string json, ref int i)
-        {
-            SkipWhitespace(json, ref i);
-            if (i >= json.Length || json[i] != '[') return null;
-            i++;
-
-            var result = new List<string>();
-
-            while (i < json.Length)
-            {
-                SkipWhitespace(json, ref i);
-                if (i >= json.Length || json[i] == ']') { i++; break; }
-                if (json[i] == ',') { i++; continue; }
-
-                var s = ParseString(json, ref i);
-                if (s != null) result.Add(s);
-            }
-
-            return result;
-        }
-
-        private static void SkipValue(string json, ref int i)
-        {
-            SkipWhitespace(json, ref i);
-            if (i >= json.Length) return;
-
-            if (json[i] == '"') { ParseString(json, ref i); }
-            else if (json[i] == '[') { int depth = 1; i++; while (i < json.Length && depth > 0) { if (json[i] == '[') depth++; else if (json[i] == ']') depth--; i++; } }
-            else if (json[i] == '{') { int depth = 1; i++; while (i < json.Length && depth > 0) { if (json[i] == '{') depth++; else if (json[i] == '}') depth--; i++; } }
-            else { while (i < json.Length && json[i] != ',' && json[i] != '}' && json[i] != ']') i++; }
-        }
-
-        private static void SkipWhitespace(string json, ref int i)
-        {
-            while (i < json.Length && char.IsWhiteSpace(json[i])) i++;
         }
 
         /// <summary>
-        /// Saves key metadata to _meta.json.
+        /// Saves key metadata to _meta.json. Throws if loading failed, the file changed externally,
+        /// or writing failed. A failed write preserves the original file and pending metadata edits.
         /// </summary>
         public void SaveMeta()
         {
             string path = GetMetaFilePath();
-            if (string.IsNullOrEmpty(path)) return;
+            if (string.IsNullOrEmpty(path))
+                throw new InvalidOperationException("Cannot save _meta.json without a localization base path. Load a configured localization folder first.");
+            if (_metaLoadError != null)
+                throw new InvalidOperationException($"Cannot save metadata '{path}' after a load error: {_metaLoadError}. Repair the file and reload before saving.");
 
-            // Clean up empty entries
-            var toRemove = _keyMeta
-                .Where(kvp => kvp.Value.IsEmpty)
-                .Select(kvp => kvp.Key)
-                .ToList();
-
-            foreach (var key in toRemove)
-                _keyMeta.Remove(key);
-
-            if (_keyMeta.Count == 0)
+            EnsureMetaUnchanged(path);
+            // Serialize before touching the file or pruning mutable public KeyMeta entries.
+            string json = EditorMetadataJson.Serialize(_keyMeta);
+            bool changed = json != _metaSnapshot;
+            if (changed)
             {
-                // Delete file if no meta
-                if (File.Exists(path))
-                    File.Delete(path);
-                return;
-            }
-
-            // Write as sorted JSON
-            var sb = new System.Text.StringBuilder();
-            sb.AppendLine("{");
-
-            var sortedKeys = _keyMeta.Keys.OrderBy(k => k).ToList();
-
-            for (int i = 0; i < sortedKeys.Count; i++)
-            {
-                var key = sortedKeys[i];
-                var meta = _keyMeta[key];
-
-                sb.Append($"  \"{EditorJsonWriter.EscapeJsonPublic(key)}\": {{");
-
-                var parts = new List<string>();
-
-                if (!string.IsNullOrEmpty(meta.description))
-                    parts.Add($"\"description\": \"{EditorJsonWriter.EscapeJsonPublic(meta.description)}\"");
-
-                if (meta.previousKeys is { Count: > 0 })
+                if (json == null)
                 {
-                    var escaped = meta.previousKeys
-                        .Select(pk => $"\"{EditorJsonWriter.EscapeJsonPublic(pk)}\"");
-                    parts.Add($"\"previousKeys\": [{string.Join(", ", escaped)}]");
+                    EnsureMetaUnchanged(path);
+                    File.Delete(path);
                 }
-
-                sb.Append(string.Join(", ", parts));
-                sb.Append(i < sortedKeys.Count - 1 ? " }," : " }");
-                sb.AppendLine();
+                else
+                {
+                    string temporary = Path.Combine(Path.GetDirectoryName(path),
+                        "." + Path.GetFileName(path) + "." + Guid.NewGuid().ToString("N") + ".tmp");
+                    try
+                    {
+                        using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                        {
+                            var bytes = new System.Text.UTF8Encoding(false, true).GetBytes(json);
+                            stream.Write(bytes, 0, bytes.Length);
+                            stream.Flush(true);
+                        }
+                        EnsureMetaUnchanged(path);
+                        // Same-directory replacement is atomic. Never delete the destination first.
+                        if (_metaSnapshot != null) File.Replace(temporary, path, null);
+                        else File.Move(temporary, path);
+                    }
+                    finally
+                    {
+                        if (File.Exists(temporary)) File.Delete(temporary);
+                    }
+                }
+                MarkPendingAssetRefresh();
             }
+            _metaSnapshot = json;
+            foreach (var key in _keyMeta.Where(pair => pair.Value.IsEmpty).Select(pair => pair.Key).ToList())
+                _keyMeta.Remove(key);
+        }
 
-            sb.Append("}");
-
-            File.WriteAllText(path, sb.ToString());
+        private void EnsureMetaUnchanged(string path)
+        {
+            string current = File.Exists(path) ? File.ReadAllText(path, new System.Text.UTF8Encoding(false, true)) : null;
+            if (!string.Equals(current, _metaSnapshot, StringComparison.Ordinal))
+                throw new InvalidOperationException($"Metadata '{path}' changed on disk. Reload before saving to avoid overwriting external changes.");
         }
     }
 }

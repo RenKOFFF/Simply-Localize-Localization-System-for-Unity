@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+- Fixed metadata parser hangs on non-string rename-history entries and corruption of JSON escapes.
+- Validate metadata before applying it; retain unknown fields and the existing data format.
+- Block metadata saves after load errors or external file changes; use atomic replacement and preserve pending edits on write failure.
+- Added metadata persistence regression tests. Newtonsoft Json, already a package dependency, is now used by the editor metadata codec; runtime parsing is unchanged.
+
 ## [2.0.2] — 2026-10-10
 
 - Fixed the Play Mode language dropdown creating and focusing a Game View when only Device Simulator was open.

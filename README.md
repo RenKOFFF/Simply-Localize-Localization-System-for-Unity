@@ -241,6 +241,18 @@ Multiple JSON files per language are **merged** at runtime — split your keys b
 - **Context menu** on any key: copy, rename (with reference update), move to file, delete, add description
 - **Key descriptions** stored in `_meta.json` — visible below the key in the table
 
+Metadata keeps the existing `{ "key": { "description": "...", "previousKeys": ["old"] } }`
+format; no migration is needed. `description` accepts a string or null, and `previousKeys`
+accepts an array of strings or null. Null/numeric/object entries inside that array are invalid.
+Unicode and JSON escapes round-trip correctly, and unknown fields are retained when editing metadata.
+Malformed JSON, duplicate properties, invalid UTF-8, excessive nesting (over 64 levels), and read
+errors produce a warning naming `_meta.json`; JSON/schema errors include a location.
+After a load error, repair the file and reload before saving. `SaveMeta()` throws instead of
+overwriting unreadable metadata, overwriting a file changed since loading, or silently discarding
+edits when no localization folder is configured. Writes replace the file atomically; failures keep
+the previous file and pending edits. This protection is scoped to metadata, not a transaction
+covering translation files, CSV import, or scene/prefab reference updates.
+
 ### Assets Tab
 
 ![Assets tab](docs/images/assets-tab.gif)
