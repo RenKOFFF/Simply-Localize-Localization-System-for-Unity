@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Replace root Resources config discovery with a generated path catalog; preserve existing config locations and reject ambiguous Resources paths.
+
 - Validate the entire CSV before merging; add a change preview, explicit empty-cell clearing, and delayed profile creation. Empty cells now preserve existing values by default; use `CsvEmptyCellPolicy.Clear` for explicit clearing.
 - Preserve quoted/multiline CSV values, whitespace and rename history; reject ambiguous rows, duplicate columns and unsafe paths.
 - Save translations and metadata with per-file replacement and rollback; protect CSV-created profiles/config, preserve extra JSON fields, and reject external file changes.

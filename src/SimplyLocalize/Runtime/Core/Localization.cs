@@ -144,22 +144,8 @@ namespace SimplyLocalize
             Pluralization.PluralRuleProvider.ResetRuntimeState();
         }
 
-        internal static LocalizationConfig FindResourceConfig(bool automaticOnly)
-        {
-            var candidates = new List<LocalizationConfig>();
-            foreach (var config in Resources.LoadAll<LocalizationConfig>(""))
-                if (config != null && (!automaticOnly || config.autoInitialize)) candidates.Add(config);
-            if (candidates.Count == 1) return candidates[0];
-            if (candidates.Count == 0)
-            {
-                if (!automaticOnly) Debug.LogError("[SimplyLocalize] No LocalizationConfig found in Resources. Create one and place it in a Resources folder.");
-                return null;
-            }
-            var names = candidates.ConvertAll(config => config.name);
-            names.Sort(StringComparer.Ordinal);
-            Debug.LogError($"[SimplyLocalize] Conflicting {(automaticOnly ? "auto-initialize " : "")}LocalizationConfigs in Resources: {string.Join(", ", names)}. Assign a config explicitly or enable autoInitialize on only one config.");
-            return null;
-        }
+        internal static LocalizationConfig FindResourceConfig(bool automaticOnly) =>
+            LocalizationConfigCatalog.FindConfig(automaticOnly);
 
         /// <summary>
         /// Whether the system has been initialized.

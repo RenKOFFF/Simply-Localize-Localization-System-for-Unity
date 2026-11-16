@@ -894,3 +894,5 @@ MIT — see [LICENSE.txt](LICENSE.txt).
 ## Contributing
 
 Issues and pull requests welcome at [github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity](https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity).
+
+Automatic Resources discovery uses a generated, string-only bootstrap catalog at `Assets/SimplyLocalizeGenerated/Resources/SimplyLocalize/GeneratedConfigCatalog.asset`. It is refreshed before Player builds; Editor play uses current AssetDatabase metadata. Existing config names and paths remain supported. The catalog does not reference localized media. Keep its `.meta` when versioning it; use **Tools > Simply Localize > Rebuild Bootstrap Catalog** to refresh it manually. Duplicate Resources paths are rejected instead of selecting an arbitrary config.

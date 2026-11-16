@@ -889,3 +889,5 @@ MIT — см. [LICENSE.txt](LICENSE.txt).
 ## Контрибьюция
 
 Issues и pull requests приветствуются на [github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity](https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity).
+
+Автоматический поиск конфигурации в Resources использует небольшой каталог строк по пути `Assets/SimplyLocalizeGenerated/Resources/SimplyLocalize/GeneratedConfigCatalog.asset`. Он обновляется перед сборкой Player; в Editor используются актуальные метаданные AssetDatabase. Старые имена и пути конфигов поддерживаются без переноса. Каталог не содержит ссылок на локализованные звуки и изображения. При хранении в Git сохраняйте его `.meta`; ручное обновление — **Tools > Simply Localize > Rebuild Bootstrap Catalog**. Одинаковые Resources-пути конфигов считаются ошибкой, а не поводом выбрать случайный конфиг.
