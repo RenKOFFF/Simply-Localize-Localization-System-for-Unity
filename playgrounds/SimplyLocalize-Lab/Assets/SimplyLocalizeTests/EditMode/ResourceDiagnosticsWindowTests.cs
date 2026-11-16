@@ -55,5 +55,29 @@ namespace SimplyLocalize.Tests
                 Assert.That(root.Q<Label>("resourceDetails").text, Does.Contain("Select a resource"));
             } finally { window.Close(); }
         }
+        [UnityEngine.TestTools.UnityTest] public System.Collections.IEnumerator Resize_KeepsBothPanesReadableInNarrowAndWideWindows()
+        {
+            var window = ScriptableObject.CreateInstance<EditorWindow>();
+            try {
+                window.ShowUtility(); window.position = new Rect(100, 100, 700, 850);
+                var tab = new DiagnosticsTab(); tab.Build(window.rootVisualElement);
+                var item = System.Activator.CreateInstance(typeof(LocalizationResourceInfo), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { 1, "Radio", "AudioClip", 1, true, System.Array.Empty<LocalizationResourceOwnerInfo>() }, null);
+                var snapshot = System.Activator.CreateInstance(typeof(LocalizationResourceSnapshot), BindingFlags.Instance | BindingFlags.NonPublic, null, new object[] { System.Array.Empty<LocalizationResourceSetInfo>(), new[] { (LocalizationResourceInfo)item }, System.Array.Empty<LocalizationResourceEvent>(), 0 }, null);
+                typeof(DiagnosticsTab).GetField("snapshot", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(tab, snapshot);
+                typeof(DiagnosticsTab).GetMethod("RenderResources", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(tab, null);
+                window.rootVisualElement.Q<ListView>("diagnosticResourceList").SetSelection(0);
+                for (int i = 0; i < 3; i++) yield return null;
+                var browser = window.rootVisualElement.Q("resourceBrowser");
+                var inspector = window.rootVisualElement.Q("resourceInspector");
+                Assert.That(browser.worldBound.height, Is.GreaterThan(240));
+                Assert.That(inspector.worldBound.height, Is.GreaterThan(240));
+                Assert.That(inspector.worldBound.yMin, Is.GreaterThanOrEqualTo(browser.worldBound.yMax));
+                window.position = new Rect(100, 100, 1100, 850);
+                for (int i = 0; i < 3; i++) yield return null;
+                Assert.That(browser.worldBound.height, Is.GreaterThan(240));
+                Assert.That(inspector.worldBound.height, Is.GreaterThan(240));
+                Assert.That(inspector.worldBound.xMin, Is.GreaterThanOrEqualTo(browser.worldBound.xMax));
+            } finally { window.Close(); }
+        }
     }
 }

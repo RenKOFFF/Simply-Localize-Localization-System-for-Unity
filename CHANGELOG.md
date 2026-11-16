@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Redesign resource diagnostics with summary cards, a resource list and owner details, explicit selection highlighting, status colors and a separate event history. Stack the panes in narrow windows and keep empty states compact; runtime behavior is unchanged.
 - Add Diagnostics → Resources in the main editor window: live context owners, preparation/release states, source addresses and opt-in bounded history. Public immutable snapshots support custom tools without retaining Unity objects; existing ownership policies and serialized data are unchanged.
 - Fix Night Shift dropdown arrows/checkmarks and subtitle overlap while settings are open. Keep generated build identities, ordinary test outputs and duplicate source archives out of Git; retain regression fixtures and unique historical evidence.
 
