@@ -1146,15 +1146,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var popup = ScriptableObject.CreateInstance<RenameAssetKeyPopup>();
             popup.Init(oldKey, _allAssetKeys, (newKey, updateRefs) =>
             {
-                foreach (var table in _tables.Values)
-                {
-                    if (table == null) continue;
-                    if (table.HasKey(oldKey))
-                    {
-                        table.RenameKey(oldKey, newKey);
-                        EditorUtility.SetDirty(table);
-                    }
-                }
+                LocalizationKeyRenamer.RenameAssets(_tables.Values, oldKey, newKey, updateRefs);
 
                 _allAssetKeys.Remove(oldKey);
                 if (!_allAssetKeys.Contains(newKey))
@@ -1167,27 +1159,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 if (_expandedRows.Remove(oldKey))
                     _expandedRows.Add(newKey);
 
-                int updatedRefs = 0;
-                if (updateRefs)
-                    updatedRefs = KeyReferenceUpdater.UpdateReferences(oldKey, newKey);
-
-                AssetDatabase.SaveAssets();
-
-                if (updateRefs && updatedRefs > 0)
-                {
-                    EditorUtility.DisplayDialog("Key renamed",
-                        $"Renamed '{oldKey}' → '{newKey}'\n" +
-                        $"Updated {updatedRefs} component reference(s) in scenes/prefabs.",
-                        "OK");
-                }
-
                 RebuildRows();
             });
 
             popup.titleContent = new GUIContent("Rename asset key");
             popup.ShowUtility();
             popup.position = new Rect(
-                Screen.width / 2f - 175, Screen.height / 2f - 75, 350, 150);
+                Screen.width / 2f - 220, Screen.height / 2f - 140, 440, 280);
         }
     }
 
@@ -1240,6 +1218,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private List<string> _existing;
         private System.Action<string, bool> _onRenamed;
         private bool _updateReferences = true;
+        private string _renameError;
 
         public void Init(string oldKey, List<string> existing, System.Action<string, bool> onRenamed)
         {
@@ -1262,7 +1241,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 && _existing != null
                 && _existing.Contains(_newKey);
             bool unchanged = _newKey == _oldKey;
-            bool empty = string.IsNullOrEmpty(_newKey);
+            bool empty = string.IsNullOrWhiteSpace(_newKey);
 
             if (isDuplicate)
                 EditorGUILayout.HelpBox("A key with this name already exists.", MessageType.Error);
@@ -1271,17 +1250,24 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             _updateReferences = EditorGUILayout.Toggle(
                 new GUIContent("Update references in project",
-                    "Scan all scenes and prefabs and replace the old key with the new one"),
+                    "Update localized asset components in scenes and prefabs"),
                 _updateReferences);
 
             EditorGUILayout.Space(4);
+
+            EditorGUILayout.HelpBox("Saves affected files. Project-wide rename cannot be undone with Ctrl+Z.", MessageType.Info);
+            if (!string.IsNullOrEmpty(_renameError)) EditorGUILayout.HelpBox(_renameError, MessageType.Error);
 
             GUI.enabled = !isDuplicate && !unchanged && !empty;
 
             if (GUILayout.Button("Rename"))
             {
-                _onRenamed?.Invoke(_newKey, _updateReferences);
-                Close();
+                try
+                {
+                    _onRenamed?.Invoke(_newKey, _updateReferences);
+                    Close();
+                }
+                catch (System.Exception error) { _renameError = error.Message; }
             }
 
             GUI.enabled = true;

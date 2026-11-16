@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Make editor key renames transactional across translations, metadata, asset tables and serialized references; preflight conflicts and unwritable files, and restore files/objects on caught save failures.
+- Update marked fields in ScriptableObjects, sub-assets and custom components; handle closed scenes, prefab inheritance, simultaneous mappings and cyclic managed references. Keep text and asset keys independent.
+- Preserve existing APIs, data formats and GUIDs. Add an Editor rename API and lab-only regression tests; explain project-wide Undo limits in the rename window.
+
 - Add opt-in asset-only contexts via loadTextData=false; keep legacy text loading on by default and preserve missing-text diagnostics for text-enabled contexts.
 
 - Keep Info logging independent for standalone managers; scope synchronous provider logs to their caller. Public static logging follows the committed Localization facade; warnings and errors remain unconditional.

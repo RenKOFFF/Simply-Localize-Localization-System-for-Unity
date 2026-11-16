@@ -1,0 +1,10 @@
+{
+  "name": "SimplyLocalize.Tests.Fixtures",
+  "references": [
+    "SimplyLocalize"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}

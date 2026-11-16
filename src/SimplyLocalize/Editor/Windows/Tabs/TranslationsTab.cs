@@ -1601,7 +1601,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     popup.titleContent = new GUIContent("Rename key");
                     popup.ShowUtility();
                     popup.position = new Rect(
-                        Screen.width / 2f - 175, Screen.height / 2f - 60, 350, 150);
+                        Screen.width / 2f - 220, Screen.height / 2f - 140, 440, 280);
                 });
 
                 // Edit description
@@ -1819,6 +1819,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private LocalizationConfig _config;
         private System.Action _onRenamed;
         private bool _updateReferences = true;
+        private string _renameError;
 
         public void Init(string oldKey, EditorLocalizationData data, LocalizationConfig config,
             System.Action onRenamed)
@@ -1841,7 +1842,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             bool isDuplicate = _newKey != _oldKey && _data.GetFileForKey(_newKey) != null;
             bool unchanged = _newKey == _oldKey;
-            bool empty = string.IsNullOrEmpty(_newKey);
+            bool empty = string.IsNullOrWhiteSpace(_newKey);
 
             if (isDuplicate)
                 EditorGUILayout.HelpBox("A key with this name already exists.", MessageType.Error);
@@ -1850,43 +1851,25 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             _updateReferences = EditorGUILayout.Toggle(
                 new GUIContent("Update references in project",
-                    "Scan all scenes and prefabs and replace the old key with the new one"),
+                    "Update text components and marked fields in scenes, prefabs and ScriptableObjects"),
                 _updateReferences);
 
             EditorGUILayout.Space(4);
+
+            EditorGUILayout.HelpBox("Saves affected files. Project-wide rename cannot be undone with Ctrl+Z.", MessageType.Info);
+            if (!string.IsNullOrEmpty(_renameError)) EditorGUILayout.HelpBox(_renameError, MessageType.Error);
 
             GUI.enabled = !isDuplicate && !unchanged && !empty;
 
             if (GUILayout.Button("Rename"))
             {
-                string file = _data.GetFileForKey(_oldKey);
-                _data.RenameKey(_oldKey, _newKey);
-
-                if (!string.IsNullOrEmpty(file))
-                    _data.SaveFileAllLanguages(file);
-
-                _data.SaveMeta();
-
-                int updatedRefs = 0;
-
-                if (_updateReferences)
+                try
                 {
-                    updatedRefs = Utilities.KeyReferenceUpdater.UpdateReferences(_oldKey, _newKey);
+                    Utilities.LocalizationKeyRenamer.RenameText(_data, _oldKey, _newKey, _updateReferences);
+                    _onRenamed?.Invoke();
+                    Close();
                 }
-
-                AssetDatabase.SaveAssets();
-                AssetDatabase.Refresh();
-
-                if (_updateReferences && updatedRefs > 0)
-                {
-                    EditorUtility.DisplayDialog("Key renamed",
-                        $"Renamed '{_oldKey}' → '{_newKey}'\n" +
-                        $"Updated {updatedRefs} component reference(s) in scenes/prefabs.",
-                        "OK");
-                }
-
-                _onRenamed?.Invoke();
-                Close();
+                catch (System.Exception error) { _renameError = error.Message; }
             }
 
             GUI.enabled = true;

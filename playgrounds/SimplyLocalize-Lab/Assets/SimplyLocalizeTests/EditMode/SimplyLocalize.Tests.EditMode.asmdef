@@ -5,7 +5,8 @@
         "SimplyLocalize",
         "SimplyLocalize.Editor",
         "Unity.TextMeshPro",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "SimplyLocalize.Tests.Fixtures"
     ],
     "includePlatforms": ["Editor"],
     "optionalUnityReferences": ["TestAssemblies"],

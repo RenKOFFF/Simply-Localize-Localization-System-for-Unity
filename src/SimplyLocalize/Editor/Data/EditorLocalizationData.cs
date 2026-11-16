@@ -459,6 +459,9 @@ namespace SimplyLocalize.Editor.Data
             SaveFiles(_sourceFiles.SelectMany(file => _translations.Keys.Select(code => (file, code))), true, afterWrite, enlist);
         }
 
+        internal void SaveRenamedFile(string file, Action afterWrite, Action<EditorFileTransaction> enlist) =>
+            SaveFiles(_translations.Keys.Select(code => (file, code)), true, afterWrite, enlist);
+
         private void SaveFiles(IEnumerable<(string file, string language)> files, bool includeMetadata, Action afterWrite = null, Action<EditorFileTransaction> enlist = null)
         {
             var writes = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
