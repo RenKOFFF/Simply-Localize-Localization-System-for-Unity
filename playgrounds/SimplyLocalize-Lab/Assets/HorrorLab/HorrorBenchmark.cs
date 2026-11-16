@@ -64,7 +64,7 @@ namespace SimplyLocalize.HorrorLab
             Application.targetFrameRate = 60;
             report.unityVersion = Application.unityVersion; report.device = SystemInfo.processorType;
             report.graphics = SystemInfo.graphicsDeviceType.ToString();
-            report.note = "Protocol plugin-owned-v1: no manual localization cleanup/prewarming/candidate manager. Functional PASS is not a plugin performance certification. Small fixture; 60 FPS cap; world frames measured with menu open; Null graphics excludes GPU. Play call cost is not physical sound latency. Unity allocator/GC counters are not process RAM. Once-per-frame peaks can miss short spikes.";
+            report.note = "Protocol plugin-owned-v2-prepared: plugin prepares and applies world tables; ready-only asset reads; no manual localization cleanup/audio prewarming. Functional PASS is not a plugin performance certification. Small fixture; 60 FPS cap; world frames measured with menu open; Null graphics excludes GPU. Play call cost is not physical sound latency. Unity allocator/GC counters are not process RAM. Once-per-frame peaks can miss short spikes.";
             Application.logMessageReceived += OnLog;
             try
             {
@@ -91,7 +91,7 @@ namespace SimplyLocalize.HorrorLab
                     var playback = app.Presentation.Dialogue.PlayAsync(app.worldDefinition.dialogues[0].sequenceId);
                     int firstReads = app.Metrics.TotalReads - beforeReads;
                     string stateBeforePlay = app.Metrics.lastAudioStateBeforePlay;
-                    if (firstReads > 0) Observe("SL-003", "World " + cycle + ": first dialogue requested " + firstReads + " provider reads");
+                    Check(firstReads == 0, "World " + cycle + ": prepared first dialogue performs no provider reads");
                     if (stateBeforePlay != AudioDataLoadState.Loaded.ToString()) Observe("SL-006", "World " + cycle + ": plugin returned audio in state " + stateBeforePlay + " before Play");
                     var clip = app.Presentation.Dialogue.CurrentClip;
                     Check(clip != null, "Dialogue resolves voice through the plugin");

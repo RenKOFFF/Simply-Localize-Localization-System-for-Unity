@@ -26,12 +26,14 @@ namespace SimplyLocalize.HorrorLab
         public AudioClip Clip(string id)
         {
             if (IsDisposed) throw new ObjectDisposedException(nameof(HorrorWorldSession));
-            return voice.GetAsset<AudioClip>(id) ?? throw new InvalidOperationException("Missing voice: " + id);
+            var result = voice.ResolvePreparedAsset<AudioClip>(id);
+            return result.Value ?? throw new InvalidOperationException("Voice is " + result.Status + ": " + id);
         }
         public HorrorVisualVariant Visual(string id)
         {
             if (IsDisposed) throw new ObjectDisposedException(nameof(HorrorWorldSession));
-            return visual.GetAsset<HorrorVisualVariant>(id) ?? throw new InvalidOperationException("Missing visual: " + id);
+            var result = visual.ResolvePreparedAsset<HorrorVisualVariant>(id);
+            return result.Value ?? throw new InvalidOperationException("Visual is " + result.Status + ": " + id);
         }
         public HorrorRadioSequence Dialogue(string id)
         {
@@ -56,12 +58,14 @@ namespace SimplyLocalize.HorrorLab
             var timer = Stopwatch.StartNew();
             var voice = new LocalizationManager(definition.voiceConfig);
             voice.SetDataProvider(new ObservedResourcesProvider(definition.voiceConfig.resourcesBasePath, metrics));
-            voice.SetLanguage(voiceLocale);
+            using var preparedVoice = voice.PrepareLanguage(voiceLocale, cancellationToken: cancellation);
             var visual = new LocalizationManager(definition.visualConfig);
             visual.SetDataProvider(new ObservedResourcesProvider(definition.visualConfig.resourcesBasePath, metrics));
-            visual.SetLanguage(visualLocale);
-            // No audio decode, asset sweep, font warmup, or cache clearing.
-            // Consumers call the plugin when they actually need an asset.
+            using var preparedVisual = visual.PrepareLanguage(visualLocale, cancellationToken: cancellation);
+            voice.ApplyPreparedLanguage(preparedVoice, cancellation);
+            visual.ApplyPreparedLanguage(preparedVisual, cancellation);
+            // Resources preparation is synchronous. Task.Yield above is progress scheduling, not background I/O.
+            // No audio decode, asset sweep, font warmup, or cache clearing. Playback reads prepared plugin data.
             metrics.lastWorldPrepareMs = timer.Elapsed.TotalMilliseconds;
             return new HorrorWorldSession(definition, voice, visual);
         }

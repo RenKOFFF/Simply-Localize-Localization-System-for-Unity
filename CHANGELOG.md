@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add opt-in language preparation snapshots, atomic apply, cancellation/stale-result protection and provider-free resolution with actual fallback language. Existing sync APIs and stored data are unchanged.
+- Add optional IAsyncLocalizationDataProvider for custom providers. Built-in Resources preparation remains synchronous; handles release managed references only and do not guarantee native resource unloading or decoded audio readiness.
+
 - Discover editor JSON sources across all configured languages and nested folders; preserve existing file paths and extra JSON fields through saves, CSV and key renames. Block saves after malformed data, conflicting source ownership or ambiguous Resources roots.
 - Share explicit config selection between Simply Localize and inspectors; prefer the startup config and require a choice when automatic selection is ambiguous.
 - Distinguish entry presence, empty values, whitespace and usable fallback in Coverage; honor current complete editor snapshots, including deletions. Runtime HasKey/fallback behavior is unchanged.

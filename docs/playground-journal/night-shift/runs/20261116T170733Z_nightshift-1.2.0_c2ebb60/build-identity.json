@@ -1,0 +1,20 @@
+{
+  "playgroundVersion": "1.2.0",
+  "measurementProtocol": "plugin-owned-v2-prepared",
+  "localizerVersion": "2.0.2",
+  "localizerPackageSha256": "5cf95522c5d470beed4b5e467e1ca9d3891fff442dedeba00a6163df005312da",
+  "localizerCommit": "c2ebb60a9338ae40c4f4d4ab2566e74574768082",
+  "localizerDescribe": "2.0.2-19-gc2ebb60-dirty",
+  "localizerWorkingTreeStatus": "M src/SimplyLocalize/Runtime/Core/LocalizationManager.cs\n?? src/SimplyLocalize/Runtime/Core/Data/IAsyncLocalizationDataProvider.cs\n?? src/SimplyLocalize/Runtime/Core/Data/IAsyncLocalizationDataProvider.cs.meta\n?? src/SimplyLocalize/Runtime/Core/PreparedLocalizationData.cs\n?? src/SimplyLocalize/Runtime/Core/PreparedLocalizationData.cs.meta",
+  "localizerRuntimeSha256": "eca3c5cab26581b13e046acdcb69eddcb8c7cd0b2595a96d888ac46e29c6b87e",
+  "playgroundSourceSha256": "f13cb116973635234b7f3ca6127107f139ca7b704eb2436846d72f6d622b8a79",
+  "worldSceneSha256": "a53b5c0126bd19d7e606007b2d820a727b750d76a92d7647580608834b83770c",
+  "menuSceneSha256": "3e336161c2f1bcd0faffeb3cf306f346c83cdccaf7677f6e273dec68318dd430",
+  "fixtureDataSha256": "8c91791e5a55c9d505f4ca3fc710a6f56d2ca59e5c06cfec4ba9807582ab513d",
+  "builtUtc": "2026-11-16T17:07:33.4364942Z",
+  "runId": "20261116T170733Z_nightshift-1.2.0_c2ebb60",
+  "unityVersion": "6000.0.62f1",
+  "buildKind": "Windows x64 Release",
+  "audioFixture": "DecompressOnLoad; PreloadAudioData=false; LoadInBackground=true; no sample LoadAudioData",
+  "cleanupPolicy": "Prepared data handles disposed after apply; no ClearCaches, UnloadAsset(s), UnloadAudioData or forced GC in playground"
+}
