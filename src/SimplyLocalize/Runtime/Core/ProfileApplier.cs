@@ -6,7 +6,7 @@ using UnityEngine.UI;
 namespace SimplyLocalize
 {
     /// <summary>
-    /// Caches original text settings (including material) and applies LanguageProfile overrides.
+    /// Caches original text settings (including material) and applies localization appearance overrides.
     /// Per-section skip flags allow LocalizedProfileOverride to handle specific sections.
     /// </summary>
     public class ProfileApplier : IDisposable
@@ -72,7 +72,7 @@ namespace SimplyLocalize
             _originalLegacyAlignment = text.alignment;
         }
 
-        public void Apply(TMP_Text text, LanguageProfile profile,
+        public void Apply(TMP_Text text, LocalizationAppearance profile,
             bool skipFont = false, bool skipTypography = false,
             bool skipSpacing = false, bool skipLayout = false)
         {
@@ -136,7 +136,7 @@ namespace SimplyLocalize
             }
         }
 
-        public void Apply(Text text, LanguageProfile profile,
+        public void Apply(Text text, LocalizationAppearance profile,
             bool skipFont = false, bool skipTypography = false,
             bool skipSpacing = false, bool skipLayout = false)
         {

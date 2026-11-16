@@ -85,7 +85,7 @@ namespace SimplyLocalize
             target.Accept(source.Entries.Single(e => e.Id == entryId)); // Validate before changing the source.
             source.RemoveEntry(entryId);
         }
-        public IReadOnlyList<LocalizationConfigurationIssue> Validate() => LocalizationProjectValidation.Validate(this);
+        public IReadOnlyList<LocalizationConfigurationIssue> Validate(Pluralization.LocalizationPluralRules pluralRules = null) => LocalizationProjectValidation.Validate(this, pluralRules);
         public void ValidateOrThrow()
         {
             var errors = Validate().Where(i => i.Severity == LocalizationIssueSeverity.Error).Select(i => i.Path + ": " + i.Message).ToArray();

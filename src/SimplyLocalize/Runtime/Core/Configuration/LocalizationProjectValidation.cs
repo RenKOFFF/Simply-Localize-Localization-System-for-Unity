@@ -19,7 +19,7 @@ namespace SimplyLocalize
 
     internal static class LocalizationProjectValidation
     {
-        internal static IReadOnlyList<LocalizationConfigurationIssue> Validate(LocalizationProjectConfig config)
+        internal static IReadOnlyList<LocalizationConfigurationIssue> Validate(LocalizationProjectConfig config, LocalizationPluralRules pluralRules = null)
         {
             var issues = new List<LocalizationConfigurationIssue>();
             void Error(string code, string path, string message) => issues.Add(new(LocalizationIssueSeverity.Error, code, path, message));
@@ -59,8 +59,8 @@ namespace SimplyLocalize
                 else
                 {
                     if (!languages.Add(language.Code)) Error("duplicate-language", path, "Language is already defined: " + language.Code);
-                    if (PluralRuleProvider.GetRuleInfo(language.Code).Support == PluralRuleSupport.Default)
-                        Warning("default-plural-rule", path, "No built-in/custom plural rule for " + language.Code + "; English-like fallback is used. Selecting a language does not guarantee its grammar or font coverage.");
+                    if ((pluralRules?.GetRuleInfo(language.Code) ?? PluralRuleProvider.GetBuiltInRuleInfo(language.Code)).Support == PluralRuleSupport.Default)
+                        Warning("default-plural-rule", path, "No built-in or explicitly supplied plural rule for " + language.Code + "; English-like fallback is used. Selecting a language does not guarantee its grammar or font coverage.");
                 }
                 Name(language.DisplayName, path + ".displayName");
                 if (language.Appearance != null) Source(language.Appearance, path + ".appearance", true);

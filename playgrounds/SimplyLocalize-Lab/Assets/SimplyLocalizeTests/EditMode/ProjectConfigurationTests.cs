@@ -170,7 +170,9 @@ namespace SimplyLocalize.Tests
             var custom = new FixedRule(); PluralRuleProvider.RegisterRule(code, custom);
             Assert.That(PluralRuleProvider.GetRuleInfo(code).Support, Is.EqualTo(PluralRuleSupport.Custom));
             Assert.That(PluralRuleProvider.GetRule(code), Is.SameAs(custom));
-            Assert.That(config.Validate().Any(i => i.Code == "default-plural-rule"), Is.False);
+            Assert.That(config.Validate().Any(i => i.Code == "default-plural-rule"), Is.True, "Legacy global overrides do not configure channel runtimes.");
+            var rules = new LocalizationPluralRules(); rules.Register(code, custom);
+            Assert.That(config.Validate(rules).Any(i => i.Code == "default-plural-rule"), Is.False);
         }
 
         [TestCase("en-US", PluralRuleSupport.BuiltIn)]

@@ -29,7 +29,7 @@ namespace SimplyLocalize
     internal sealed class LocalizationPreparedSet
     {
         internal readonly Dictionary<string, LocalizationTextValue> Text = new(StringComparer.Ordinal);
-        internal readonly Dictionary<string, LocalizationAssetValue> Assets = new(StringComparer.Ordinal);
+        internal readonly Dictionary<string, List<LocalizationAssetValue>> Assets = new(StringComparer.Ordinal);
         internal readonly List<LocalizationSourceLease> Sources = new();
         internal LocalizationPreparedSet Retain()
         {
@@ -37,7 +37,8 @@ namespace SimplyLocalize
             var owners = new Dictionary<LocalizationSourceLease, LocalizationSourceLease>();
             foreach (var source in Sources) { var retained = source.Retain(); copy.Sources.Add(retained); owners.Add(source, retained); }
             foreach (var pair in Text) copy.Text.Add(pair.Key, pair.Value);
-            foreach (var pair in Assets) copy.Assets.Add(pair.Key, new(pair.Value.Asset, pair.Value.Language, pair.Value.RequestedLanguage, owners[pair.Value.Owner]));
+            foreach (var pair in Assets) copy.Assets.Add(pair.Key, pair.Value.Select(value =>
+                new LocalizationAssetValue(value.Asset, value.Language, value.RequestedLanguage, owners[value.Owner])).ToList());
             return copy;
         }
     }
@@ -67,13 +68,21 @@ namespace SimplyLocalize
             return key != null && target != null && Sets.TryGetValue(target, out var set) && set.Text.TryGetValue(key, out value);
         }
         public bool TryGetAsset(string key, out LocalizationAssetValue value, string setId = null)
+            => TryGetAsset<Object>(key, out value, setId);
+        public bool TryGetAsset<T>(string key, out LocalizationAssetValue value, string setId = null) where T : Object
         {
             EnsureAlive(); value = default;
             string target = setId ?? DefaultSetId;
-            return key != null && target != null && Sets.TryGetValue(target, out var set) && set.Assets.TryGetValue(key, out value) && value.Asset != null;
+            if (key == null || target == null || !Sets.TryGetValue(target, out var set) || !set.Assets.TryGetValue(key, out var candidates)) return false;
+            foreach (var candidate in candidates)
+                if (candidate.Asset is T && candidate.Asset != null) { value = candidate; return true; }
+            return false;
         }
         public LocalizationAppearance GetAppearance(string language = null)
         { EnsureAlive(); return Appearances.TryGetValue(language ?? ResolvedLanguage, out var lease) ? lease.Data.Appearance : null; }
+        /// <summary>Retains only the loaded appearance source while a consumer applies its fonts. Null means no appearance was configured.</summary>
+        public LocalizationSourceLease RetainAppearance(string language = null)
+        { EnsureAlive(); return Appearances.TryGetValue(language ?? ResolvedLanguage, out var lease) ? lease.Retain() : null; }
         public LocalizationChannelLease Retain() { EnsureAlive(); owners++; return new LocalizationChannelLease(this); }
         internal void EnsureAlive()
         {

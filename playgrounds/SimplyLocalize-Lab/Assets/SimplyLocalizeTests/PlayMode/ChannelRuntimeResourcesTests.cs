@@ -103,5 +103,19 @@ namespace SimplyLocalize.Tests
             yield return Done(owner.ReleaseAsync());
             Assert.That(Resources.FindObjectsOfTypeAll<AudioClip>().Any(c => c.GetInstanceID() == lineId), Is.False);
         }
+        [UnityTest] public IEnumerator AppearanceCanBeRetainedWithoutKeepingTheOldVoiceTable()
+        {
+            Create(); config.Languages.First(l => l.Code == "en").Appearance = new LocalizationSourceReference(
+                "resources", "SimplyLocalizeTests/Lifecycle/Appearance", LocalizationSourceKind.Appearance);
+            var runtime = Create(); yield return Done(runtime.InitializeAsync());
+            var appearance = runtime.GetChannel().GetAppearance(); Assert.That(appearance, Is.Not.Null);
+            int fontId = appearance.primaryFont.GetInstanceID(), voiceId = Clip(runtime).GetInstanceID();
+            var owner = runtime.GetChannel().RetainAppearance(); sourceLeases.Add(owner);
+            yield return Done(runtime.SwitchLanguageAsync("ru")); Assert.That(runtime.GetChannel().GetAppearance(), Is.Null);
+            Assert.That(owner.Data.Appearance.primaryFont != null, Is.True);
+            Assert.That(Resources.FindObjectsOfTypeAll<AudioClip>().Any(c => c.GetInstanceID() == voiceId), Is.False);
+            yield return Done(owner.ReleaseAsync());
+            Assert.That(Resources.FindObjectsOfTypeAll<TMPro.TMP_FontAsset>().Any(f => f.GetInstanceID() == fontId), Is.False);
+        }
     }
 }

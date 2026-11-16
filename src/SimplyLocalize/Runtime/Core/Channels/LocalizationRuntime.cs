@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SimplyLocalize.TextProcessing;
 
 namespace SimplyLocalize
 {
@@ -20,6 +21,7 @@ namespace SimplyLocalize
         private readonly LocalizationRuntimeDefinition definition;
         private readonly LocalizationSourceRegistry sources;
         private readonly LocalizationContextOptions options;
+        private readonly bool ownsFormatter;
         private readonly Dictionary<string, Group> groups = new(StringComparer.Ordinal);
         private readonly Dictionary<string, Dictionary<string, int>> active = new(StringComparer.Ordinal);
         private readonly Dictionary<string, LocalizationChannelLease> current = new(StringComparer.Ordinal);
@@ -33,15 +35,19 @@ namespace SimplyLocalize
         public ReadOnlyCollection<string> ChannelIds { get; }
         public bool IsInitialized { get; private set; }
         public bool IsReleased => released;
+        public ILocalizationTextFormatter Formatter { get; }
         /// <summary>All participants are committed before any subscriber runs. Subscriber failures do not roll back state.</summary>
         public event Action<LocalizationRuntime, IReadOnlyList<string>> Changed;
         public event Action<Exception> ObserverError;
 
-        public LocalizationRuntime(LocalizationProjectConfig config, LocalizationSourceRegistry providers = null, LocalizationContextOptions options = null)
+        public LocalizationRuntime(LocalizationProjectConfig config, LocalizationSourceRegistry providers = null, LocalizationContextOptions options = null,
+            ILocalizationTextFormatter formatter = null)
         {
             definition = new LocalizationRuntimeDefinition(config);
             sources = (providers ?? new LocalizationSourceRegistry()).Copy();
             this.options = (options ?? new LocalizationContextOptions()).Copy();
+            ownsFormatter = formatter == null;
+            Formatter = formatter ?? new LocalizationMessageFormatter(this.options.MaxTemplates);
             ChannelIds = Array.AsReadOnly(definition.Channels.Keys.ToArray());
             var main = new Group { Channels = definition.Channels.Values.Where(c => c.Id == definition.MainId || c.Mode == LocalizationChannelMode.FollowMain).Select(c => c.Id).ToArray() };
             foreach (var channel in definition.Channels.Values)
@@ -52,6 +58,18 @@ namespace SimplyLocalize
         }
         public LocalizationChannelSnapshot GetChannel(string channelId = null)
         { RequireReady(); return current[Channel(channelId).Id].Snapshot; }
+        public string Get(string key, params object[] args) => Format(key, args);
+        public string Get(string key, Dictionary<string, object> namedArgs) => Format(key, namedArgs: namedArgs);
+        /// <summary>Formats prepared content only. Missing keys are returned literally, without parsing them as templates.</summary>
+        public string Format(string key, object[] args = null, Dictionary<string, object> namedArgs = null, string channelId = null, string setId = null)
+        {
+            RequireReady();
+            return GetChannel(channelId).TryGetText(key, out var value, setId) ? Formatter.Format(value, args, namedArgs) : key ?? "";
+        }
+        public string Format(LocalizationEntryReference reference, object[] args = null, Dictionary<string, object> namedArgs = null)
+        { return TryGetText(reference, out var value) ? Formatter.Format(value, args, namedArgs) : reference.EntryId ?? ""; }
+        public T GetAsset<T>(string key, string channelId = null, string setId = null) where T : UnityEngine.Object =>
+            GetChannel(channelId).TryGetAsset<T>(key, out var value, setId) ? (T)value.Asset : null;
         public bool TryGetText(LocalizationEntryReference reference, out LocalizationTextValue value)
         {
             RequireReady(); value = default;
@@ -59,10 +77,12 @@ namespace SimplyLocalize
                 && entry.Kind == LocalizationEntryKind.Text && GetChannel(reference.ChannelId).TryGetText(entry.Key, out value, entry.SetId);
         }
         public bool TryGetAsset(LocalizationEntryReference reference, out LocalizationAssetValue value)
+            => TryGetAsset<UnityEngine.Object>(reference, out value);
+        public bool TryGetAsset<T>(LocalizationEntryReference reference, out LocalizationAssetValue value) where T : UnityEngine.Object
         {
             RequireReady(); value = default;
             return definition.Index.Resolve(reference, out var entry) == LocalizationReferenceStatus.Found
-                && entry.Kind == LocalizationEntryKind.Asset && GetChannel(reference.ChannelId).TryGetAsset(entry.Key, out value, entry.SetId);
+                && entry.Kind == LocalizationEntryKind.Asset && GetChannel(reference.ChannelId).TryGetAsset<T>(entry.Key, out value, entry.SetId);
         }
         public Task InitializeAsync(string mainLanguage = null, CancellationToken cancellationToken = default)
         {
@@ -248,12 +268,16 @@ namespace SimplyLocalize
                         foreach (var pair in lease.Data.Text.Where(p => set.Keys.TryGetValue(p.Key, out var kind) && kind == LocalizationEntryKind.Text))
                         {
                             if (!seen.Add(pair.Key)) throw new InvalidOperationException("Multiple sources define the same key in one set/language: " + pair.Key);
-                            if (pair.Value != null && !result.Text.ContainsKey(pair.Key)) result.Text.Add(pair.Key, new(pair.Value, language, requested));
+                            if (!string.IsNullOrEmpty(pair.Value) && !result.Text.ContainsKey(pair.Key)) result.Text.Add(pair.Key, new(pair.Value, language, requested));
                         }
                         foreach (var pair in lease.Data.Assets.Where(p => set.Keys.TryGetValue(p.Key, out var kind) && kind == LocalizationEntryKind.Asset))
                         {
                             if (!seen.Add(pair.Key)) throw new InvalidOperationException("Multiple sources define the same key in one set/language: " + pair.Key);
-                            if (pair.Value != null && !result.Assets.ContainsKey(pair.Key)) result.Assets.Add(pair.Key, new(pair.Value, language, requested, lease));
+                            if (pair.Value != null)
+                            {
+                                if (!result.Assets.TryGetValue(pair.Key, out var candidates)) result.Assets.Add(pair.Key, candidates = new());
+                                candidates.Add(new(pair.Value, language, requested, lease));
+                            }
                         }
                     }
                 }
@@ -321,15 +345,22 @@ namespace SimplyLocalize
             Cancel(lifetime); Finish(); return release;
             async void Finish()
             {
+                Exception failure = null;
                 try
                 {
                     try { await Task.WhenAll(operations.ToArray()); } catch { /* Each operation keeps its own failure. */ }
                     var owners = current.Values.ToArray(); current.Clear(); IsInitialized = false;
                     Changed = null;
-                    await ReleaseOwners(owners); completion.TrySetResult(true);
+                    await ReleaseOwners(owners);
                 }
-                catch (Exception error) { completion.TrySetException(error); }
-                finally { lifetime.Dispose(); }
+                catch (Exception error) { failure = error; }
+                finally
+                {
+                    if (ownsFormatter) ((LocalizationMessageFormatter)Formatter).ClearCache();
+                    ObserverError = null;
+                    lifetime.Dispose();
+                }
+                if (failure == null) completion.TrySetResult(true); else completion.TrySetException(failure);
             }
         }
         public void Dispose() => LocalizationChannelLease.Observe(ReleaseAsync());

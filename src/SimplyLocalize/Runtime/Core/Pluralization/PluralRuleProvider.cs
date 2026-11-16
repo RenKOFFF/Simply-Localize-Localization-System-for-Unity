@@ -38,6 +38,17 @@ namespace SimplyLocalize.Pluralization
         /// </summary>
         public static IPluralRule GetRule(string languageCode) => GetRuleInfo(languageCode).Rule;
 
+        /// <summary>Built-in rules only. Does not consult mutable global overrides.</summary>
+        public static PluralRuleInfo GetBuiltInRuleInfo(string languageCode)
+        {
+            if (string.IsNullOrWhiteSpace(languageCode)) return new PluralRuleInfo(Germanic, PluralRuleSupport.Default, "en");
+            string code = Normalize(languageCode);
+            string parent = code.Split('-')[0];
+            var rule = ResolveRule(parent, code);
+            return rule != null ? new PluralRuleInfo(rule, PluralRuleSupport.BuiltIn, parent)
+                : new PluralRuleInfo(Germanic, PluralRuleSupport.Default, "en");
+        }
+
         public static PluralRuleInfo GetRuleInfo(string languageCode)
         {
             if (string.IsNullOrWhiteSpace(languageCode))
@@ -56,10 +67,7 @@ namespace SimplyLocalize.Pluralization
                     if (separator < 0) break;
                     parent = parent.Substring(0, separator);
                 }
-                var rule = ResolveRule(parent, code);
-                return Cache[code] = rule != null
-                    ? new PluralRuleInfo(rule, PluralRuleSupport.BuiltIn, parent)
-                    : new PluralRuleInfo(Germanic, PluralRuleSupport.Default, "en");
+                return Cache[code] = GetBuiltInRuleInfo(code);
             }
         }
 

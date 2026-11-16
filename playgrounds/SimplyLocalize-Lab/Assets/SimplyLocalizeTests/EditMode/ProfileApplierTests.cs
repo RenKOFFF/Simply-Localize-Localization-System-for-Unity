@@ -232,6 +232,39 @@ namespace SimplyLocalize.Tests
             Assert.That(tmp.fontSize, Is.EqualTo(40));
         }
 
+        [Test]
+        public void AppearanceAppliesAndRestoresWithoutALegacyLanguageProfile()
+        {
+            var text = MakeTMP(); text.fontSize = 20; text.characterSpacing = 2; text.alignment = TextAlignmentOptions.TopLeft;
+            var applier = Applier(text); var appearance = Track(ScriptableObject.CreateInstance<LocalizationAppearance>());
+            appearance.overrideTypography = appearance.overrideSpacing = appearance.overrideLayout = true;
+            appearance.fontSizeMultiplier = 1.5f; appearance.characterSpacingAdjustment = 3;
+            appearance.textDirection = TextDirection.RTL; appearance.overrideAlignment = true; appearance.alignmentOverride = TextAlignmentOptions.Right;
+            applier.Apply(text, appearance); applier.Apply(text, appearance);
+            Assert.That(text.fontSize, Is.EqualTo(30)); Assert.That(text.characterSpacing, Is.EqualTo(5)); Assert.That(text.isRightToLeftText, Is.True);
+            applier.Restore(); Assert.That(text.fontSize, Is.EqualTo(20)); Assert.That(text.characterSpacing, Is.EqualTo(2)); Assert.That(text.alignment, Is.EqualTo(TextAlignmentOptions.TopLeft));
+        }
+        [Test]
+        public void AppearanceUsesTheSameFontVariantOwnershipForTwoConsumers()
+        {
+            var source = MakeFont("A"); var fallback = MakeFont("B"); var first = MakeTMP(source); var second = MakeTMP(source);
+            var a = Applier(first); var b = Applier(second); var appearance = Track(ScriptableObject.CreateInstance<LocalizationAppearance>());
+            appearance.overrideFont = true; appearance.primaryFont = source; appearance.fallbackFont = fallback;
+            a.Apply(first, appearance); b.Apply(second, appearance); var variant = first.font;
+            Assert.That(second.font, Is.SameAs(variant)); Assert.That(FindCharacter(second.font, 'B'), Is.Not.Null);
+            a.Restore(); Assert.That(FindCharacter(second.font, 'B'), Is.Not.Null); b.Restore();
+            Assert.That(variant == null, Is.True); Assert.That(source.fallbackFontAssetTable, Is.Empty); Assert.That(source.material != null && source.atlasTexture != null, Is.True);
+        }
+        [Test]
+        public void ExistingSerializedProfileFieldsStillPopulateTheSharedAppearanceModel()
+        {
+            var profile = Profile();
+            EditorJsonUtility.FromJsonOverwrite("{\"MonoBehaviour\":{\"languageCode\":\"ru\",\"overrideTypography\":true,\"fontSizeMultiplier\":1.5,\"overrideSpacing\":true,\"lineSpacingAdjustment\":4}}", profile);
+            var text = MakeLegacy(); text.fontSize = 20; using var applier = new ProfileApplier(); applier.CacheOriginals(text);
+            applier.Apply(text, profile); Assert.That(text.fontSize, Is.EqualTo(30)); Assert.That(profile.Code, Is.EqualTo("ru"));
+            Assert.That(profile.lineSpacingAdjustment, Is.EqualTo(4)); applier.Restore(); Assert.That(text.fontSize, Is.EqualTo(20));
+        }
+
         // Unlike HasCharacter(searchFallbacks: true), this excludes TMP's global/default fonts.
         private static TMP_Character FindCharacter(TMP_FontAsset font, char character) =>
             TMP_FontAssetUtilities.GetCharacterFromFontAsset(character, font, true,

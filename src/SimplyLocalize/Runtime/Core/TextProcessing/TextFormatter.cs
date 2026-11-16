@@ -55,6 +55,16 @@ namespace SimplyLocalize.TextProcessing
         /// </summary>
         public static string Format(ParsedTemplate template, string languageCode,
             object[] args, Dictionary<string, object> namedArgs)
+            => FormatCore(template, languageCode, null, null, args, namedArgs);
+
+        /// <summary>Formats using explicit instance-owned plural and culture policies, without consulting global overrides.</summary>
+        public static string Format(ParsedTemplate template, IPluralRule pluralRule, IFormatProvider formatProvider,
+            object[] args, Dictionary<string, object> namedArgs)
+            => FormatCore(template, null, pluralRule ?? throw new ArgumentNullException(nameof(pluralRule)),
+                formatProvider ?? CultureInfo.InvariantCulture, args, namedArgs);
+
+        private static string FormatCore(ParsedTemplate template, string languageCode, IPluralRule pluralRule,
+            IFormatProvider formatProvider, object[] args, Dictionary<string, object> namedArgs)
         {
             if (template == null)
                 return string.Empty;
@@ -69,7 +79,6 @@ namespace SimplyLocalize.TextProcessing
                 return tokens[0].Text;
 
             var sb = GetBuilder();
-            IPluralRule pluralRule = null;
 
             try
             {
@@ -95,9 +104,9 @@ namespace SimplyLocalize.TextProcessing
                         sb.Append(token.RawText);
                     }
                     else if (token.Type == TokenType.IndexedParam)
-                        AppendValue(sb, value, token.Index);
+                        AppendValue(sb, value, token.Index, formatProvider);
                     else
-                        AppendValue(sb, value, token.Name);
+                        AppendValue(sb, value, token.Name, formatProvider);
                 }
                 return sb.ToString();
             }
@@ -136,20 +145,26 @@ namespace SimplyLocalize.TextProcessing
             sb.Append(forms[formIndex]);
         }
 
-        private static void AppendValue(StringBuilder sb, object value, int indexFallback)
+        private static void AppendValue(StringBuilder sb, object value, int indexFallback, IFormatProvider provider)
         {
             if (value != null)
-                sb.Append(value);
+                AppendFormattedValue(sb, value, provider);
             else
                 sb.Append('{').Append(indexFallback).Append('}');
         }
 
-        private static void AppendValue(StringBuilder sb, object value, string nameFallback)
+        private static void AppendValue(StringBuilder sb, object value, string nameFallback, IFormatProvider provider)
         {
             if (value != null)
-                sb.Append(value);
+                AppendFormattedValue(sb, value, provider);
             else
                 sb.Append('{').Append(nameFallback).Append('}');
+        }
+
+        private static void AppendFormattedValue(StringBuilder sb, object value, IFormatProvider provider)
+        {
+            if (provider != null && value is IFormattable formattable) sb.Append(formattable.ToString(null, provider));
+            else sb.Append(value);
         }
 
         private static object GetIndexedValue(object[] args, int index)
