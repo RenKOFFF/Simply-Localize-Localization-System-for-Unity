@@ -44,25 +44,29 @@ namespace SimplyLocalize.Lab.Editor
             AssetDatabase.CreateAsset(font, Root + "/Data/LabFont.asset");
             AssetDatabase.AddObjectToAsset(font.material, font);
             foreach (var texture in font.atlasTextures) AssetDatabase.AddObjectToAsset(texture, font);
-            var config = ScriptableObject.CreateInstance<LocalizationConfig>();
-            config.resourcesBasePath = "SimplyLocalizeLab";
-            config.autoInitialize = false;
+            var config = LocalizationProjectConfig.Create(new[] { "en", "ru", "pl" });
+            foreach (string key in new[] { "Lab/Welcome", "Lab/Coins", "Lab/Named", "Lab/Profile", "Lab/Escapes", "Lab/Fallback" })
+                config.Sets[0].AddEntry(key);
             foreach (string code in new[] { "en", "ru", "pl" })
             {
-                var profile = ScriptableObject.CreateInstance<LanguageProfile>();
-                profile.languageCode = profile.displayName = code;
-                profile.systemLanguage = code == "en" ? SystemLanguage.English : code == "ru" ? SystemLanguage.Russian : SystemLanguage.Polish;
+                var profile = ScriptableObject.CreateInstance<LocalizationAppearance>();
+                var language = config.Languages.First(l => l.Code == code);
+                language.SystemLanguage = code == "en" ? SystemLanguage.English : code == "ru" ? SystemLanguage.Russian : SystemLanguage.Polish;
                 profile.overrideFont = true; profile.primaryFont = font; profile.legacyFont = source;
                 profile.overrideTypography = code == "ru"; profile.fontSizeMultiplier = code == "ru" ? 1.1f : 1f;
-                AssetDatabase.CreateAsset(profile, Root + "/Data/" + code + ".asset");
-                config.languages.Add(profile);
+                string appearancePath = "SimplyLocalizeLab/" + code + "/Appearance";
+                Directory.CreateDirectory(Root + "/Resources/SimplyLocalizeLab/" + code);
+                AssetDatabase.Refresh();
+                AssetDatabase.CreateAsset(profile, Root + "/Resources/" + appearancePath + ".asset");
+                language.Appearance = new LocalizationSourceReference("resources", appearancePath, LocalizationSourceKind.Appearance);
+                config.Sets[0].SetSources(code, new LocalizationSourceReference("resources", "SimplyLocalizeLab/" + code + "/text/lab", LocalizationSourceKind.TextTable));
                 WriteData(code);
             }
-            config.defaultLanguage = config.fallbackLanguage = config.languages[0];
+            config.MainChannel.SetFallback("ru", "en"); config.MainChannel.SetFallback("pl", "en");
             AssetDatabase.CreateAsset(config, Root + "/Data/LabConfig.asset");
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(Root + "/Data/LabConfig.asset");
+            config = AssetDatabase.LoadAssetAtPath<LocalizationProjectConfig>(Root + "/Data/LabConfig.asset");
             font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(Root + "/Data/LabFont.asset");
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var camera = new GameObject("Main Camera", typeof(Camera));
@@ -84,10 +88,7 @@ namespace SimplyLocalize.Lab.Editor
             var serialized = new SerializedObject(lab.localOverride);
             var entries = serialized.FindProperty("_entries"); entries.arraySize = 1;
             var entry = entries.GetArrayElementAtIndex(0);
-            // Refresh can replace imported ScriptableObject instances. Resolve the saved asset.
-            var overrideProfile = AssetDatabase.LoadAssetAtPath<LanguageProfile>(Root + "/Data/ru.asset");
-            if (overrideProfile == null) throw new InvalidOperationException("Russian profile was not imported.");
-            entry.FindPropertyRelative("profile").objectReferenceValue = overrideProfile;
+            entry.FindPropertyRelative("languageCode").stringValue = "ru";
             entry.FindPropertyRelative("overrideTypography").boolValue = true;
             entry.FindPropertyRelative("fontSizeMultiplier").floatValue = 1.4f;
             entry.FindPropertyRelative("fontWeight").intValue = (int)FontWeight.Regular;

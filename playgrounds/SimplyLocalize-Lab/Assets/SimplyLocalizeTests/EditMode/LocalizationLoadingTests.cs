@@ -17,12 +17,12 @@ namespace SimplyLocalize.Tests
         private LanguageProfile _ru;
         private LanguageProfile _uk;
         private MemoryProvider _provider;
-        private LocalizationManager Manager => Localization.Manager;
+        private LocalizationManager Manager;
 
         [SetUp]
         public void SetUp()
         {
-            Localization.Shutdown();
+            Manager?.ClearCaches();
             _config = Create<LocalizationConfig>();
             _en = Profile("en");
             _ru = Profile("ru");
@@ -32,14 +32,14 @@ namespace SimplyLocalize.Tests
             _provider.Text["en"] = new() { ["greeting"] = "Hello" };
             _provider.Text["ru"] = new() { ["greeting"] = "Привет" };
             _provider.Text["uk"] = new();
-            Localization.Initialize(_config);
-            Localization.SetDataProvider(_provider);
+            Manager = new LocalizationManager(_config);
+            Manager.SetDataProvider(_provider);
         }
 
         [TearDown]
         public void TearDown()
         {
-            Localization.Shutdown();
+            Manager?.ClearCaches();
             for (int i = _objects.Count - 1; i >= 0; i--)
                 Object.DestroyImmediate(_objects[i]);
             _objects.Clear();
@@ -198,8 +198,8 @@ namespace SimplyLocalize.Tests
             _provider.Text["ru"] = LocalizationFileParser.Parse(
                 "{\"translations\":{\"coins\":\"{0} {0|монета|монеты|монет}\",\"hello\":\"Привет, {name}!\"}}");
             Manager.SetLanguage("ru");
-            Assert.That(Localization.Get("coins", 21), Is.EqualTo("21 монета"));
-            Assert.That(Localization.Get("hello", new Dictionary<string, object> { ["name"] = "Alex" }), Is.EqualTo("Привет, Alex!"));
+            Assert.That(Manager.Get("coins", new object[] { 21 }), Is.EqualTo("21 монета"));
+            Assert.That(Manager.Get("hello", new Dictionary<string, object> { ["name"] = "Alex" }), Is.EqualTo("Привет, Alex!"));
         }
 
         [Test]
@@ -223,8 +223,8 @@ namespace SimplyLocalize.Tests
             };
             Manager.OnProfileChanged += _ => profileEvents++;
 
-            Localization.Reload();
-            Localization.Reload();
+            Manager.Reload();
+            Manager.Reload();
 
             Assert.That(Manager.CurrentProfile, Is.SameAs(_ru));
             Assert.That(languageEvents, Is.EqualTo(2));
@@ -241,7 +241,7 @@ namespace SimplyLocalize.Tests
             Manager.SetLanguage("uk");
             _provider.Text["ru"]["greeting"] = "Новый fallback";
             _provider.Text["en"]["global"] = "New global";
-            Localization.Reload();
+            Manager.Reload();
             Assert.That(Manager.Get("greeting"), Is.EqualTo("Новый fallback"));
             Assert.That(Manager.Get("global"), Is.EqualTo("New global"));
         }
@@ -256,12 +256,12 @@ namespace SimplyLocalize.Tests
             int events = 0;
             Manager.OnLanguageChanged += _ => events++;
             Manager.OnProfileChanged += _ => events++;
-            Assert.Throws<InvalidOperationException>(() => Localization.Reload());
+            Assert.Throws<InvalidOperationException>(() => Manager.Reload());
             Assert.That(Manager.CurrentLanguage, Is.EqualTo("ru"));
             Assert.That(Manager.Get("greeting"), Is.EqualTo("Привет"));
             Assert.That(events, Is.Zero);
             _provider.ThrowText = null;
-            Localization.Reload();
+            Manager.Reload();
             Assert.That(Manager.Get("greeting"), Is.EqualTo("Must not commit"));
         }
 
@@ -274,7 +274,7 @@ namespace SimplyLocalize.Tests
             Manager.GetAsset<Texture2D>("icon");
             _provider.Text["ru"]["greeting"] = "Must not commit";
             _provider.ThrowAssets = "ru";
-            Assert.Throws<InvalidOperationException>(() => Localization.Reload());
+            Assert.Throws<InvalidOperationException>(() => Manager.Reload());
             Assert.That(Manager.Get("greeting"), Is.EqualTo("Привет"));
             Assert.That(Manager.GetAsset<Texture2D>("icon"), Is.SameAs(original));
         }
@@ -317,7 +317,7 @@ namespace SimplyLocalize.Tests
                 Assert.That(Manager.Get("greeting"), Is.EqualTo("Replacement"));
                 Assert.That(Manager.GetAsset<Texture2D>("icon"), Is.SameAs(replacement));
             };
-            Localization.SetDataProvider(next);
+            Manager.SetDataProvider(next);
             Assert.That(events, Is.EqualTo(1));
             Assert.That(Manager.CurrentLanguage, Is.EqualTo("ru"));
             Assert.That(_provider.Disposed, Is.False, "Providers remain caller-owned.");
@@ -341,7 +341,7 @@ namespace SimplyLocalize.Tests
             Assert.That(Manager.GetAsset<Texture2D>("icon"), Is.SameAs(original));
             Assert.That(events, Is.Zero);
             _provider.Text["ru"]["greeting"] = "Still old provider";
-            Localization.Reload();
+            Manager.Reload();
             Assert.That(Manager.Get("greeting"), Is.EqualTo("Still old provider"));
         }
 
@@ -386,7 +386,7 @@ namespace SimplyLocalize.Tests
             else _provider.NullText = "ru";
             int events = 0;
             Manager.OnLanguageChanged += _ => events++;
-            Assert.Throws<InvalidOperationException>(() => Localization.Reload());
+            Assert.Throws<InvalidOperationException>(() => Manager.Reload());
             Assert.That(Manager.Get("greeting"), Is.EqualTo("Привет"));
             Assert.That(events, Is.Zero);
         }
@@ -403,7 +403,7 @@ namespace SimplyLocalize.Tests
             _provider.Text["ru"]["GREETING"] = "Changed";
             _provider.Tables["ru"].Clear();
             _provider.ThrowText = "en";
-            Assert.Throws<InvalidOperationException>(() => Localization.Reload());
+            Assert.Throws<InvalidOperationException>(() => Manager.Reload());
             Assert.That(Manager.Get("greeting"), Is.EqualTo("Original"));
             Assert.That(Manager.GetAsset<Texture2D>("icon"), Is.SameAs(original));
         }
@@ -447,7 +447,7 @@ namespace SimplyLocalize.Tests
             int events = 0;
             Manager.OnLanguageChanged += _ => events++;
             Manager.SetDataProvider(next);
-            Localization.Reload();
+            Manager.Reload();
             Assert.That(next.TextLoads, Is.Empty);
             Assert.That(next.AssetLoads, Is.Empty);
             Assert.That(events, Is.Zero);
@@ -486,10 +486,12 @@ namespace SimplyLocalize.Tests
         }
 
         [Test]
-        public void Reload_WhenUninitializedIsSafe()
+        public void FacadeReload_RequiresExplicitInitialization()
         {
-            Localization.Shutdown();
-            Assert.DoesNotThrow(Localization.Reload);
+            Manager?.ClearCaches();
+            var closing = Localization.ShutdownAsync();
+            Assert.That(closing.IsCompleted, Is.True); closing.GetAwaiter().GetResult();
+            Assert.Throws<InvalidOperationException>(() => Localization.ReloadAsync());
             Assert.That(Localization.IsInitialized, Is.False);
         }
 

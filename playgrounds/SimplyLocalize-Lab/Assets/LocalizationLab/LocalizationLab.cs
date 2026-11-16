@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using SimplyLocalize.Components;
-using SimplyLocalize.Data;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 
@@ -11,7 +13,7 @@ namespace SimplyLocalize.Lab
     [DefaultExecutionOrder(-90)]
     public sealed class LocalizationLab : MonoBehaviour
     {
-        public LocalizationConfig config;
+        public LocalizationProjectConfig config;
         public TMP_FontAsset uiFont;
         public Font legacyFont;
         public TMP_Text status;
@@ -24,16 +26,18 @@ namespace SimplyLocalize.Lab
         public int Events { get; private set; }
         public bool AlternateProvider { get; private set; }
         public int Revision { get; private set; } = 1;
-        private LocalizationManager ownedManager;
+        private LocalizationRuntime ownedManager;
+        private readonly CancellationTokenSource lifetime = new();
         private bool previousRunInBackground;
         private string lastAction = "Ready";
 
-        private void Awake()
+        private async void Awake()
         {
             previousRunInBackground = Application.runInBackground;
             Application.runInBackground = true;
-            Localization.Initialize(config);
-            ownedManager = Localization.Manager;
+            try { ownedManager = await Localization.InitializeAsync(config, cancellationToken: lifetime.Token); }
+            catch (OperationCanceledException) { return; }
+            catch (Exception error) { Debug.LogException(error, this); return; }
             Localization.OnLanguageChanged += LanguageChanged;
         }
 
@@ -48,34 +52,37 @@ namespace SimplyLocalize.Lab
             UpdateStatus();
         }
 
-        private void OnDestroy()
+        private async void OnDestroy()
         {
             Localization.OnLanguageChanged -= LanguageChanged;
-            if (ReferenceEquals(Localization.Manager, ownedManager)) Localization.Shutdown();
+            lifetime.Cancel();
+            if (ReferenceEquals(Localization.Runtime, ownedManager) && ownedManager != null)
+                await Localization.ShutdownAsync();
+            lifetime.Dispose();
             Application.runInBackground = previousRunInBackground;
         }
 
         private void LanguageChanged(string _) { Events++; }
 
-        public void Execute(string action)
+        public async void Execute(string action)
         {
             try
             {
                 switch (action)
                 {
-                    case "en": case "ru": case "pl": Localization.SetLanguage(action); break;
+                    case "en": case "ru": case "pl": await Localization.SetLanguageAsync(action); break;
                     case "minus": Count = Math.Max(0, Count - 1); break;
                     case "plus": Count++; break;
                     case "next":
                         int[] values = { 0, 1, 2, 5, 11, 21, 22, 25, 101 };
                         Count = values[(Array.IndexOf(values, Count) + 1) % values.Length];
                         break;
-                    case "reload": Localization.Reload(); break;
+                    case "reload": await Localization.ReloadAsync(); break;
                     case "provider":
                         bool next = !AlternateProvider;
-                        Localization.SetDataProvider(next
-                            ? new RevisionProvider(config.resourcesBasePath, () => Revision)
-                            : new ResourcesDataProvider(config.resourcesBasePath));
+                        var registry = new LocalizationSourceRegistry();
+                        registry.Register("resources", next ? new RevisionProvider(() => Revision) : new ResourcesLocalizationSourceProvider());
+                        await Localization.ReplaceProvidersAsync(registry);
                         AlternateProvider = next;
                         break;
                     case "revision": Revision++; break;
@@ -84,7 +91,8 @@ namespace SimplyLocalize.Lab
                         int beforeEvents = Events;
                         try
                         {
-                            Localization.SetDataProvider(new BrokenProvider());
+                            var brokenRegistry = new LocalizationSourceRegistry(); brokenRegistry.Register("resources", new BrokenProvider());
+                            await Localization.ReplaceProvidersAsync(brokenRegistry);
                             throw new InvalidOperationException("The broken provider was unexpectedly accepted.");
                         }
                         catch (LabLoadException)
@@ -229,27 +237,30 @@ namespace SimplyLocalize.Lab
             rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
 
-        private sealed class RevisionProvider : ILocalizationDataProvider
+        private sealed class RevisionProvider : ILocalizationSourceProvider
         {
-            private readonly ResourcesDataProvider source;
+            private readonly ResourcesLocalizationSourceProvider source = new();
             private readonly Func<int> revision;
-            public RevisionProvider(string path, Func<int> revision)
-            { source = new ResourcesDataProvider(path); this.revision = revision; }
-            public Dictionary<string, string> LoadTextData(string language)
+            public RevisionProvider(Func<int> revision) { this.revision = revision; }
+            public LocalizationProviderCapabilities GetCapabilities(LocalizationSourceKind kind) => source.GetCapabilities(kind);
+            public async Task<LocalizationSourceLease> LoadAsync(LocalizationSourceRequest request, CancellationToken token)
             {
-                var data = source.LoadTextData(language);
-                data["Lab/Welcome"] = data["Lab/Welcome"] + " [revision " + revision() + "]";
-                return data;
+                var lease = await source.LoadAsync(request, token);
+                if (request.Source.Kind != LocalizationSourceKind.TextTable) return lease;
+                try
+                {
+                    var data = lease.Data.Text.ToDictionary(p => p.Key, p => p.Value);
+                    if (data.ContainsKey("Lab/Welcome")) data["Lab/Welcome"] += " [revision " + revision() + "]";
+                    return new LocalizationSourceLease(LocalizationSourceData.FromText(data), lease.ReleaseAsync);
+                }
+                catch { await lease.ReleaseAsync(); throw; }
             }
-            public bool HasTextData(string language) => source.HasTextData(language);
-            public List<LocalizationAssetTable> LoadAssetTables(string language) => source.LoadAssetTables(language);
         }
         private sealed class LabLoadException : Exception { }
-        private sealed class BrokenProvider : ILocalizationDataProvider
+        private sealed class BrokenProvider : ILocalizationSourceProvider
         {
-            public Dictionary<string, string> LoadTextData(string language) => throw new LabLoadException();
-            public bool HasTextData(string language) => true;
-            public List<LocalizationAssetTable> LoadAssetTables(string language) => new List<LocalizationAssetTable>();
+            public LocalizationProviderCapabilities GetCapabilities(LocalizationSourceKind kind) => new(LocalizationLoadUnit.Table, true, true);
+            public Task<LocalizationSourceLease> LoadAsync(LocalizationSourceRequest request, CancellationToken token) => throw new LabLoadException();
         }
     }
 }

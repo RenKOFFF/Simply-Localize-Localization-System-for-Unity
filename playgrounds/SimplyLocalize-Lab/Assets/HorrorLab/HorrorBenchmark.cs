@@ -76,7 +76,7 @@ namespace SimplyLocalize.HorrorLab
                 Check(Cursor.lockState == CursorLockMode.None, "Startup does not capture cursor");
                 if (report.menuAudio.Length > 0) Observe("SL-001", "AudioClip objects already exist before any world: " + string.Join(", ", report.menuAudio));
                 Capture("initial-menu", app);
-                var global = Localization.Manager;
+                var global = Localization.Runtime;
                 var real = new SimplyLocalizeWorldPreparer(app.Metrics);
                 // Measure ordinary first use before the matrix and failure-injection tests warm anything.
                 for (int cycle = 0; cycle < 3; cycle++)
@@ -152,7 +152,7 @@ namespace SimplyLocalize.HorrorLab
                 while (app.State == HorrorAppState.PreparingWorld && app.ProgressKey != "UI/LoadingWorld") await Task.Yield();
                 app.CancelPreparation(); await sceneLoad;
                 Check(app.State == HorrorAppState.Menu && app.Session == null && !SceneManager.GetSceneByPath(app.worldDefinition.scenePath).isLoaded, "Cancelled scene load is rolled back");
-                Check(ReferenceEquals(global, Localization.Manager), "Global localization facade unchanged");
+                Check(ReferenceEquals(global, Localization.Runtime), "Global localization facade unchanged");
                 Check(Cursor.lockState == CursorLockMode.None, "Audit never captures cursor");
                 report.functionalChecksPassed = true;
             }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -165,15 +166,22 @@ namespace SimplyLocalize.Editor
             for (int i = 0; i < languages.Count; i++)
             {
                 var p = languages[i];
-                names[i] = p != null ? p.displayName : "(null)";
-                if (p != null && Localization.CurrentLanguage == p.Code)
+                names[i] = Localization.Config.Languages.FirstOrDefault(l => l.Code == p)?.DisplayName ?? p;
+                if (Localization.CurrentLanguage == p)
                     currentIndex = i;
             }
 
             int newIndex = EditorGUI.Popup(rect, currentIndex, names);
 
             if (newIndex != currentIndex && newIndex >= 0 && newIndex < languages.Count && languages[newIndex] != null)
-                Localization.SetLanguage(languages[newIndex]);
+                SwitchLanguage(languages[newIndex]);
+        }
+
+        private static async void SwitchLanguage(string code)
+        {
+            try { await Localization.SetLanguageAsync(code); }
+            catch (OperationCanceledException) { }
+            catch (Exception error) { Debug.LogException(error); }
         }
     }
 }

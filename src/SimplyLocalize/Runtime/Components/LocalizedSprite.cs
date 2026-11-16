@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace SimplyLocalize.Components
@@ -6,11 +6,7 @@ namespace SimplyLocalize.Components
     /// <summary>
     /// Localizes a Sprite on Image (UI) or SpriteRenderer (world-space).
     ///
-    /// Supports two modes:
-    ///   1. Direct entries: drag sprites per language in the Inspector
-    ///   2. Path-based: set a key, sprites loaded from Resources/{lang}/images/
-    ///
-    /// Replaces the old LocalizedImage component with full LocalizedAsset support.
+    /// Resolves a ready asset from the bound channel and retains its source until detached.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("SimplyLocalize/Localized Sprite")]
@@ -36,12 +32,7 @@ namespace SimplyLocalize.Components
             return null;
         }
 
-        protected override Object LoadFromProvider(string languageCode)
-        {
-            return Localization.GetAsset<Sprite>(_key);
-        }
-
-        private void CacheTargets()
+private void CacheTargets()
         {
             if (_image == null && _spriteRenderer == null)
             {

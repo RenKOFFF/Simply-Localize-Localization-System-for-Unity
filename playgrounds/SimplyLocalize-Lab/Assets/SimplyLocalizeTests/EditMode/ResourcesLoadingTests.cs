@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -22,6 +25,7 @@ namespace SimplyLocalize.Tests
         private LanguageProfile _en;
         private LanguageProfile _ru;
         private LocalizationManager _manager;
+        private readonly List<LocalizationProjectConfig> _projects = new();
 
         [SetUp]
         public void SetUp()
@@ -45,10 +49,12 @@ namespace SimplyLocalize.Tests
             _manager = new LocalizationManager(_config);
         }
 
-        [TearDown]
-        public void TearDown()
+        [UnityTearDown]
+        public IEnumerator TearDown()
         {
-            Localization.Shutdown();
+            yield return Done(Localization.ShutdownAsync());
+            foreach (var config in _projects) Object.DestroyImmediate(config);
+            _projects.Clear();
             _manager?.ClearCaches();
             Object.DestroyImmediate(_config);
             Object.DestroyImmediate(_en);
@@ -85,25 +91,27 @@ namespace SimplyLocalize.Tests
             Assert.That(_manager.Get("greeting"), Is.EqualTo("Updated"));
         }
 
-        [TestCase("not JSON")]
-        [TestCase("{\"translations\":{\"bad\":t")]
-        [TestCase("{\"translations\":{\"bad\":n")]
-        [TestCase("{\"translations\":{\"bad\":999999999999999999999999999999999999}}")]
-        public void Initialize_MalformedSourceNamesFileAndPreservesActiveManager(string invalidJson)
+        [UnityTest]
+        public IEnumerator Initialize_MalformedSourceNamesFileAndPreservesActiveRuntime()
         {
-            Localization.Initialize(_config, "ru");
-            var original = Localization.Manager;
-            Write("en", "broken", invalidJson);
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            var error = Assert.Throws<FormatException>(() => Localization.Initialize(_config, "en"));
-            StringAssert.Contains($"Resources/{_basePath}/en/text/broken", error.Message);
-            Assert.That(error.InnerException, Is.Not.Null);
-            Assert.That(Localization.Manager, Is.SameAs(original));
-            Assert.That(Localization.Get("greeting"), Is.EqualTo("Привет"));
+            yield return Done(Localization.InitializeAsync(Project(), "ru"));
+            var original = Localization.Runtime;
+            foreach (string invalidJson in new[] { "not JSON", "{\"translations\":{\"bad\":t", "{\"translations\":{\"bad\":n",
+                "{\"translations\":{\"bad\":999999999999999999999999999999999999}}" })
+            {
+                Write("en", "broken", invalidJson);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                var attempt = Localization.InitializeAsync(Project(true), "en");
+                yield return Done(attempt, false);
+                var error = Assert.Throws<FormatException>(() => attempt.GetAwaiter().GetResult());
+                StringAssert.Contains($"{_basePath}/en/text/broken", error.Message);
+                Assert.That(error.InnerException, Is.Not.Null);
+                Assert.That(Localization.Runtime, Is.SameAs(original));
+                Assert.That(Localization.Get("greeting"), Is.EqualTo("Привет"));
+            }
         }
-
-        [Test]
-        public void Coverage_LoadsOtherLanguageFilesNestedFilesAndAllTablesWithoutChangingLiveState()
+        [UnityTest]
+        public IEnumerator Coverage_LoadsOtherLanguageFilesNestedFilesAndAllTablesWithoutChangingLiveState()
         {
             Write("ru", "nested/extra", "{\"translations\":{\"nested\":\"Nested\"}}");
             string secondRoot = $"{_root}/Second/Resources/{_basePath}/en/text";
@@ -118,8 +126,8 @@ namespace SimplyLocalize.Tests
                 AssetDatabase.CreateAsset(table, $"{_root}/Resources/{_basePath}/en/table{i}.asset");
             }
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            Localization.Initialize(_config, "ru");
-            var live = Localization.Manager;
+            yield return Done(Localization.InitializeAsync(Project(), "ru"));
+            var live = Localization.Runtime;
             var edited = new EditorLocalizationData();
             edited.AddKey("greeting", "first");
             edited.SetTranslation("greeting", "ru", "");
@@ -129,7 +137,7 @@ namespace SimplyLocalize.Tests
             Assert.That(ru.TranslatedCount, Is.EqualTo(2)); // second + nested; edited greeting is empty
             Assert.That(ru.AvailableCount, Is.EqualTo(4)); // plus fallback + other-root
             Assert.That(report.AssetCoverage.Find(c => c.LanguageCode == "ru").AvailableCount, Is.EqualTo(2));
-            Assert.That(Localization.Manager, Is.SameAs(live));
+            Assert.That(Localization.Runtime, Is.SameAs(live));
             Assert.That(Localization.Get("greeting"), Is.EqualTo("Привет"));
             Assert.That(edited.KeyCount, Is.EqualTo(1));
         }
@@ -154,6 +162,26 @@ namespace SimplyLocalize.Tests
             Assert.That(provider.LoadAssetTables("missing"), Is.Empty);
         }
 
+        private LocalizationProjectConfig Project(bool broken = false)
+        {
+            var project = LocalizationProjectConfig.Create(new[] { "en", "ru" }); _projects.Add(project);
+            var set = project.Sets[0];
+            foreach (string key in new[] { "greeting", "fallback", "empty", "second", "bad" }) set.AddEntry(key);
+            var en = new List<LocalizationSourceReference> { new("resources", _basePath + "/en/text/first", LocalizationSourceKind.TextTable) };
+            if (broken) en.Add(new("resources", _basePath + "/en/text/broken", LocalizationSourceKind.TextTable));
+            set.SetSources("en", en.ToArray());
+            set.SetSources("ru", new LocalizationSourceReference("resources", _basePath + "/ru/text/first", LocalizationSourceKind.TextTable),
+                new LocalizationSourceReference("resources", _basePath + "/ru/text/second", LocalizationSourceKind.TextTable));
+            project.MainChannel.SetFallback("ru", "en");
+            return project;
+        }
+        private static IEnumerator Done(Task task, bool success = true)
+        {
+            float deadline = Time.realtimeSinceStartup + 15;
+            while (!task.IsCompleted && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.That(task.IsCompleted, Is.True);
+            if (success) task.GetAwaiter().GetResult();
+        }
         private void Write(string language, string name, string json)
         {
             string folder = $"{_root}/Resources/{_basePath}/{language}/text";

@@ -287,6 +287,45 @@ namespace SimplyLocalize.Tests
             Assert.That(runtime.GetChannel().ActiveSetIds, Does.Not.Contain(set));
         }
 
+        [UnityTest] public IEnumerator ProviderReplacementPreservesIndependentLanguagesAndActiveSets()
+        {
+            Create(true); string optional = AddOptionalSet(); var runtime = CreateRuntime();
+            yield return Done(runtime.InitializeAsync());
+            yield return Done(runtime.SwitchLanguageAsync(independent, "ru"));
+            var acquire = runtime.AcquireSetAsync(null, optional); yield return Done(acquire); registrations.Add(acquire.Result);
+            var next = new Probe { Suffix = " replacement" }; var registry = new LocalizationSourceRegistry(false); registry.Register("probe", next);
+            yield return Done(runtime.ReplaceProvidersAsync(registry));
+            Assert.That(runtime.GetChannel().RequestedLanguage, Is.EqualTo("en"));
+            Assert.That(runtime.GetChannel(independent).RequestedLanguage, Is.EqualTo("ru"));
+            Assert.That(runtime.GetChannel().ActiveSetIds, Does.Contain(optional));
+            Assert.That(runtime.Get("key"), Is.EqualTo("main/en replacement"));
+            Assert.That(provider.Active, Is.Zero);
+            yield return Done(acquire.Result.ReleaseAsync());
+            Assert.That(runtime.GetChannel().ActiveSetIds, Does.Not.Contain(optional));
+            yield return Done(runtime.ReleaseAsync()); Assert.That(next.Active, Is.Zero);
+        }
+        [UnityTest] public IEnumerator FailedProviderReplacementPreservesRegistryForLaterReload()
+        {
+            var runtime = Create(true); yield return Done(runtime.InitializeAsync()); var before = runtime.GetChannel();
+            var next = new Probe { Failure = "voice/en" }; var registry = new LocalizationSourceRegistry(false); registry.Register("probe", next);
+            var failed = runtime.ReplaceProvidersAsync(registry); yield return Done(failed, false);
+            Assert.That(failed.IsFaulted, Is.True); Assert.That(next.Active, Is.Zero);
+            Assert.That(runtime.GetChannel(), Is.SameAs(before));
+            provider.Suffix = " original"; yield return Done(runtime.ReloadAsync());
+            Assert.That(runtime.Get("key"), Is.EqualTo("main/en original"));
+        }
+        [UnityTest] public IEnumerator CancelledProviderReplacementDrainsLateDataAndAllowsQueuedSwitch()
+        {
+            var runtime = Create(); yield return Done(runtime.InitializeAsync());
+            var next = new Probe { Delay = "main/en" }; var registry = new LocalizationSourceRegistry(false); registry.Register("probe", next);
+            using var cancel = new CancellationTokenSource();
+            var replace = runtime.ReplaceProvidersAsync(registry, cancel.Token);
+            var change = runtime.SwitchLanguageAsync("ru"); cancel.Cancel();
+            Assert.That(change.IsCompleted, Is.False);
+            next.Complete(); yield return Done(replace, false); yield return Done(change);
+            Assert.That(replace.IsCanceled, Is.True); Assert.That(next.Active, Is.Zero);
+            Assert.That(runtime.Get("key"), Is.EqualTo("main/ru"));
+        }
         private sealed class Probe : ILocalizationSourceProvider
         {
             internal readonly List<string> Loads = new();

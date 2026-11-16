@@ -13,13 +13,14 @@ namespace SimplyLocalize.Tests
     {
         private readonly List<Object> _objects = new();
         private LocalizationConfig _config;
+        private LocalizationProjectConfig _project;
         private Action<string> _languageHandler;
-        private Action<LanguageProfile> _profileHandler;
+        private Action<LocalizationRuntime> _profileHandler;
 
         [SetUp]
         public void SetUp()
         {
-            Localization.Shutdown();
+            Completed(Localization.ShutdownAsync());
             _config = Create<LocalizationConfig>();
             foreach (var code in new[] { "en", "ru" })
             {
@@ -27,17 +28,17 @@ namespace SimplyLocalize.Tests
                 profile.languageCode = code;
                 _config.languages.Add(profile);
             }
-            Localization.Initialize(_config);
-            Localization.SetDataProvider(new EmptyProvider());
-            Localization.SetLanguage("en");
+            _project ??= LocalizationProjectConfig.Create(new[] { "en", "ru" });
+            Completed(Localization.InitializeAsync(_project));
         }
 
         [TearDown]
         public void TearDown()
         {
             Localization.OnLanguageChanged -= _languageHandler;
-            Localization.OnProfileChanged -= _profileHandler;
-            Localization.Shutdown();
+            Localization.OnRuntimeChanged -= _profileHandler;
+            Completed(Localization.ShutdownAsync());
+            Object.DestroyImmediate(_project); _project = null;
             foreach (var obj in _objects) Object.DestroyImmediate(obj);
             _objects.Clear();
         }
@@ -45,16 +46,15 @@ namespace SimplyLocalize.Tests
         [Test]
         public void Reinitialize_DetachesOldManagerButKeepsFacadeSubscribers()
         {
-            var old = Localization.Manager;
+            var old = Localization.Runtime;
             int languages = 0, profiles = 0;
             _languageHandler = _ => languages++;
             _profileHandler = _ => profiles++;
             Localization.OnLanguageChanged += _languageHandler;
-            Localization.OnProfileChanged += _profileHandler;
-            Localization.Initialize(_config);
-            Localization.SetDataProvider(new EmptyProvider());
-            Localization.SetLanguage("en");
-            old.SetLanguage("ru");
+            Localization.OnRuntimeChanged += _profileHandler;
+            _project ??= LocalizationProjectConfig.Create(new[] { "en", "ru" });
+            Completed(Localization.InitializeAsync(_project));
+            Assert.That(old.IsReleased, Is.True);
             Assert.That(languages, Is.EqualTo(1));
             Assert.That(profiles, Is.EqualTo(1));
             Assert.That(Localization.CurrentLanguage, Is.EqualTo("en"));
@@ -63,39 +63,38 @@ namespace SimplyLocalize.Tests
         [Test]
         public void Shutdown_DetachesForwardingFromRetainedManager()
         {
-            var old = Localization.Manager;
+            var old = Localization.Runtime;
             int events = 0;
             _languageHandler = _ => events++;
             Localization.OnLanguageChanged += _languageHandler;
-            Localization.Shutdown();
-            old.SetLanguage("ru");
+            Completed(Localization.ShutdownAsync());
+            Assert.That(old.IsReleased, Is.True);
             Assert.That(events, Is.Zero);
         }
 
         [Test]
         public void InitializeUnknownLanguage_LeavesCurrentManagerIntactOnThrow()
         {
-            var old = Localization.Manager;
-            Assert.Throws<ArgumentException>(() => Localization.Initialize(_config, "missing", true));
-            Assert.That(Localization.Manager, Is.SameAs(old));
+            var old = Localization.Runtime;
+            Assert.Throws<ArgumentException>(() => Localization.InitializeAsync(_project, "missing"));
+            Assert.That(Localization.Runtime, Is.SameAs(old));
             Assert.That(Localization.CurrentLanguage, Is.EqualTo("en"));
         }
 
         [Test]
         public void DuplicateCodes_AreRejectedBeforeReplacingCurrentManager()
         {
-            var bad = Create<LocalizationConfig>();
-            bad.name = "Duplicate config";
-            bad.languages.Add(_config.languages[0]);
-            var duplicate = Create<LanguageProfile>();
-            duplicate.languageCode = "en";
-            bad.languages.Add(duplicate);
-            var old = Localization.Manager;
-            var error = Assert.Throws<ArgumentException>(() => Localization.Initialize(bad));
-            StringAssert.Contains("Duplicate config", error.Message);
+            var bad = Create<LocalizationProjectConfig>();
+            var serialized = new UnityEditor.SerializedObject(bad);
+            var languages = serialized.FindProperty("_languages");
+            languages.arraySize = 2;
+            languages.GetArrayElementAtIndex(0).FindPropertyRelative("_code").stringValue = "en";
+            languages.GetArrayElementAtIndex(1).FindPropertyRelative("_code").stringValue = "en";
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            var old = Localization.Runtime;
+            var error = Assert.Throws<ArgumentException>(() => Localization.InitializeAsync(bad));
             StringAssert.Contains("en", error.Message);
-            Assert.That(Localization.Manager, Is.SameAs(old));
-        }
+            Assert.That(Localization.Runtime, Is.SameAs(old));        }
 
         [TestCase(null)]
         [TestCase("../Outside")]
@@ -134,7 +133,7 @@ namespace SimplyLocalize.Tests
             _config.languages[1].fallbackProfile = fallback;
             fallback.fallbackProfile = _config.languages[1]; // Cycles already have bounded runtime resolution.
             Assert.That(_config.GetValidationErrors(), Is.Empty);
-            Assert.DoesNotThrow(() => Localization.Initialize(_config));
+            Assert.DoesNotThrow(() => new LocalizationManager(_config));
             var data = new EditorLocalizationData();
             Assert.DoesNotThrow(() => CoverageAnalyzer.ComputeWarnings(data, _config));
         }
@@ -157,7 +156,7 @@ namespace SimplyLocalize.Tests
             Assert.That(_config.GetLanguageCodes(), Is.Empty);
             Assert.That(_config.GetProfile("en"), Is.Null);
             Assert.That(_config.GetProfileBySystemLanguage(SystemLanguage.English), Is.Null);
-            Assert.DoesNotThrow(() => Localization.Initialize(_config));
+            Assert.DoesNotThrow(() => new LocalizationManager(_config));
         }
 
         [Test]
@@ -195,11 +194,10 @@ namespace SimplyLocalize.Tests
             return obj;
         }
 
-        private sealed class EmptyProvider : ILocalizationDataProvider
+        private static void Completed(System.Threading.Tasks.Task operation)
         {
-            public Dictionary<string, string> LoadTextData(string languageCode) => new();
-            public bool HasTextData(string languageCode) => false;
-            public List<LocalizationAssetTable> LoadAssetTables(string languageCode) => new();
+            Assert.That(operation.IsCompleted, Is.True);
+            operation.GetAwaiter().GetResult();
         }
     }
 }

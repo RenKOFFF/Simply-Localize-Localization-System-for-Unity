@@ -11,7 +11,7 @@ namespace SimplyLocalize.HorrorLab.Editor
         {
             var definition = AssetDatabase.LoadAssetAtPath<HorrorWorldDefinition>(HorrorLabSetup.Root + "/Data/Precinct.asset");
             var text = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(HorrorLabSetup.Root + "/Data/TextConfig.asset");
-            var global = Localization.Manager;
+            var global = Localization.Runtime;
             int checkedVariants = 0;
             foreach (var locale in definition.visualConfig.languages)
             {
@@ -35,7 +35,7 @@ namespace SimplyLocalize.HorrorLab.Editor
                     if (!manager.HasKey(id) || manager.Get(id) == id) throw new InvalidOperationException("Missing UI translation: " + locale.Code + "/" + id);
 
             }
-            if (!ReferenceEquals(global, Localization.Manager)) throw new InvalidOperationException("Global localization was replaced.");
+            if (!ReferenceEquals(global, Localization.Runtime)) throw new InvalidOperationException("Global localization was replaced.");
             return "PASS: " + checkedVariants + " visual resolutions, fallback provenance, menu translations and global-manager isolation. Async integration and memory checks run in the standalone Player.";
         }
     }

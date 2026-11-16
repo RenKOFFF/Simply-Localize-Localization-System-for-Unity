@@ -65,7 +65,10 @@ namespace SimplyLocalize
                         if (root is not TextAsset text) throw WrongType(address, "TextAsset");
                         string json = text.text;
                         if (json.Length > request.MaxSourceCharacters) throw Limit(address);
-                        var parsed = LocalizationFileParser.Parse(json);
+                        Dictionary<string, string> parsed;
+                        try { parsed = LocalizationFileParser.Parse(json); }
+                        catch (Exception error) when (error is FormatException || error is OverflowException || error is ArgumentOutOfRangeException)
+                        { throw new FormatException("Invalid localization JSON at Resources/" + address + ": " + error.Message, error); }
                         if (parsed.Count > request.MaxTextEntries || parsed.Sum(p => (long)p.Key.Length + (p.Value?.Length ?? 0)) > request.MaxTextCharacters) throw Limit(address);
                         data = LocalizationSourceData.FromText(selection == null ? parsed : parsed.Where(p => selection.Contains(p.Key)).ToDictionary(p => p.Key, p => p.Value), parsed.Count);
                         break;

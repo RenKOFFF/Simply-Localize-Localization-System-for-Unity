@@ -19,7 +19,8 @@ namespace SimplyLocalize
             internal string[] Channels;
         }
         private readonly LocalizationRuntimeDefinition definition;
-        private readonly LocalizationSourceRegistry sources;
+        private LocalizationSourceRegistry sources;
+        private CancellationTokenSource sourceChange;
         private readonly LocalizationContextOptions options;
         private readonly bool ownsFormatter;
         private readonly Dictionary<string, Group> groups = new(StringComparer.Ordinal);
@@ -39,6 +40,9 @@ namespace SimplyLocalize
         /// <summary>All participants are committed before any subscriber runs. Subscriber failures do not roll back state.</summary>
         public event Action<LocalizationRuntime, IReadOnlyList<string>> Changed;
         public event Action<Exception> ObserverError;
+        /// <summary>Consumers detach their targets before source ownership is released. Do not start new work here.</summary>
+        public event Action<LocalizationRuntime> Releasing;
+        public IReadOnlyList<string> GetAvailableLanguages(string channelId = null) => Array.AsReadOnly(Channel(channelId).Languages);
 
         public LocalizationRuntime(LocalizationProjectConfig config, LocalizationSourceRegistry providers = null, LocalizationContextOptions options = null,
             ILocalizationTextFormatter formatter = null)
@@ -157,6 +161,43 @@ namespace SimplyLocalize
             string leader = channel.Mode == LocalizationChannelMode.FollowMain ? MainChannelId : channel.Id;
             return SwitchLanguageAsync(leader, GetChannel(leader).RequestedLanguage, cancellationToken);
         }
+        /// <summary>Replaces provider registrations and all active content atomically, preserving channel languages and set registrations.</summary>
+        public Task ReplaceProvidersAsync(LocalizationSourceRegistry providers, CancellationToken cancellationToken = default)
+        {
+            RequireReady(); var replacement = (providers ?? throw new ArgumentNullException(nameof(providers))).Copy();
+            var linked = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, cancellationToken);
+            var previous = sourceChange; sourceChange = linked; Cancel(previous);
+            var participants = groups.Values.Distinct().ToArray();
+            foreach (var group in participants) Cancel(group.Switch);
+            return RunTracked(async () =>
+            {
+                var acquired = new List<Group>();
+                var prepared = new Dictionary<string, LocalizationChannelLease>(); Exception failure = null;
+                try
+                {
+                    foreach (var group in participants) { await group.Gate.WaitAsync(linked.Token); acquired.Add(group); }
+                    Check(linked.Token);
+                    foreach (string id in ChannelIds)
+                        prepared.Add(id, new LocalizationChannelLease(await Prepare(definition.Channels[id], current[id].Snapshot.RequestedLanguage,
+                            active[id].Keys, linked.Token, replacement)));
+                    Check(linked.Token); var old = current.Values.ToArray();
+                    sources = replacement;
+                    foreach (var pair in prepared) current[pair.Key] = pair.Value;
+                    prepared.Clear(); Notify(ChannelIds); await ReleaseAfterCommit(old);
+                }
+                catch (Exception error) { failure = error; throw; }
+                finally
+                {
+                    try { await ReleaseOwners(prepared.Values, failure); }
+                    finally
+                    {
+                        foreach (var group in acquired) group.Gate.Release();
+                        if (ReferenceEquals(sourceChange, linked)) sourceChange = null;
+                        linked.Dispose();
+                    }
+                }
+            });
+        }
         public Task<LocalizationSetLease> AcquireSetAsync(string channelId, string setId, CancellationToken cancellationToken = default)
         {
             RequireReady(); var channel = Channel(channelId);
@@ -227,15 +268,16 @@ namespace SimplyLocalize
                 throw;
             }
         }
-        private async Task<LocalizationChannelSnapshot> Prepare(LocalizationRuntimeDefinition.Channel channel, string requested, IEnumerable<string> setIds, CancellationToken token)
+        private async Task<LocalizationChannelSnapshot> Prepare(LocalizationRuntimeDefinition.Channel channel, string requested, IEnumerable<string> setIds, CancellationToken token,
+            LocalizationSourceRegistry providers = null)
         {
             var sets = new Dictionary<string, LocalizationPreparedSet>(StringComparer.Ordinal);
             var appearances = new Dictionary<string, LocalizationSourceLease>(StringComparer.Ordinal);
             try
             {
                 string[] chain = channel.Chain(requested);
-                foreach (string id in setIds) sets.Add(id, await PrepareSet(channel, definition.Sets[id], requested, chain, token));
-                if (sets.Count != 0) await PrepareAppearances(channel, requested, chain, appearances, token);
+                foreach (string id in setIds) sets.Add(id, await PrepareSet(channel, definition.Sets[id], requested, chain, token, providers));
+                if (sets.Count != 0) await PrepareAppearances(channel, requested, chain, appearances, token, providers);
                 return new(channel.Id, requested, chain[0], channel.DefaultSetId, sets, appearances);
             }
             catch (Exception error)
@@ -245,7 +287,8 @@ namespace SimplyLocalize
                 throw;
             }
         }
-        private async Task<LocalizationPreparedSet> PrepareSet(LocalizationRuntimeDefinition.Channel channel, LocalizationRuntimeDefinition.Set set, string requested, string[] chain, CancellationToken token)
+        private async Task<LocalizationPreparedSet> PrepareSet(LocalizationRuntimeDefinition.Channel channel, LocalizationRuntimeDefinition.Set set, string requested, string[] chain, CancellationToken token,
+            LocalizationSourceRegistry providers = null)
         {
             var result = new LocalizationPreparedSet();
             long textEntries = 0, assetEntries = 0, textCharacters = 0;
@@ -259,7 +302,7 @@ namespace SimplyLocalize
                     {
                         var keys = set.Keys.Where(p => p.Value == (source.Kind == LocalizationSourceKind.TextTable ? LocalizationEntryKind.Text : LocalizationEntryKind.Asset)).Select(p => p.Key).ToArray();
                         if (keys.Length == 0) continue;
-                        var lease = await sources.LoadAsync(Request(channel, source, language, requested, keys), token); result.Sources.Add(lease);
+                        var lease = await (providers ?? sources).LoadAsync(Request(channel, source, language, requested, keys), token); result.Sources.Add(lease);
                         if (source.Kind == LocalizationSourceKind.TextTable) textEntries += lease.Data.SourceEntryCount;
                         else assetEntries += lease.Data.SourceEntryCount;
                         textCharacters += lease.Data.Text.Sum(p => (long)p.Key.Length + (p.Value?.Length ?? 0));
@@ -290,10 +333,11 @@ namespace SimplyLocalize
                 throw;
             }
         }
-        private async Task PrepareAppearances(LocalizationRuntimeDefinition.Channel channel, string requested, string[] chain, Dictionary<string, LocalizationSourceLease> target, CancellationToken token)
+        private async Task PrepareAppearances(LocalizationRuntimeDefinition.Channel channel, string requested, string[] chain, Dictionary<string, LocalizationSourceLease> target, CancellationToken token,
+            LocalizationSourceRegistry providers = null)
         {
             foreach (string language in chain)
-                if (definition.Appearances.TryGetValue(language, out var source)) target.Add(language, await sources.LoadAsync(Request(channel, source, language, requested, null), token));
+                if (definition.Appearances.TryGetValue(language, out var source)) target.Add(language, await (providers ?? sources).LoadAsync(Request(channel, source, language, requested, null), token));
         }
         private LocalizationSourceRequest Request(LocalizationRuntimeDefinition.Channel channel, LocalizationSourceReference source, string language, string requested, string[] keys) =>
             new(source, language, keys, options, ownerId, (options.DiagnosticName ?? "Localization runtime") + "/" + channel.Name, requested);
@@ -342,6 +386,9 @@ namespace SimplyLocalize
         {
             EnsureThread(); if (release != null) return release;
             var completion = new TaskCompletionSource<bool>(); release = completion.Task; released = true;
+            foreach (Action<LocalizationRuntime> subscriber in Releasing?.GetInvocationList() ?? Array.Empty<Delegate>())
+                try { subscriber(this); } catch (Exception error) { Report(error); }
+            Releasing = null;
             Cancel(lifetime); Finish(); return release;
             async void Finish()
             {

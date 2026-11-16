@@ -1,81 +1,39 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace SimplyLocalize.Components
 {
-    /// <summary>
-    /// Generic base for localized asset components.
-    /// Assets are resolved from centralized asset tables (LocalizationAssetTable).
-    /// Falls back to the data provider (path-based loading) if not found in tables.
-    ///
-    /// To create a custom localized asset:
-    ///   public class LocalizedMaterial : LocalizedAsset&lt;Material&gt;
-    ///   {
-    ///       protected override void ApplyAsset(Material asset)
-    ///           => GetComponent&lt;Renderer&gt;().sharedMaterial = asset;
-    ///
-    ///       protected override Material ReadCurrentAsset()
-    ///           => GetComponent&lt;Renderer&gt;()?.sharedMaterial;
-    ///   }
-    /// </summary>
+    /// <summary>Custom asset components implement ApplyAsset and ReadCurrentAsset. The base owns the resolved source.</summary>
     public abstract class LocalizedAsset<T> : LocalizedComponentBase where T : Object
     {
-        private T _originalAsset;
-        private bool _originalCached;
-
-        /// <summary>
-        /// Apply the resolved asset to the target component.
-        /// Called on language change. Asset may be null if nothing was found.
-        /// </summary>
+        private T original;
+        private bool cached;
+        private LocalizationSourceLease owner;
         protected abstract void ApplyAsset(T asset);
-
-        /// <summary>
-        /// Read the current asset value from the target component.
-        /// Used to cache the original value before any localization is applied.
-        /// </summary>
+        protected virtual void RestoreAsset(T asset) => ApplyAsset(asset);
         protected abstract T ReadCurrentAsset();
-
-        /// <summary>
-        /// Optional: load from the legacy data provider path.
-        /// Override for backward compatibility with folder-based sprites/audio.
-        /// Return null to skip provider fallback.
-        /// </summary>
-        protected virtual Object LoadFromProvider(string languageCode) => null;
-
-        protected override void OnEnable()
-        {
-            CacheOriginal();
-            base.OnEnable();
-        }
-
+        protected override void OnEnable() { CacheOriginal(); base.OnEnable(); }
         public override void Refresh()
         {
-            if (string.IsNullOrEmpty(_key))
-                return;
-
             CacheOriginal();
-
-            // 1. Try centralized asset tables
-            T asset = Localization.GetAsset<T>(_key);
-
-            // 2. Fallback to provider (path-based)
-            if (asset == null)
+            bool found = TryResolveAsset<T>(out var value);
+            var next = found ? value.RetainSource() : null;
+            var old = owner;
+            try { ApplyAsset(found ? (T)value.Asset : original); owner = next; }
+            catch
             {
-                var providerResult = LoadFromProvider(Localization.CurrentLanguage);
-                asset = providerResult as T;
+                owner = null;
+                try { RestoreAsset(original); }
+                finally { ReleaseOwned(next); }
+                throw;
             }
-
-            // 3. Fallback to original if nothing found
-            if (asset == null)
-                asset = _originalAsset;
-
-            ApplyAsset(asset);
+            finally { ReleaseOwned(old); }
         }
-
-        private void CacheOriginal()
+        protected override void ClearLocalizedValue()
         {
-            if (_originalCached) return;
-            _originalAsset = ReadCurrentAsset();
-            _originalCached = true;
+            var old = owner; owner = null;
+            try { if (cached) RestoreAsset(original); }
+            finally { ReleaseOwned(old); }
         }
+        private void CacheOriginal() { if (!cached) { original = ReadCurrentAsset(); cached = true; } }
     }
 }

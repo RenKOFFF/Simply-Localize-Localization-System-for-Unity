@@ -28,7 +28,9 @@ namespace SimplyLocalize.Tests
         {
             if (Application.isPlaying) yield return new ExitPlayMode();
             Localization.OnLanguageChanged -= StaleHandler;
-            Localization.Shutdown();
+            var closing = Localization.ShutdownAsync();
+            while (!closing.IsCompleted) yield return null;
+            closing.GetAwaiter().GetResult();
             EditorSettings.enterPlayModeOptions = _previousOptions;
             EditorSettings.enterPlayModeOptionsEnabled = _previousEnabled;
         }
@@ -40,17 +42,27 @@ namespace SimplyLocalize.Tests
             EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload;
             for (int session = 0; session < 2; session++)
             {
-                var config = ScriptableObject.CreateInstance<LocalizationConfig>();
-                Localization.Initialize(config);
-                var previous = Localization.Manager;
+                var config = LocalizationProjectConfig.Create(new[] { "en" });
+                var initialization = Localization.InitializeAsync(config);
+                while (!initialization.IsCompleted) yield return null;
+                initialization.GetAwaiter().GetResult();
+                var previous = Localization.Runtime;
                 Object.DestroyImmediate(config);
                 _staleEvents = 0;
                 Localization.OnLanguageChanged += StaleHandler;
                 PluralRuleProvider.RegisterRule("en", new AlwaysFirstRule());
                 yield return new EnterPlayMode(false);
-                Assert.That(Localization.Manager, Is.Not.SameAs(previous));
+                Assert.That(Localization.Runtime, Is.Not.SameAs(previous));
                 Assert.That(PluralRuleProvider.GetRule("en").Evaluate(2), Is.EqualTo(1));
-                Localization.Reload();
+                Assert.That(previous.IsReleased, Is.True);
+                var activeConfig = LocalizationProjectConfig.Create(new[] { "en" });
+                var active = Localization.InitializeAsync(activeConfig);
+                while (!active.IsCompleted) yield return null;
+                active.GetAwaiter().GetResult();
+                var reload = Localization.ReloadAsync();
+                while (!reload.IsCompleted) yield return null;
+                reload.GetAwaiter().GetResult();
+                Object.DestroyImmediate(activeConfig);
                 Assert.That(_staleEvents, Is.Zero);
                 yield return new ExitPlayMode();
             }

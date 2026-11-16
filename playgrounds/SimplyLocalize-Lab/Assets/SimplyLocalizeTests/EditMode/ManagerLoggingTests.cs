@@ -11,7 +11,7 @@ namespace SimplyLocalize.Tests
     public class ManagerLoggingTests
     {
         private readonly List<Object> _objects = new();
-        [TearDown] public void Cleanup() { Localization.Shutdown(); foreach (var o in _objects) Object.DestroyImmediate(o); _objects.Clear(); }
+        [TearDown] public void Cleanup() { LocalizationLogger.Enabled = LocalizationLogger.EnabledInBuild = false; foreach (var o in _objects) Object.DestroyImmediate(o); _objects.Clear(); }
         private LocalizationConfig Config(bool enabled)
         {
             var config = ScriptableObject.CreateInstance<LocalizationConfig>(); _objects.Add(config);
@@ -35,22 +35,22 @@ namespace SimplyLocalize.Tests
             Assert.That(Capture(second.ClearCaches).Count(m => m.Contains("All caches cleared")), Is.EqualTo(secondEnabled ? 1 : 0));
         }
         [TestCase(true, false)] [TestCase(false, true)]
-        public void StaticPublicLogging_FollowsFacadeInsteadOfLastConstructedManager(bool facadeEnabled, bool otherEnabled)
+        public void StaticPublicLogging_UsesExplicitSettingsInsteadOfLastConstructedManager(bool facadeEnabled, bool otherEnabled)
         {
-            Localization.Initialize(Config(facadeEnabled)); new LocalizationManager(Config(otherEnabled));
+            LocalizationLogger.Enabled = LocalizationLogger.EnabledInBuild = facadeEnabled; new LocalizationManager(Config(otherEnabled));
             Assert.That(Capture(() => LocalizationLogger.LogInfo("facade-marker")).Count(m => m.Contains("facade-marker")), Is.EqualTo(facadeEnabled ? 1 : 0));
         }
         [TestCase(true)] [TestCase(false)]
         public void ProviderLogs_FollowCallingManager(bool enabled)
         {
-            Localization.Initialize(Config(!enabled));
+            LocalizationLogger.Enabled = LocalizationLogger.EnabledInBuild = !enabled;
             var manager = new LocalizationManager(Config(enabled));
             manager.SetDataProvider(new Provider(() => LocalizationLogger.LogInfo("provider-marker")));
             Assert.That(Capture(() => manager.SetLanguage("en")).Count(m => m.Contains("provider-marker")), Is.EqualTo(enabled ? 1 : 0));
         }
         [Test] public void ProviderFailure_RestoresStaticLoggingContext()
         {
-            Localization.Initialize(Config(false)); var manager = new LocalizationManager(Config(true));
+            LocalizationLogger.Enabled = LocalizationLogger.EnabledInBuild = false; var manager = new LocalizationManager(Config(true));
             manager.SetDataProvider(new Provider(() => { LocalizationLogger.LogInfo("inside-provider"); throw new InvalidOperationException("failure"); }));
             var logs = Capture(() => {
                 Assert.Throws<InvalidOperationException>(() => manager.SetLanguage("en"));

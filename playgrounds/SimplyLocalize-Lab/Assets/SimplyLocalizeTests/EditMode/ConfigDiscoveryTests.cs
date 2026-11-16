@@ -25,11 +25,43 @@ namespace SimplyLocalize.Tests
         [TearDown] public void Cleanup()
         {
             if (_other == null) return;
-            Localization.Shutdown(); AssetDatabase.DeleteAsset(Root); AssetDatabase.DeleteAsset(_other); _other = null;
+            AssetDatabase.DeleteAsset(Root); AssetDatabase.DeleteAsset(_other); _other = null;
         }
-        private static LocalizationConfig Find(bool automatic) => (LocalizationConfig)typeof(Localization)
-            .GetMethod("FindResourceConfig", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { automatic });
+        // These assertions describe the authoring output. Async runtime discovery is checked separately below.
+        private static LocalizationConfig Find(bool automatic)
+        {
+            var config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath);
+            return automatic && config != null && !config.autoInitialize ? null : config;
+        }
         private LocalizationProjectSetup.Result Create() => LocalizationProjectSetup.Configure(new[] { "en", "ru" }, "en", "en", true);
+
+        [UnityTest] public System.Collections.IEnumerator RuntimeDiscovery_RequiresNewTypeAtFixedAddressAndHonorsAutoFlag()
+        {
+            var old = Create().Config;
+            var missing = Localization.InitializeAsync();
+            while (!missing.IsCompleted) yield return null;
+            Assert.That(missing.IsFaulted, Is.True);
+            StringAssert.Contains("Project Configuration", missing.Exception.ToString());
+            AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(old));
+            var project = LocalizationProjectConfig.Create(new[] { "en", "ru" });
+            project.AutoInitialize = true;
+            AssetDatabase.CreateAsset(project, LocalizationProjectSetup.ConfigAssetPath);
+            AssetDatabase.SaveAssets(); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var initialized = Localization.InitializeAsync();
+            while (!initialized.IsCompleted) yield return null;
+            initialized.GetAwaiter().GetResult();
+            Assert.That(Localization.Config, Is.SameAs(project));
+            Assert.That(Localization.CurrentLanguage, Is.EqualTo("en"));
+            var close = Localization.ShutdownAsync();
+            while (!close.IsCompleted) yield return null;
+            close.GetAwaiter().GetResult();
+            project.AutoInitialize = false;
+            var automatic = (System.Threading.Tasks.Task<LocalizationRuntime>)typeof(Localization)
+                .GetMethod("InitializeAutomaticallyAsync", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
+            while (!automatic.IsCompleted) yield return null;
+            Assert.That(automatic.GetAwaiter().GetResult(), Is.Null);
+            Assert.That(Localization.IsInitialized, Is.False);
+        }
         private LocalizationConfig Config(string relative, bool automatic)
         {
             string path = _other + "/" + relative;
@@ -43,7 +75,7 @@ namespace SimplyLocalize.Tests
             Assert.That(result.ValidationErrors, Is.Empty); Assert.That(result.CreatedPaths.Count, Is.EqualTo(5));
             Assert.That(result.Config.languages.Select(p => p.Code), Is.EqualTo(new[] { "en", "ru" }));
             Assert.That(Find(true), Is.SameAs(result.Config)); Assert.That(Find(false), Is.SameAs(result.Config));
-            Localization.Initialize(); Assert.That(Localization.CurrentLanguage, Is.EqualTo("en"));
+            Assert.That(result.Config.defaultLanguage.Code, Is.EqualTo("en"));
         }
         [Test] public void RepeatSetup_PreservesGuidExternalTranslationsAndFlags()
         {
@@ -62,13 +94,14 @@ namespace SimplyLocalize.Tests
         [Test] public void ExplicitConfig_RemainsUsableOutsideResources()
         {
             var config = Config("Manual.asset", false); LocalizationProjectSetup.AddLanguages(config, "en");
-            config.defaultLanguage = config.languages[0]; Localization.Initialize(config);
-            Assert.That(Localization.Config, Is.SameAs(config)); Assert.That(Localization.CurrentLanguage, Is.EqualTo("en"));
+            config.defaultLanguage = config.languages[0];
+            var manager = new LocalizationManager(config); manager.SetLanguage("en");
+            Assert.That(manager.CurrentLanguage, Is.EqualTo("en")); manager.ClearCaches();
         }
         [Test] public void LegacyAutoConfigs_AreNotDiscovered()
         {
             Config("Resources/Nested/Old.asset", true); Assert.That(Find(true), Is.Null);
-            LogAssert.Expect(LogType.Error, new Regex("No startup config")); Assert.That(Find(false), Is.Null);
+            Assert.That(Find(false), Is.Null);
         }
         [Test] public void FixedAddress_IgnoresOtherAutomaticConfigs()
         {

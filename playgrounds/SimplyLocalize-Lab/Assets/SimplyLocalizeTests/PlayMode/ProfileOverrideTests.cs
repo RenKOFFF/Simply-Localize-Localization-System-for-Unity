@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using SimplyLocalize.Components;
-using SimplyLocalize.Data;
+using static SimplyLocalize.Tests.ComponentSourceFixture;
 using TMPro;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -15,31 +15,29 @@ namespace SimplyLocalize.Tests
     {
         private readonly List<Object> _objects = new();
         private readonly List<TMP_FontAsset> _borrowedAtlasFonts = new();
-        private LanguageProfile _en, _ru;
+        private LocalizationAppearance _en, _ru;
 
         [SetUp]
         public void SetUp()
         {
-            var config = Track(ScriptableObject.CreateInstance<LocalizationConfig>());
-            _en = Track(ScriptableObject.CreateInstance<LanguageProfile>());
-            _ru = Track(ScriptableObject.CreateInstance<LanguageProfile>());
-            _en.languageCode = "en";
-            _ru.languageCode = "ru";
+
+            _en = Track(ScriptableObject.CreateInstance<LocalizationAppearance>());
+            _ru = Track(ScriptableObject.CreateInstance<LocalizationAppearance>());
+
+
             _en.overrideTypography = _en.overrideSpacing = true;
             _en.fontSizeMultiplier = 1.8f;
             _en.lineSpacingAdjustment = 10;
-            config.languages.Add(_en);
-            config.languages.Add(_ru);
-            Localization.Initialize(config);
-            Localization.SetDataProvider(new Provider());
-            Localization.SetLanguage("en");
-        }
+            var provider = new ComponentSourceFixture();
+            provider.Appearances.Add("en", _en); provider.Appearances.Add("ru", _ru);
+            var config = Track(provider.CreateConfig("en", "ru"));
+            Completed(Localization.InitializeAsync(config, providers: provider.Registry()));        }
 
         [UnityTearDown]
         public IEnumerator TearDown()
         {
             foreach (var obj in _objects) if (obj is GameObject go) go.SetActive(false);
-            Localization.Shutdown();
+            Completed(Localization.ShutdownAsync());
             foreach (var obj in _objects) if (obj is GameObject) Object.Destroy(obj);
             yield return null;
             foreach (var font in _borrowedAtlasFonts)
@@ -63,13 +61,13 @@ namespace SimplyLocalize.Tests
             go.SetActive(true);
             for (int i = 0; i < 3; i++)
             {
-                Localization.Reload();
+                Completed(Localization.ReloadAsync());
                 AssertSize(go, tmp, 30);
                 if (tmp) Assert.That(go.GetComponent<TMP_Text>().lineSpacing, Is.EqualTo(5));
             }
-            Localization.SetLanguage("ru");
+            Completed(Localization.SetLanguageAsync("ru"));
             AssertSize(go, tmp, 20);
-            Localization.SetLanguage("en");
+            Completed(Localization.SetLanguageAsync("en"));
             AssertSize(go, tmp, 30);
             go.SetActive(false);
             go.SetActive(true);
@@ -108,7 +106,7 @@ namespace SimplyLocalize.Tests
             go.SetActive(true);
             Assert.That(text.alignment, Is.EqualTo(TextAlignmentOptions.BottomRight));
             entry.overrideAlignment = false;
-            Localization.Reload();
+            Completed(Localization.ReloadAsync());
             Assert.That(text.alignment, Is.EqualTo(TextAlignmentOptions.TopLeft));
             Assert.That(text.font, Is.SameAs(originalFont));
             Assert.That(text.fontSharedMaterial, Is.SameAs(originalMaterial));
@@ -128,10 +126,10 @@ namespace SimplyLocalize.Tests
             go.SetActive(true);
             Assert.That(text.fontSharedMaterial, Is.SameAs(originalPreset));
             entry.tmpMaterial = overridePreset;
-            Localization.Reload();
+            Completed(Localization.ReloadAsync());
             Assert.That(text.fontSharedMaterial, Is.SameAs(overridePreset));
             entry.tmpMaterial = null;
-            Localization.Reload();
+            Completed(Localization.ReloadAsync());
             Assert.That(text.fontSharedMaterial, Is.SameAs(originalPreset));
         }
 
@@ -155,10 +153,10 @@ namespace SimplyLocalize.Tests
                 legacy.resizeTextMaxSize = 40;
             }
             go.SetActive(true);
-            for (int i = 0; i < 3; i++) Localization.Reload();
+            for (int i = 0; i < 3; i++) Completed(Localization.ReloadAsync());
             Assert.That(tmp ? text.fontSizeMin : legacy.resizeTextMinSize, Is.EqualTo(15));
             Assert.That(tmp ? text.fontSizeMax : legacy.resizeTextMaxSize, Is.EqualTo(60));
-            Localization.SetLanguage("ru");
+            Completed(Localization.SetLanguageAsync("ru"));
             Assert.That(tmp ? text.fontSizeMin : legacy.resizeTextMinSize, Is.EqualTo(10));
             Assert.That(tmp ? text.fontSizeMax : legacy.resizeTextMaxSize, Is.EqualTo(40));
         }
@@ -171,7 +169,7 @@ namespace SimplyLocalize.Tests
             ((List<LocalizedProfileOverride.OverrideEntry>)local.Entries).Insert(0, null);
             go.SetActive(true);
             AssertSize(go, true, 30);
-            Localization.SetLanguage("ru");
+            Completed(Localization.SetLanguageAsync("ru"));
             AssertSize(go, true, 20);
         }
 
@@ -196,7 +194,7 @@ namespace SimplyLocalize.Tests
             Assert.That(text.textInfo.characterCount, Is.EqualTo(2));
             Assert.That(text.textInfo.characterInfo[1].fontAsset, Is.SameAs(fallbackB));
             var previousVariant = text.font;
-            Localization.SetLanguage("ru");
+            Completed(Localization.SetLanguageAsync("ru"));
             text.text = "AC";
             text.ForceMeshUpdate();
             Assert.That(text.textInfo.characterInfo[1].fontAsset, Is.SameAs(fallbackC));
@@ -232,7 +230,7 @@ namespace SimplyLocalize.Tests
             AssertSize(go, false, 36);
             local = go.AddComponent<LocalizedProfileOverride>();
             AddEntry(local);
-            Localization.Reload();
+            Completed(Localization.ReloadAsync());
             AssertSize(go, false, 30);
             local.enabled = false;
             AssertSize(go, false, 36);
@@ -259,17 +257,11 @@ namespace SimplyLocalize.Tests
         private void AddEntry(LocalizedProfileOverride local) => ((List<LocalizedProfileOverride.OverrideEntry>)local.Entries).Add(
             new LocalizedProfileOverride.OverrideEntry
             {
-                profile = _en, overrideTypography = true, fontSizeMultiplier = 1.5f,
+                languageCode = "en", overrideTypography = true, fontSizeMultiplier = 1.5f,
                 overrideSpacing = true, lineSpacingAdjustment = 3
             });
         private void AssertSize(GameObject go, bool tmp, float size) =>
             Assert.That(tmp ? go.GetComponent<TMP_Text>().fontSize : go.GetComponent<Text>().fontSize, Is.EqualTo(size));
         private T Track<T>(T obj) where T : Object { _objects.Add(obj); return obj; }
-        private sealed class Provider : ILocalizationDataProvider
-        {
-            public Dictionary<string, string> LoadTextData(string languageCode) => new() { ["label"] = "Text" };
-            public bool HasTextData(string languageCode) => true;
-            public List<LocalizationAssetTable> LoadAssetTables(string languageCode) => new();
-        }
     }
 }

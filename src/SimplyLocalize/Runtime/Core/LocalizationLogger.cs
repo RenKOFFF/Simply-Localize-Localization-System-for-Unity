@@ -19,8 +19,10 @@ namespace SimplyLocalize
     /// </summary>
     public static class LocalizationLogger
     {
-        internal static bool Enabled { get; set; }
-        internal static bool EnabledInBuild { get; set; }
+        /// <summary>Enables optional informational messages from the static logger. Errors and warnings remain visible.</summary>
+        public static bool Enabled { get; set; }
+        /// <summary>Also allows informational messages in a player build.</summary>
+        public static bool EnabledInBuild { get; set; }
 
         [ThreadStatic] private static LocalizationConfig _scopedConfig;
 

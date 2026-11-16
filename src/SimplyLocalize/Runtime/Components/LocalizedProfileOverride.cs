@@ -7,13 +7,13 @@ using UnityEngine.UI;
 namespace SimplyLocalize.Components
 {
     /// <summary>
-    /// Overrides specific parts of the global LanguageProfile for this component.
+    /// Overrides selected appearance sections for the resolved language of a text component.
     /// Auto-detects whether the target is TMP_Text or legacy Text and shows
     /// appropriate fields in the inspector.
     /// </summary>
     [DefaultExecutionOrder(10)]
     [AddComponentMenu("SimplyLocalize/Localized Profile Override")]
-    public class LocalizedProfileOverride : MonoBehaviour
+    public class LocalizedProfileOverride : LocalizedComponentBase
     {
         [SerializeField] private List<OverrideEntry> _entries = new();
 
@@ -22,7 +22,7 @@ namespace SimplyLocalize.Components
         private ProfileApplier _applier;
         private bool _standalone;
         private LocalizedText _localizedText;
-        private FormattableLocalizedText _formattableText;
+        private LocalizationSourceLease appearanceOwner;
 
         public IReadOnlyList<OverrideEntry> Entries => _entries;
 
@@ -32,52 +32,45 @@ namespace SimplyLocalize.Components
         /// <summary>True if this component targets a legacy UI Text.</summary>
         public bool IsLegacy => _legacyText != null && _tmpText == null;
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
             _tmpText = GetComponent<TMP_Text>();
             _legacyText = GetComponent<Text>();
-
             _localizedText = GetComponent<LocalizedText>();
-            _formattableText = GetComponent<FormattableLocalizedText>();
-            _standalone = _localizedText == null && _formattableText == null;
-
+            _standalone = _localizedText == null;
             if (_standalone)
             {
                 _applier ??= new ProfileApplier();
-
-                if (_tmpText != null)
-                    _applier.CacheOriginals(_tmpText);
-                else if (_legacyText != null)
-                    _applier.CacheOriginals(_legacyText);
-
-                Localization.OnLanguageChanged += OnLanguageChanged;
-
-                if (Localization.IsInitialized)
-                    ApplyForLanguage(Localization.CurrentLanguage);
+                if (_tmpText != null) _applier.CacheOriginals(_tmpText);
+                else if (_legacyText != null) _applier.CacheOriginals(_legacyText);
             }
-            else RefreshOwner();
+            base.OnEnable();
+            if (!_standalone) RefreshOwner();
         }
 
-        private void OnDisable()
+        protected override void OnDisable()
         {
-            if (_standalone)
-            {
-                Localization.OnLanguageChanged -= OnLanguageChanged;
-                _applier?.Restore();
-            }
-            else RefreshOwner();
+            base.OnDisable();
+            if (!_standalone) RefreshOwner();
         }
 
-        private void OnDestroy() => _applier?.Dispose();
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            _applier?.Dispose();
+        }
 
         private void RefreshOwner()
         {
             if (_localizedText != null && _localizedText.isActiveAndEnabled) _localizedText.Refresh();
-            if (_formattableText != null && _formattableText.isActiveAndEnabled) _formattableText.Refresh();
         }
 
-        private void OnLanguageChanged(string lang) => ApplyForLanguage(lang);
-
+        protected override void ClearLocalizedValue()
+        {
+            var old = appearanceOwner; appearanceOwner = null;
+            try { _applier?.Restore(); }
+            finally { ReleaseOwned(old); }
+        }
         // ──────────────────────────────────────────────
         //  TMP path
         // ──────────────────────────────────────────────
@@ -85,11 +78,11 @@ namespace SimplyLocalize.Components
         /// <summary>
         /// Called by LocalizedText after restoring originals (TMP path).
         /// </summary>
-        internal void ApplyMerged(TMP_Text text, LanguageProfile globalProfile, ProfileApplier applier)
+        internal void ApplyMerged(TMP_Text text, LocalizationAppearance globalProfile, string languageCode, ProfileApplier applier)
         {
             if (text == null) return;
 
-            var entry = GetEntry(globalProfile?.Code);
+            var entry = GetEntry(languageCode);
 
             if (entry == null)
             {
@@ -120,11 +113,11 @@ namespace SimplyLocalize.Components
         /// <summary>
         /// Called by LocalizedText after restoring originals (legacy Text path).
         /// </summary>
-        internal void ApplyMerged(Text text, LanguageProfile globalProfile, ProfileApplier applier)
+        internal void ApplyMerged(Text text, LocalizationAppearance globalProfile, string languageCode, ProfileApplier applier)
         {
             if (text == null) return;
 
-            var entry = GetEntry(globalProfile?.Code);
+            var entry = GetEntry(languageCode);
 
             if (entry == null)
             {
@@ -148,18 +141,28 @@ namespace SimplyLocalize.Components
         //  Standalone (no LocalizedText)
         // ──────────────────────────────────────────────
 
-        private void ApplyForLanguage(string langCode)
+        public override void Refresh()
         {
-            if (_applier == null) return;
-
-            var globalProfile = Localization.CurrentProfile;
-
-            if (_tmpText != null)
-                ApplyMerged(_tmpText, globalProfile, _applier);
-            else if (_legacyText != null)
-                ApplyMerged(_legacyText, globalProfile, _applier);
+            if (!_standalone) { RefreshOwner(); return; }
+            if (!IsReady || _applier == null) { ClearLocalizedValue(); return; }
+            var language = Channel.ResolvedLanguage;
+            var next = Channel.RetainAppearance(language);
+            var old = appearanceOwner;
+            try
+            {
+                if (_tmpText != null) ApplyMerged(_tmpText, next?.Data.Appearance, language, _applier);
+                else if (_legacyText != null) ApplyMerged(_legacyText, next?.Data.Appearance, language, _applier);
+                appearanceOwner = next;
+            }
+            catch
+            {
+                appearanceOwner = null;
+                try { _applier.Restore(); }
+                finally { ReleaseOwned(next); }
+                throw;
+            }
+            finally { ReleaseOwned(old); }
         }
-
         // ──────────────────────────────────────────────
         //  Apply entry to specific text type
         // ──────────────────────────────────────────────
@@ -232,7 +235,7 @@ namespace SimplyLocalize.Components
 
             for (int i = 0; i < _entries.Count; i++)
             {
-                if (_entries[i] != null && _entries[i].profile != null && _entries[i].profile.Code == languageCode)
+                if (_entries[i] != null && string.Equals(_entries[i].languageCode, languageCode, StringComparison.OrdinalIgnoreCase))
                     return _entries[i];
             }
 
@@ -245,7 +248,7 @@ namespace SimplyLocalize.Components
         public class OverrideEntry
         {
             [Header("Target")]
-            public LanguageProfile profile;
+            public string languageCode;
 
             // ── Font ──
             public bool overrideFont;

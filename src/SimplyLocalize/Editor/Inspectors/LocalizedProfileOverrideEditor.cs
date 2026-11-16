@@ -73,11 +73,9 @@ namespace SimplyLocalize.Editor.Inspectors
         private void DrawEntry(int index)
         {
             var entry = _entries.GetArrayElementAtIndex(index);
-            var profileProp = entry.FindPropertyRelative("profile");
+            var profileProp = entry.FindPropertyRelative("languageCode");
 
-            string profileName = profileProp.objectReferenceValue != null
-                ? ((LanguageProfile)profileProp.objectReferenceValue).displayName
-                : "(none)";
+            string profileName = profileProp.stringValue;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
@@ -94,9 +92,9 @@ namespace SimplyLocalize.Editor.Inspectors
 
             EditorGUILayout.EndHorizontal();
 
-            if (profileProp.objectReferenceValue == null)
+            if (string.IsNullOrWhiteSpace(profileProp.stringValue))
             {
-                EditorGUILayout.LabelField("Assign a LanguageProfile to configure overrides.",
+                EditorGUILayout.LabelField("Enter a standard language code, for example en or pt-BR.",
                     EditorStyles.miniLabel);
                 EditorGUILayout.EndVertical();
                 return;
