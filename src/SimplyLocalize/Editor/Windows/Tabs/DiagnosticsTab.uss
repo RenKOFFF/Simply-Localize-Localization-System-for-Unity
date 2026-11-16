@@ -2,23 +2,6 @@
     border-left-width: 3px;
     border-left-color: transparent;
 }
-#resourceDiagnostics.diagnostics-dark .unity-collection-view__item--alternative-background {
-    background-color: rgba(255, 255, 255, 0.025);
-}
-#resourceDiagnostics.diagnostics-light .unity-collection-view__item--alternative-background {
-    background-color: rgba(0, 0, 0, 0.025);
-}
-#resourceDiagnostics.diagnostics-dark .unity-collection-view__item:hover {
-    background-color: rgba(110, 175, 240, 0.12);
-}
-#resourceDiagnostics.diagnostics-light .unity-collection-view__item:hover {
-    background-color: rgba(40, 110, 180, 0.08);
-}
-#resourceDiagnostics.diagnostics-dark .unity-collection-view__item--selected {
-    background-color: rgb(24, 49, 76);
-    border-left-color: rgb(105, 183, 255);
-}
-#resourceDiagnostics.diagnostics-light .unity-collection-view__item--selected {
-    background-color: rgb(200, 224, 248);
-    border-left-color: rgb(29, 94, 160);
+#resourceDiagnostics .unity-collection-view__item--selected {
+    border-left-color: rgb(128, 128, 128);
 }

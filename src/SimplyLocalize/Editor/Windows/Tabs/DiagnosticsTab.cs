@@ -19,19 +19,16 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private Foldout historySection;
         private IVisualElementScheduledItem refresh;
         private static bool Dark => EditorGUIUtility.isProSkin;
-        private static Color Surface => Dark ? new Color(.13f, .14f, .16f) : new Color(.94f, .95f, .96f);
-        private static Color Muted => Dark ? new Color(.78f, .81f, .85f) : new Color(.30f, .34f, .39f);
-        private static Color Line => Dark ? new Color(.30f, .32f, .35f) : new Color(.74f, .77f, .80f);
+        private static Color Surface => Dark ? new Color(.19f, .19f, .19f) : new Color(.89f, .89f, .89f);
+        private static Color Muted => Dark ? new Color(.68f, .68f, .68f) : new Color(.35f, .35f, .35f);
+        private static Color Line => new Color(0, 0, 0, .15f);
         [InitializeOnLoadMethod] private static void RestoreRecording() => LocalizationResourceDiagnostics.RecordingEnabled = SessionState.GetBool(RecordingKey, false);
 
         public void Build(VisualElement container)
         {
             var root = new ScrollView { name = "resourceDiagnostics" };
-            root.AddToClassList(Dark ? "diagnostics-dark" : "diagnostics-light");
             var stylesheet = AssetDatabase.LoadAssetAtPath<StyleSheet>("Packages/com.renkoff.simply-localize/Editor/Windows/Tabs/DiagnosticsTab.uss");
             if (stylesheet != null) root.styleSheets.Add(stylesheet);
-            root.style.backgroundColor = Dark ? new Color(.085f, .09f, .10f) : new Color(.85f, .87f, .89f);
-            root.style.color = Dark ? new Color(.94f, .95f, .97f) : new Color(.10f, .12f, .15f);
             root.style.flexGrow = 1; Pad(root, 16); container.Add(root);
             var heading = Row(); heading.style.justifyContent = Justify.SpaceBetween; heading.style.flexWrap = Wrap.Wrap; root.Add(heading);
             var intro = new VisualElement(); heading.Add(intro);
