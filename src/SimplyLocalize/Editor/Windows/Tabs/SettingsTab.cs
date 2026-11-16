@@ -100,6 +100,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 var newPath = EditorGUILayout.TextField("Resources base path",
                     _config.resourcesBasePath);
+                var newLoadText = EditorGUILayout.Toggle(new GUIContent("Load text translations", "Disable for an audio/image-only context; missing text files will not be requested."), _config.loadTextData);
                 var newMode = (KeyConversionMode)EditorGUILayout.EnumPopup(
                     "Key conversion mode", _config.keyConversionMode);
                 var newLogging = EditorGUILayout.Toggle("Enable logging",
@@ -111,6 +112,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 {
                     Undo.RecordObject(_config, "Change data settings");
                     _config.resourcesBasePath = newPath;
+                    _config.loadTextData = newLoadText;
                     _config.keyConversionMode = newMode;
                     _config.enableLogging = newLogging;
                     _config.enableLoggingInBuild = newLoggingBuild;

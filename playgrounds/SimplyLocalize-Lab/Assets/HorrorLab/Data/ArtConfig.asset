@@ -21,6 +21,7 @@ MonoBehaviour:
   defaultLanguage: {fileID: 11400000, guid: 848b9cce37c603040ba34bc2f46aaf3e, type: 2}
   fallbackLanguage: {fileID: 11400000, guid: 848b9cce37c603040ba34bc2f46aaf3e, type: 2}
   resourcesBasePath: NightShift/Worlds/Precinct/Visuals
+  loadTextData: 0
   keyConversionMode: 1
   enableLogging: 0
   enableLoggingInBuild: 0

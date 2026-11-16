@@ -29,6 +29,7 @@ namespace SimplyLocalize.HorrorLab.Editor
             var text = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(Root + "/Data/TextConfig.asset");
             var voice = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(Root + "/Data/VoiceConfig.asset");
             var visual = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(Root + "/Data/ArtConfig.asset");
+            voice.loadTextData = false; visual.loadTextData = false;
             voice.resourcesBasePath = "NightShift/Worlds/Precinct/Voice";
             visual.resourcesBasePath = "NightShift/Worlds/Precinct/Visuals";
             EditorUtility.SetDirty(voice); EditorUtility.SetDirty(visual);

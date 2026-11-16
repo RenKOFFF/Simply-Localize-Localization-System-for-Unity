@@ -36,6 +36,9 @@ namespace SimplyLocalize
         [Tooltip("Base path inside Resources for localization data")]
         public string resourcesBasePath = "Localization";
 
+        [Tooltip("Load text translations when changing language. Disable for contexts containing only localized audio, images or other assets. Existing configurations keep text loading enabled.")]
+        public bool loadTextData = true;
+
         [Header("Editor")]
         public KeyConversionMode keyConversionMode = KeyConversionMode.ReplaceSpacesWithSlashes;
         public bool enableLogging;

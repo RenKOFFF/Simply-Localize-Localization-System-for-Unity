@@ -287,7 +287,7 @@ namespace SimplyLocalize
         /// </summary>
         public IEnumerable<string> GetAllKeys()
         {
-            if (!string.IsNullOrEmpty(_currentLanguage)
+            if (_config.loadTextData && !string.IsNullOrEmpty(_currentLanguage)
                 && _textCache.TryGetValue(_currentLanguage, out var data))
             {
                 return data.Keys;
@@ -371,7 +371,7 @@ namespace SimplyLocalize
         {
             foreach (var code in GetLanguageChain(languageCode, profile))
             {
-                if (!text.ContainsKey(code)) text[code] = LoadTextData(provider, code);
+                if (_config.loadTextData && !text.ContainsKey(code)) text[code] = LoadTextData(provider, code);
                 // Once assets have consumers, prepare them before publishing any change event.
                 if (_usesAssetTables && !assets.ContainsKey(code))
                     assets[code] = LoadAssetTables(provider, code);
@@ -400,6 +400,7 @@ namespace SimplyLocalize
 
         private void EnsureTextDataLoaded(string languageCode)
         {
+            if (!_config.loadTextData) { _textCache.Remove(languageCode); return; }
             if (_textCache.ContainsKey(languageCode))
                 return;
 

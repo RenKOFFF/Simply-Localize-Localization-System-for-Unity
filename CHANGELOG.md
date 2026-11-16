@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add opt-in asset-only contexts via loadTextData=false; keep legacy text loading on by default and preserve missing-text diagnostics for text-enabled contexts.
+
 - Keep Info logging independent for standalone managers; scope synchronous provider logs to their caller. Public static logging follows the committed Localization facade; warnings and errors remain unconditional.
 
 - Replace root Resources config discovery with a generated path catalog; preserve existing config locations and reject ambiguous Resources paths.
