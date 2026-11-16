@@ -1,0 +1,193 @@
+{
+  "mode": "owners",
+  "utc": "2026-11-16T18:57:41.0762399Z",
+  "unity": "6000.0.62f1",
+  "failure": null,
+  "checks": [
+    {
+      "pass": true,
+      "name": "owners share same native clip"
+    },
+    {
+      "pass": true,
+      "name": "second owner remains usable"
+    },
+    {
+      "pass": true,
+      "name": "last owner releases clip"
+    },
+    {
+      "pass": true,
+      "name": "Borrowed preserves external clip"
+    }
+  ],
+  "samples": [
+    {
+      "name": "before-owners",
+      "frame": 50491,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "two-owners",
+      "frame": 50499,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [
+        {
+          "id": 46222,
+          "name": "01",
+          "state": "Loaded"
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "state": "Loaded"
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "state": "Loaded"
+        }
+      ],
+      "registry": [
+        {
+          "id": 44990,
+          "name": "Radio",
+          "type": "LocalizationAssetTable",
+          "users": 2,
+          "owned": true
+        },
+        {
+          "id": 46222,
+          "name": "01",
+          "type": "AudioClip",
+          "users": 2,
+          "owned": true
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "type": "AudioClip",
+          "users": 2,
+          "owned": true
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "type": "AudioClip",
+          "users": 2,
+          "owned": true
+        }
+      ]
+    },
+    {
+      "name": "first-owner-closed",
+      "frame": 50499,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [
+        {
+          "id": 46222,
+          "name": "01",
+          "state": "Loaded"
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "state": "Loaded"
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "state": "Loaded"
+        }
+      ],
+      "registry": [
+        {
+          "id": 44990,
+          "name": "Radio",
+          "type": "LocalizationAssetTable",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46222,
+          "name": "01",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        }
+      ]
+    },
+    {
+      "name": "last-owner-closed",
+      "frame": 50499,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "borrowed-closed-external-keeps-clip",
+      "frame": 50506,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [
+        {
+          "id": 46222,
+          "name": "01",
+          "state": "Loaded"
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "state": "Loaded"
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "state": "Loaded"
+        }
+      ],
+      "registry": []
+    },
+    {
+      "name": "explicit-owned-context-closed",
+      "frame": 50507,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    }
+  ],
+  "logs": []
+}

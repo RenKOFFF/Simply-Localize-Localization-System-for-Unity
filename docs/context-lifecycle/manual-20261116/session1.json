@@ -1,0 +1,182 @@
+{
+  "mode": "session1",
+  "utc": "2026-11-16T18:58:36.6435678Z",
+  "unity": "6000.0.62f1",
+  "failure": null,
+  "checks": [
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "fresh Play session prepares audio"
+    },
+    {
+      "pass": true,
+      "name": "fresh session releases audio"
+    }
+  ],
+  "samples": [
+    {
+      "name": "before-session1",
+      "frame": 920,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "session-world",
+      "frame": 933,
+      "state": "World",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [
+        {
+          "id": 46222,
+          "name": "01",
+          "state": "Loaded"
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "state": "Loaded"
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "state": "Loaded"
+        }
+      ],
+      "registry": [
+        {
+          "id": 44990,
+          "name": "Radio",
+          "type": "LocalizationAssetTable",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46222,
+          "name": "01",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44868,
+          "name": "Signs",
+          "type": "LocalizationAssetTable",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44888,
+          "name": "pl-Archive",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45128,
+          "name": "Archive",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44928,
+          "name": "pl-Reception",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45130,
+          "name": "Reception",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44946,
+          "name": "Signs",
+          "type": "LocalizationAssetTable",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44956,
+          "name": "en-Archive",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45120,
+          "name": "Archive",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44896,
+          "name": "en-Warning",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45118,
+          "name": "Warning",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44820,
+          "name": "en-Reception",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45116,
+          "name": "Reception",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        }
+      ]
+    },
+    {
+      "name": "session-closed",
+      "frame": 934,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    }
+  ],
+  "logs": []
+}

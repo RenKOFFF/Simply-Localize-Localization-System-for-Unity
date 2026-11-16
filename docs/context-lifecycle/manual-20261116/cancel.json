@@ -1,0 +1,57 @@
+{
+  "mode": "cancel",
+  "utc": "2026-11-16T18:57:39.8092222Z",
+  "unity": "6000.0.62f1",
+  "failure": null,
+  "checks": [
+    {
+      "pass": true,
+      "name": "loading curtain entered"
+    },
+    {
+      "pass": true,
+      "name": "cancel leaves no partial world"
+    },
+    {
+      "pass": true,
+      "name": "cancel audio drained"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    }
+  ],
+  "samples": [
+    {
+      "name": "before-cancel",
+      "frame": 50219,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cancelled",
+      "frame": 50220,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "retry-closed",
+      "frame": 50234,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    }
+  ],
+  "logs": []
+}

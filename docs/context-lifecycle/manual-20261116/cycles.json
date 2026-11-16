@@ -1,0 +1,583 @@
+{
+  "mode": "cycles",
+  "utc": "2026-11-16T18:57:38.4802058Z",
+  "unity": "6000.0.62f1",
+  "failure": null,
+  "checks": [
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 0 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 0 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 0 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 1 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 1 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 1 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 2 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 2 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 2 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 3 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 3 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 3 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 4 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 4 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 4 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 5 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 5 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 5 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 6 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 6 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 6 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 7 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 7 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 7 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 8 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 8 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 8 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 9 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 9 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 9 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 10 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 10 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 10 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 11 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 11 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 11 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 12 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 12 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 12 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 13 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 13 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 13 audio released"
+    },
+    {
+      "pass": true,
+      "name": "world published"
+    },
+    {
+      "pass": true,
+      "name": "cycle 14 voice ready"
+    },
+    {
+      "pass": true,
+      "name": "cycle 14 textures valid"
+    },
+    {
+      "pass": true,
+      "name": "cycle 14 audio released"
+    }
+  ],
+  "samples": [
+    {
+      "name": "before-cycles",
+      "frame": 48590,
+      "state": "World",
+      "text": "pl",
+      "voice": "ru",
+      "visual": "pl",
+      "audio": [
+        {
+          "id": 46216,
+          "name": "01",
+          "state": "Loaded"
+        },
+        {
+          "id": 46218,
+          "name": "02",
+          "state": "Loaded"
+        },
+        {
+          "id": 46220,
+          "name": "03",
+          "state": "Loaded"
+        },
+        {
+          "id": 46222,
+          "name": "01",
+          "state": "Loaded"
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "state": "Loaded"
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "state": "Loaded"
+        }
+      ],
+      "registry": [
+        {
+          "id": 44956,
+          "name": "en-Archive",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44946,
+          "name": "Signs",
+          "type": "LocalizationAssetTable",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45130,
+          "name": "Reception",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44928,
+          "name": "pl-Reception",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45128,
+          "name": "Archive",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44888,
+          "name": "pl-Archive",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44868,
+          "name": "Signs",
+          "type": "LocalizationAssetTable",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46226,
+          "name": "03",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46224,
+          "name": "02",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46222,
+          "name": "01",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44990,
+          "name": "Radio",
+          "type": "LocalizationAssetTable",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46220,
+          "name": "03",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46218,
+          "name": "02",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 46216,
+          "name": "01",
+          "type": "AudioClip",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44860,
+          "name": "Radio",
+          "type": "LocalizationAssetTable",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45120,
+          "name": "Archive",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44896,
+          "name": "en-Warning",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45118,
+          "name": "Warning",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 44820,
+          "name": "en-Reception",
+          "type": "HorrorVisualVariant",
+          "users": 1,
+          "owned": true
+        },
+        {
+          "id": 45116,
+          "name": "Reception",
+          "type": "Texture2D",
+          "users": 1,
+          "owned": true
+        }
+      ]
+    },
+    {
+      "name": "cycle-0-closed",
+      "frame": 48678,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "en",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-1-closed",
+      "frame": 48773,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "ru",
+      "visual": "ru",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-2-closed",
+      "frame": 48861,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-3-closed",
+      "frame": 48957,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "ru",
+      "visual": "en",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-4-closed",
+      "frame": 49045,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "ru",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-5-closed",
+      "frame": 49141,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "ru",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-6-closed",
+      "frame": 49228,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "en",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-7-closed",
+      "frame": 49324,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "ru",
+      "visual": "ru",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-8-closed",
+      "frame": 49412,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-9-closed",
+      "frame": 49505,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "ru",
+      "visual": "en",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-10-closed",
+      "frame": 49590,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "ru",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-11-closed",
+      "frame": 49687,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "ru",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-12-closed",
+      "frame": 49773,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "en",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-13-closed",
+      "frame": 49869,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "ru",
+      "visual": "ru",
+      "audio": [],
+      "registry": []
+    },
+    {
+      "name": "cycle-14-closed",
+      "frame": 49956,
+      "state": "Menu",
+      "text": "pl",
+      "voice": "en",
+      "visual": "pl",
+      "audio": [],
+      "registry": []
+    }
+  ],
+  "logs": []
+}
