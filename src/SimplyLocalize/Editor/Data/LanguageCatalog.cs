@@ -23,10 +23,6 @@ namespace SimplyLocalize.Editor.Data
     internal static class LanguageCatalog
     {
         private static readonly Regex CustomTag = new Regex(@"^(?:[a-z]{2,3}(?:-[a-z]{4})?(?:-(?:[a-z]{2}|[0-9]{3}))?(?:-(?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*|x(?:-[a-z0-9]{1,8})+)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-        private static readonly HashSet<string> Languages = new HashSet<string>(LanguageSubtags.Language.Split(' '), StringComparer.OrdinalIgnoreCase);
-        private static readonly HashSet<string> Scripts = new HashSet<string>(LanguageSubtags.Script.Split(' '), StringComparer.OrdinalIgnoreCase);
-        private static readonly HashSet<string> Regions = new HashSet<string>(LanguageSubtags.Region.Split(' '), StringComparer.OrdinalIgnoreCase);
-        private static readonly HashSet<string> Variants = new HashSet<string>(LanguageSubtags.Variant.Split(' '), StringComparer.OrdinalIgnoreCase);
         private static readonly Dictionary<string, LanguageDefinition> Entries = Build();
 
         internal static LanguageDefinition Find(string code) => Entries.TryGetValue(code, out var entry) ? entry : null;
@@ -54,44 +50,7 @@ namespace SimplyLocalize.Editor.Data
             return entry;
         }
 
-        internal static string CanonicalCode(string input)
-        {
-            string code = (input ?? "").Trim().Replace('_', '-');
-            if (code.Equals("zh-CHS", StringComparison.OrdinalIgnoreCase)) return "zh-Hans";
-            if (code.Equals("zh-CHT", StringComparison.OrdinalIgnoreCase)) return "zh-Hant";
-            var known = Find(code);
-            if (known != null) return known.Code;
-            var iso = Entries.Values.FirstOrDefault(e => !e.Code.Contains("-") && string.Equals(e.Iso3, code, StringComparison.OrdinalIgnoreCase));
-            if (iso != null) return iso.Code;
-            if (!CustomTag.IsMatch(code)) throw new ArgumentException("Use a language code such as en, ru, pt-BR or zh-Hans. For a private/custom language use x-my-language. Names and paths are not codes.");
-            string[] parts = code.ToLowerInvariant().Split('-');
-            if (parts[0] != "x")
-            {
-                if (parts[0] == "iw") parts[0] = "he";
-                if (parts[0] == "in") parts[0] = "id";
-                if (parts[0] == "ji") parts[0] = "yi";
-                var baseAlias = Entries.Values.FirstOrDefault(e => !e.Code.Contains("-") && e.Iso3 == parts[0]);
-                if (baseAlias != null) parts[0] = baseAlias.Code;
-                if (!Languages.Contains(parts[0])) throw new ArgumentException("Unknown language code: " + parts[0] + ". Choose a language from the list, or use x-... for a private language.");
-                int index = 1;
-                if (index < parts.Length && parts[index].Length == 4 && char.IsLetter(parts[index][0]))
-                {
-                    if (!Scripts.Contains(parts[index])) throw new ArgumentException("Unknown script code: " + parts[index]);
-                    parts[index] = char.ToUpperInvariant(parts[index][0]) + parts[index].Substring(1);
-                    index++;
-                }
-                if (index < parts.Length && (parts[index].Length == 2 || parts[index].Length == 3))
-                {
-                    if (!Regions.Contains(parts[index])) throw new ArgumentException("Unknown region code: " + parts[index]);
-                    parts[index] = parts[index].ToUpperInvariant();
-                    index++;
-                }
-                var variants = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                for (; index < parts.Length; index++)
-                    if (!Variants.Contains(parts[index]) || !variants.Add(parts[index])) throw new ArgumentException("Unknown or repeated language variant: " + parts[index]);
-            }
-            return string.Join("-", parts);
-        }
+        internal static string CanonicalCode(string input) => LocalizationLanguageCode.Normalize(input);
 
         private static Dictionary<string, LanguageDefinition> Build()
         {

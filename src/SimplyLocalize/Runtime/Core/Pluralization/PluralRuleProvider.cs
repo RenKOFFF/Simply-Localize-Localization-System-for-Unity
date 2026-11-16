@@ -9,7 +9,7 @@ namespace SimplyLocalize.Pluralization
     /// </summary>
     public static class PluralRuleProvider
     {
-        private static readonly Dictionary<string, IPluralRule> Cache = new();
+        private static readonly Dictionary<string, PluralRuleInfo> Cache = new();
         private static readonly Dictionary<string, IPluralRule> Overrides = new();
         private static readonly object Sync = new();
 
@@ -36,10 +36,12 @@ namespace SimplyLocalize.Pluralization
         /// Supports both short codes ("en") and regional codes ("en-US", "pt-BR").
         /// Falls back to Germanic (English-like) if the language is not recognized.
         /// </summary>
-        public static IPluralRule GetRule(string languageCode)
+        public static IPluralRule GetRule(string languageCode) => GetRuleInfo(languageCode).Rule;
+
+        public static PluralRuleInfo GetRuleInfo(string languageCode)
         {
             if (string.IsNullOrWhiteSpace(languageCode))
-                return Germanic;
+                return new PluralRuleInfo(Germanic, PluralRuleSupport.Default, "en");
 
             string code = Normalize(languageCode);
             lock (Sync)
@@ -49,14 +51,15 @@ namespace SimplyLocalize.Pluralization
                 string parent = code;
                 while (true)
                 {
-                    if (Overrides.TryGetValue(parent, out var custom)) return Cache[code] = custom;
+                    if (Overrides.TryGetValue(parent, out var custom)) return Cache[code] = new PluralRuleInfo(custom, PluralRuleSupport.Custom, parent);
                     int separator = parent.LastIndexOf('-');
                     if (separator < 0) break;
                     parent = parent.Substring(0, separator);
                 }
                 var rule = ResolveRule(parent, code);
-                Cache[code] = rule;
-                return rule;
+                return Cache[code] = rule != null
+                    ? new PluralRuleInfo(rule, PluralRuleSupport.BuiltIn, parent)
+                    : new PluralRuleInfo(Germanic, PluralRuleSupport.Default, "en");
             }
         }
 
@@ -101,7 +104,7 @@ namespace SimplyLocalize.Pluralization
                 "ja" or "zh" or "ko" or "vi" or "th" or "id" or "ms"
                     or "my" or "lo" or "km" => EastAsian,
                 "ar" => Arabic,
-                _ => Germanic
+                _ => null
             };
         }
 

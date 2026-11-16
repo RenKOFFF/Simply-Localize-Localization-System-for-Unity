@@ -1,6 +1,6 @@
 // Registered BCP 47 subtags from IANA. File-Date: 2026-09-17
 // https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
-namespace SimplyLocalize.Editor.Data
+namespace SimplyLocalize
 {
     internal static class LanguageSubtags
     {
