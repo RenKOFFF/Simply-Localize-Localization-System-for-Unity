@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using SimplyLocalize.Components;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -16,6 +17,7 @@ namespace SimplyLocalize.Tests
         private readonly List<LocalizationRuntime> runtimes = new();
         private readonly List<LocalizationChannelLease> leases = new();
         private readonly List<LocalizationSourceLease> sourceLeases = new();
+        private readonly List<GameObject> consumers = new();
         private static IEnumerator Done(Task task)
         {
             float deadline = Time.realtimeSinceStartup + 15;
@@ -32,7 +34,7 @@ namespace SimplyLocalize.Tests
                 foreach (string language in new[] { "en", "ru" })
                     set.SetSources(language, new LocalizationSourceReference("resources", LocalizationResourceFixtures.VoiceTable(language), LocalizationSourceKind.AssetTable));
             }
-            var runtime = new LocalizationRuntime(config, options: new LocalizationContextOptions { Ownership = LocalizationResourceOwnership.Owned });
+            var runtime = new LocalizationRuntime(config, options: new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Owned });
             runtimes.Add(runtime); return runtime;
         }
         private static AudioClip Clip(LocalizationRuntime runtime)
@@ -42,6 +44,8 @@ namespace SimplyLocalize.Tests
         }
         [UnityTearDown] public IEnumerator Cleanup()
         {
+            foreach (var consumer in consumers) if (consumer != null) { consumer.SetActive(false); UnityEngine.Object.Destroy(consumer); }
+            consumers.Clear();
             foreach (var runtime in runtimes) yield return Done(runtime.ReleaseAsync());
             foreach (var lease in leases) yield return Done(lease.ReleaseAsync());
             foreach (var lease in sourceLeases) yield return Done(lease.ReleaseAsync());
@@ -72,7 +76,7 @@ namespace SimplyLocalize.Tests
         [UnityTest] public IEnumerator PreviousSessionRuntimeCannotReadOrUnloadTheNewSession()
         {
             var old = Create(); yield return Done(old.InitializeAsync()); var snapshot = old.GetChannel();
-            typeof(LocalizationContext).Assembly.GetType("SimplyLocalize.LocalizationResourceLease")
+            typeof(LocalizationRuntime).Assembly.GetType("SimplyLocalize.LocalizationResourceLease")
                 .GetMethod("ResetSession", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
             var current = Create(); yield return Done(current.InitializeAsync()); var clip = Clip(current); int clipId = clip.GetInstanceID();
             Assert.Throws<OperationCanceledException>(() => old.GetChannel());
@@ -102,6 +106,34 @@ namespace SimplyLocalize.Tests
             Assert.That(Resources.FindObjectsOfTypeAll<UnityEngine.Object>().Any(o => o.GetInstanceID() == pictureId), Is.False);
             yield return Done(owner.ReleaseAsync());
             Assert.That(Resources.FindObjectsOfTypeAll<AudioClip>().Any(c => c.GetInstanceID() == lineId), Is.False);
+        }
+        [UnityTest] public IEnumerator AudioComponentDetachesAndStopsBeforeOwnedClipIsUnloaded()
+        {
+            var runtime = Create(); yield return Done(runtime.InitializeAsync());
+            var clip = Clip(runtime); int id = clip.GetInstanceID();
+            var go = new GameObject("Owned audio consumer"); consumers.Add(go); go.SetActive(false);
+            var audio = go.AddComponent<AudioSource>(); audio.playOnAwake = false;
+            var localized = go.AddComponent<LocalizedAudioClip>(); localized.Key = LocalizationResourceFixtures.PrimaryKey;
+            localized.Bind(runtime); go.SetActive(true); audio.Play();
+            Assert.That(audio.clip, Is.SameAs(clip));
+            yield return Done(runtime.ReleaseAsync()); yield return Done(localized.ReleaseCompletion);
+            Assert.That(audio.clip, Is.Null); Assert.That(audio.isPlaying, Is.False);
+            Assert.That(Resources.FindObjectsOfTypeAll<AudioClip>().Any(c => c.GetInstanceID() == id), Is.False);
+        }
+        [UnityTest] public IEnumerator TextComponentRestoresBorrowedBaselineBeforeOwnedAppearanceUnloads()
+        {
+            Create(); config.Languages.First(l => l.Code == "en").Appearance = new LocalizationSourceReference(
+                "resources", "SimplyLocalizeTests/Lifecycle/Appearance", LocalizationSourceKind.Appearance);
+            var runtime = Create(); yield return Done(runtime.InitializeAsync());
+            int fontId = runtime.GetChannel().GetAppearance().primaryFont.GetInstanceID();
+            var go = new GameObject("Owned appearance consumer", typeof(RectTransform)); consumers.Add(go); go.SetActive(false);
+            var text = go.AddComponent<TMPro.TextMeshProUGUI>(); text.text = "";
+            var baseline = TMPro.TMP_Settings.defaultFontAsset; text.font = baseline;
+            var localized = go.AddComponent<LocalizedText>(); localized.Bind(runtime); go.SetActive(true);
+            Assert.That(text.font, Is.Not.SameAs(baseline));
+            yield return Done(runtime.ReleaseAsync()); yield return Done(localized.ReleaseCompletion); yield return null;
+            Assert.That(text.font, Is.SameAs(baseline)); Assert.That(baseline.material != null && baseline.atlasTexture != null, Is.True);
+            Assert.That(Resources.FindObjectsOfTypeAll<TMPro.TMP_FontAsset>().Any(f => f.GetInstanceID() == fontId), Is.False);
         }
         [UnityTest] public IEnumerator AppearanceCanBeRetainedWithoutKeepingTheOldVoiceTable()
         {

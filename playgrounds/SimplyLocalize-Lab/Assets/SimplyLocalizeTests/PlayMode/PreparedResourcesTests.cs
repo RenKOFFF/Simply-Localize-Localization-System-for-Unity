@@ -1,11 +1,10 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
-using SimplyLocalize.Data;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
@@ -17,72 +16,61 @@ namespace SimplyLocalize.Tests
         [Serializable] private class Measurement
         {
             public string unityVersion, scope, requestedKey, resolvedLanguage, audioLoadState;
-            public int legacyFirstLookupReads, preparationReads, readyLookupReads, preparedTableEntries;
+            public int beforeInitializationReads, preparationReads, readyLookupReads, preparedTableEntries;
             public double preparationMilliseconds, readyLookupMilliseconds;
         }
-
-        [UnityTest] public IEnumerator RealResources_PreparedReadsDoNotLoadAndReturnTheResolvedLanguage()
+        [UnityTest] public IEnumerator RealResources_ReadyReadsDoNotLoadAndReturnTheResolvedLanguage()
         {
-            var config = ScriptableObject.CreateInstance<LocalizationConfig>();
-            var en = ScriptableObject.CreateInstance<LanguageProfile>(); en.languageCode = "en";
-            var ru = ScriptableObject.CreateInstance<LanguageProfile>(); ru.languageCode = "ru";
-            config.languages.Add(en); config.languages.Add(ru); config.defaultLanguage = config.fallbackLanguage = en;
-            config.resourcesBasePath = LocalizationResourceFixtures.VoiceRoot; config.loadTextData = false;
-            var provider = new ObservedProvider(config.resourcesBasePath);
-            var legacy = new LocalizationManager(config); legacy.SetDataProvider(provider); legacy.SetLanguage("ru");
-            var preparedManager = new LocalizationManager(config); preparedManager.SetDataProvider(provider);
+            var config = LocalizationProjectConfig.Create(new[] { "en", "ru" });
+            config.MainChannel.FallbackLanguage = "en";
+            config.Sets[0].AddEntry(LocalizationResourceFixtures.PrimaryKey, LocalizationEntryKind.Asset);
+            foreach (string code in new[] { "en", "ru" })
+                config.Sets[0].SetSources(code, new LocalizationSourceReference("observed", LocalizationResourceFixtures.VoiceTable(code), LocalizationSourceKind.AssetTable));
+            var provider = new ObservedProvider(); var registry = new LocalizationSourceRegistry(false); registry.Register("observed", provider);
+            var runtime = new LocalizationRuntime(config, registry);
             try
             {
-                // Use a known independent fixture; no lookup that preloads tables before the probe.
                 string key = LocalizationResourceFixtures.PrimaryKey;
-                var measurement = new Measurement { unityVersion = Application.unityVersion, scope = config.resourcesBasePath, requestedKey = key };
-                int before = provider.Reads;
-                Assert.That(legacy.GetAsset<AudioClip>(key), Is.Not.Null);
-                measurement.legacyFirstLookupReads = provider.Reads - before;
-                Assert.That(measurement.legacyFirstLookupReads, Is.GreaterThan(0));
-                before = provider.Reads; provider.LastEntryCount = 0; var timer = Stopwatch.StartNew();
-                using (var snapshot = preparedManager.PrepareLanguage("ru"))
-                {
-                    preparedManager.ApplyPreparedLanguage(snapshot);
-                    measurement.preparationReads = provider.Reads - before;
-                    measurement.preparedTableEntries = provider.LastEntryCount;
-                }
+                var measurement = new Measurement { unityVersion = Application.unityVersion, scope = LocalizationResourceFixtures.VoiceRoot, requestedKey = key };
+                Assert.Throws<InvalidOperationException>(() => runtime.GetAsset<AudioClip>(key));
+                measurement.beforeInitializationReads = provider.Reads; Assert.That(provider.Reads, Is.Zero);
+                var timer = Stopwatch.StartNew(); var preparation = runtime.InitializeAsync("ru");
+                while (!preparation.IsCompleted) yield return null;
+                preparation.GetAwaiter().GetResult();
                 measurement.preparationMilliseconds = timer.Elapsed.TotalMilliseconds;
-                before = provider.Reads; timer.Restart();
+                measurement.preparationReads = provider.Reads; measurement.preparedTableEntries = provider.LastEntryCount;
+                Assert.That(measurement.preparationReads, Is.EqualTo(2), "Only the requested and fallback table are loaded.");
+                int before = provider.Reads; timer.Restart();
                 for (int i = 0; i < 1000; i++)
                 {
-                    var resolved = preparedManager.ResolvePreparedAsset<AudioClip>(key);
-                    Assert.That(resolved.Status, Is.EqualTo(LocalizationResolveStatus.Found));
-                    Assert.That(preparedManager.ResolvePreparedAsset<AudioClip>("__missing__").Status, Is.EqualTo(LocalizationResolveStatus.Missing));
+                    Assert.That(runtime.GetChannel().TryGetAsset<AudioClip>(key, out _), Is.True);
+                    Assert.That(runtime.GetChannel().TryGetAsset<AudioClip>("__missing__", out _), Is.False);
                 }
                 measurement.readyLookupMilliseconds = timer.Elapsed.TotalMilliseconds;
                 measurement.readyLookupReads = provider.Reads - before;
-                var result = preparedManager.ResolvePreparedAsset<AudioClip>(key);
-                measurement.resolvedLanguage = result.ResolvedLanguage; measurement.audioLoadState = result.Value.loadState.ToString();
-                Assert.That(measurement.readyLookupReads, Is.Zero); Assert.That(result.ResolvedLanguage, Is.EqualTo("ru"));
-                preparedManager.ClearCaches();
-                Assert.That(preparedManager.ResolvePreparedAsset<AudioClip>(key).Status, Is.EqualTo(LocalizationResolveStatus.NotPrepared));
-                Assert.That(result.Value != null, Is.True, "Clearing a manager must not destroy borrowed audio.");
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "../TestResults/Stage9Preparation/playmode-probe.json"));
+                Assert.That(runtime.GetChannel().TryGetAsset<AudioClip>(key, out var result), Is.True);
+                var clip = (AudioClip)result.Asset;
+                measurement.resolvedLanguage = result.Language; measurement.audioLoadState = clip.loadState.ToString();
+                Assert.That(measurement.readyLookupReads, Is.Zero); Assert.That(result.Language, Is.EqualTo("ru"));
+                Assert.That(clip.loadState, Is.EqualTo(AudioDataLoadState.Loaded));
+                var release = runtime.ReleaseAsync(); while (!release.IsCompleted) yield return null; release.GetAwaiter().GetResult();
+                Assert.Throws<ObjectDisposedException>(() => runtime.GetAsset<AudioClip>(key));
+                Assert.That(clip != null, Is.True, "Releasing a Borrowed source does not destroy external audio.");
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "../TestResults/Channels-C4/prepared-resources.json"));
                 Directory.CreateDirectory(Path.GetDirectoryName(path)); File.WriteAllText(path, JsonUtility.ToJson(measurement, true));
-                yield return null;
             }
-            finally
-            {
-                legacy.ClearCaches(); preparedManager.ClearCaches();
-                Object.DestroyImmediate(config); Object.DestroyImmediate(en); Object.DestroyImmediate(ru);
-            }
+            finally { runtime.Dispose(); Object.DestroyImmediate(config); }
         }
-
-        private sealed class ObservedProvider : ILocalizationDataProvider
+        private sealed class ObservedProvider : ILocalizationSourceProvider
         {
-            private readonly ResourcesDataProvider _inner;
+            private readonly ResourcesLocalizationSourceProvider inner = new();
             internal int Reads, LastEntryCount;
-            internal ObservedProvider(string path) { _inner = new ResourcesDataProvider(path); }
-            public Dictionary<string, string> LoadTextData(string code) { Reads++; return _inner.LoadTextData(code); }
-            public bool HasTextData(string code) => _inner.HasTextData(code);
-            public List<LocalizationAssetTable> LoadAssetTables(string code)
-            { Reads++; var tables = _inner.LoadAssetTables(code); LastEntryCount += tables.Sum(t => t.Count); return tables; }
+            public LocalizationProviderCapabilities GetCapabilities(LocalizationSourceKind kind) => inner.GetCapabilities(kind);
+            public async Task<LocalizationSourceLease> LoadAsync(LocalizationSourceRequest request, CancellationToken token)
+            {
+                Reads++; var source = await inner.LoadAsync(request, token);
+                LastEntryCount += source.Data.SourceEntryCount; return source;
+            }
         }
     }
 }

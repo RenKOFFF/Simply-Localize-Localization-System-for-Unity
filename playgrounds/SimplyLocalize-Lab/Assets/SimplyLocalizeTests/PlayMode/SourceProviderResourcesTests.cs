@@ -15,8 +15,8 @@ namespace SimplyLocalize.Tests
     public class SourceProviderResourcesTests
     {
         private readonly List<LocalizationSourceLease> leases = new();
-        private static readonly LocalizationContextOptions Owned = new() { Ownership = LocalizationResourceOwnership.Owned };
-        private static LocalizationSourceRequest Request(string address, string language = "en", LocalizationContextOptions options = null,
+        private static readonly LocalizationRuntimeOptions Owned = new() { Ownership = LocalizationResourceOwnership.Owned };
+        private static LocalizationSourceRequest Request(string address, string language = "en", LocalizationRuntimeOptions options = null,
             string[] keys = null, LocalizationSourceKind kind = LocalizationSourceKind.AssetTable) =>
             new(new LocalizationSourceReference("resources", address, kind), language, keys, options ?? Owned);
         private static IEnumerator Done(Task task, bool success = true)
@@ -67,7 +67,7 @@ namespace SimplyLocalize.Tests
         [UnityTest] public IEnumerator BorrowedOwnerPinsOwnedDataAndBorrowedOnlyDoesNotUnloadIt()
         {
             var registry = new LocalizationSourceRegistry();
-            var borrowed = new LocalizationContextOptions { Ownership = LocalizationResourceOwnership.Borrowed };
+            var borrowed = new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Borrowed };
             yield return Load(registry, Request(LocalizationResourceFixtures.VoiceTable("en"), options: borrowed), _ => { });
             var clip = (AudioClip)leases[0].Data.Assets[LocalizationResourceFixtures.PrimaryKey]; int id = clip.GetInstanceID();
             yield return Done(leases[0].ReleaseAsync()); Assert.That(clip != null, Is.True);
@@ -97,7 +97,7 @@ namespace SimplyLocalize.Tests
             var wrong = registry.LoadAsync(Request(LocalizationResourceFixtures.ImageTable, kind: LocalizationSourceKind.TextTable));
             yield return Done(wrong, false); Assert.That(wrong.IsFaulted, Is.True); _ = wrong.Exception;
             var limited = registry.LoadAsync(Request("SimplyLocalizeTests/Lifecycle/Voice/Large",
-                options: new LocalizationContextOptions { Ownership = LocalizationResourceOwnership.Owned, MaxAssetEntries = 63 }));
+                options: new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Owned, MaxAssetEntries = 63 }));
             yield return Done(limited, false); Assert.That(limited.Exception.ToString(), Does.Contain("limits"));
             Assert.That(Resources.FindObjectsOfTypeAll<AudioClip>().Any(c => c.name.StartsWith("SLTest_")), Is.False);
             yield return Load(registry, Request("SimplyLocalizeTests/Lifecycle/Voice/Large"), lease => Assert.That(lease.Data.Assets.Count, Is.EqualTo(64)));
@@ -107,7 +107,7 @@ namespace SimplyLocalize.Tests
         {
             var old = new LocalizationSourceRegistry();
             yield return Load(old, Request(LocalizationResourceFixtures.VoiceTable("en")), _ => { });
-            typeof(LocalizationContext).Assembly.GetType("SimplyLocalize.LocalizationResourceLease")
+            typeof(LocalizationRuntime).Assembly.GetType("SimplyLocalize.LocalizationResourceLease")
                 .GetMethod("ResetSession", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
             var current = new LocalizationSourceRegistry();
             yield return Load(current, Request(LocalizationResourceFixtures.VoiceTable("en")), _ => { });
@@ -125,9 +125,9 @@ namespace SimplyLocalize.Tests
             var registry = new LocalizationSourceRegistry();
             var limits = new[]
             {
-                new LocalizationContextOptions { Ownership = LocalizationResourceOwnership.Owned, MaxSourceCharacters = 10 },
-                new LocalizationContextOptions { Ownership = LocalizationResourceOwnership.Owned, MaxTextEntries = 2 },
-                new LocalizationContextOptions { Ownership = LocalizationResourceOwnership.Owned, MaxTextCharacters = 15 }
+                new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Owned, MaxSourceCharacters = 10 },
+                new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Owned, MaxTextEntries = 2 },
+                new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Owned, MaxTextCharacters = 15 }
             };
             foreach (var limit in limits)
             {

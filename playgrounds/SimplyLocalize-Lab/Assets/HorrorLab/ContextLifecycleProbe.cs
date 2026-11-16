@@ -33,7 +33,7 @@ namespace SimplyLocalize.HorrorLab
             config.languages.Add(en); config.languages.Add(ru); config.defaultLanguage = config.fallbackLanguage = en;
             var sources = new[] { "en", "ru" }.Select(c => new ResourcesLanguageSources(c,
                 assetTables: new[] { "NightShift/Worlds/Precinct/Voice/" + c + "/Radio" })).ToArray();
-            var options = new LocalizationContextOptions { Ownership = LocalizationResourceOwnership.Owned, MaxAssetEntries = 6 };
+            var options = new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Owned, MaxAssetEntries = 6 };
             using var first = new LocalizationContext(config, sources, options);
             using var second = new LocalizationContext(config, sources, options);
             try

@@ -34,7 +34,7 @@ namespace SimplyLocalize
         public long DiagnosticId { get; } = LocalizationResourceDiagnostics.NextId();
         private readonly LocalizationConfig config;
         private readonly ResourcesLanguageSources[] sources;
-        private readonly LocalizationContextOptions options;
+        private readonly LocalizationRuntimeOptions options;
         private readonly int thread = Environment.CurrentManagedThreadId;
         private readonly List<Task> operations = new();
         private CancellationTokenSource pending;
@@ -54,12 +54,12 @@ namespace SimplyLocalize
         private Exception cleanupFailure;
 
         public LocalizationContext(LocalizationConfig config, IEnumerable<ResourcesLanguageSources> sources,
-            LocalizationContextOptions options = null)
+            LocalizationRuntimeOptions options = null)
         {
             this.config = config != null ? config : throw new ArgumentNullException(nameof(config));
             config.ValidateOrThrow();
             this.sources = sources?.ToArray() ?? throw new ArgumentNullException(nameof(sources));
-            this.options = (options ?? new LocalizationContextOptions()).Copy();
+            this.options = (options ?? new LocalizationRuntimeOptions()).Copy();
             // Validate descriptors immediately without issuing any loads.
             using var validation = new ScopedResourcesDataProvider(this.sources);
             if (this.options.Ownership == LocalizationResourceOwnership.Owned && !Application.isPlaying)

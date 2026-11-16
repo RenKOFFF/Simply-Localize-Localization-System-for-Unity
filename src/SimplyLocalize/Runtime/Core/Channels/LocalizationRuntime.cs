@@ -21,7 +21,7 @@ namespace SimplyLocalize
         private readonly LocalizationRuntimeDefinition definition;
         private LocalizationSourceRegistry sources;
         private CancellationTokenSource sourceChange;
-        private readonly LocalizationContextOptions options;
+        private readonly LocalizationRuntimeOptions options;
         private readonly bool ownsFormatter;
         private readonly Dictionary<string, Group> groups = new(StringComparer.Ordinal);
         private readonly Dictionary<string, Dictionary<string, int>> active = new(StringComparer.Ordinal);
@@ -44,12 +44,12 @@ namespace SimplyLocalize
         public event Action<LocalizationRuntime> Releasing;
         public IReadOnlyList<string> GetAvailableLanguages(string channelId = null) => Array.AsReadOnly(Channel(channelId).Languages);
 
-        public LocalizationRuntime(LocalizationProjectConfig config, LocalizationSourceRegistry providers = null, LocalizationContextOptions options = null,
+        public LocalizationRuntime(LocalizationProjectConfig config, LocalizationSourceRegistry providers = null, LocalizationRuntimeOptions options = null,
             ILocalizationTextFormatter formatter = null)
         {
             definition = new LocalizationRuntimeDefinition(config);
             sources = (providers ?? new LocalizationSourceRegistry()).Copy();
-            this.options = (options ?? new LocalizationContextOptions()).Copy();
+            this.options = (options ?? new LocalizationRuntimeOptions()).Copy();
             ownsFormatter = formatter == null;
             Formatter = formatter ?? new LocalizationMessageFormatter(this.options.MaxTemplates);
             ChannelIds = Array.AsReadOnly(definition.Channels.Keys.ToArray());
@@ -118,6 +118,8 @@ namespace SimplyLocalize
         }
         public Task SwitchLanguageAsync(string language, CancellationToken cancellationToken = default) => SwitchLanguageAsync(MainChannelId, language, cancellationToken);
         public Task SwitchLanguageAsync(string channelId, string language, CancellationToken cancellationToken = default)
+            => ChangeLanguageAsync(channelId, language, false, cancellationToken);
+        private Task ChangeLanguageAsync(string channelId, string language, bool reload, CancellationToken cancellationToken)
         {
             RequireReady(); var channel = Channel(channelId);
             if (channel.Mode == LocalizationChannelMode.FollowMain) throw new InvalidOperationException("Switch Main to change a FollowMain channel.");
@@ -133,6 +135,8 @@ namespace SimplyLocalize
                 try
                 {
                     await group.Gate.WaitAsync(linked.Token); entered = true; Check(linked.Token);
+                    // Check under the gate: choosing the current language still cancels and drains an older switch.
+                    if (!reload && current[channel.Id].Snapshot.RequestedLanguage == language) return;
                     foreach (string id in group.Channels)
                         prepared.Add(id, new LocalizationChannelLease(await Prepare(definition.Channels[id], language, active[id].Keys, linked.Token)));
                     Check(linked.Token);
@@ -159,7 +163,7 @@ namespace SimplyLocalize
         {
             var channel = Channel(channelId);
             string leader = channel.Mode == LocalizationChannelMode.FollowMain ? MainChannelId : channel.Id;
-            return SwitchLanguageAsync(leader, GetChannel(leader).RequestedLanguage, cancellationToken);
+            return ChangeLanguageAsync(leader, GetChannel(leader).RequestedLanguage, true, cancellationToken);
         }
         /// <summary>Replaces provider registrations and all active content atomically, preserving channel languages and set registrations.</summary>
         public Task ReplaceProvidersAsync(LocalizationSourceRegistry providers, CancellationToken cancellationToken = default)

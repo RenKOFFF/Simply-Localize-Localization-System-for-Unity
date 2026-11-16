@@ -35,7 +35,7 @@ namespace SimplyLocalize.Tests
             if (config != null) UnityEngine.Object.DestroyImmediate(config);
             if (provider != null) Assert.That(provider.Active, Is.Zero, "All source owners must be returned.");
         }
-        private LocalizationRuntime Create(bool channels = false, LocalizationContextOptions options = null)
+        private LocalizationRuntime Create(bool channels = false, LocalizationRuntimeOptions options = null)
         {
             config = LocalizationProjectConfig.Create(new[] { "en", "ru", "fr" });
             var common = config.Sets[0]; mainSet = common.Id;
@@ -50,7 +50,7 @@ namespace SimplyLocalize.Tests
             }
             provider = new Probe(); return CreateRuntime(options);
         }
-        private LocalizationRuntime CreateRuntime(LocalizationContextOptions options = null)
+        private LocalizationRuntime CreateRuntime(LocalizationRuntimeOptions options = null)
         {
             var registry = new LocalizationSourceRegistry(false); registry.Register("probe", provider);
             var runtime = new LocalizationRuntime(config, registry, options); runtimes.Add(runtime); return runtime;
@@ -110,6 +110,41 @@ namespace SimplyLocalize.Tests
             provider.Complete(); yield return Done(old, false); yield return Done(superseded, false); yield return Done(latest);
             Assert.That(old.IsCanceled, Is.True); Assert.That(superseded.IsCanceled, Is.True);
             Assert.That(provider.Loads, Does.Not.Contain("main/fr")); Assert.That(Text(runtime), Is.EqualTo("main/en"));
+        }
+        [UnityTest] public IEnumerator SelectingCurrentLanguageKeepsSnapshotsAndDoesNotReadOrNotify()
+        {
+            var runtime = Create(true); yield return Done(runtime.InitializeAsync());
+            var main = runtime.GetChannel(); var follower = runtime.GetChannel(voice);
+            int loads = provider.Loads.Count, owners = provider.Active, changes = 0;
+            runtime.Changed += (_, _) => changes++;
+            provider.Suffix = " changed externally";
+            yield return Done(runtime.SwitchLanguageAsync("EN"));
+            Assert.That(runtime.GetChannel(), Is.SameAs(main)); Assert.That(runtime.GetChannel(voice), Is.SameAs(follower));
+            Assert.That(provider.Loads.Count, Is.EqualTo(loads)); Assert.That(provider.Active, Is.EqualTo(owners));
+            Assert.That(changes, Is.Zero); Assert.That(Text(runtime), Is.EqualTo("main/en"));
+            yield return Done(runtime.ReloadAsync(voice));
+            Assert.That(Text(runtime), Is.EqualTo("main/en changed externally")); Assert.That(changes, Is.EqualTo(1));
+            Assert.That(runtime.GetChannel(voice), Is.Not.SameAs(follower));
+        }
+        [UnityTest] public IEnumerator SelectingCurrentLanguageDrainsOlderSwitchWithoutReloadingCurrentData()
+        {
+            var runtime = Create(true); yield return Done(runtime.InitializeAsync());
+            var before = runtime.GetChannel(); int owners = provider.Active, changes = 0;
+            runtime.Changed += (_, _) => changes++;
+            provider.Delay = "main/ru"; var old = runtime.SwitchLanguageAsync("ru"); int loads = provider.Loads.Count;
+            var currentLanguage = runtime.SwitchLanguageAsync("en");
+            Assert.That(currentLanguage.IsCompleted, Is.False);
+            provider.Complete(); yield return Done(old, false); yield return Done(currentLanguage);
+            Assert.That(old.IsCanceled, Is.True); Assert.That(runtime.GetChannel(), Is.SameAs(before));
+            Assert.That(provider.Loads.Count, Is.EqualTo(loads)); Assert.That(provider.Active, Is.EqualTo(owners));
+            Assert.That(changes, Is.Zero);
+        }
+        [UnityTest] public IEnumerator CancelledCurrentLanguageSelectionStillReportsCancellation()
+        {
+            var runtime = Create(); yield return Done(runtime.InitializeAsync()); int loads = provider.Loads.Count;
+            using var cancel = new CancellationTokenSource(); cancel.Cancel();
+            var operation = runtime.SwitchLanguageAsync("en", cancel.Token); yield return Done(operation, false);
+            Assert.That(operation.IsCanceled, Is.True); Assert.That(provider.Loads.Count, Is.EqualTo(loads));
         }
         [UnityTest] public IEnumerator CancelledPreparationPreservesOldStateAndCleansLateResult()
         {
@@ -214,7 +249,7 @@ namespace SimplyLocalize.Tests
         }
         [UnityTest] public IEnumerator BudgetsCoverTheEntireSetAcrossItsFallbackSources()
         {
-            var runtime = Create(options: new LocalizationContextOptions { MaxTextEntries = 2 }); yield return Done(runtime.InitializeAsync());
+            var runtime = Create(options: new LocalizationRuntimeOptions { MaxTextEntries = 2 }); yield return Done(runtime.InitializeAsync());
             var before = runtime.GetChannel(); var failed = runtime.SwitchLanguageAsync("ru"); yield return Done(failed, false);
             Assert.That(failed.Exception.ToString(), Does.Contain("limits")); Assert.That(runtime.GetChannel(), Is.SameAs(before));
         }

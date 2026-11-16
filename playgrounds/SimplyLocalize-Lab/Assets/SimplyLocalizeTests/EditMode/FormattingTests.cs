@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using NUnit.Framework;
-using SimplyLocalize.Data;
+using System.Threading;
+using System.Threading.Tasks;
 using SimplyLocalize.Pluralization;
 using SimplyLocalize.TextProcessing;
 using UnityEngine;
@@ -19,25 +20,24 @@ namespace SimplyLocalize.Tests
         [TestCase("a {{ b }} c", "a { b } c")]
         [TestCase("{{{{}}}}", "{{}}")]
         [TestCase("plain text", "plain text")]
-        public void Manager_AllOverloadsDecodeEscapedBraces(string raw, string expected)
+        public void Runtime_AllOverloadsDecodeEscapedBraces(string raw, string expected)
         {
-            var config = ScriptableObject.CreateInstance<LocalizationConfig>();
-            var en = ScriptableObject.CreateInstance<LanguageProfile>();
+            var config = LocalizationProjectConfig.Create(new[] { "en" });
+
             try
             {
-                en.languageCode = "en";
-                config.languages.Add(en);
-                var manager = new LocalizationManager(config);
-                manager.SetDataProvider(new TextProvider(raw));
-                manager.SetLanguage("en");
-                Assert.That(manager.Get("key"), Is.EqualTo(expected));
+                config.Sets[0].AddEntry("key");
+                config.Sets[0].SetSources("en", new LocalizationSourceReference("test", "text", LocalizationSourceKind.TextTable));
+                var providers = new LocalizationSourceRegistry(false); providers.Register("test", new TextProvider(raw));
+                using var manager = new LocalizationRuntime(config, providers);
+                var initialized = manager.InitializeAsync(); Assert.That(initialized.IsCompleted, Is.True); initialized.GetAwaiter().GetResult();                Assert.That(manager.Get("key"), Is.EqualTo(expected));
                 Assert.That(manager.Get("key", Array.Empty<object>()), Is.EqualTo(expected));
                 Assert.That(manager.Get("key", new Dictionary<string, object>()), Is.EqualTo(expected));
-                Assert.That(manager.Get("key", null, null), Is.EqualTo(expected));
+                Assert.That(manager.Format("key", null, null), Is.EqualTo(expected));
             }
             finally
             {
-                Object.DestroyImmediate(en);
+
                 Object.DestroyImmediate(config);
             }
         }
@@ -297,13 +297,13 @@ namespace SimplyLocalize.Tests
             public int FormCount => 2;
             public int Evaluate(int count) { LastCount = count; return 1; }
         }
-        private sealed class TextProvider : ILocalizationDataProvider
+        private sealed class TextProvider : ILocalizationSourceProvider
         {
-            private readonly string _text;
-            public TextProvider(string text) => _text = text;
-            public Dictionary<string, string> LoadTextData(string languageCode) => new() { ["key"] = _text };
-            public bool HasTextData(string languageCode) => true;
-            public List<LocalizationAssetTable> LoadAssetTables(string languageCode) => new();
+            private readonly string text;
+            public TextProvider(string text) => this.text = text;
+            public LocalizationProviderCapabilities GetCapabilities(LocalizationSourceKind kind) => new(LocalizationLoadUnit.Table, false, true);
+            public Task<LocalizationSourceLease> LoadAsync(LocalizationSourceRequest request, CancellationToken token) =>
+                Task.FromResult(new LocalizationSourceLease(LocalizationSourceData.FromText(new Dictionary<string, string> { ["key"] = text })));
         }
     }
 }

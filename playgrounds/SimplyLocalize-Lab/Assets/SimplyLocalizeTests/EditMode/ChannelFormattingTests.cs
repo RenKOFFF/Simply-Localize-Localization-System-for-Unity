@@ -55,7 +55,7 @@ namespace SimplyLocalize.Tests
                 }
             }
             var registry = new LocalizationSourceRegistry(false); registry.Register("test", provider);
-            var runtime = new LocalizationRuntime(config, registry, new LocalizationContextOptions { MaxTemplates = maxTemplates }, formatter);
+            var runtime = new LocalizationRuntime(config, registry, new LocalizationRuntimeOptions { MaxTemplates = maxTemplates }, formatter);
             runtimes.Add(runtime);
             Assert.That(runtime.InitializeAsync(language).IsCompletedSuccessfully, Is.True, "The in-memory provider completes synchronously; tests do not block on async I/O.");
             return runtime;

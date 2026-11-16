@@ -32,7 +32,7 @@ namespace SimplyLocalize
         internal static event Action<LocalizationRuntime> BindingChanged;
 
         public static Task<LocalizationRuntime> InitializeAsync(LocalizationProjectConfig config, string languageCode = null,
-            LocalizationSourceRegistry providers = null, LocalizationContextOptions options = null,
+            LocalizationSourceRegistry providers = null, LocalizationRuntimeOptions options = null,
             ILocalizationTextFormatter formatter = null, CancellationToken cancellationToken = default)
         {
             EnsureThread();
@@ -71,7 +71,7 @@ namespace SimplyLocalize
             return StartInitialization(() => FindResourceConfigAsync(true), null, null, null, null, default);
         }
         private static Task<LocalizationRuntime> StartInitialization(Func<Task<LocalizationProjectConfig>> findConfig, string language,
-            LocalizationSourceRegistry providers, LocalizationContextOptions options, ILocalizationTextFormatter formatter, CancellationToken token)
+            LocalizationSourceRegistry providers, LocalizationRuntimeOptions options, ILocalizationTextFormatter formatter, CancellationToken token)
         {
             var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
             var previous = initializationCancellation; initializationCancellation = cancellation;

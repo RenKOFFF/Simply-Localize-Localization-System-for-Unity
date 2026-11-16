@@ -63,7 +63,7 @@ namespace SimplyLocalize.HorrorLab
         private static LocalizationContext Context(LocalizationConfig config, string table) => new(config,
             config.languages.Where(p => p != null).Select(p => new SimplyLocalize.Data.ResourcesLanguageSources(p.Code,
                 assetTables: new[] { config.resourcesBasePath + "/" + p.Code + "/" + table })),
-            new LocalizationContextOptions { Ownership = LocalizationResourceOwnership.Owned, PrepareAudio = true, DiagnosticName = "Night Shift / " + table });
+            new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Owned, PrepareAudio = true, DiagnosticName = "Night Shift / " + table });
         private readonly HorrorLoadMetrics metrics;
         public SimplyLocalizeWorldPreparer(HorrorLoadMetrics metrics) { this.metrics = metrics; }
         public async Task<HorrorWorldSession> PrepareAsync(HorrorWorldDefinition definition, string voiceLocale, string visualLocale,

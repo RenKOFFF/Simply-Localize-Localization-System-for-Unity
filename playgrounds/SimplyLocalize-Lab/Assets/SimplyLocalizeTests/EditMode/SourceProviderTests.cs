@@ -103,7 +103,7 @@ namespace SimplyLocalize.Tests
                     : LocalizationSourceData.FromText(new Dictionary<string, string> { ["key"] = "value" }, sourceEntryCount: 20);
                 var registry = new LocalizationSourceRegistry(false);
                 registry.Register("custom", new ResultProvider(() => new(data, () => { releases++; return Task.CompletedTask; })));
-                var operation = registry.LoadAsync(new(Source(), "en", options: new LocalizationContextOptions { MaxTextEntries = 1 }));
+                var operation = registry.LoadAsync(new(Source(), "en", options: new LocalizationRuntimeOptions { MaxTextEntries = 1 }));
                 yield return Done(operation);
                 Assert.That(operation.IsFaulted, Is.True); _ = operation.Exception;
                 Assert.That(releases, Is.EqualTo(1));
@@ -150,7 +150,7 @@ namespace SimplyLocalize.Tests
 
         [Test] public void RequestFreezesSelectionAndLimits()
         {
-            var keys = new[] { "one" }; var options = new LocalizationContextOptions { MaxAssetEntries = 2 };
+            var keys = new[] { "one" }; var options = new LocalizationRuntimeOptions { MaxAssetEntries = 2 };
             var request = new LocalizationSourceRequest(Source(), "RU", keys, options);
             keys[0] = "two"; options.MaxAssetEntries = 99;
             Assert.That(request.RequestedKeys.Single(), Is.EqualTo("one")); Assert.That(request.MaxAssetEntries, Is.EqualTo(2));

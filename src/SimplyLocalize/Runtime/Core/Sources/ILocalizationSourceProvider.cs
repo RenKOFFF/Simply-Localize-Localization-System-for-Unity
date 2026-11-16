@@ -65,10 +65,10 @@ namespace SimplyLocalize
         public long MaxTextCharacters => Limits.MaxTextCharacters;
         public int MaxAssetEntries => Limits.MaxAssetEntries;
         public double AudioTimeoutSeconds => Limits.AudioTimeoutSeconds;
-        internal LocalizationContextOptions Limits { get; }
+        internal LocalizationRuntimeOptions Limits { get; }
 
         public LocalizationSourceRequest(LocalizationSourceReference source, string language,
-            IEnumerable<string> requestedKeys = null, LocalizationContextOptions options = null,
+            IEnumerable<string> requestedKeys = null, LocalizationRuntimeOptions options = null,
             long ownerId = 0, string ownerName = null, string requestedLanguage = null)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
@@ -78,7 +78,7 @@ namespace SimplyLocalize
             Source = new LocalizationSourceReference(source.ProviderId, source.Address, source.Kind);
             Language = LocalizationLanguageCode.Normalize(language);
             RequestedLanguage = LocalizationLanguageCode.Normalize(requestedLanguage ?? language);
-            Limits = (options ?? new LocalizationContextOptions()).Copy();
+            Limits = (options ?? new LocalizationRuntimeOptions()).Copy();
             if (requestedKeys != null)
             {
                 var keys = requestedKeys.ToArray();
