@@ -1,4 +1,4 @@
-# Night Shift — личный проверочный стенд, версия 1.2.0
+# Night Shift — личный проверочный стенд, версия 1.3.0
 
 Назначение: проверять Simply Localize как обычная игра-потребитель. Не распространяемый Sample. Единственный рабочий исходник находится в playgrounds/SimplyLocalize-Lab/Assets/HorrorLab.
 
@@ -23,7 +23,9 @@
 
 ObservedResourcesProvider только считает и без изменения пересылает все вызовы стандартному ResourcesDataProvider. Счётчик не является полной трассировкой диска: глобальный bootstrap плагина проходит мимо него.
 
-IHorrorWorldPreparer вызывает штатные PrepareLanguage/ApplyPreparedLanguage для голосового и визуального менеджеров до публикации мира. Диалоги и объекты используют ResolvePreparedAsset: получение ссылки больше не читает провайдер. Resources-подготовка остаётся синхронной; Task.Yield лишь даёт обновиться прогрессу. Dispose подготовленного снимка освобождает его ссылки, а не Unity-ресурсы. Неготовые аудиоданные по-прежнему фиксируются в отчёте. Протокол: plugin-owned-v2-prepared.
+IHorrorWorldPreparer использует ScopedResourcesDataProvider и PrepareLanguageAsync/ApplyPreparedLanguage. До публикации мира асинхронно загружаются только адреса Radio и Signs выбранных языков/fallback. Диалоги и объекты используют ResolvePreparedAsset. При выходе/ошибке игра закрывает свои провайдеры; плагин прекращает ожидания и не выгружает заимствованные Unity-объекты. Текст меню сохраняет прежний синхронный путь. Неготовые аудиоданные по-прежнему фиксируются в отчёте. Протокол: plugin-owned-v3-scoped-async.
+
+Отдельный флаг --scoped-resources-probe с --scoped-resources-report <абсолютный JSON> проверяет в новом Player холодную загрузку выбранных таблиц рядом с большой невыбранной текстурой. Он не запускается вместе с --nightshift-benchmark. Фикстура создаётся внутренним Editor-методом ScopedResourcesFixture.Create, который отказывается перезаписывать существующую папку.
 
 Настройки аудиофикстуры фиксированы и записываются в build identity: DecompressOnLoad, Preload Audio Data=false, Load In Background=true. Это специально делает видимым поведение первого использования. Стенд не гарантирует отсутствие задержки первого звука.
 

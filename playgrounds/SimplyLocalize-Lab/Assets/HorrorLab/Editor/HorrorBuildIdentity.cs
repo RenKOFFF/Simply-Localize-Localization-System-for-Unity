@@ -62,12 +62,13 @@ namespace SimplyLocalize.HorrorLab.Editor
                 ["worldSceneSha256"] = HashFile(HorrorLabSetup.ScenePath),
                 ["menuSceneSha256"] = HashFile(HorrorArchitectureSetup.MenuPath),
                 ["fixtureDataSha256"] = TreeHash(Path.Combine(sample, "Data"), p => p.EndsWith(".asset")),
+                ["scopeFixtureSha256"] = TreeHash(Path.Combine(sample, "Resources", "ScopedResourcesProbe"), p => true),
                 ["builtUtc"] = DateTime.UtcNow.ToString("O"),
                 ["runId"] = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ") + "_nightshift-" + version["version"] + "_" + commit.Substring(0, Math.Min(7, commit.Length)),
                 ["unityVersion"] = UnityEngine.Application.unityVersion,
                 ["buildKind"] = "Windows x64 Release",
                 ["audioFixture"] = "DecompressOnLoad; PreloadAudioData=false; LoadInBackground=true; no sample LoadAudioData",
-                ["cleanupPolicy"] = "Prepared data handles disposed after apply; no ClearCaches, UnloadAsset(s), UnloadAudioData or forced GC in playground"
+                ["cleanupPolicy"] = "World providers closed without native unload; cold scope probe clears only its own managed manager caches; no UnloadAsset(s), UnloadAudioData or forced GC"
             };
             string json = result.ToString(Formatting.Indented);
             File.WriteAllText(HorrorLabSetup.Root + "/Resources/NightShift/BuildIdentity.json", json);

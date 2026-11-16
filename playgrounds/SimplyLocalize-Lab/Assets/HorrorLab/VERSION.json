@@ -1,5 +1,5 @@
 {
   "name": "Night Shift localization playground",
-  "version": "1.2.0",
-  "measurementProtocol": "plugin-owned-v2-prepared"
+  "version": "1.3.0",
+  "measurementProtocol": "plugin-owned-v3-scoped-async"
 }

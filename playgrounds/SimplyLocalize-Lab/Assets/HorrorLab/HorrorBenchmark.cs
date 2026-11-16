@@ -64,7 +64,7 @@ namespace SimplyLocalize.HorrorLab
             Application.targetFrameRate = 60;
             report.unityVersion = Application.unityVersion; report.device = SystemInfo.processorType;
             report.graphics = SystemInfo.graphicsDeviceType.ToString();
-            report.note = "Protocol plugin-owned-v2-prepared: plugin prepares and applies world tables; ready-only asset reads; no manual localization cleanup/audio prewarming. Functional PASS is not a plugin performance certification. Small fixture; 60 FPS cap; world frames measured with menu open; Null graphics excludes GPU. Play call cost is not physical sound latency. Unity allocator/GC counters are not process RAM. Once-per-frame peaks can miss short spikes.";
+            report.note = "Protocol plugin-owned-v3-scoped-async: plugin prepares exact world table addresses through Resources.LoadAsync; ready-only asset reads; no manual localization cleanup/audio prewarming. Functional PASS is not a plugin performance certification. Small fixture; 60 FPS cap; world frames measured with menu open; Null graphics excludes GPU. Play call cost is not physical sound latency. Unity allocator/GC counters are not process RAM. Once-per-frame peaks can miss short spikes.";
             Application.logMessageReceived += OnLog;
             try
             {

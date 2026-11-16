@@ -17,12 +17,14 @@ namespace SimplyLocalize.HorrorLab
     public sealed class HorrorWorldSession : IDisposable
     {
         private LocalizationManager voice, visual;
+        private IDisposable voiceProvider, visualProvider;
         private HorrorWorldDefinition definition;
         public string VoiceLocale { get; }
         public string VisualLocale { get; }
         public bool IsDisposed { get; private set; }
-        internal HorrorWorldSession(HorrorWorldDefinition definition, LocalizationManager voice, LocalizationManager visual)
-        { this.definition = definition; this.voice = voice; this.visual = visual; VoiceLocale = voice.CurrentLanguage; VisualLocale = visual.CurrentLanguage; }
+        internal HorrorWorldSession(HorrorWorldDefinition definition, LocalizationManager voice, LocalizationManager visual,
+            IDisposable voiceProvider, IDisposable visualProvider)
+        { this.definition = definition; this.voice = voice; this.visual = visual; this.voiceProvider = voiceProvider; this.visualProvider = visualProvider; VoiceLocale = voice.CurrentLanguage; VisualLocale = visual.CurrentLanguage; }
         public AudioClip Clip(string id)
         {
             if (IsDisposed) throw new ObjectDisposedException(nameof(HorrorWorldSession));
@@ -41,7 +43,12 @@ namespace SimplyLocalize.HorrorLab
             return definition.dialogues.FirstOrDefault(s => s.sequenceId == id) ?? throw new InvalidOperationException("Missing dialogue: " + id);
         }
         // Release game references only. Native resource/caching policy is not implemented here.
-        public void Dispose() { IsDisposed = true; voice = visual = null; definition = null; }
+        public void Dispose()
+        {
+            if (IsDisposed) return;
+            IsDisposed = true; voiceProvider?.Dispose(); visualProvider?.Dispose();
+            voiceProvider = visualProvider = null; voice = visual = null; definition = null;
+        }
     }
 
     public sealed class SimplyLocalizeWorldPreparer : IHorrorWorldPreparer
@@ -56,18 +63,21 @@ namespace SimplyLocalize.HorrorLab
             progress?.Invoke("UI/LoadingTables"); await Task.Yield();
             cancellation.ThrowIfCancellationRequested();
             var timer = Stopwatch.StartNew();
-            var voice = new LocalizationManager(definition.voiceConfig);
-            voice.SetDataProvider(new ObservedResourcesProvider(definition.voiceConfig.resourcesBasePath, metrics));
-            using var preparedVoice = voice.PrepareLanguage(voiceLocale, cancellationToken: cancellation);
-            var visual = new LocalizationManager(definition.visualConfig);
-            visual.SetDataProvider(new ObservedResourcesProvider(definition.visualConfig.resourcesBasePath, metrics));
-            using var preparedVisual = visual.PrepareLanguage(visualLocale, cancellationToken: cancellation);
-            voice.ApplyPreparedLanguage(preparedVoice, cancellation);
-            visual.ApplyPreparedLanguage(preparedVisual, cancellation);
-            // Resources preparation is synchronous. Task.Yield above is progress scheduling, not background I/O.
-            // No audio decode, asset sweep, font warmup, or cache clearing. Playback reads prepared plugin data.
-            metrics.lastWorldPrepareMs = timer.Elapsed.TotalMilliseconds;
-            return new HorrorWorldSession(definition, voice, visual);
+            var voiceProvider = new ObservedScopedResourcesProvider(definition.voiceConfig, "Radio", metrics);
+            var visualProvider = new ObservedScopedResourcesProvider(definition.visualConfig, "Signs", metrics);
+            try
+            {
+                var voice = new LocalizationManager(definition.voiceConfig); voice.SetDataProvider(voiceProvider);
+                using var preparedVoice = await voice.PrepareLanguageAsync(voiceLocale, cancellationToken: cancellation);
+                var visual = new LocalizationManager(definition.visualConfig); visual.SetDataProvider(visualProvider);
+                using var preparedVisual = await visual.PrepareLanguageAsync(visualLocale, cancellationToken: cancellation);
+                cancellation.ThrowIfCancellationRequested();
+                voice.ApplyPreparedLanguage(preparedVoice, cancellation);
+                visual.ApplyPreparedLanguage(preparedVisual, cancellation);
+                metrics.lastWorldPrepareMs = timer.Elapsed.TotalMilliseconds;
+                return new HorrorWorldSession(definition, voice, visual, voiceProvider, visualProvider);
+            }
+            catch { voiceProvider.Dispose(); visualProvider.Dispose(); throw; }
         }
     }
 }

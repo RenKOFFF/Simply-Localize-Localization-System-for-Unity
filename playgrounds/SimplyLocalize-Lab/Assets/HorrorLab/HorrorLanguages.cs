@@ -77,6 +77,27 @@ namespace SimplyLocalize.HorrorLab
         { metrics.assetTableReads++; return inner.LoadAssetTables(code); }
     }
 
+    // Forwards the new scoped provider unchanged; counts API reads, not physical disk operations.
+    internal sealed class ObservedScopedResourcesProvider : IAsyncLocalizationDataProvider, IDisposable
+    {
+        private readonly ScopedResourcesDataProvider inner;
+        private readonly HorrorLoadMetrics metrics;
+        public ObservedScopedResourcesProvider(LocalizationConfig config, string table, HorrorLoadMetrics metrics)
+        {
+            this.metrics = metrics;
+            inner = new ScopedResourcesDataProvider(config.languages.Where(p => p != null).Select(p =>
+                new ResourcesLanguageSources(p.Code, assetTables: new[] { config.resourcesBasePath + "/" + p.Code + "/" + table })));
+        }
+        public Dictionary<string, string> LoadTextData(string code) { metrics.textReads++; return inner.LoadTextData(code); }
+        public bool HasTextData(string code) => inner.HasTextData(code);
+        public List<LocalizationAssetTable> LoadAssetTables(string code) { metrics.assetTableReads++; return inner.LoadAssetTables(code); }
+        public Task<Dictionary<string, string>> LoadTextDataAsync(string code, CancellationToken token)
+        { metrics.textReads++; return inner.LoadTextDataAsync(code, token); }
+        public Task<List<LocalizationAssetTable>> LoadAssetTablesAsync(string code, CancellationToken token)
+        { metrics.assetTableReads++; return inner.LoadAssetTablesAsync(code, token); }
+        public void Dispose() => inner.Dispose();
+    }
+
     public sealed class HorrorTextService : IDisposable
     {
         private LocalizationManager manager;

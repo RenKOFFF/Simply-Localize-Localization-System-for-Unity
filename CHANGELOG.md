@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add opt-in ScopedResourcesDataProvider with immutable per-language lists of exact Resources addresses, deterministic file ordering and real Resources.LoadAsync preparation. Existing ResourcesDataProvider and serialized data are unchanged.
+- Closing a scoped provider cancels pending waits and prevents new reads without unloading borrowed Unity assets. Add scope, cancellation, error and shared-resource regressions plus a cold Player probe with a large unselected neighbor.
+
 - Add opt-in language preparation snapshots, atomic apply, cancellation/stale-result protection and provider-free resolution with actual fallback language. Existing sync APIs and stored data are unchanged.
 - Add optional IAsyncLocalizationDataProvider for custom providers. Built-in Resources preparation remains synchronous; handles release managed references only and do not guarantee native resource unloading or decoded audio readiness.
 
