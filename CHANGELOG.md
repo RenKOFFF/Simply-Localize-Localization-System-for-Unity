@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Keep Info logging independent for standalone managers; scope synchronous provider logs to their caller. Public static logging follows the committed Localization facade; warnings and errors remain unconditional.
+
 - Replace root Resources config discovery with a generated path catalog; preserve existing config locations and reject ambiguous Resources paths.
 
 - Validate the entire CSV before merging; add a change preview, explicit empty-cell clearing, and delayed profile creation. Empty cells now preserve existing values by default; use `CsvEmptyCellPolicy.Clear` for explicit clearing.

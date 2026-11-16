@@ -76,21 +76,13 @@ namespace SimplyLocalize
             }
 
             // Prepare completely before replacing a working instance. Events see only committed state.
-            bool logging = LocalizationLogger.Enabled, loggingInBuild = LocalizationLogger.EnabledInBuild;
-            LocalizationManager candidate;
-            try
-            {
-                candidate = new LocalizationManager(config);
-                if (profile != null) candidate.SetLanguage(profile);
-            }
-            catch
-            {
-                LocalizationLogger.Enabled = logging;
-                LocalizationLogger.EnabledInBuild = loggingInBuild;
-                throw;
-            }
+            var candidate = new LocalizationManager(config);
+            if (profile != null) candidate.SetLanguage(profile);
             Shutdown();
             _manager = candidate;
+            // Public static logging follows the committed facade, not arbitrary standalone managers.
+            LocalizationLogger.Enabled = config.enableLogging;
+            LocalizationLogger.EnabledInBuild = config.enableLoggingInBuild;
             _manager.OnLanguageChanged += ForwardLanguageChanged;
             _manager.OnProfileChanged += ForwardProfileChanged;
             if (candidate.CurrentProfile != null)
@@ -98,7 +90,7 @@ namespace SimplyLocalize
                 ForwardLanguageChanged(candidate.CurrentLanguage);
                 if (ReferenceEquals(_manager, candidate)) ForwardProfileChanged(candidate.CurrentProfile);
             }
-            LocalizationLogger.Log($"Localization initialized with '{candidate.CurrentLanguage}'");
+            LocalizationLogger.Log(config, $"Localization initialized with '{candidate.CurrentLanguage}'");
             // Subscribers can replace the manager while handling startup events. The caller
             // owns this candidate, never a replacement created by another initializer.
             return candidate;

@@ -22,6 +22,21 @@ namespace SimplyLocalize
         internal static bool Enabled { get; set; }
         internal static bool EnabledInBuild { get; set; }
 
+        [ThreadStatic] private static LocalizationConfig _scopedConfig;
+
+        internal readonly struct ConfigScope : IDisposable
+        {
+            private readonly LocalizationConfig _previous;
+            internal ConfigScope(LocalizationConfig config) { _previous = _scopedConfig; _scopedConfig = config; }
+            public void Dispose() => _scopedConfig = _previous;
+        }
+        internal static ConfigScope UseConfig(LocalizationConfig config) => new ConfigScope(config);
+        internal static void Log(LocalizationConfig config, string message)
+        {
+            using var scope = UseConfig(config);
+            Log(message);
+        }
+
         private static readonly Color InfoColor = new(0f, 0.6f, 1f, 1f);
         private static readonly Color WarningColor = new(1f, 0.5f, 0f, 1f);
         private static readonly Color ErrorColor = new(1f, 0f, 0f, 1f);
@@ -190,9 +205,9 @@ namespace SimplyLocalize
         private static bool ShouldLog()
         {
 #if UNITY_EDITOR
-            return Enabled;
+            return _scopedConfig != null ? _scopedConfig.enableLogging : Enabled;
 #else
-            return Enabled && EnabledInBuild;
+            return _scopedConfig != null ? _scopedConfig.enableLogging && _scopedConfig.enableLoggingInBuild : Enabled && EnabledInBuild;
 #endif
         }
 

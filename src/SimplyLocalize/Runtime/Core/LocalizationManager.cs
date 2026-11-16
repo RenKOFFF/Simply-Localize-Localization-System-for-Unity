@@ -50,8 +50,6 @@ namespace SimplyLocalize
 
             config.ValidateOrThrow();
 
-            LocalizationLogger.Enabled = config.enableLogging;
-            LocalizationLogger.EnabledInBuild = config.enableLoggingInBuild;
             _dataProvider = new ResourcesDataProvider(config.resourcesBasePath);
         }
 
@@ -65,7 +63,7 @@ namespace SimplyLocalize
         {
             if (provider == null) throw new ArgumentNullException(nameof(provider));
             ReloadFrom(provider);
-            LocalizationLogger.Log("Data provider changed");
+            LocalizationLogger.Log(_config, "Data provider changed");
         }
 
         /// <summary>
@@ -142,7 +140,7 @@ namespace SimplyLocalize
             _currentLanguage = languageCode;
             _currentProfile = profile;
 
-            LocalizationLogger.Log($"Language set to '{languageCode}' ({profile.displayName})");
+            LocalizationLogger.Log(_config, $"Language set to '{languageCode}' ({profile.displayName})");
 
             NotifyCurrentState();
         }
@@ -307,7 +305,7 @@ namespace SimplyLocalize
             _textCache.Clear();
             _templateCache.Clear();
             _assetTableCache.Clear();
-            LocalizationLogger.Log("All caches cleared");
+            LocalizationLogger.Log(_config, "All caches cleared");
         }
 
         /// <summary>
@@ -328,7 +326,7 @@ namespace SimplyLocalize
                 if (TryGetText(key, code, out var value) && !string.IsNullOrEmpty(value))
                 {
                     sourceLanguage = code;
-                    LocalizationLogger.Log($"Key '{key}' missing for '{_currentLanguage}', using fallback '{code}'");
+                    LocalizationLogger.Log(_config, $"Key '{key}' missing for '{_currentLanguage}', using fallback '{code}'");
                     return value;
                 }
             }
@@ -416,19 +414,21 @@ namespace SimplyLocalize
             _assetTableCache[languageCode] = LoadAssetTables(_dataProvider, languageCode);
         }
 
-        private static Dictionary<string, string> LoadTextData(ILocalizationDataProvider provider, string code)
+        private Dictionary<string, string> LoadTextData(ILocalizationDataProvider provider, string code)
         {
-            LocalizationLogger.Log($"Loading text data for '{code}'...");
+            LocalizationLogger.Log(_config, $"Loading text data for '{code}'...");
+            using var logging = LocalizationLogger.UseConfig(_config);
             var data = provider.LoadTextData(code)
                 ?? throw new InvalidOperationException($"Data provider returned null text data for '{code}'. Return an empty dictionary when no data exists.");
             // Snapshot collections so a provider reusing its buffers cannot alter the active cache.
             var snapshot = new Dictionary<string, string>(data, data.Comparer);
-            LocalizationLogger.Log($"Loaded {snapshot.Count} keys for '{code}'");
+            LocalizationLogger.Log(_config, $"Loaded {snapshot.Count} keys for '{code}'");
             return snapshot;
         }
 
-        private static List<LocalizationAssetTable> LoadAssetTables(ILocalizationDataProvider provider, string code)
+        private List<LocalizationAssetTable> LoadAssetTables(ILocalizationDataProvider provider, string code)
         {
+            using var logging = LocalizationLogger.UseConfig(_config);
             var tables = provider.LoadAssetTables(code)
                 ?? throw new InvalidOperationException($"Data provider returned null asset tables for '{code}'. Return an empty list when no tables exist.");
             return new List<LocalizationAssetTable>(tables);
