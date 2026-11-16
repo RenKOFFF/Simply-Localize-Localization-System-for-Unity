@@ -67,7 +67,8 @@ namespace SimplyLocalize.Tests
             Open(config);
             Field<ObjectField>("configField").value = null;
             var selected = Selection.activeObject;
-            Field<TextField>("setupLanguages").value = "en,ru,pl";
+            Field<TextField>("languageSearch").value = "pl";
+            Click("addSelectedLanguage");
             Click("createConfig");
             Assert.That(Field<TextField>("addLanguageCodes"), Is.Not.Null);
             Assert.That(config.GetLanguageCodes(), Is.EqualTo(new[] { "en", "ru", "pl" }));
@@ -78,10 +79,12 @@ namespace SimplyLocalize.Tests
         [Test] public void InvalidSetup_ShowsErrorInWindowAndDoesNotCreateFiles()
         {
             Open(null);
-            Field<TextField>("setupLanguages").value = "../ru";
-            Click("createConfig");
-            Assert.That(Field<HelpBox>("setupMessage").text, Is.Not.Empty);
-            Assert.That(Field<HelpBox>("setupMessage").style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            Field<Foldout>("customLanguage").value = true;
+            Field<TextField>("customLanguageCode").value = "../ru";
+            Field<TextField>("customLanguageName").value = "Invalid";
+            Click("addCustomLanguage");
+            Assert.That(Field<HelpBox>("languagePickerMessage").text, Is.Not.Empty);
+            Assert.That(Field<HelpBox>("languagePickerMessage").style.display.value, Is.EqualTo(DisplayStyle.Flex));
             Assert.That(Directory.Exists(Root), Is.False);
         }
 
@@ -180,6 +183,120 @@ namespace SimplyLocalize.Tests
             Assert.That(old.autoInitialize, Is.False);
             Assert.That(AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath), Is.SameAs(startup));
             Assert.That(Field<HelpBox>("startupMessage").messageType, Is.EqualTo(HelpBoxMessageType.Error));
+        }
+
+
+        [TestCase("Ан", "en")]
+        [TestCase("ру", "ru")]
+        [TestCase("ру", "ro")]
+        [TestCase("English", "en")]
+        [TestCase("francais", "fr")]
+        [TestCase("rus", "ru")]
+        [TestCase("pt-BR", "pt-BR")]
+        public void LanguageSearch_FindsNamesAndStandardCodes(string query, string expected)
+        {
+            Open(null);
+            Field<TextField>("languageSearch").value = query;
+            var results = Field<ListView>("languageResults").itemsSource.Cast<string>().ToArray();
+            Assert.That(results, Does.Contain(expected));
+        }
+
+        [Test] public void LanguageCatalog_IsLargeAndExactCodeComesFirst()
+        {
+            Open(null);
+            Assert.That(Field<ListView>("languageResults").itemsSource.Count, Is.GreaterThan(600));
+            Field<TextField>("languageSearch").value = "ro";
+            Assert.That(Field<ListView>("languageResults").itemsSource[0], Is.EqualTo("ro"));
+        }
+
+        [Test] public void ShortSearch_PrefersNamePrefixesOverUnrelatedSubstrings()
+        {
+            Open(null);
+            Field<TextField>("languageSearch").value = "Ан";
+            var results = Field<ListView>("languageResults").itemsSource.Cast<string>().ToArray();
+            Assert.That(results.Take(4), Does.Contain("en"));
+            Assert.That(results, Does.Not.Contain("ada"));
+            Field<TextField>("languageSearch").value = "Рум";
+            Assert.That(Field<ListView>("languageResults").itemsSource[0], Is.EqualTo("ro"));
+        }
+
+        [Test] public void DefaultAndFallback_OnlyUseSelectedLanguagesAndRepairAfterRemoval()
+        {
+            Open(null);
+            Field<TextField>("languageSearch").value = "ro"; Click("addSelectedLanguage");
+            Click("addSelectedLanguage");
+            Assert.That(Field<DropdownField>("setupDefault").choices, Is.EqualTo(new[] { "en", "ru", "ro" }));
+            Field<DropdownField>("setupDefault").value = "ro";
+            Field<DropdownField>("setupFallback").value = "ro";
+            Click("removeLanguage_ro");
+            Assert.That(Field<DropdownField>("setupDefault").value, Is.EqualTo("en"));
+            Assert.That(Field<DropdownField>("setupFallback").value, Is.EqualTo(""));
+            Click("removeLanguage_en"); Click("removeLanguage_ru");
+            Assert.That(Field<Button>("createConfig").enabledSelf, Is.False);
+            Assert.That(Field<DropdownField>("setupDefault").choices, Is.Empty);
+        }
+
+        [TestCase(" PT_br ", "pt-BR")]
+        [TestCase("zh_hans", "zh-Hans")]
+        [TestCase("RUS", "ru")]
+        [TestCase("eng_us", "en-US")]
+        [TestCase("x-ELVISH", "x-elvish")]
+        [TestCase("aaa", "aaa")]
+        public void CustomLanguage_NormalizesStandardCodeAndAvoidsDuplicates(string input, string expected)
+        {
+            Open(null);
+            Field<Foldout>("customLanguage").value = true;
+            Field<TextField>("customLanguageCode").value = input;
+            Field<TextField>("customLanguageName").value = "Custom display name";
+            Click("addCustomLanguage"); Click("addCustomLanguage");
+            Assert.That(Field<TextField>("customLanguageCode").value, Is.EqualTo(expected));
+            Assert.That(Field<DropdownField>("setupDefault").choices.Count(c => c == expected), Is.EqualTo(1));
+        }
+
+        [TestCase("English")]
+        [TestCase("рус")]
+        [TestCase("../en")]
+        [TestCase("en/US")]
+        [TestCase("xx")]
+        [TestCase("en-QQ")]
+        [TestCase("en-Abcd")]
+        [TestCase("en-unknown")]
+        [TestCase("sl-rozaj-rozaj")]
+        public void InvalidCustomCode_IsRejectedBeforeAnyWrites(string input)
+        {
+            Open(null);
+            Field<Foldout>("customLanguage").value = true;
+            Field<TextField>("customLanguageCode").value = input;
+            Field<TextField>("customLanguageName").value = "Bad language";
+            Click("addCustomLanguage");
+            Assert.That(Field<HelpBox>("languagePickerMessage").style.display.value, Is.EqualTo(DisplayStyle.Flex));
+            Assert.That(Field<DropdownField>("setupDefault").choices, Is.EqualTo(new[] { "en", "ru" }));
+            Assert.That(Directory.Exists(Root), Is.False);
+        }
+
+        [Test] public void SetupSelection_CreatesProfileMetadataAndPreservesExistingProfiles()
+        {
+            var config = Config(); config.GetProfile("en").displayName = "My English";
+            EditorUtility.SetDirty(config.GetProfile("en")); AssetDatabase.SaveAssetIfDirty(config.GetProfile("en"));
+            Open(config); Field<ObjectField>("configField").value = null;
+            Field<TextField>("languageSearch").value = "ro"; Click("addSelectedLanguage");
+            Field<Foldout>("customLanguage").value = true;
+            Field<TextField>("customLanguageCode").value = "x-elvish";
+            Field<TextField>("customLanguageName").value = "Elvish";
+            Click("addCustomLanguage"); Click("createConfig");
+            Assert.That(config.GetProfile("ro").displayName, Is.Not.EqualTo("ro"));
+            Assert.That(config.GetProfile("ro").systemLanguage, Is.EqualTo(SystemLanguage.Romanian));
+            Assert.That(config.GetProfile("x-elvish").displayName, Is.EqualTo("Elvish"));
+            Assert.That(config.GetProfile("en").displayName, Is.EqualTo("My English"));
+        }
+
+        [Test] public void SetupSelection_NoneFallbackClearsExistingFallback()
+        {
+            var config = Config(); Open(config); Field<ObjectField>("configField").value = null;
+            Field<DropdownField>("setupFallback").value = "";
+            Click("createConfig");
+            Assert.That(config.fallbackLanguage, Is.Null);
+            Assert.That(EditorUtility.IsDirty(config), Is.False);
         }
 
         [Test] public void OpeningWindow_PrefersStartupConfigOverOtherConfigs()

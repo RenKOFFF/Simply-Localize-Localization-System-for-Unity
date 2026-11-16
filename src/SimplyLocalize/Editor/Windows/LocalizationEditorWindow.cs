@@ -276,13 +276,8 @@ namespace SimplyLocalize.Editor.Windows
             title.style.marginBottom = 12;
             setup.Add(title);
             setup.Add(new HelpBox("Create your config, language profiles and translation files here. You can edit translations in this window or in an external text editor.", HelpBoxMessageType.Info));
-            var codes = new TextField("Language codes") { name = "setupLanguages", value = "en,ru", tooltip = "Comma-separated codes, for example en, ru, pl." };
-            codes.style.marginTop = 16;
-            var defaultCode = new TextField("Default language") { name = "setupDefault", value = "en" };
-            var fallbackCode = new TextField("Fallback language") { name = "setupFallback", value = "en", tooltip = "Used when a translation is missing. Leave empty to disable global fallback." };
-            setup.Add(codes);
-            setup.Add(defaultCode);
-            setup.Add(fallbackCode);
+            var languages = new SetupLanguagePicker();
+            setup.Add(languages);
             var path = new Label("Config: " + LocalizationProjectSetup.ConfigAssetPath);
             path.style.whiteSpace = WhiteSpace.Normal;
             path.style.marginTop = 16;
@@ -294,10 +289,7 @@ namespace SimplyLocalize.Editor.Windows
             {
                 try
                 {
-                    string fallback = fallbackCode.value.Trim();
-                    var result = LocalizationProjectSetup.Configure(
-                        System.Array.ConvertAll(codes.value.Split(','), code => code.Trim()),
-                        defaultCode.value.Trim(), fallback.Length == 0 ? null : fallback);
+                    var result = LocalizationProjectSetup.ConfigureSelection(languages.Selected, languages.DefaultCode, languages.FallbackCode);
                     _activeTabIndex = 2;
                     AssignConfig(result.Config);
                 }
@@ -307,6 +299,8 @@ namespace SimplyLocalize.Editor.Windows
                     message.style.display = DisplayStyle.Flex;
                 }
             }) { name = "createConfig", text = "Create config and languages" };
+            languages.Changed += () => create.SetEnabled(languages.Selected.Count > 0);
+            create.SetEnabled(languages.Selected.Count > 0);
             create.style.marginTop = 16;
             create.style.height = 30;
             setup.Add(create);

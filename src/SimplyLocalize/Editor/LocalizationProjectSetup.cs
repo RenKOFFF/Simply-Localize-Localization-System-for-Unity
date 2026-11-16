@@ -27,6 +27,14 @@ namespace SimplyLocalize.Editor
         /// Existing startup/logging flags are preserved; supplied default/fallback codes are applied explicitly.</summary>
         public static Result Configure(string[] languageCodes, string defaultLanguage, string fallbackLanguage = null, bool createAlongsideExistingConfigs = false)
         {
+            return ConfigureCore(languageCodes, defaultLanguage, fallbackLanguage, createAlongsideExistingConfigs, null);
+        }
+
+        internal static Result ConfigureSelection(IReadOnlyList<LanguageDefinition> languages, string defaultLanguage, string fallbackLanguage) =>
+            ConfigureCore(languages.Select(l => l.Code).ToArray(), defaultLanguage, fallbackLanguage, false, languages.ToDictionary(l => l.Code), fallbackLanguage == null);
+
+        private static Result ConfigureCore(string[] languageCodes, string defaultLanguage, string fallbackLanguage, bool createAlongsideExistingConfigs, IReadOnlyDictionary<string, LanguageDefinition> definitions, bool clearFallback = false)
+        {
             ValidateCodes(languageCodes);
             if (!languageCodes.Contains(defaultLanguage)) throw new ArgumentException("Default language must be included in languageCodes.");
             if (fallbackLanguage != null && !languageCodes.Contains(fallbackLanguage))
@@ -43,7 +51,7 @@ namespace SimplyLocalize.Editor
                 config.autoInitialize = true;
                 config.resourcesBasePath = "SimplyLocalize/Translations";
             }
-            return Apply(config, languageCodes, defaultLanguage, fallbackLanguage, !AssetDatabase.Contains(config));
+            return Apply(config, languageCodes, defaultLanguage, fallbackLanguage, !AssetDatabase.Contains(config), definitions, clearFallback);
         }
 
         /// <summary>Adds profiles and empty translation files to a saved config without changing its defaults.</summary>
@@ -67,7 +75,7 @@ namespace SimplyLocalize.Editor
             }
         }
 
-        private static Result Apply(LocalizationConfig config, string[] codes, string defaultCode, string fallbackCode, bool createConfig)
+        private static Result Apply(LocalizationConfig config, string[] codes, string defaultCode, string fallbackCode, bool createConfig, IReadOnlyDictionary<string, LanguageDefinition> definitions = null, bool clearFallback = false)
         {
             string path = createConfig ? ConfigAssetPath : AssetDatabase.GetAssetPath(config);
             if (!path.StartsWith("Assets/", StringComparison.Ordinal)) throw new ArgumentException("Config must be editable under Assets.");
@@ -101,7 +109,7 @@ namespace SimplyLocalize.Editor
             }
             if (!createConfig && newProfiles.Count == 0 && files.Count == 0 &&
                 (defaultCode == null || config.DefaultLanguageCode == defaultCode) &&
-                (fallbackCode == null || config.FallbackLanguageCode == fallbackCode)) return MakeResult(config, Array.Empty<string>());
+                (clearFallback ? config.fallbackLanguage == null : fallbackCode == null || config.FallbackLanguageCode == fallbackCode)) return MakeResult(config, Array.Empty<string>());
 
             string before = EditorJsonUtility.ToJson(config);
             bool wasDirty = EditorUtility.IsDirty(config);
@@ -129,6 +137,11 @@ namespace SimplyLocalize.Editor
                         profile.languageCode = pair.Key;
                         profile.displayName = pair.Key;
                         profile.systemLanguage = pair.Key switch { "en" => SystemLanguage.English, "ru" => SystemLanguage.Russian, "pl" => SystemLanguage.Polish, _ => SystemLanguage.Unknown };
+                        if (definitions != null && definitions.TryGetValue(pair.Key, out var definition))
+                        {
+                            profile.displayName = definition.NativeName;
+                            profile.systemLanguage = definition.SystemLanguage;
+                        }
                         transaction.TouchExternal(pair.Value); transaction.TouchExternal(pair.Value + ".meta");
                         AssetDatabase.CreateAsset(profile, pair.Value);
                         if (!File.Exists(pair.Value) || AssetDatabase.LoadAssetAtPath<LanguageProfile>(pair.Value) != profile)
@@ -137,6 +150,7 @@ namespace SimplyLocalize.Editor
                     }
                     if (defaultCode != null) config.defaultLanguage = config.GetProfile(defaultCode);
                     if (fallbackCode != null) config.fallbackLanguage = config.GetProfile(fallbackCode);
+                    else if (clearFallback) config.fallbackLanguage = null;
                     EnsureFolders(parent);
                     transaction.TouchExternal(path);
                     if (createConfig)

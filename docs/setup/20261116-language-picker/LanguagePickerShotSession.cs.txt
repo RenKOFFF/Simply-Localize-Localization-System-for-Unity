@@ -1,0 +1,90 @@
+using System;
+using System.IO;
+using System.Linq;
+using SimplyLocalize;
+using SimplyLocalize.Editor;
+using SimplyLocalize.Editor.Windows;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public static class LanguagePickerShotSession
+{
+    private static LocalizationEditorWindow window;
+    private static int step;
+    private static double next;
+    private static readonly string Output = Path.GetFullPath("../../LanguagePicker/Screenshots");
+
+    public static void Begin()
+    {
+        if (!Application.dataPath.Replace('\\', '/').EndsWith("/TestResults/WindowSetup/WindowDemo/Assets")) throw new Exception("Wrong screenshot fixture.");
+        Directory.CreateDirectory(Output);
+        if (AssetDatabase.IsValidFolder("Assets/SimplyLocalize")) AssetDatabase.DeleteAsset("Assets/SimplyLocalize");
+        if (AssetDatabase.IsValidFolder("Assets/LegacySettings")) AssetDatabase.DeleteAsset("Assets/LegacySettings");
+        AssetDatabase.Refresh();
+        window = ScriptableObject.CreateInstance<LocalizationEditorWindow>();
+        window.titleContent = new GUIContent("Simply Localize");
+        window.ShowUtility(); window.position = new Rect(50, 40, 1060, 880); window.Focus();
+        window.rootVisualElement.Q<TextField>("languageSearch").value = "Ан";
+        step = 0; next = EditorApplication.timeSinceStartup + 4;
+        EditorApplication.update += Tick;
+    }
+    private static void Click(string name)
+    {
+        var button = window.rootVisualElement.Q<Button>(name);
+        if (button == null || !button.enabledInHierarchy) throw new Exception("Missing enabled button " + name);
+        using var evt = NavigationSubmitEvent.GetPooled(); evt.target = button; button.SendEvent(evt);
+    }
+    private static void Capture(string name)
+    {
+        var rect = window.position; float dpi = EditorGUIUtility.pixelsPerPoint;
+        var texture = new Texture2D(Mathf.RoundToInt(rect.width * dpi), Mathf.RoundToInt(rect.height * dpi), TextureFormat.RGB24, false);
+        texture.SetPixels(UnityEditorInternal.InternalEditorUtility.ReadScreenPixel(rect.position * dpi, texture.width, texture.height));
+        texture.Apply(); File.WriteAllBytes(Output + "/" + name + ".png", texture.EncodeToPNG());
+        UnityEngine.Object.DestroyImmediate(texture);
+    }
+    private static void Tick()
+    {
+        if (EditorApplication.timeSinceStartup < next) return;
+        next = EditorApplication.timeSinceStartup + 4;
+        try
+        {
+            switch (step++)
+            {
+                case 0:
+                    Capture("01-search-russian-name");
+                    window.rootVisualElement.Q<TextField>("languageSearch").value = "Рум";
+                    break;
+                case 1:
+                    var results = window.rootVisualElement.Q<ListView>("languageResults");
+                    results.selectedIndex = results.itemsSource.Cast<string>().ToList().IndexOf("ro");
+                    Click("addSelectedLanguage");
+                    window.rootVisualElement.Q<DropdownField>("setupDefault").value = "ru";
+                    break;
+                case 2:
+                    Capture("02-selected-languages");
+                    window.rootVisualElement.Q<Foldout>("customLanguage").value = true;
+                    window.rootVisualElement.Q<TextField>("customLanguageCode").value = "PT_br";
+                    window.rootVisualElement.Q<TextField>("customLanguageName").value = "Português";
+                    Click("addCustomLanguage");
+                    break;
+                case 3:
+                    Capture("03-canonical-code");
+                    Click("createConfig");
+                    var config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath);
+                    if (config == null || config.GetProfile("ro") == null || config.GetProfile("pt-BR") == null || config.DefaultLanguageCode != "ru" || config.FallbackLanguageCode != "en") throw new Exception("Setup mismatch");
+                    break;
+                case 4:
+                    Capture("04-generated-profiles");
+                    File.WriteAllText(Output + "/result.txt", "PASS: Russian-name search, selected ro, default ru/fallback en, PT_br normalized to pt-BR, window created four profiles and matching files.");
+                    EditorApplication.update -= Tick; EditorApplication.Exit(0); break;
+            }
+            window.Repaint();
+        }
+        catch (Exception error)
+        {
+            File.WriteAllText(Output + "/result.txt", error.ToString());
+            EditorApplication.update -= Tick; Debug.LogException(error); EditorApplication.Exit(1);
+        }
+    }
+}
