@@ -26,7 +26,7 @@ namespace SimplyLocalize.Tests
         }
         private LocalizationContext Create(string name, LocalizationResourceOwnership ownership = LocalizationResourceOwnership.Owned, int maxAssets = 4096)
         {
-            var context = new LocalizationContext(config, new[] { "en", "ru" }.Select(code => new ResourcesLanguageSources(code, assetTables: new[] { "NightShift/Worlds/Precinct/Voice/" + code + "/Radio" })), new LocalizationContextOptions { DiagnosticName = name, Ownership = ownership, MaxAssetEntries = maxAssets });
+            var context = new LocalizationContext(config, new[] { "en", "ru" }.Select(code => new ResourcesLanguageSources(code, assetTables: new[] { LocalizationResourceFixtures.VoiceTable(code) })), new LocalizationContextOptions { DiagnosticName = name, Ownership = ownership, MaxAssetEntries = maxAssets });
             contexts.Add(context); return context;
         }
         private static IEnumerator Done(Task task, bool success = true)
@@ -37,7 +37,7 @@ namespace SimplyLocalize.Tests
         [UnityTest] public IEnumerator SharedOwners_ImmutableSnapshotDoesNotPreventLastNativeUnload()
         {
             var a = Create("Intro"); var b = Create("Gameplay"); yield return Done(a.ChangeLanguageAsync("en")); yield return Done(b.ChangeLanguageAsync("en"));
-            int id = a.ResolveAsset<AudioClip>("Radio/01").Value.GetInstanceID();
+            int id = a.ResolveAsset<AudioClip>(LocalizationResourceFixtures.PrimaryKey).Value.GetInstanceID();
             var before = LocalizationResourceDiagnostics.Capture(); var row = before.Resources.Single(r => r.InstanceId == id);
             Assert.That(row.ReferenceCount, Is.EqualTo(2)); Assert.That(row.Owners.Select(o => o.ContextName), Is.EquivalentTo(new[] { "Intro", "Gameplay" }));
             Assert.Throws<NotSupportedException>(() => ((IList<LocalizationResourceInfo>)before.Resources).Clear());
@@ -50,7 +50,7 @@ namespace SimplyLocalize.Tests
         [UnityTest] public IEnumerator BorrowedRelease_IsNotReportedAsUnload()
         {
             var c = Create("External audio", LocalizationResourceOwnership.Borrowed); yield return Done(c.ChangeLanguageAsync("en"));
-            int id = c.ResolveAsset<AudioClip>("Radio/01").Value.GetInstanceID(); yield return Done(c.ReleaseAsync());
+            int id = c.ResolveAsset<AudioClip>(LocalizationResourceFixtures.PrimaryKey).Value.GetInstanceID(); yield return Done(c.ReleaseAsync());
             var snapshot = LocalizationResourceDiagnostics.Capture(); Assert.That(snapshot.Resources, Is.Empty);
             Assert.That(snapshot.History.Any(e => e.InstanceId == id && e.Kind == LocalizationResourceEventKind.BorrowedReleased), Is.True);
             Assert.That(snapshot.History.Any(e => e.Kind == LocalizationResourceEventKind.Unloaded), Is.False);
@@ -62,9 +62,9 @@ namespace SimplyLocalize.Tests
             LocalizationResourceDiagnostics.RecordingEnabled = false;
             var c = Create("Russian voice"); yield return Done(c.ChangeLanguageAsync("ru"));
             var first = LocalizationResourceDiagnostics.Capture(); Assert.That(first.History, Is.Empty);
-            Assert.That(first.Resources.SelectMany(r => r.Owners).Any(o => o.RequestedLanguage == "ru" && o.SourceLanguage == "en" && o.Address.EndsWith("/en/Radio")), Is.True);
+            Assert.That(first.Resources.SelectMany(r => r.Owners).Any(o => o.RequestedLanguage == "ru" && o.SourceLanguage == "en" && o.Address == LocalizationResourceFixtures.VoiceTable("en")), Is.True);
             LocalizationResourceDiagnostics.RecordingEnabled = true;
-            for (int i = 0; i < 100; i++) c.ResolveAsset<AudioClip>("Radio/01");
+            for (int i = 0; i < 100; i++) c.ResolveAsset<AudioClip>(LocalizationResourceFixtures.PrimaryKey);
             Assert.That(LocalizationResourceDiagnostics.Capture().History, Is.Empty, "Ready reads do not create events.");
             Assert.That(LocalizationResourceDiagnostics.Capture().Sets.Single().Owner.Stage, Is.EqualTo(LocalizationResourceStage.Ready));
         }
@@ -89,7 +89,7 @@ namespace SimplyLocalize.Tests
             var active = Create("Keep alive"); yield return Done(active.ChangeLanguageAsync("en"));
             var before = LocalizationResourceDiagnostics.Capture(); Assert.That(before.History.Count, Is.EqualTo(LocalizationResourceDiagnostics.HistoryCapacity)); Assert.That(before.DroppedEvents, Is.GreaterThan(0));
             LocalizationResourceDiagnostics.ClearHistory(); var after = LocalizationResourceDiagnostics.Capture();
-            Assert.That(after.History, Is.Empty); Assert.That(after.DroppedEvents, Is.Zero); Assert.That(after.Resources.Count, Is.EqualTo(before.Resources.Count)); Assert.That(active.ResolveAsset<AudioClip>("Radio/01").Value.loadState, Is.EqualTo(AudioDataLoadState.Loaded));
+            Assert.That(after.History, Is.Empty); Assert.That(after.DroppedEvents, Is.Zero); Assert.That(after.Resources.Count, Is.EqualTo(before.Resources.Count)); Assert.That(active.ResolveAsset<AudioClip>(LocalizationResourceFixtures.PrimaryKey).Value.loadState, Is.EqualTo(AudioDataLoadState.Loaded));
         }
         [UnityTest] public IEnumerator SessionReset_ClearsStaleDiagnostics()
         {

@@ -27,15 +27,14 @@ namespace SimplyLocalize.Tests
             var en = ScriptableObject.CreateInstance<LanguageProfile>(); en.languageCode = "en";
             var ru = ScriptableObject.CreateInstance<LanguageProfile>(); ru.languageCode = "ru";
             config.languages.Add(en); config.languages.Add(ru); config.defaultLanguage = config.fallbackLanguage = en;
-            config.resourcesBasePath = "NightShift/Worlds/Precinct/Voice"; config.loadTextData = false;
+            config.resourcesBasePath = LocalizationResourceFixtures.VoiceRoot; config.loadTextData = false;
             var provider = new ObservedProvider(config.resourcesBasePath);
             var legacy = new LocalizationManager(config); legacy.SetDataProvider(provider); legacy.SetLanguage("ru");
             var preparedManager = new LocalizationManager(config); preparedManager.SetDataProvider(provider);
             try
             {
-                // Read an existing fixture's identifier; do not recreate or alter game assets.
-                var fixtures = Resources.LoadAll<LocalizationAssetTable>(config.resourcesBasePath + "/ru");
-                string key = fixtures.SelectMany(t => t.Entries).First(e => e.asset is AudioClip).key;
+                // Use a known independent fixture; no lookup that preloads tables before the probe.
+                string key = LocalizationResourceFixtures.PrimaryKey;
                 var measurement = new Measurement { unityVersion = Application.unityVersion, scope = config.resourcesBasePath, requestedKey = key };
                 int before = provider.Reads;
                 Assert.That(legacy.GetAsset<AudioClip>(key), Is.Not.Null);
