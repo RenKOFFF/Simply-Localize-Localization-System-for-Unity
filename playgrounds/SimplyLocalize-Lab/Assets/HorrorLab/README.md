@@ -42,7 +42,7 @@ Player: Builds/NightShift/NightShift.exe с -batchmode -nographics --nightshift-
 
 Один репозиторий содержит пакет src/SimplyLocalize, проект playgrounds/SimplyLocalize-Lab и отчёты docs/playground-journal. Пакет подключён локальной зависимостью file:; исходники обоих полигонов находятся непосредственно в Assets проекта.
 
-Копия Samples~ выведена из разработки и сохранена в архиве переноса docs/project-structure/0001-local-package-migration/artifacts/legacy-samples.zip. Все существующие .meta сохраняются. Новые файлы импортируются Unity перед коммитом вместе с их .meta. См. [отчёт переноса](../../../../docs/project-structure/0001-local-package-migration/REPORT.md).
+Копия Samples~ выведена из разработки. Прежние исходники LocalizationLab доступны в коммите d2f7795; расположение резервной копии до переноса указано в отчёте ниже. Все существующие .meta сохраняются. Новые файлы импортируются Unity перед коммитом вместе с их .meta. См. [отчёт переноса](../../../../docs/project-structure/0001-local-package-migration/REPORT.md).
 
 Среда: Unity 6000.0.62f1, URP 17.0.4, uGUI/TMP 2.0.0, Input System 1.14.2. Генератор сцены остаётся инструментом восстановления тестовой фикстуры. Он перезаписывает демонстрационные тексты/таблицы из Content; не применяйте его к произвольному пользовательскому контенту.
 
