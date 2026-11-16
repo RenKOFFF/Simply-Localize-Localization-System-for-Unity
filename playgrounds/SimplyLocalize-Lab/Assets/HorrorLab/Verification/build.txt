@@ -1,4 +1,0 @@
-Succeeded
-Errors: 0
-Bytes: 104438336
-Duration: 00:00:07.8502504

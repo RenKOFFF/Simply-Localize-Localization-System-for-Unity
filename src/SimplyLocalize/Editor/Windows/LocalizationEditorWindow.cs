@@ -137,6 +137,7 @@ namespace SimplyLocalize.Editor.Windows
             // Tab bar
             _tabBar = new VisualElement();
             _tabBar.style.flexDirection = FlexDirection.Row;
+            _tabBar.style.flexWrap = Wrap.Wrap;
             _tabBar.style.borderBottomWidth = 1;
             _tabBar.style.borderBottomColor = new Color(0, 0, 0, 0.15f);
             _tabBar.style.paddingLeft = 8;
@@ -163,12 +164,13 @@ namespace SimplyLocalize.Editor.Windows
                 new AutoLocalizeTab(_data, _config, this),
                 new ToolsTab(_data, _config),
                 new SettingsTab(_config, this),
+                new DiagnosticsTab(),
             };
 
             var nameList = new System.Collections.Generic.List<string>
             {
                 "Translations", "Assets", "Languages", "Profiles",
-                "Coverage", "Auto Localize", "Tools", "Settings"
+                "Coverage", "Auto Localize", "Tools", "Settings", "Diagnostics"
             };
 
             // Discover custom tabs registered via [LocalizationEditorTab]
@@ -221,7 +223,7 @@ namespace SimplyLocalize.Editor.Windows
                 int index = i;
                 var btn = new Button(() => SetActiveTab(index));
                 btn.name = "tab" + _tabNames[i].Replace(" ", "");
-                btn.SetEnabled(_config != null);
+                btn.SetEnabled(_config != null || _tabs[i] is DiagnosticsTab);
                 btn.text = _tabNames[i];
                 btn.style.borderBottomWidth = 2;
                 btn.style.borderLeftWidth = 0;
@@ -252,7 +254,7 @@ namespace SimplyLocalize.Editor.Windows
 
             _tabContent.Clear();
 
-            if (_config == null)
+            if (_config == null && !(index >= 0 && index < _tabs.Length && _tabs[index] is DiagnosticsTab))
             {
                 BuildSetup(_tabContent);
                 return;
@@ -262,7 +264,7 @@ namespace SimplyLocalize.Editor.Windows
             {
                 _tabContent.Add(new HelpBox(_data.LoadError + "\nEditing translations is blocked until this is resolved.", HelpBoxMessageType.Error));
                 _tabContent.Add(new Button(FullRefresh) { text = "Reload data" });
-                if (index != 2 && index != 3 && index != 4 && index != 7) return;
+                if (index != 2 && index != 3 && index != 4 && index != 7 && !(_tabs[index] is DiagnosticsTab)) return;
             }
             if (index >= 0 && index < _tabs.Length)
                 _tabs[index].Build(_tabContent);

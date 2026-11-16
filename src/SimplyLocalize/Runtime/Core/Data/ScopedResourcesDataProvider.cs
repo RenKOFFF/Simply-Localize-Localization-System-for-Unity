@@ -21,8 +21,8 @@ namespace SimplyLocalize.Data
         private readonly CancellationTokenSource _lifetime = new();
         internal int MaxSourceCharacters; // Zero keeps the standalone provider unrestricted.
         private readonly int _thread = Environment.CurrentManagedThreadId;
-        private readonly Action<string, UnityEngine.Object> _loaded;
-        private readonly Action<string> _requestStarted;
+        private readonly Action<string, string, UnityEngine.Object> _loaded;
+        private readonly Action<string, string> _requestStarted;
         private readonly Action<string> _requestFinished;
         private int _nativeLoads;
         private TaskCompletionSource<bool> _idle;
@@ -33,7 +33,7 @@ namespace SimplyLocalize.Data
 
         public ScopedResourcesDataProvider(IEnumerable<ResourcesLanguageSources> sources) : this(sources, null) { }
 
-        internal ScopedResourcesDataProvider(IEnumerable<ResourcesLanguageSources> sources, Action<string, UnityEngine.Object> loaded, Action<string> requestStarted = null, Action<string> requestFinished = null)
+        internal ScopedResourcesDataProvider(IEnumerable<ResourcesLanguageSources> sources, Action<string, string, UnityEngine.Object> loaded, Action<string, string> requestStarted = null, Action<string> requestFinished = null)
         {
             _loaded = loaded; _requestStarted = requestStarted; _requestFinished = requestFinished;
             if (sources == null) throw new ArgumentNullException(nameof(sources));
@@ -60,7 +60,7 @@ namespace SimplyLocalize.Data
             var merged = new Dictionary<string, string>();
             if (source != null)
                 foreach (string address in source.TextFiles)
-                    Merge(merged, Required(Resources.Load<TextAsset>(address), address), address, languageCode);
+                    Merge(merged, Required(Resources.Load<TextAsset>(address), address, languageCode), address, languageCode);
             return merged;
         }
 
@@ -70,7 +70,7 @@ namespace SimplyLocalize.Data
             var tables = new List<LocalizationAssetTable>();
             if (source != null)
                 foreach (string address in source.AssetTables)
-                    tables.Add(Required(Resources.Load<LocalizationAssetTable>(address), address));
+                    tables.Add(Required(Resources.Load<LocalizationAssetTable>(address), address, languageCode));
             return tables;
         }
 
@@ -94,7 +94,7 @@ namespace SimplyLocalize.Data
             if (source != null)
                 foreach (string address in source.TextFiles)
                 {
-                    var asset = await LoadAsync<TextAsset>(address, token);
+                    var asset = await LoadAsync<TextAsset>(address, languageCode, token);
                     Merge(merged, asset, address, languageCode);
                     token.ThrowIfCancellationRequested();
                 }
@@ -110,17 +110,17 @@ namespace SimplyLocalize.Data
             var tables = new List<LocalizationAssetTable>();
             if (source != null)
                 foreach (string address in source.AssetTables)
-                    tables.Add(await LoadAsync<LocalizationAssetTable>(address, token));
+                    tables.Add(await LoadAsync<LocalizationAssetTable>(address, languageCode, token));
             token.ThrowIfCancellationRequested();
             return tables;
         }
 
-        private async Task<T> LoadAsync<T>(string address, CancellationToken token) where T : UnityEngine.Object
+        private async Task<T> LoadAsync<T>(string address, string languageCode, CancellationToken token) where T : UnityEngine.Object
         {
             EnsureThread(); token.ThrowIfCancellationRequested();
             if (SynchronizationContext.Current == null)
                 throw new InvalidOperationException("Async Resources loading requires the Unity synchronization context.");
-            _requestStarted?.Invoke(address);
+            _requestStarted?.Invoke(address, languageCode);
             ResourceRequest request;
             try { request = Resources.LoadAsync<T>(address); }
             catch { _requestFinished?.Invoke(address); throw; }
@@ -132,7 +132,7 @@ namespace SimplyLocalize.Data
                 try
                 {
                     // Even after cancellation, register late objects so an owning context can release them.
-                    _loaded?.Invoke(address, request.asset);
+                    _loaded?.Invoke(address, languageCode, request.asset);
                     completed.TrySetResult(true);
                 }
                 catch (Exception error) { completed.TrySetException(error); }
@@ -151,17 +151,17 @@ namespace SimplyLocalize.Data
                 {
                     await completed.Task;
                     EnsureThread(); token.ThrowIfCancellationRequested();
-                    return Required(request.asset as T, address);
+                    return Required(request.asset as T, address, languageCode);
                 }
             }
             finally { PendingLoadCount--; }
         }
 
-        private T Required<T>(T asset, string address) where T : UnityEngine.Object
+        private T Required<T>(T asset, string address, string languageCode) where T : UnityEngine.Object
         {
             if (asset == null)
                 throw new InvalidOperationException("Missing or wrong-type localization resource: Resources/" + address + " (" + typeof(T).Name + ").");
-            _loaded?.Invoke(address, asset);
+            _loaded?.Invoke(address, languageCode, asset);
             return asset;
         }
 

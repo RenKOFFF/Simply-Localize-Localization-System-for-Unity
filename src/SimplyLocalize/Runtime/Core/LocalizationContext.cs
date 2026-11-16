@@ -24,12 +24,14 @@ namespace SimplyLocalize
             internal long TextCharacters;
             internal async Task ReleaseAsync()
             {
+                Lease.SetStage(LocalizationResourceStage.Releasing);
                 Provider.Dispose();
                 await Provider.NativeLoadsFinished;
                 Manager.ClearCaches();
                 await Lease.ReleaseAsync();
             }
         }
+        public long DiagnosticId { get; } = LocalizationResourceDiagnostics.NextId();
         private readonly LocalizationConfig config;
         private readonly ResourcesLanguageSources[] sources;
         private readonly LocalizationContextOptions options;
@@ -90,8 +92,8 @@ namespace SimplyLocalize
                 if (prior != null) try { await prior; } catch (Exception) { }
                 token.ThrowIfCancellationRequested();
                 var manager = new LocalizationManager(config) { TemplateCacheLimit = options.MaxTemplates };
-                var lease = new LocalizationResourceLease(options.Ownership == LocalizationResourceOwnership.Owned);
-                candidate = new State { Lease = lease, Provider = new ScopedResourcesDataProvider(sources, lease.TrackLoaded, address => { lease.BeginRequest(address); ResourceRequestCount++; }, lease.EndRequest) { MaxSourceCharacters = options.MaxSourceCharacters }, Manager = manager };
+                var lease = new LocalizationResourceLease(options.Ownership == LocalizationResourceOwnership.Owned, DiagnosticId, options.DiagnosticName ?? config.name, code);
+                candidate = new State { Lease = lease, Provider = new ScopedResourcesDataProvider(sources, lease.TrackLoaded, (address, sourceLanguage) => { lease.BeginRequest(address, sourceLanguage); ResourceRequestCount++; }, lease.EndRequest) { MaxSourceCharacters = options.MaxSourceCharacters }, Manager = manager };
                 candidate.Manager.SetDataProvider(candidate.Provider);
                 using var prepared = await candidate.Manager.PrepareLanguageAsync(code, cancellationToken: token);
                 candidate.TextEntries = prepared.Text.Values.Sum(t => t.Count);
@@ -100,14 +102,20 @@ namespace SimplyLocalize
                 if (candidate.TextEntries > options.MaxTextEntries || candidate.TextCharacters > options.MaxTextCharacters
                     || candidate.AssetEntries > options.MaxAssetEntries)
                     throw new InvalidOperationException("Prepared localization exceeds context limits. Split the selected sources or raise the explicit limits.");
-                if (options.PrepareAudio) await lease.PrepareAudioAsync(options.AudioTimeoutSeconds, token);
+                if (options.PrepareAudio) { lease.SetStage(LocalizationResourceStage.PreparingAudio); await lease.PrepareAudioAsync(options.AudioTimeoutSeconds, token); }
                 token.ThrowIfCancellationRequested();
                 if (IsDisposed || version != revision || generation != LocalizationResourceLease.Generation) throw new OperationCanceledException(token);
                 candidate.Manager.ApplyPreparedLanguage(prepared, token);
+                candidate.Lease.SetStage(LocalizationResourceStage.Ready);
                 var previous = active; active = candidate; candidate = null;
                 // Publish only a ready state. Cleanup never invalidates resources retained by the new state.
                 try { OnLanguageChanged?.Invoke(code); }
                 finally { if (previous != null) await CleanupAsync(previous); }
+            }
+            catch (Exception error)
+            {
+                if (candidate != null) LocalizationResourceDiagnostics.Record(candidate.Lease, error is OperationCanceledException ? LocalizationResourceEventKind.Cancelled : LocalizationResourceEventKind.Failed, detail: error.Message);
+                throw;
             }
             finally
             {

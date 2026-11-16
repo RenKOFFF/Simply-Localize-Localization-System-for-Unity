@@ -1,4 +1,4 @@
-# Night Shift — личный проверочный стенд, версия 1.4.0
+# Night Shift — личный проверочный стенд, версия 1.4.1
 
 Назначение: проверять Simply Localize как обычная игра-потребитель. Не распространяемый Sample. Единственный рабочий исходник находится в playgrounds/SimplyLocalize-Lab/Assets/HorrorLab.
 
@@ -51,3 +51,9 @@ Player: Builds/NightShift/NightShift.exe с -batchmode -nographics --nightshift-
 
 
 Флаг --context-lifecycle-probe с --context-lifecycle-report <JSON> запускается отдельным свежим Player: Loaded до первого использования, два владельца, последний владелец, отменённые поздние запросы, 12 смен языка и освобождение объявленной текстуры. Ручные сценарии: [этап 9](../../../../docs/context-lifecycle/MANUAL_TESTS.md).
+
+## Диагностика и локальные результаты
+
+Simply Localize → Diagnostics → Resources показывает подготовленные наборы Night Shift / Radio и Night Shift / Signs. [Использование и ограничения](../../../../docs/context-lifecycle/DIAGNOSTICS.md). Стрелки/галочки списков не требуют текстур; субтитры при открытом меню находятся справа.
+
+BuildIdentity.json и его .meta генерируются HorrorBuildIdentity.Write перед сборкой и не хранятся в Git. Результаты проверок сохраняются в TestResults, игры — в Builds. Прежний Assets/HorrorLab/Verification удалён как дубликат исторических отчётов. [Правила хранения](../../../../docs/ARTIFACT_POLICY.md).

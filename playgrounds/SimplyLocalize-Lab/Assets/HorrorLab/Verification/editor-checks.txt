@@ -1,3 +1,0 @@
-PASS: 9 visual resolutions, fallback provenance, menu translations and global-manager isolation. Async integration and memory checks run in the standalone Player.
-PASS: 16 interaction cases (front cone, distance, nearest, hysteresis, disabled/consumed props, walls, door hinge, tabletop key, independent sign inspection).
-PASS: 4 real scene targets reachable in front of hero with camera facing away.

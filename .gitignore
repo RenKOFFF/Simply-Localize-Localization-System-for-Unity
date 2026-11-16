@@ -22,3 +22,16 @@ docs/project-structure/**/artifacts/*-pid.txt
 docs/project-structure/**/artifacts/*-process.txt
 docs/project-structure/**/artifacts/*-command.json
 docs/project-structure/**/artifacts/audit-command.json
+
+# Generated playground build identity and disposable verification copies.
+playgrounds/*/Assets/HorrorLab/Resources/NightShift/BuildIdentity.json
+playgrounds/*/Assets/HorrorLab/Resources/NightShift/BuildIdentity.json.meta
+playgrounds/*/Assets/HorrorLab/Verification/
+playgrounds/*/Assets/HorrorLab/Verification.meta
+
+# New run artifacts belong in ignored TestResults, not in documentation.
+# Existing unique historical evidence stays tracked until reviewed individually.
+docs/**/playground-source.zip
+docs/**/localizer-runtime.zip
+docs/**/*-command.json
+docs/**/*-pid.txt

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add Diagnostics → Resources in the main editor window: live context owners, preparation/release states, source addresses and opt-in bounded history. Public immutable snapshots support custom tools without retaining Unity objects; existing ownership policies and serialized data are unchanged.
+- Fix Night Shift dropdown arrows/checkmarks and subtitle overlap while settings are open. Keep generated build identities, ordinary test outputs and duplicate source archives out of Git; retain regression fixtures and unique historical evidence.
+
 - Add LocalizationContext for bounded ready-only Resources sets, atomic language replacement, audio-data readiness, cancellation/draining and explicit Borrowed/Owned lifetimes. Shared and in-flight contexts retain assets until the last user releases them; no global unload or forced GC is used.
 - Add ILocalizationAssetDependencies for custom runtime asset graphs, limits for source/text/table/template caches and play-session isolation. Existing managers, providers, formats and default borrowed ownership remain supported.
 

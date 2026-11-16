@@ -18,6 +18,7 @@ namespace SimplyLocalize
     /// Stop consumers and remove their references before closing an owned context.</summary>
     public sealed class LocalizationContextOptions
     {
+        public string DiagnosticName { get; set; }
         public LocalizationResourceOwnership Ownership { get; set; } = LocalizationResourceOwnership.Borrowed;
         public bool PrepareAudio { get; set; } = true;
         public int MaxSourceCharacters { get; set; } = 4000000;

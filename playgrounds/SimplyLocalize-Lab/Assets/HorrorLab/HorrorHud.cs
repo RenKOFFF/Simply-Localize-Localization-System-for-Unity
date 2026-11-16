@@ -12,7 +12,7 @@ namespace SimplyLocalize.HorrorLab
         private readonly TMP_FontAsset font;
         private readonly List<(TMP_Text text, string key, ProfileApplier profile)> labels = new();
         private readonly Dictionary<TMP_Text, ProfileApplier> dynamicProfiles = new();
-        private readonly RectTransform canvas, backdrop, menu, document, interactionPanel, translationPanel, loading, intro;
+        private readonly RectTransform canvas, backdrop, menu, document, interactionPanel, translationPanel, loading, intro, subtitlePanel;
         private readonly TMP_Text objective, prompt, translation, subtitle, message, documentBody, documentTitle, subtitlesValue, progress, hint;
         private readonly TMP_Dropdown textLanguage, voiceLanguage, visualLanguage, inscriptionMode;
         private readonly UnityEngine.UI.Button start, resume, leave, replay, cancel;
@@ -62,8 +62,8 @@ namespace SimplyLocalize.HorrorLab
             prompt = Text(interactionPanel, 21, Vector2.zero, Vector2.one, new Vector2(12, 8), new Vector2(-12, -8)); prompt.alignment = TextAlignmentOptions.Center;
             translationPanel = Panel("Sign Translation", canvas, new Vector2(.5f, 0), new Vector2(.5f, 0), new Vector2(-440, 192), new Vector2(440, 282), new Color(.02f, .025f, .03f, .88f));
             translation = Text(translationPanel, 21, Vector2.zero, Vector2.one, new Vector2(18, 8), new Vector2(-18, -8)); translation.alignment = TextAlignmentOptions.Center;
-            var subPanel = Panel("Subtitles", canvas, new Vector2(.5f, 0), new Vector2(.5f, 0), new Vector2(-570, 65), new Vector2(570, 178), new Color(.02f, .025f, .03f, .88f));
-            subtitle = Text(subPanel, 25, Vector2.zero, Vector2.one, new Vector2(25, 12), new Vector2(-25, -12)); subtitle.alignment = TextAlignmentOptions.Center;
+            subtitlePanel = Panel("Subtitles", canvas, new Vector2(.5f, 0), new Vector2(.5f, 0), new Vector2(-570, 65), new Vector2(570, 178), new Color(.02f, .025f, .03f, .88f));
+            subtitle = Text(subtitlePanel, 25, Vector2.zero, Vector2.one, new Vector2(25, 12), new Vector2(-25, -12)); subtitle.alignment = TextAlignmentOptions.Center;
             message = Text(canvas, 25, Vector2.one, Vector2.one, new Vector2(-790, -300), new Vector2(-45, -205)); message.alignment = TextAlignmentOptions.Center;
             document = Panel("Document", canvas, new Vector2(.5f, .5f), new Vector2(.5f, .5f), new Vector2(-420, -285), new Vector2(420, 285), new Color(.065f, .075f, .07f, .99f));
             documentTitle = PlainLabel(document, 31, 40, 30, 760, 75); documentBody = PlainLabel(document, 25, 40, 125, 760, 300);
@@ -113,9 +113,21 @@ namespace SimplyLocalize.HorrorLab
             var obj = TMP_DefaultControls.CreateDropdown(new TMP_DefaultControls.Resources()); obj.transform.SetParent(parent, false);
             var rect = (RectTransform)obj.transform; Place(rect, Vector2.up, Vector2.up, new Vector2(x, -y - 44), new Vector2(x + 290, -y));
             var drop = obj.GetComponent<TMP_Dropdown>(); drop.ClearOptions();
+            ReplaceIcon(obj.transform.Find("Arrow").GetComponent<Graphic>(), false);
+            var item = drop.template.GetComponentInChildren<Toggle>(true);
+            item.graphic = ReplaceIcon(item.graphic, true);
             foreach (var text in obj.GetComponentsInChildren<TMP_Text>(true)) { text.font = font; text.fontSize = 20; text.color = new Color(.08f, .1f, .1f); }
             var options = new List<string>(); foreach (var language in config.languages) options.Add(language.displayName);
             drop.AddOptions(options); drop.onValueChanged.AddListener(index => changed(config.languages[index].Code)); return drop;
+        }
+        private static Graphic ReplaceIcon(Graphic original, bool checkmark)
+        {
+            original.enabled = false;
+            var obj = new GameObject(checkmark ? "Selection mark" : "Dropdown arrow", typeof(RectTransform), typeof(HorrorDropdownIcon));
+            obj.transform.SetParent(original.transform, false);
+            var rect = (RectTransform)obj.transform; Place(rect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            var icon = obj.GetComponent<HorrorDropdownIcon>(); icon.checkmark = checkmark;
+            icon.color = new Color(.08f, .1f, .1f); icon.raycastTarget = false; return icon;
         }
         public void Refresh()
         {
@@ -154,7 +166,11 @@ namespace SimplyLocalize.HorrorLab
             translationPanel.gameObject.SetActive(translate);
             if (translate) Assign(translation, text.Format("UI/InscriptionText", text.Get(sign.textKey)));
             var line = app.Presentation != null ? app.Presentation.Dialogue?.CurrentLine : null;
-            subtitle.transform.parent.gameObject.SetActive(inWorld && settings.Subtitles && line != null);
+            subtitlePanel.gameObject.SetActive(inWorld && settings.Subtitles && line != null);
+            if (inWorld && game.MenuOpen)
+                Place(subtitlePanel, new Vector2(.54f, 0), new Vector2(1, 0), new Vector2(24, 65), new Vector2(-40, 265));
+            else
+                Place(subtitlePanel, new Vector2(.5f, 0), new Vector2(.5f, 0), new Vector2(-570, 65), new Vector2(570, 178));
             if (line != null) Assign(subtitle, text.Format("UI/SubtitleLine", text.Get(line.speakerKey), text.Get(line.textKey)));
             string notice = app.ErrorKey;
             if (notice == null && game != null)

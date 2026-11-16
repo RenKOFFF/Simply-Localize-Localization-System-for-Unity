@@ -30,46 +30,73 @@ namespace SimplyLocalize
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetSession()
         {
-            Generation++; Shared.Clear(); Addresses.Clear();
+            Generation++; Shared.Clear(); Addresses.Clear(); LocalizationResourceDiagnostics.ResetSession();
         }
         private void EnsureSession()
         { if (generation != Generation) throw new OperationCanceledException("Localization context belongs to a previous play session."); }
         private readonly bool owned;
         private bool released;
         private Exception loadFailure;
-        internal LocalizationResourceLease(bool owned) { this.owned = owned; }
+        internal long ContextId { get; }
+        internal long SetId { get; } = LocalizationResourceDiagnostics.NextId();
+        internal string ContextName { get; }
+        internal string Language { get; }
+        internal bool IsCurrentSession => generation == Generation;
+        internal LocalizationResourceOwnership Ownership => owned ? LocalizationResourceOwnership.Owned : LocalizationResourceOwnership.Borrowed;
+        internal LocalizationResourceStage Stage { get; private set; } = LocalizationResourceStage.Loading;
+        private readonly long created = System.Diagnostics.Stopwatch.GetTimestamp();
+        private long ready, releaseStarted;
+        private readonly Dictionary<string, string> pendingSources = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<int, (string address, string language)> origins = new();
+        private KeyValuePair<int, Entry>[] closing;
+        private static double Milliseconds(long start, long end) => start == 0 ? 0 : (end - start) * 1000d / System.Diagnostics.Stopwatch.Frequency;
+        internal double PreparationMilliseconds => Milliseconds(created, ready != 0 ? ready : releaseStarted != 0 ? releaseStarted : System.Diagnostics.Stopwatch.GetTimestamp());
+        internal double ReleaseMilliseconds => Milliseconds(releaseStarted, System.Diagnostics.Stopwatch.GetTimestamp());
+        internal LocalizationResourceLease(bool owned, long contextId, string contextName, string language)
+        {
+            this.owned = owned; ContextId = contextId; ContextName = string.IsNullOrWhiteSpace(contextName) ? "Context " + contextId : contextName; Language = language;
+            LocalizationResourceDiagnostics.Register(this);
+            LocalizationResourceDiagnostics.Record(this, LocalizationResourceEventKind.Preparing);
+        }
+        internal void SetStage(LocalizationResourceStage stage)
+        {
+            Stage = stage;
+            if (stage == LocalizationResourceStage.Ready) { ready = System.Diagnostics.Stopwatch.GetTimestamp(); LocalizationResourceDiagnostics.Record(this, LocalizationResourceEventKind.Ready); }
+            if (stage == LocalizationResourceStage.Releasing && releaseStarted == 0) { releaseStarted = System.Diagnostics.Stopwatch.GetTimestamp(); LocalizationResourceDiagnostics.Record(this, LocalizationResourceEventKind.ReleaseRequested); }
+        }
         internal IEnumerable<AudioClip> Audio => entries.Values.Select(e => e.Asset).OfType<AudioClip>();
 
-        internal void BeginRequest(string address)
+        internal void BeginRequest(string address, string language)
         {
             EnsureSession();
             if (!Addresses.TryGetValue(address, out var source)) Addresses.Add(address, source = new Address());
-            source.Pending.Add(this);
-            try { Track(source.Root); }
+            source.Pending.Add(this); pendingSources[address] = language;
+            try { Track(source.Root, address, language); }
             catch { EndRequest(address); throw; }
         }
         internal void EndRequest(string address)
         {
             if (generation != Generation) return;
+            pendingSources.Remove(address);
             if (Addresses.TryGetValue(address, out var source))
             {
                 source.Pending.Remove(this);
                 if (source.Pending.Count == 0 && ReferenceEquals(source.Root, null)) Addresses.Remove(address);
             }
         }
-        internal void TrackLoaded(string address, Object asset)
+        internal void TrackLoaded(string address, string language, Object asset)
         {
             EnsureSession();
             if (!Addresses.TryGetValue(address, out var source)) Addresses.Add(address, source = new Address());
             source.Root = asset;
             // Protect every in-flight owner before the first completed caller can close its context.
             foreach (var lease in source.Pending.ToArray())
-                try { lease.Track(asset); } catch (Exception error) { lease.loadFailure ??= error; }
-            Track(asset);
+                try { lease.Track(asset, address, lease.pendingSources.TryGetValue(address, out var code) ? code : language); } catch (Exception error) { lease.loadFailure ??= error; }
+            Track(asset, address, language);
             if (loadFailure != null) throw loadFailure;
         }
 
-        internal void Track(Object asset)
+        internal void Track(Object asset, string address, string language)
         {
             EnsureSession();
             if (asset == null) return;
@@ -79,12 +106,12 @@ namespace SimplyLocalize
             if (owned && (asset is GameObject || asset is Component || asset is AssetBundle))
                 throw new NotSupportedException("Owned localization contexts cannot unload " + asset.GetType().Name + ". Use Borrowed ownership for prefabs/components/bundles.");
             if (!Shared.TryGetValue(id, out var entry)) Shared.Add(id, entry = new Entry { Asset = asset });
-            entry.Users++; entry.UnloadWhenUnused |= owned; entries.Add(id, entry);
+            entry.Users++; entry.UnloadWhenUnused |= owned; entries.Add(id, entry); origins[id] = (address, language);
             if (asset is LocalizationAssetTable table)
-                foreach (var item in table.Entries) Track(item.asset);
-            else if (asset is Sprite sprite) Track(sprite.texture);
+                foreach (var item in table.Entries) Track(item.asset, address, language);
+            else if (asset is Sprite sprite) Track(sprite.texture, address, language);
             if (asset is ILocalizationAssetDependencies dependencies)
-                foreach (var dependency in dependencies.GetLocalizationDependencies() ?? Array.Empty<Object>()) Track(dependency);
+                foreach (var dependency in dependencies.GetLocalizationDependencies() ?? Array.Empty<Object>()) Track(dependency, address, language);
         }
 
         internal async Task PrepareAudioAsync(double timeoutSeconds, CancellationToken token)
@@ -111,20 +138,27 @@ namespace SimplyLocalize
         {
             if (released) return;
             released = true;
-            if (generation != Generation) { entries.Clear(); return; }
-            var candidates = entries.ToArray(); entries.Clear();
+            if (generation != Generation) { entries.Clear(); origins.Clear(); Stage = LocalizationResourceStage.Released; LocalizationResourceDiagnostics.Forget(this); return; }
+            SetStage(LocalizationResourceStage.Releasing);
+            var candidates = entries.ToArray(); closing = candidates; entries.Clear();
             // Drop all counts before releasing roots and then their explicitly tracked dependencies.
             foreach (var pair in candidates) pair.Value.Users--;
             foreach (var pair in candidates)
             {
                 var entry = pair.Value;
-                if (entry.Users != 0) continue;
+                if (entry.Users != 0) { if (LocalizationResourceDiagnostics.RecordingEnabled) LocalizationResourceDiagnostics.Record(this, LocalizationResourceEventKind.Retained, pair.Key, entry.Asset != null ? entry.Asset.name : null, "Another live context retains this object."); continue; }
                 // A canceled LoadAudioData may still be running. New contexts can retain the same entry meanwhile.
                 while (generation == Generation && entry.Users == 0 && entry.Asset is AudioClip clip && clip != null && clip.loadState == AudioDataLoadState.Loading)
-                    await Task.Yield();
-                if (generation != Generation) return;
+                { Stage = LocalizationResourceStage.WaitingForAudio; await Task.Yield(); }
+                if (generation != Generation) { closing = null; origins.Clear(); Stage = LocalizationResourceStage.Released; LocalizationResourceDiagnostics.Forget(this); return; }
                 if (entry.Users != 0) continue;
-                if (entry.UnloadWhenUnused && entry.Asset != null) Resources.UnloadAsset(entry.Asset);
+                string resourceName = LocalizationResourceDiagnostics.RecordingEnabled && entry.Asset != null ? entry.Asset.name : null;
+                if (entry.UnloadWhenUnused && entry.Asset != null)
+                {
+                    Resources.UnloadAsset(entry.Asset);
+                    LocalizationResourceDiagnostics.Record(this, LocalizationResourceEventKind.Unloaded, pair.Key, resourceName, "Resources.UnloadAsset completed; not a process RAM measurement.");
+                }
+                else if (!entry.UnloadWhenUnused) LocalizationResourceDiagnostics.Record(this, LocalizationResourceEventKind.BorrowedReleased, pair.Key, resourceName, "Reference released; native residency is not managed by this context.");
                 if (Shared.TryGetValue(pair.Key, out var current) && ReferenceEquals(current, entry)) Shared.Remove(pair.Key);
                 foreach (var address in Addresses.Where(p => (object)p.Value.Root != null && p.Value.Root.GetInstanceID() == pair.Key).Select(p => p.Key).ToArray())
                 {
@@ -133,6 +167,34 @@ namespace SimplyLocalize
                 }
                 entry.Asset = null;
             }
+            closing = null; origins.Clear(); Stage = LocalizationResourceStage.Released;
+            LocalizationResourceDiagnostics.Record(this, LocalizationResourceEventKind.Released);
+            LocalizationResourceDiagnostics.Forget(this);
+        }
+        internal static LocalizationResourceSnapshot CaptureDiagnostics(IEnumerable<LocalizationResourceLease> leases, IEnumerable<LocalizationResourceEvent> history, int dropped)
+        {
+            var sets = new List<LocalizationResourceSetInfo>();
+            var owners = new Dictionary<int, List<LocalizationResourceOwnerInfo>>();
+            foreach (var lease in leases)
+            {
+                var retained = lease.closing ?? lease.entries.ToArray();
+                sets.Add(new LocalizationResourceSetInfo(lease, retained.Count(p => p.Value.Asset != null), lease.pendingSources.Keys));
+                foreach (var pair in retained)
+                {
+                    if (pair.Value.Asset == null) continue;
+                    if (!owners.TryGetValue(pair.Key, out var list)) owners.Add(pair.Key, list = new List<LocalizationResourceOwnerInfo>());
+                    lease.origins.TryGetValue(pair.Key, out var source);
+                    list.Add(new LocalizationResourceOwnerInfo(lease, source.address, source.language));
+                }
+            }
+            var resources = new List<LocalizationResourceInfo>();
+            foreach (var pair in Shared)
+            {
+                var entry = pair.Value; if (entry.Asset == null) continue;
+                owners.TryGetValue(pair.Key, out var list);
+                resources.Add(new LocalizationResourceInfo(pair.Key, entry.Asset.name, entry.Asset.GetType().Name, entry.Users, entry.UnloadWhenUnused, list ?? new List<LocalizationResourceOwnerInfo>()));
+            }
+            return new LocalizationResourceSnapshot(sets, resources, history, dropped);
         }
     }
 }
