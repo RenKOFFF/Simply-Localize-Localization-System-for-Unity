@@ -37,6 +37,8 @@ namespace SimplyLocalize
         // Asset tables: languageCode → list of loaded tables
         private Dictionary<string, List<LocalizationAssetTable>> _assetTableCache = new();
         private bool _usesAssetTables;
+        internal int TemplateCacheLimit; // Zero preserves legacy caching. Contexts set a positive bound.
+        internal int CachedTemplateCount => _templateCache.Count;
         private readonly object _preparationOwner = new();
         private readonly int _ownerThread = Environment.CurrentManagedThreadId;
         private long _dataVersion;
@@ -575,6 +577,7 @@ namespace SimplyLocalize
                 return cached;
 
             var template = TokenParser.Parse(rawText);
+            if (TemplateCacheLimit > 0 && _templateCache.Count >= TemplateCacheLimit) _templateCache.Clear();
             _templateCache[rawText] = template;
             return template;
         }

@@ -64,7 +64,7 @@ namespace SimplyLocalize.HorrorLab
             Application.targetFrameRate = 60;
             report.unityVersion = Application.unityVersion; report.device = SystemInfo.processorType;
             report.graphics = SystemInfo.graphicsDeviceType.ToString();
-            report.note = "Protocol plugin-owned-v3-scoped-async: plugin prepares exact world table addresses through Resources.LoadAsync; ready-only asset reads; no manual localization cleanup/audio prewarming. Functional PASS is not a plugin performance certification. Small fixture; 60 FPS cap; world frames measured with menu open; Null graphics excludes GPU. Play call cost is not physical sound latency. Unity allocator/GC counters are not process RAM. Once-per-frame peaks can miss short spikes.";
+            report.note = "Protocol plugin-owned-v4-context-lifecycle: plugin contexts prepare tables/audio and release owned resources after consumers detach; ready-only reads; no game-side native unload/GC. Functional PASS is not a plugin performance certification. Small fixture; 60 FPS cap; world frames measured with menu open; Null graphics excludes GPU. Play call cost is not physical sound latency. Unity allocator/GC counters are not process RAM. Once-per-frame peaks can miss short spikes.";
             Application.logMessageReceived += OnLog;
             try
             {
@@ -92,7 +92,7 @@ namespace SimplyLocalize.HorrorLab
                     int firstReads = app.Metrics.TotalReads - beforeReads;
                     string stateBeforePlay = app.Metrics.lastAudioStateBeforePlay;
                     Check(firstReads == 0, "World " + cycle + ": prepared first dialogue performs no provider reads");
-                    if (stateBeforePlay != AudioDataLoadState.Loaded.ToString()) Observe("SL-006", "World " + cycle + ": plugin returned audio in state " + stateBeforePlay + " before Play");
+                    Check(stateBeforePlay == AudioDataLoadState.Loaded.ToString(), "World " + cycle + ": audio is ready before Play");
                     var clip = app.Presentation.Dialogue.CurrentClip;
                     Check(clip != null, "Dialogue resolves voice through the plugin");
                     string nextText = app.textConfig.languages[(cycle + 1) % app.textConfig.languages.Count].Code;
@@ -127,7 +127,7 @@ namespace SimplyLocalize.HorrorLab
                     Check(app.Session == null && app.Game == null && context.IsDisposed, "Game detaches consumers and drops its context");
                     // No assertion of zero native assets, and absolutely no cleanup to make that assertion pass.
                     Capture("menu-after-" + cycle, app);
-                    if (report.samples.Last().audioObjects > 0) Observe("SL-005", "After world " + cycle + ": " + report.samples.Last().audioObjects + " AudioClip objects remain; reachability/leak not inferred");
+                    Check(report.samples.Last().audioObjects == 0, "World " + cycle + ": owned audio released after consumers detach");
                 }
                 string previous = app.Text.Locale;
                 using (var cancellation = new CancellationTokenSource())

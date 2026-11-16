@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add LocalizationContext for bounded ready-only Resources sets, atomic language replacement, audio-data readiness, cancellation/draining and explicit Borrowed/Owned lifetimes. Shared and in-flight contexts retain assets until the last user releases them; no global unload or forced GC is used.
+- Add ILocalizationAssetDependencies for custom runtime asset graphs, limits for source/text/table/template caches and play-session isolation. Existing managers, providers, formats and default borrowed ownership remain supported.
+
 - Add opt-in ScopedResourcesDataProvider with immutable per-language lists of exact Resources addresses, deterministic file ordering and real Resources.LoadAsync preparation. Existing ResourcesDataProvider and serialized data are unchanged.
 - Closing a scoped provider cancels pending waits and prevents new reads without unloading borrowed Unity assets. Add scope, cancellation, error and shared-resource regressions plus a cold Player probe with a large unselected neighbor.
 

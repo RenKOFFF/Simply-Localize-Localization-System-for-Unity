@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "field": "playgroundSourceSha256",
+      "expected": "16a7c774749f53c20781fd80243d640265932d3a9249a0e3eec441e787bae143",
+      "actual": "16a7c774749f53c20781fd80243d640265932d3a9249a0e3eec441e787bae143",
+      "passed": true
+    },
+    {
+      "field": "localizerRuntimeSha256",
+      "expected": "e9c57ef2f137e84a0361c7cb3742d1b39bc30904c7d88440c8da16532353401d",
+      "actual": "e9c57ef2f137e84a0361c7cb3742d1b39bc30904c7d88440c8da16532353401d",
+      "passed": true
+    },
+    {
+      "field": "fixtureDataSha256",
+      "expected": "8c91791e5a55c9d505f4ca3fc710a6f56d2ca59e5c06cfec4ba9807582ab513d",
+      "actual": "8c91791e5a55c9d505f4ca3fc710a6f56d2ca59e5c06cfec4ba9807582ab513d",
+      "passed": true
+    },
+    {
+      "field": "scopeFixtureSha256",
+      "expected": "1e4637b79c68a43fa74cb24429b080b1d9cacce1703016fb433cf5b92baa470c",
+      "actual": "1e4637b79c68a43fa74cb24429b080b1d9cacce1703016fb433cf5b92baa470c",
+      "passed": true
+    },
+    {
+      "field": "worldSceneSha256",
+      "expected": "a53b5c0126bd19d7e606007b2d820a727b750d76a92d7647580608834b83770c",
+      "actual": "a53b5c0126bd19d7e606007b2d820a727b750d76a92d7647580608834b83770c",
+      "passed": true
+    },
+    {
+      "field": "menuSceneSha256",
+      "expected": "3e336161c2f1bcd0faffeb3cf306f346c83cdccaf7677f6e273dec68318dd430",
+      "actual": "3e336161c2f1bcd0faffeb3cf306f346c83cdccaf7677f6e273dec68318dd430",
+      "passed": true
+    }
+  ],
+  "embedded": [
+    {
+      "report": "player",
+      "passed": true
+    },
+    {
+      "report": "scope-player",
+      "passed": true
+    },
+    {
+      "report": "context-player",
+      "passed": true
+    }
+  ]
+}

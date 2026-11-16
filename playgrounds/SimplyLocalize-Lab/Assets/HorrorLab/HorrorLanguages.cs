@@ -60,7 +60,10 @@ namespace SimplyLocalize.HorrorLab
         public int textReads, assetTableReads;
         public double lastTextPrepareMs, lastWorldPrepareMs, lastFirstPlayCallMs;
         public string lastAudioStateBeforePlay;
-        public int TotalReads => textReads + assetTableReads;
+        private readonly List<LocalizationContext> contexts = new();
+        public int TotalReads => textReads + assetTableReads + contexts.Sum(c => c.ResourceRequestCount);
+        internal void Track(LocalizationContext context) => contexts.Add(context);
+        internal void Finish(LocalizationContext context) { if (contexts.Remove(context)) assetTableReads += context.ResourceRequestCount; }
     }
 
     // Instrumentation only: every operation is forwarded unchanged to the stock provider.
@@ -75,27 +78,6 @@ namespace SimplyLocalize.HorrorLab
         public bool HasTextData(string code) => inner.HasTextData(code);
         public List<LocalizationAssetTable> LoadAssetTables(string code)
         { metrics.assetTableReads++; return inner.LoadAssetTables(code); }
-    }
-
-    // Forwards the new scoped provider unchanged; counts API reads, not physical disk operations.
-    internal sealed class ObservedScopedResourcesProvider : IAsyncLocalizationDataProvider, IDisposable
-    {
-        private readonly ScopedResourcesDataProvider inner;
-        private readonly HorrorLoadMetrics metrics;
-        public ObservedScopedResourcesProvider(LocalizationConfig config, string table, HorrorLoadMetrics metrics)
-        {
-            this.metrics = metrics;
-            inner = new ScopedResourcesDataProvider(config.languages.Where(p => p != null).Select(p =>
-                new ResourcesLanguageSources(p.Code, assetTables: new[] { config.resourcesBasePath + "/" + p.Code + "/" + table })));
-        }
-        public Dictionary<string, string> LoadTextData(string code) { metrics.textReads++; return inner.LoadTextData(code); }
-        public bool HasTextData(string code) => inner.HasTextData(code);
-        public List<LocalizationAssetTable> LoadAssetTables(string code) { metrics.assetTableReads++; return inner.LoadAssetTables(code); }
-        public Task<Dictionary<string, string>> LoadTextDataAsync(string code, CancellationToken token)
-        { metrics.textReads++; return inner.LoadTextDataAsync(code, token); }
-        public Task<List<LocalizationAssetTable>> LoadAssetTablesAsync(string code, CancellationToken token)
-        { metrics.assetTableReads++; return inner.LoadAssetTablesAsync(code, token); }
-        public void Dispose() => inner.Dispose();
     }
 
     public sealed class HorrorTextService : IDisposable

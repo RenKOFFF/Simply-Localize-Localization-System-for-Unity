@@ -133,7 +133,7 @@ namespace SimplyLocalize.HorrorLab
             if (worldScene.IsValid() && worldScene.isLoaded)
             { var unload = SceneManager.UnloadSceneAsync(worldScene); if (unload != null) while (!unload.isDone) await Task.Yield(); }
             worldScene = default;
-            Session?.Dispose(); Session = null;
+            if (Session != null) await Session.ReleaseAsync(); Session = null;
         }
         public async void Observe(Task task)
         {

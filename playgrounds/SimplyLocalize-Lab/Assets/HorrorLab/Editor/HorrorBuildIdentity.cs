@@ -68,7 +68,7 @@ namespace SimplyLocalize.HorrorLab.Editor
                 ["unityVersion"] = UnityEngine.Application.unityVersion,
                 ["buildKind"] = "Windows x64 Release",
                 ["audioFixture"] = "DecompressOnLoad; PreloadAudioData=false; LoadInBackground=true; no sample LoadAudioData",
-                ["cleanupPolicy"] = "World providers closed without native unload; cold scope probe clears only its own managed manager caches; no UnloadAsset(s), UnloadAudioData or forced GC"
+                ["cleanupPolicy"] = "Plugin-owned contexts prepare audio and unload tracked owned resources after last user; game only detaches consumers; no global UnloadUnusedAssets or forced GC"
             };
             string json = result.ToString(Formatting.Indented);
             File.WriteAllText(HorrorLabSetup.Root + "/Resources/NightShift/BuildIdentity.json", json);

@@ -19,13 +19,23 @@ namespace SimplyLocalize.Data
     {
         private readonly Dictionary<string, ResourcesLanguageSources> _sources = new(StringComparer.OrdinalIgnoreCase);
         private readonly CancellationTokenSource _lifetime = new();
+        internal int MaxSourceCharacters; // Zero keeps the standalone provider unrestricted.
         private readonly int _thread = Environment.CurrentManagedThreadId;
+        private readonly Action<string, UnityEngine.Object> _loaded;
+        private readonly Action<string> _requestStarted;
+        private readonly Action<string> _requestFinished;
+        private int _nativeLoads;
+        private TaskCompletionSource<bool> _idle;
+        internal Task NativeLoadsFinished => _nativeLoads == 0 ? Task.CompletedTask : _idle.Task;
         public bool IsDisposed { get; private set; }
         /// <summary>Outstanding waits, not outstanding native Unity loads after cancellation.</summary>
         public int PendingLoadCount { get; private set; }
 
-        public ScopedResourcesDataProvider(IEnumerable<ResourcesLanguageSources> sources)
+        public ScopedResourcesDataProvider(IEnumerable<ResourcesLanguageSources> sources) : this(sources, null) { }
+
+        internal ScopedResourcesDataProvider(IEnumerable<ResourcesLanguageSources> sources, Action<string, UnityEngine.Object> loaded, Action<string> requestStarted = null, Action<string> requestFinished = null)
         {
+            _loaded = loaded; _requestStarted = requestStarted; _requestFinished = requestFinished;
             if (sources == null) throw new ArgumentNullException(nameof(sources));
             foreach (var source in sources)
             {
@@ -110,41 +120,58 @@ namespace SimplyLocalize.Data
             EnsureThread(); token.ThrowIfCancellationRequested();
             if (SynchronizationContext.Current == null)
                 throw new InvalidOperationException("Async Resources loading requires the Unity synchronization context.");
-            var request = Resources.LoadAsync<T>(address);
+            _requestStarted?.Invoke(address);
+            ResourceRequest request;
+            try { request = Resources.LoadAsync<T>(address); }
+            catch { _requestFinished?.Invoke(address); throw; }
             var completed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            Action<AsyncOperation> onCompleted = _ => completed.TrySetResult(true);
+            if (_nativeLoads++ == 0) _idle = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            Action<AsyncOperation> onCompleted = null;
+            onCompleted = _ =>
+            {
+                try
+                {
+                    // Even after cancellation, register late objects so an owning context can release them.
+                    _loaded?.Invoke(address, request.asset);
+                    completed.TrySetResult(true);
+                }
+                catch (Exception error) { completed.TrySetException(error); }
+                finally
+                {
+                    request.completed -= onCompleted;
+                    _requestFinished?.Invoke(address);
+                    if (--_nativeLoads == 0) _idle.TrySetResult(true);
+                }
+            };
             PendingLoadCount++;
             request.completed += onCompleted;
             try
             {
-                // A cancellation callback may run on another thread. It touches only the task, never Unity APIs.
                 using (token.Register(() => completed.TrySetCanceled()))
                 {
-                    if (request.isDone) completed.TrySetResult(true);
                     await completed.Task;
                     EnsureThread(); token.ThrowIfCancellationRequested();
                     return Required(request.asset as T, address);
                 }
             }
-            finally
-            {
-                // Await resumes on Unity's context, including when cancellation won the race.
-                request.completed -= onCompleted;
-                PendingLoadCount--;
-            }
+            finally { PendingLoadCount--; }
         }
 
-        private static T Required<T>(T asset, string address) where T : UnityEngine.Object
+        private T Required<T>(T asset, string address) where T : UnityEngine.Object
         {
             if (asset == null)
                 throw new InvalidOperationException("Missing or wrong-type localization resource: Resources/" + address + " (" + typeof(T).Name + ").");
+            _loaded?.Invoke(address, asset);
             return asset;
         }
 
-        private static void Merge(Dictionary<string, string> merged, TextAsset asset, string address, string code)
+        private void Merge(Dictionary<string, string> merged, TextAsset asset, string address, string code)
         {
             Dictionary<string, string> parsed;
-            try { parsed = LocalizationFileParser.Parse(asset.text); }
+            string json = asset.text;
+            if (MaxSourceCharacters > 0 && json.Length > MaxSourceCharacters)
+                throw new InvalidOperationException("Localization source exceeds context limits: Resources/" + address);
+            try { parsed = LocalizationFileParser.Parse(json); }
             catch (Exception error) when (error is FormatException || error is OverflowException || error is ArgumentOutOfRangeException)
             { throw new FormatException("Invalid localization JSON at Resources/" + address + " (language '" + code + "'): " + error.Message, error); }
             foreach (var pair in parsed)
