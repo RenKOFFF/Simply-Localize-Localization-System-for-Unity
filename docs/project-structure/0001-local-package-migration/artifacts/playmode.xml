@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="26" result="Passed" total="26" passed="26" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0,236497">
+  <test-suite type="TestSuite" id="1039" name="SimplyLocalize-Lab" fullname="SimplyLocalize-Lab" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.236497" total="26" passed="26" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1033" name="SimplyLocalize.Tests.PlayMode.dll" fullname="D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Library/ScriptAssemblies/SimplyLocalize.Tests.PlayMode.dll" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.228968" total="26" passed="26" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="11448" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1034" name="SimplyLocalize" fullname="SimplyLocalize" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.228477" total="26" passed="26" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1035" name="Tests" fullname="SimplyLocalize.Tests" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.228165" total="26" passed="26" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="BootstrapLifecycleTests" fullname="SimplyLocalize.Tests.BootstrapLifecycleTests" classname="SimplyLocalize.Tests.BootstrapLifecycleTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.053914" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1006" name="AdditiveSceneUnload_OnlyOwnerCanShutdown" fullname="SimplyLocalize.Tests.BootstrapLifecycleTests.AdditiveSceneUnload_OnlyOwnerCanShutdown" methodname="AdditiveSceneUnload_OnlyOwnerCanShutdown" classname="SimplyLocalize.Tests.BootstrapLifecycleTests" runstate="Runnable" seed="1950683524" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.024107" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+]]></output>
+            </test-case>
+            <test-case id="1004" name="Bootstrap_DoesNotAcquireManagerReplacedByStartupSubscriber" fullname="SimplyLocalize.Tests.BootstrapLifecycleTests.Bootstrap_DoesNotAcquireManagerReplacedByStartupSubscriber" methodname="Bootstrap_DoesNotAcquireManagerReplacedByStartupSubscriber" classname="SimplyLocalize.Tests.BootstrapLifecycleTests" runstate="Runnable" seed="367980482" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.005985" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/Localization/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/Localization/en/text/ for language 'en'
+]]></output>
+            </test-case>
+            <test-case id="1002" name="DuplicateBootstrap_DoesNotReplaceOrShutdownOwner" fullname="SimplyLocalize.Tests.BootstrapLifecycleTests.DuplicateBootstrap_DoesNotReplaceOrShutdownOwner" methodname="DuplicateBootstrap_DoesNotReplaceOrShutdownOwner" classname="SimplyLocalize.Tests.BootstrapLifecycleTests" runstate="Runnable" seed="1296748341" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.002683" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+]]></output>
+            </test-case>
+            <test-case id="1005" name="InvalidBootstrap_DoesNotShutdownExistingManager" fullname="SimplyLocalize.Tests.BootstrapLifecycleTests.InvalidBootstrap_DoesNotShutdownExistingManager" methodname="InvalidBootstrap_DoesNotShutdownExistingManager" classname="SimplyLocalize.Tests.BootstrapLifecycleTests" runstate="Runnable" seed="1990810453" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.004024" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+[SimplyLocalize] LocalizationBootstrap: No config assigned!
+]]></output>
+            </test-case>
+            <test-case id="1003" name="OldBootstrap_DoesNotShutdownManualReplacement" fullname="SimplyLocalize.Tests.BootstrapLifecycleTests.OldBootstrap_DoesNotShutdownManualReplacement" methodname="OldBootstrap_DoesNotShutdownManualReplacement" classname="SimplyLocalize.Tests.BootstrapLifecycleTests" runstate="Runnable" seed="1862766160" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.002281" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+]]></output>
+            </test-case>
+            <test-case id="1007" name="PersistentBootstrap_SurvivesOwningSceneUnload" fullname="SimplyLocalize.Tests.BootstrapLifecycleTests.PersistentBootstrap_SurvivesOwningSceneUnload" methodname="PersistentBootstrap_SurvivesOwningSceneUnload" classname="SimplyLocalize.Tests.BootstrapLifecycleTests" runstate="Runnable" seed="1206572340" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.002697" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1008" name="LocalizationRefreshTests" fullname="SimplyLocalize.Tests.LocalizationRefreshTests" classname="SimplyLocalize.Tests.LocalizationRefreshTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.053764" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1011" name="FormattableText_UpdatesEscapesSelectorsAndFractionalPlurals" fullname="SimplyLocalize.Tests.LocalizationRefreshTests.FormattableText_UpdatesEscapesSelectorsAndFractionalPlurals" methodname="FormattableText_UpdatesEscapesSelectorsAndFractionalPlurals" classname="SimplyLocalize.Tests.LocalizationRefreshTests" runstate="Runnable" seed="838279805" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.045293" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1010" name="ProviderChange_RefreshesActiveComponents_AndFailureKeepsThemConsistent" fullname="SimplyLocalize.Tests.LocalizationRefreshTests.ProviderChange_RefreshesActiveComponents_AndFailureKeepsThemConsistent" methodname="ProviderChange_RefreshesActiveComponents_AndFailureKeepsThemConsistent" classname="SimplyLocalize.Tests.LocalizationRefreshTests" runstate="Runnable" seed="41390293" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.004319" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1009" name="Reload_RefreshesActiveTextAndSpriteWithoutChangingLanguage" fullname="SimplyLocalize.Tests.LocalizationRefreshTests.Reload_RefreshesActiveTextAndSpriteWithoutChangingLanguage" methodname="Reload_RefreshesActiveTextAndSpriteWithoutChangingLanguage" classname="SimplyLocalize.Tests.LocalizationRefreshTests" runstate="Runnable" seed="783287656" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.002727" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1012" name="ProfileOverrideTests" fullname="SimplyLocalize.Tests.ProfileOverrideTests" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" testcasecount="17" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.119105" total="17" passed="17" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1024" name="EmptyTranslationKeyStillAppliesProfile" fullname="SimplyLocalize.Tests.ProfileOverrideTests.EmptyTranslationKeyStillAppliesProfile" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.037170" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1020" name="EmptyTranslationKeyStillAppliesProfile(True,1)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.EmptyTranslationKeyStillAppliesProfile(True,1)" methodname="EmptyTranslationKeyStillAppliesProfile" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="735430420" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.033593" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1021" name="EmptyTranslationKeyStillAppliesProfile(True,2)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.EmptyTranslationKeyStillAppliesProfile(True,2)" methodname="EmptyTranslationKeyStillAppliesProfile" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="467515205" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.001113" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1022" name="EmptyTranslationKeyStillAppliesProfile(False,1)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.EmptyTranslationKeyStillAppliesProfile(False,1)" methodname="EmptyTranslationKeyStillAppliesProfile" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="1387469184" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.001040" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1023" name="EmptyTranslationKeyStillAppliesProfile(False,2)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.EmptyTranslationKeyStillAppliesProfile(False,2)" methodname="EmptyTranslationKeyStillAppliesProfile" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="65374558" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.000761" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1031" name="FallbackGlyphs_RenderAfterLanguageSwitch_AndSourcesSurviveDisable" fullname="SimplyLocalize.Tests.ProfileOverrideTests.FallbackGlyphs_RenderAfterLanguageSwitch_AndSourcesSurviveDisable" methodname="FallbackGlyphs_RenderAfterLanguageSwitch_AndSourcesSurviveDisable" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="13053843" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.066318" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1025" name="FontAndLayoutOverridesWithUnsetValuesRestoreOriginals" fullname="SimplyLocalize.Tests.ProfileOverrideTests.FontAndLayoutOverridesWithUnsetValuesRestoreOriginals" methodname="FontAndLayoutOverridesWithUnsetValuesRestoreOriginals" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="2053374072" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.001980" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1026" name="LocalFontOverride_PreservesOriginalPresetUnlessMaterialIsExplicit" fullname="SimplyLocalize.Tests.ProfileOverrideTests.LocalFontOverride_PreservesOriginalPresetUnlessMaterialIsExplicit" methodname="LocalFontOverride_PreservesOriginalPresetUnlessMaterialIsExplicit" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="29152760" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.001235" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1029" name="LocalTypography_ScalesAutoSizeBoundsFromOriginals" fullname="SimplyLocalize.Tests.ProfileOverrideTests.LocalTypography_ScalesAutoSizeBoundsFromOriginals" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.002893" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1027" name="LocalTypography_ScalesAutoSizeBoundsFromOriginals(True)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.LocalTypography_ScalesAutoSizeBoundsFromOriginals(True)" methodname="LocalTypography_ScalesAutoSizeBoundsFromOriginals" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="1258478315" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.001447" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1028" name="LocalTypography_ScalesAutoSizeBoundsFromOriginals(False)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.LocalTypography_ScalesAutoSizeBoundsFromOriginals(False)" methodname="LocalTypography_ScalesAutoSizeBoundsFromOriginals" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="1745074643" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.000900" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1032" name="OverrideAddedAtRuntimeIsAppliedAndDisabledOverrideIsIgnored" fullname="SimplyLocalize.Tests.ProfileOverrideTests.OverrideAddedAtRuntimeIsAppliedAndDisabledOverrideIsIgnored" methodname="OverrideAddedAtRuntimeIsAppliedAndDisabledOverrideIsIgnored" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="1038789305" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.000976" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1019" name="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable" fullname="SimplyLocalize.Tests.ProfileOverrideTests.Overrides_AreStableAcrossReloadLanguageSwitchAndReenable" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.006011" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1013" name="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(True,0)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(True,0)" methodname="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="332900443" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.001033" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1014" name="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(True,1)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(True,1)" methodname="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="584801233" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.000847" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1015" name="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(True,2)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(True,2)" methodname="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="1380337717" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.000966" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1016" name="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(False,0)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(False,0)" methodname="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="1037285790" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.000858" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1017" name="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(False,1)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(False,1)" methodname="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="1903076294" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.000838" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1018" name="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(False,2)" fullname="SimplyLocalize.Tests.ProfileOverrideTests.Overrides_AreStableAcrossReloadLanguageSwitchAndReenable(False,2)" methodname="Overrides_AreStableAcrossReloadLanguageSwitchAndReenable" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="598938914" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.000828" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1030" name="UnrelatedLocalizedComponentAndNullEntryDoNotSuppressStandaloneProfile" fullname="SimplyLocalize.Tests.ProfileOverrideTests.UnrelatedLocalizedComponentAndNullEntryDoNotSuppressStandaloneProfile" methodname="UnrelatedLocalizedComponentAndNullEntryDoNotSuppressStandaloneProfile" classname="SimplyLocalize.Tests.ProfileOverrideTests" runstate="Runnable" seed="260530575" result="Passed" start-time="2026-11-16 12:09:08Z" end-time="2026-11-16 12:09:08Z" duration="0.001014" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/kompik/AppData/LocalLow/DefaultCompany/SimplyLocalize-Lab\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

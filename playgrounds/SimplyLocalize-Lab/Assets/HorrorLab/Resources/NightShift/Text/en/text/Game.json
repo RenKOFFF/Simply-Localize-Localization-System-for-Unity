@@ -1,0 +1,12 @@
+{
+  "translations": {
+    "Game/ObjectiveKey": "OBJECTIVE\nFind the archive key",
+    "Game/ObjectiveDoor": "OBJECTIVE\nUnlock the archive",
+    "Game/ObjectiveDone": "ARCHIVE UNLOCKED\nPlayground complete",
+    "Game/KeyFound": "Archive key added to inventory",
+    "Game/DoorLocked": "Locked. Find the archive key.",
+    "Game/Complete": "The archive is open. You made it.",
+    "Game/InventoryKey": "ARCHIVE KEY\nA brass key with a faded paper tag.",
+    "Game/InventoryEmpty": "Your inventory is empty."
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "translations": {
+    "Dialogue/Speaker": "DISPATCH",
+    "Dialogue/01": "This is dispatch. Can anyone hear me? The west precinct is in quarantine.",
+    "Dialogue/02": "The archive key is beside the lockers. Find it and unlock the archive.",
+    "Dialogue/03": "Keep your flashlight on. And if you hear something behind the door, do not answer."
+  }
+}

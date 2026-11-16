@@ -6,6 +6,8 @@ A modern, flexible localization system for Unity. Manages translations, localize
 
 *Read in other languages: [Russian](README_RU.md).*
 
+Development project: [playgrounds/SimplyLocalize-Lab](playgrounds/SimplyLocalize-Lab/README-LAB.md) (Unity 6000.0.62f1). It imports `src/SimplyLocalize` as a local UPM package. Keep new files and their Unity-generated `.meta` files together in version control. See the [numbered migration report](docs/project-structure/0001-local-package-migration/REPORT.md) for layout and verification evidence.
+
 ---
 
 ## Table of Contents

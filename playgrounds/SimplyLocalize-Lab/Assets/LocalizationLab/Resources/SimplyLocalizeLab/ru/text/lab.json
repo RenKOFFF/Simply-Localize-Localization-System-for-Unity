@@ -1,0 +1,9 @@
+{
+  "translations": {
+    "Lab/Welcome": "Привет, мир!",
+    "Lab/Coins": "{0} {0|монета|монеты|монет}",
+    "Lab/Named": "Игрок: {name}, предметов: {count}",
+    "Lab/Profile": "Локальный профиль: размер x1.4",
+    "Lab/Escapes": "Escaped braces: {{name}} / {{0}}"
+  }
+}

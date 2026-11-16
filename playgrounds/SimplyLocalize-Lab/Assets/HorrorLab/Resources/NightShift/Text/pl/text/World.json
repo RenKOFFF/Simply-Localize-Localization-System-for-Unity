@@ -1,0 +1,11 @@
+{
+  "translations": {
+    "World/Radio": "Posłuchaj radia",
+    "World/Note": "Przeczytaj notatkę dyżurnego",
+    "World/Key": "Weź klucz do archiwum",
+    "World/Door": "Otwórz archiwum",
+    "World/SignArchive": "ARCHIWUM  /  TYLKO DLA PERSONELU",
+    "World/SignWarning": "KWARANTANNA  /  NIE OTWIERAJ DRZWI",
+    "World/SignReception": "RECEPCJA  /  ZACHODNI KOMISARIAT"
+  }
+}

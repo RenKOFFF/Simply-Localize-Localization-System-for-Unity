@@ -1,0 +1,10 @@
+{
+  "translations": {
+    "Lab/Welcome": "Hello, world!",
+    "Lab/Coins": "{0} {0|coin|coins}",
+    "Lab/Named": "Player: {name}, items: {count}",
+    "Lab/Profile": "Profile: baseline size",
+    "Lab/Escapes": "Escaped braces: {{name}} / {{0}}",
+    "Lab/Fallback": "Fallback: this key exists only in English."
+  }
+}

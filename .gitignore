@@ -1,0 +1,24 @@
+# Unity projects: generated caches and local outputs only. Keep all asset .meta files.
+playgrounds/*/[Ll]ibrary/
+playgrounds/*/[Tt]emp/
+playgrounds/*/[Oo]bj/
+playgrounds/*/[Bb]uilds/
+playgrounds/*/[Ll]ogs/
+playgrounds/*/[Uu]ser[Ss]ettings/
+playgrounds/*/[Tt]est[Rr]esults/
+playgrounds/*/Recovery/
+playgrounds/*/.vs/
+playgrounds/*/.idea/
+playgrounds/*/*.csproj
+playgrounds/*/*.sln
+playgrounds/*/*.slnx
+playgrounds/*/*.user
+playgrounds/*/*.pidb
+playgrounds/*/*.suo
+playgrounds/*/crash-report.txt
+
+# Disposable command receipts and process IDs, not experimental evidence.
+docs/project-structure/**/artifacts/*-pid.txt
+docs/project-structure/**/artifacts/*-process.txt
+docs/project-structure/**/artifacts/*-command.json
+docs/project-structure/**/artifacts/audit-command.json

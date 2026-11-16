@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c656d61dc1323749b99cd62da1d7a85, type: 3}
+  m_Name: pl
+  m_EditorClassIdentifier: 
+  languageCode: pl
+  displayName: pl
+  systemLanguage: 27
+  fallbackProfile: {fileID: 0}
+  overrideFont: 1
+  primaryFont: {fileID: 11400000, guid: c0bc2caa48f9ec443a29b2ab67821ea6, type: 2}
+  fallbackFont: {fileID: 0}
+  legacyFont: {fileID: 12800000, guid: e3265ab4bf004d28a9537516768c1c75, type: 3}
+  overrideTypography: 0
+  fontSizeMultiplier: 1
+  fontWeight: 400
+  fontStyle: 0
+  overrideSpacing: 0
+  lineSpacingAdjustment: 0
+  characterSpacingAdjustment: 0
+  wordSpacingAdjustment: 0
+  overrideLayout: 0
+  textDirection: 0
+  overrideAlignment: 0
+  alignmentOverride: 516

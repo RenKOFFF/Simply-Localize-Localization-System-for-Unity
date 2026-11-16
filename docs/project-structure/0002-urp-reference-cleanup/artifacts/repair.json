@@ -1,0 +1,14 @@
+{
+  "missingBefore": 9,
+  "removed": 9,
+  "remaining": 0,
+  "clearedObsoleteFields": [
+    "probeVolumeDebugShader",
+    "probeVolumeFragmentationDebugShader",
+    "probeVolumeOffsetDebugShader",
+    "probeVolumeSamplingDebugShader",
+    "probeSamplingDebugMesh",
+    "probeSamplingDebugTexture",
+    "probeVolumeBlendStatesCS"
+  ]
+}

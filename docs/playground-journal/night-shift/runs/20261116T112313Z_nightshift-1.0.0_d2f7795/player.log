@@ -1,0 +1,64 @@
+Mono path[0] = 'D:/Unity/Projects/SimplyLocalize-Lab/Builds/NightShift/NightShift_Data/Managed'
+Mono config path = 'D:/Unity/Projects/SimplyLocalize-Lab/Builds/NightShift/MonoBleedingEdge/etc'
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.0.62f1 (f99f05b3e950)
+[Subsystems] Discovering subsystems at path D:/Unity/Projects/SimplyLocalize-Lab/Builds/NightShift/NightShift_Data/UnitySubsystems
+Forcing GfxDevice: Null
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.249 seconds
+- Finished resetting the current domain, in  0.002 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Microsoft Media Foundation video decoding to texture disabled: graphics device is Null, only Direct3D 11 and Direct3D 12 (only on desktop) are supported for hardware-accelerated video decoding.
+UnloadTime: 0.383700 ms
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/ru/text/ for language 'ru'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/ru/text/ for language 'ru'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/pl/text/ for language 'pl'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+Unsupported locale: unsupported-test-locale
+<color=#FF7F00>[SimplyLocalize]</color> Translation not found for key 'Missing/DeliberateAuditKey' in 'en' or any fallback
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/ru/text/ for language 'ru'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/pl/text/ for language 'pl'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/ru/text/ for language 'ru'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/ru/text/ for language 'ru'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/ru/text/ for language 'ru'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/ru/text/ for language 'ru'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/pl/text/ for language 'pl'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+Night Shift preparation failed: Expected injected context failure
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Voice/en/text/ for language 'en'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/pl/text/ for language 'pl'
+<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/NightShift/Worlds/Precinct/Visuals/en/text/ for language 'en'
+Night Shift functional checks: True; findings: 10
+[Physics::Module] Cleanup current backned.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input System polling thread exited.
+Input System module state changed to: Shutdown.

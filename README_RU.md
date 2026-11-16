@@ -6,6 +6,8 @@
 
 *На других языках: [English](README.md).*
 
+Проект разработки: [playgrounds/SimplyLocalize-Lab](playgrounds/SimplyLocalize-Lab/README-LAB.md), Unity 6000.0.62f1. Плагин подключён из `src/SimplyLocalize` локальным UPM-пакетом. Новые файлы сохраняются в Git вместе с созданными Unity `.meta`. Структура и доказательства проверки — в [нумерованном отчёте переноса](docs/project-structure/0001-local-package-migration/REPORT.md).
+
 ---
 
 ## Содержание

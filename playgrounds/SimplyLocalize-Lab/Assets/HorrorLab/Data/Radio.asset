@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: abff92aae0c8e2646ba814910239e197, type: 3}
+  m_Name: Radio
+  m_EditorClassIdentifier: 
+  sequenceId: dispatch-intro
+  lines:
+  - speakerKey: Dialogue/Speaker
+    textKey: Dialogue/01
+    audioKey: Radio/01
+    silentDuration: 5
+  - speakerKey: Dialogue/Speaker
+    textKey: Dialogue/02
+    audioKey: Radio/02
+    silentDuration: 5
+  - speakerKey: Dialogue/Speaker
+    textKey: Dialogue/03
+    audioKey: Radio/03
+    silentDuration: 5

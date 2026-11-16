@@ -1,0 +1,20 @@
+{
+  "playgroundVersion": "1.0.0",
+  "measurementProtocol": "plugin-owned-v1",
+  "localizerVersion": "2.0.2",
+  "localizerPackageSha256": "8f2cfbed56c2df02a6394337465d958cd3e6a09939eaa96ae0d6ac24aefb39f6",
+  "localizerCommit": "d2f77957ee30e06309a8a16ffa7c876929ad6384",
+  "localizerDescribe": "2.0.2-5-gd2f7795",
+  "localizerWorkingTreeStatus": "",
+  "localizerRuntimeSha256": "568b7b2fdbaa081676cccbab3f6a4477673d65205e78d9f1788bf0badf642885",
+  "playgroundSourceSha256": "cfc2ca07d8bdb1f852c249d3ac29047c3aedf10b412ca56e36d8e9b5d9587e27",
+  "worldSceneSha256": "a53b5c0126bd19d7e606007b2d820a727b750d76a92d7647580608834b83770c",
+  "menuSceneSha256": "3e336161c2f1bcd0faffeb3cf306f346c83cdccaf7677f6e273dec68318dd430",
+  "fixtureDataSha256": "2a89d94cd66a0d07733f4af52d47eee106033eb516276c6fedc37d8ab7bdcef9",
+  "builtUtc": "2026-11-16T11:23:13.6914382Z",
+  "runId": "20261116T112313Z_nightshift-1.0.0_d2f7795",
+  "unityVersion": "6000.0.62f1",
+  "buildKind": "Windows x64 Release",
+  "audioFixture": "DecompressOnLoad; PreloadAudioData=false; LoadInBackground=true; no sample LoadAudioData",
+  "cleanupPolicy": "No ClearCaches, UnloadAsset(s), UnloadAudioData or forced GC in playground"
+}
