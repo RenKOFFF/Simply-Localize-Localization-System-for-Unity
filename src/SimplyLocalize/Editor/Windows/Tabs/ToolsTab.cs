@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
     {
         private readonly EditorLocalizationData _data;
         private readonly LocalizationConfig _config;
+        private bool _clearEmptyCells;
 
         public ToolsTab(EditorLocalizationData data, LocalizationConfig config)
         {
@@ -34,13 +36,18 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             var csvDesc = new Label(
                 "Export all translations to a CSV file for editing in Google Sheets, Excel, etc.\n" +
-                "Import merges CSV data back into your JSON files.\n" +
+                "Preview CSV changes before saving. Empty cells are skipped by default.\n" +
                 "New languages found in CSV will get profiles created automatically.");
             csvDesc.style.fontSize = 12;
             csvDesc.style.color = new Color(0.5f, 0.5f, 0.5f);
             csvDesc.style.whiteSpace = WhiteSpace.Normal;
             csvDesc.style.marginBottom = 12;
             root.Add(csvDesc);
+
+            var clearEmpty = new Toggle("Clear existing values for empty CSV cells") { value = _clearEmptyCells };
+            clearEmpty.tooltip = "Off: keep existing translations and descriptions. On: explicitly clear them. Whitespace-only values are preserved.";
+            clearEmpty.RegisterValueChangedCallback(evt => _clearEmptyCells = evt.newValue);
+            root.Add(clearEmpty);
 
             var btnRow = new VisualElement();
             btnRow.style.flexDirection = FlexDirection.Row;
@@ -74,9 +81,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             var saveAllBtn = new Button(() =>
             {
-                _data.SaveAll();
-                AssetDatabase.Refresh();
-                EditorUtility.DisplayDialog("Saved", "All translation files have been saved.", "OK");
+                try
+                {
+                    _data.SaveAll();
+                    _data.FlushPendingAssetRefresh();
+                    EditorUtility.DisplayDialog("Saved", "All translation files have been saved.", "OK");
+                }
+                catch (Exception error) { EditorUtility.DisplayDialog("Save failed", error.Message, "OK"); }
             });
             saveAllBtn.text = "Save all files";
             saveAllBtn.style.fontSize = 12;
@@ -115,114 +126,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             string path = EditorUtility.OpenFilePanel("Import CSV", "", "csv");
             if (string.IsNullOrEmpty(path)) return;
 
-            string csv = File.ReadAllText(path, System.Text.Encoding.UTF8);
-
-            // Parse header to detect new languages
-            var newLanguages = DetectNewLanguages(csv);
-
-            if (newLanguages.Count > 0)
+            try
             {
-                string langList = string.Join(", ", newLanguages);
-                bool proceed = EditorUtility.DisplayDialog(
-                    "New languages detected",
-                    $"The CSV contains languages not in your config:\n{langList}\n\n" +
-                    "Profiles will be created automatically. " +
-                    "Please review them after import (set fonts, SystemLanguage, etc.).",
-                    "Import & create profiles", "Cancel");
-
-                if (!proceed) return;
-
-                // Create profiles for new languages
-                foreach (var langCode in newLanguages)
-                    CreateProfileForLanguage(langCode);
+                string csv = File.ReadAllText(path, new System.Text.UTF8Encoding(false, true));
+                var policy = _clearEmptyCells ? CsvEmptyCellPolicy.Clear : CsvEmptyCellPolicy.Skip;
+                var plan = CsvExporter.Preview(_data, csv, policy);
+                CsvImportPreviewWindow.Open(_data, _config, plan, policy);
             }
-
-            int updated = CsvExporter.ImportFromFile(_data, path);
-
-            // Save all — including any new files that were auto-created
-            _data.SaveAll();
-            AssetDatabase.Refresh();
-
-            string message = $"Imported/updated {updated} keys.";
-
-            if (newLanguages.Count > 0)
-                message += $"\nCreated {newLanguages.Count} new language profile(s): {string.Join(", ", newLanguages)}";
-
-            EditorUtility.DisplayDialog("Imported", message, "OK");
-        }
-
-        private List<string> DetectNewLanguages(string csv)
-        {
-            var newLangs = new List<string>();
-
-            // Read first line to get headers
-            int lineEnd = csv.IndexOf('\n');
-            if (lineEnd < 0) return newLangs;
-
-            string headerLine = csv.Substring(0, lineEnd).TrimEnd('\r');
-            string[] headers = headerLine.Split(',');
-
-            // headers[0] = Key, headers[1] = File, optionally headers[2] = Description, then languages
-            var existingCodes = new HashSet<string>(
-                _config.languages.Where(p => p != null).Select(p => p.Code));
-
-            for (int i = 2; i < headers.Length; i++)
-            {
-                string code = headers[i].Trim().Trim('"');
-
-                if (string.IsNullOrEmpty(code)) continue;
-                if (code.Equals("Description", System.StringComparison.OrdinalIgnoreCase)) continue;
-
-                if (!existingCodes.Contains(code))
-                    newLangs.Add(code);
-            }
-
-            return newLangs;
-        }
-
-        private void CreateProfileForLanguage(string langCode)
-        {
-            var profile = ScriptableObject.CreateInstance<LanguageProfile>();
-            profile.languageCode = langCode;
-            profile.displayName = langCode;
-            
-            //TODO этого тут быть не должно
-            // profile.hasText = true;
-
-            string configPath = AssetDatabase.GetAssetPath(_config);
-            string configDir = Path.GetDirectoryName(configPath);
-            string profilePath = Path.Combine(configDir ?? "Assets", $"Profile_{langCode}.asset");
-            profilePath = AssetDatabase.GenerateUniqueAssetPath(profilePath);
-
-            AssetDatabase.CreateAsset(profile, profilePath);
-
-            Undo.RecordObject(_config, "Add language from CSV");
-            _config.languages.Add(profile);
-            EditorUtility.SetDirty(_config);
-
-            // Create folder structure
-            if (!string.IsNullOrEmpty(_data.BasePath))
-            {
-                string textDir = Path.Combine(_data.BasePath, langCode, "text");
-                Directory.CreateDirectory(textDir);
-
-                // Create empty JSON for all existing source files
-                foreach (var fileName in _data.SourceFiles)
-                {
-                    string jsonPath = Path.Combine(textDir, fileName + ".json");
-                    if (!File.Exists(jsonPath))
-                        File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
-                }
-
-                // If no source files exist yet, create global.json
-                if (_data.SourceFiles.Count == 0)
-                {
-                    string jsonPath = Path.Combine(textDir, "global.json");
-                    File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
-                }
-            }
-
-            AssetDatabase.SaveAssets();
+            catch (Exception error) { EditorUtility.DisplayDialog("CSV import failed", error.Message, "OK"); }
         }
     }
 }

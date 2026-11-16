@@ -29,6 +29,8 @@ namespace SimplyLocalize.Editor.Data
         private readonly Dictionary<string, KeyMeta> _keyMeta = new();
         private string _metaLoadError;
         private string _metaSnapshot;
+        private byte[] _metaFileSnapshot;
+        private readonly Dictionary<string, byte[]> _fileSnapshots = new(StringComparer.OrdinalIgnoreCase);
 
         // ── Caches (for performance) ──
 
@@ -58,6 +60,7 @@ namespace SimplyLocalize.Editor.Data
 
         /// <summary>The base path to the Localization folder inside Assets/Resources/</summary>
         private string _basePath;
+        internal string LoadedResourcesPath { get; private set; }
 
         /// <summary>Reference language code used to discover files and keys</summary>
         private string _referenceLanguage;
@@ -161,7 +164,8 @@ namespace SimplyLocalize.Editor.Data
             if (config == null)
                 return;
 
-            _basePath = FindLocalizationBasePath(config.resourcesBasePath);
+            LoadedResourcesPath = config.resourcesBasePath;
+            _basePath = FindLocalizationBasePath(LoadedResourcesPath);
 
             if (string.IsNullOrEmpty(_basePath))
             {
@@ -205,7 +209,10 @@ namespace SimplyLocalize.Editor.Data
             _keyMeta.Clear();
             _metaLoadError = null;
             _metaSnapshot = null;
+            _metaFileSnapshot = null;
+            _fileSnapshots.Clear();
             _basePath = null;
+            LoadedResourcesPath = null;
             _referenceLanguage = null;
             InvalidateCaches();
         }
@@ -249,6 +256,11 @@ namespace SimplyLocalize.Editor.Data
 
         /// <summary>Returns all language codes that have been loaded.</summary>
         public IEnumerable<string> LoadedLanguages => _translations.Keys;
+
+        internal void EnsureLanguage(string code)
+        {
+            if (!_translations.ContainsKey(code)) _translations.Add(code, new Dictionary<string, string>());
+        }
 
         // ──────────────────────────────────────────────
         //  Metadata queries
@@ -430,57 +442,119 @@ namespace SimplyLocalize.Editor.Data
         /// </summary>
         public void SaveFile(string fileName, string languageCode)
         {
-            string filePath = GetJsonFilePath(languageCode, fileName);
-
-            if (string.IsNullOrEmpty(filePath))
-                return;
-
-            var keysInFile = _keyToFile
-                .Where(kvp => kvp.Value == fileName)
-                .Select(kvp => kvp.Key)
-                .OrderBy(k => k);
-
-            var translations = new Dictionary<string, string>();
-
-            if (_translations.TryGetValue(languageCode, out var langData))
-            {
-                foreach (var key in keysInFile)
-                {
-                    if (langData.TryGetValue(key, out var value))
-                        translations[key] = value;
-                    else
-                        translations[key] = "";
-                }
-            }
-
-            string json = EditorJsonWriter.WriteTranslations(translations);
-
-            string directory = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            File.WriteAllText(filePath, json);
+            SaveFiles(new[] { (fileName, languageCode) }, false);
         }
 
-        /// <summary>
-        /// Saves a source file for ALL languages.
-        /// </summary>
+        /// <summary>Saves a source file for all loaded languages as one rollback-capable operation.</summary>
         public void SaveFileAllLanguages(string fileName)
         {
-            foreach (var langCode in _translations.Keys)
-                SaveFile(fileName, langCode);
+            SaveFiles(_translations.Keys.Select(code => (fileName, code)), false);
         }
 
-        /// <summary>
-        /// Saves everything to disk.
-        /// </summary>
-        public void SaveAll()
+        /// <summary>Saves translations and metadata together; failures preserve pending memory edits.</summary>
+        public void SaveAll() => SaveAll(null);
+
+        internal void SaveAll(Action afterWrite, Action<EditorFileTransaction> enlist = null)
         {
-            foreach (var fileName in _sourceFiles)
-                SaveFileAllLanguages(fileName);
-
-            SaveMeta();
+            SaveFiles(_sourceFiles.SelectMany(file => _translations.Keys.Select(code => (file, code))), true, afterWrite, enlist);
         }
+
+        private void SaveFiles(IEnumerable<(string file, string language)> files, bool includeMetadata, Action afterWrite = null, Action<EditorFileTransaction> enlist = null)
+        {
+            var writes = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+            foreach (var (file, language) in files)
+            {
+                string path = GetJsonFilePath(language, file);
+                if (!_translations.ContainsKey(language)) throw new InvalidOperationException("Language was not loaded: " + language);
+                var values = new Dictionary<string, string>();
+                foreach (var key in _keyToFile.Where(pair => pair.Value == file).Select(pair => pair.Key))
+                    values[key] = GetTranslation(key, language) ?? "";
+                string json = EditorJsonWriter.WriteTranslations(values);
+                // Keep user-defined top-level fields from a loaded document.
+                if (_fileSnapshots.TryGetValue(path, out var original) && original != null)
+                {
+                    using var reader = new Newtonsoft.Json.JsonTextReader(new StringReader(DecodeFile(original)))
+                    { DateParseHandling = Newtonsoft.Json.DateParseHandling.None, FloatParseHandling = Newtonsoft.Json.FloatParseHandling.Decimal };
+                    var document = Newtonsoft.Json.Linq.JObject.Load(reader, new Newtonsoft.Json.Linq.JsonLoadSettings
+                    { DuplicatePropertyNameHandling = Newtonsoft.Json.Linq.DuplicatePropertyNameHandling.Error });
+                    if (reader.Read()) throw new FormatException("Trailing JSON content in " + path);
+                    document["translations"] = Newtonsoft.Json.Linq.JObject.Parse(json)["translations"];
+                    json = document.ToString(Newtonsoft.Json.Formatting.Indented);
+                }
+                if (writes.ContainsKey(path)) throw new InvalidOperationException("Conflicting file names: " + path);
+                writes.Add(path, EncodeFile(json));
+            }
+            string metaJson = null, metaPath = null;
+            if (includeMetadata)
+            {
+                metaPath = EditorDataPath.Resolve(_basePath, "_meta.json");
+                if (_metaLoadError != null)
+                    throw new InvalidOperationException($"Cannot save metadata '{metaPath}' after a load error: {_metaLoadError}. Repair the file and reload.");
+                EnsureMetaUnchanged(metaPath);
+                metaJson = EditorMetadataJson.Serialize(_keyMeta);
+            }
+            using var transaction = new EditorFileTransaction();
+            foreach (var write in writes)
+            {
+                _fileSnapshots.TryGetValue(write.Key, out var before);
+                transaction.Add(write.Key, before, write.Value);
+            }
+            if (includeMetadata) transaction.Add(metaPath, _metaFileSnapshot, EncodeFile(metaJson));
+            enlist?.Invoke(transaction);
+            transaction.Execute(afterWrite);
+            foreach (var write in writes) _fileSnapshots[write.Key] = write.Value;
+            if (includeMetadata)
+            {
+                _metaSnapshot = metaJson;
+                _metaFileSnapshot = EncodeFile(metaJson);
+                foreach (var key in _keyMeta.Where(pair => pair.Value.IsEmpty).Select(pair => pair.Key).ToList()) _keyMeta.Remove(key);
+            }
+            MarkPendingAssetRefresh();
+        }
+
+        internal static byte[] EncodeFile(string text) => text == null ? null : new System.Text.UTF8Encoding(false, true).GetBytes(text);
+
+        private static string DecodeFile(byte[] bytes)
+        {
+            using var stream = new MemoryStream(bytes);
+            using var reader = new StreamReader(stream, new System.Text.UTF8Encoding(false, true), true);
+            return reader.ReadToEnd();
+        }
+
+        internal EditorLocalizationData Clone()
+        {
+            var copy = new EditorLocalizationData();
+            copy.CopyFrom(this);
+            return copy;
+        }
+
+        internal void CopyFrom(EditorLocalizationData source)
+        {
+            _basePath = source._basePath;
+            LoadedResourcesPath = source.LoadedResourcesPath;
+            _referenceLanguage = source._referenceLanguage;
+            _metaLoadError = source._metaLoadError;
+            _metaSnapshot = source._metaSnapshot;
+            _metaFileSnapshot = source._metaFileSnapshot;
+            HasPendingAssetRefresh = source.HasPendingAssetRefresh;
+            _sourceFiles.Clear(); _sourceFiles.AddRange(source._sourceFiles);
+            _keyToFile.Clear(); foreach (var pair in source._keyToFile) _keyToFile.Add(pair.Key, pair.Value);
+            _translations.Clear(); foreach (var pair in source._translations) _translations.Add(pair.Key, new Dictionary<string, string>(pair.Value));
+            _fileSnapshots.Clear(); foreach (var pair in source._fileSnapshots) _fileSnapshots.Add(pair.Key, pair.Value);
+            _keyMeta.Clear();
+            foreach (var pair in source._keyMeta)
+                _keyMeta.Add(pair.Key, new KeyMeta { description = pair.Value.description,
+                    previousKeys = pair.Value.previousKeys == null ? null : new List<string>(pair.Value.previousKeys),
+                    AdditionalFields = (Newtonsoft.Json.Linq.JObject)pair.Value.AdditionalFields?.DeepClone() });
+            InvalidateCaches();
+        }
+
+        internal string StateSignature() => Newtonsoft.Json.JsonConvert.SerializeObject(new
+        {
+            path = _basePath, reference = _referenceLanguage, files = _sourceFiles, keys = _keyToFile,
+            translations = _translations, metadata = EditorMetadataJson.Serialize(_keyMeta),
+            metaError = _metaLoadError, metaSnapshot = _metaSnapshot
+        });
 
         // ──────────────────────────────────────────────
         //  Internal
@@ -517,10 +591,12 @@ namespace SimplyLocalize.Editor.Data
             {
                 string filePath = GetJsonFilePath(languageCode, fileName);
 
-                if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+                byte[] original = EditorFileTransaction.Read(filePath);
+                _fileSnapshots[filePath] = original;
+                if (original == null)
                     continue;
 
-                string json = File.ReadAllText(filePath);
+                string json = DecodeFile(original);
                 var parsed = LocalizationFileParser.Parse(json);
 
                 foreach (var kvp in parsed)
@@ -538,10 +614,9 @@ namespace SimplyLocalize.Editor.Data
 
         private string GetJsonFilePath(string languageCode, string fileName)
         {
-            if (string.IsNullOrEmpty(_basePath))
-                return null;
-
-            return Path.Combine(_basePath, languageCode, "text", fileName + ".json");
+            EditorDataPath.ValidateName(languageCode, "language code");
+            EditorDataPath.ValidateName(fileName, "source file name");
+            return EditorDataPath.Resolve(_basePath, Path.Combine(languageCode, "text", fileName + ".json"));
         }
 
         /// <summary>
@@ -583,17 +658,20 @@ namespace SimplyLocalize.Editor.Data
             _keyMeta.Clear();
             _metaLoadError = null;
             _metaSnapshot = null;
+            _metaFileSnapshot = null;
             string path = GetMetaFilePath();
             if (string.IsNullOrEmpty(path)) return;
 
             try
             {
                 if (!File.Exists(path)) return;
-                string json = File.ReadAllText(path, new System.Text.UTF8Encoding(false, true));
+                byte[] original = File.ReadAllBytes(path);
+                string json = DecodeFile(original);
                 // Parse and validate the entire document before publishing any entries.
                 var parsed = EditorMetadataJson.Parse(json);
                 foreach (var pair in parsed) _keyMeta.Add(pair.Key, pair.Value);
                 _metaSnapshot = json;
+                _metaFileSnapshot = original;
             }
             catch (Exception error)
             {
@@ -606,58 +684,11 @@ namespace SimplyLocalize.Editor.Data
         /// Saves key metadata to _meta.json. Throws if loading failed, the file changed externally,
         /// or writing failed. A failed write preserves the original file and pending metadata edits.
         /// </summary>
-        public void SaveMeta()
-        {
-            string path = GetMetaFilePath();
-            if (string.IsNullOrEmpty(path))
-                throw new InvalidOperationException("Cannot save _meta.json without a localization base path. Load a configured localization folder first.");
-            if (_metaLoadError != null)
-                throw new InvalidOperationException($"Cannot save metadata '{path}' after a load error: {_metaLoadError}. Repair the file and reload before saving.");
-
-            EnsureMetaUnchanged(path);
-            // Serialize before touching the file or pruning mutable public KeyMeta entries.
-            string json = EditorMetadataJson.Serialize(_keyMeta);
-            bool changed = json != _metaSnapshot;
-            if (changed)
-            {
-                if (json == null)
-                {
-                    EnsureMetaUnchanged(path);
-                    File.Delete(path);
-                }
-                else
-                {
-                    string temporary = Path.Combine(Path.GetDirectoryName(path),
-                        "." + Path.GetFileName(path) + "." + Guid.NewGuid().ToString("N") + ".tmp");
-                    try
-                    {
-                        using (var stream = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                        {
-                            var bytes = new System.Text.UTF8Encoding(false, true).GetBytes(json);
-                            stream.Write(bytes, 0, bytes.Length);
-                            stream.Flush(true);
-                        }
-                        EnsureMetaUnchanged(path);
-                        // Same-directory replacement is atomic. Never delete the destination first.
-                        if (_metaSnapshot != null) File.Replace(temporary, path, null);
-                        else File.Move(temporary, path);
-                    }
-                    finally
-                    {
-                        if (File.Exists(temporary)) File.Delete(temporary);
-                    }
-                }
-                MarkPendingAssetRefresh();
-            }
-            _metaSnapshot = json;
-            foreach (var key in _keyMeta.Where(pair => pair.Value.IsEmpty).Select(pair => pair.Key).ToList())
-                _keyMeta.Remove(key);
-        }
+        public void SaveMeta() => SaveFiles(Array.Empty<(string, string)>(), true);
 
         private void EnsureMetaUnchanged(string path)
         {
-            string current = File.Exists(path) ? File.ReadAllText(path, new System.Text.UTF8Encoding(false, true)) : null;
-            if (!string.Equals(current, _metaSnapshot, StringComparison.Ordinal))
+            if (!EditorFileTransaction.Equal(EditorFileTransaction.Read(path), _metaFileSnapshot))
                 throw new InvalidOperationException($"Metadata '{path}' changed on disk. Reload before saving to avoid overwriting external changes.");
         }
     }

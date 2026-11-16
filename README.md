@@ -250,8 +250,8 @@ errors produce a warning naming `_meta.json`; JSON/schema errors include a locat
 After a load error, repair the file and reload before saving. `SaveMeta()` throws instead of
 overwriting unreadable metadata, overwriting a file changed since loading, or silently discarding
 edits when no localization folder is configured. Writes replace the file atomically; failures keep
-the previous file and pending edits. This protection is scoped to metadata, not a transaction
-covering translation files, CSV import, or scene/prefab reference updates.
+the previous file and pending edits. `SaveAll()` now saves translations and metadata as one
+rollback-capable operation. Scene/prefab reference updates remain outside this transaction.
 
 ### Assets Tab
 
@@ -300,9 +300,32 @@ Scan a scene for all `TMP_Text` / `Text` components and bulk-add `LocalizedText`
 ### Tools Tab
 
 - Export to CSV (for translation services)
-- Import from CSV
+- Import from CSV with validation and a preview before applying
 - Sort keys
 - Find unused keys
+
+CSV accepts both `Key,File,en,ru,...` and `Key,File,Description,en,ru,...` headers.
+Quoted commas, escaped quotes, multiline values, UTF-8 BOM and CR/LF/CRLF are supported.
+Translation/description whitespace is preserved. Malformed quotes, duplicate keys/language columns,
+unsafe paths, inconsistent row widths and implicit moves between source files reject the entire import.
+
+Empty cells now **keep existing values by default**. Enable **Clear existing values for empty CSV cells**
+to clear them explicitly; omitted language columns always remain unchanged. Review the change list,
+then choose **Apply and save**. Cancel creates no profiles and changes no data. A preview must be
+recreated if the editor data changes. New language profiles are created only on application.
+
+Existing editor API signatures remain available. `CsvExporter.Import` / `ImportFromFile` merge in memory;
+the new overload with `CsvEmptyCellPolicy.Clear` requests clearing. `CsvExporter.Preview` produces an
+immutable plan: `Apply(data)` changes memory, `Apply(data, true)` also saves JSON, and
+`ApplyAndSave(data, config)` additionally creates missing profiles in a saved config under Assets.
+Headers without rows are a no-op. Import preserves descriptions omitted from CSV and rename history.
+
+Saving uses temporary files and per-file replacement. A caught write failure rolls back earlier files;
+CSV application also protects new profiles and the config. Pending memory edits remain available on
+failure. Existing JSON fields outside `translations` are retained. External file changes require Reload
+and a new preview rather than being overwritten. CSV application also saves pending editor changes;
+it is **not a Unity Undo operation**. This is not a crash/power-loss journal: if rollback itself fails,
+the error identifies retained recovery backups. Keep version control/backups for recovery.
 
 ### Settings Tab
 

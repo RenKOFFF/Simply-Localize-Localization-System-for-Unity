@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace SimplyLocalize.Editor.Data
             // Header: Key, File, Description, lang1, lang2, ...
             sb.Append("Key,File,Description");
             foreach (var lang in languageCodes)
-                sb.Append(',').Append(lang);
+                sb.Append(',').Append(CsvEscape(lang));
             sb.AppendLine();
 
             // Rows
@@ -54,77 +55,33 @@ namespace SimplyLocalize.Editor.Data
         public static void ExportToFile(EditorLocalizationData data, List<string> languageCodes, string filePath)
         {
             string csv = Export(data, languageCodes);
-            File.WriteAllText(filePath, csv, Encoding.UTF8);
+            using var transaction = new EditorFileTransaction();
+            transaction.Add(filePath, EditorFileTransaction.Read(filePath), EditorLocalizationData.EncodeFile(csv));
+            transaction.Execute();
         }
 
         /// <summary>
         /// Imports a CSV string and merges into the data.
         /// Returns the number of keys updated.
         /// </summary>
-        public static int Import(EditorLocalizationData data, string csv)
+        public static int Import(EditorLocalizationData data, string csv) => Import(data, csv, CsvEmptyCellPolicy.Skip);
+
+        public static int Import(EditorLocalizationData data, string csv, CsvEmptyCellPolicy emptyCells)
         {
-            var lines = ParseCsvLines(csv);
-            if (lines.Count < 2) return 0;
-
-            var header = lines[0];
-            if (header.Count < 3) return 0;
-
-            // Detect if Description column is present
-            // New format: Key, File, Description, lang1, lang2...
-            // Old format: Key, File, lang1, lang2...
-            bool hasDescription = header.Count > 2
-                && header[2].Trim().Equals("Description", System.StringComparison.OrdinalIgnoreCase);
-
-            int langStartIndex = hasDescription ? 3 : 2;
-
-            var languageCodes = new List<string>();
-            for (int i = langStartIndex; i < header.Count; i++)
-                languageCodes.Add(header[i].Trim());
-
-            int updated = 0;
-
-            for (int row = 1; row < lines.Count; row++)
-            {
-                var fields = lines[row];
-                if (fields.Count < langStartIndex) continue;
-
-                string key = fields[0].Trim();
-                if (string.IsNullOrEmpty(key)) continue;
-
-                string file = fields[1].Trim();
-
-                // Ensure key exists
-                if (data.GetFileForKey(key) == null)
-                    data.AddKey(key, string.IsNullOrEmpty(file) ? "global" : file);
-
-                // Import description if present
-                if (hasDescription && fields.Count > 2)
-                {
-                    string desc = fields[2].Trim();
-                    if (!string.IsNullOrEmpty(desc))
-                        data.SetDescription(key, desc);
-                }
-
-                for (int i = 0; i < languageCodes.Count && i + langStartIndex < fields.Count; i++)
-                {
-                    string value = fields[i + langStartIndex];
-                    data.SetTranslation(key, languageCodes[i], value);
-                }
-
-                updated++;
-            }
-
-            return updated;
+            var plan = Preview(data, csv, emptyCells);
+            plan.Apply(data);
+            return plan.RowCount;
         }
 
-        /// <summary>
-        /// Imports from a file on disk.
-        /// </summary>
-        public static int ImportFromFile(EditorLocalizationData data, string filePath)
+        public static CsvImportPlan Preview(EditorLocalizationData data, string csv, CsvEmptyCellPolicy emptyCells = CsvEmptyCellPolicy.Skip)
+            => CsvImportPlan.Create(data, csv, emptyCells);
+
+        public static int ImportFromFile(EditorLocalizationData data, string filePath) => ImportFromFile(data, filePath, CsvEmptyCellPolicy.Skip);
+
+        public static int ImportFromFile(EditorLocalizationData data, string filePath, CsvEmptyCellPolicy emptyCells)
         {
             if (!File.Exists(filePath)) return 0;
-            string csv = File.ReadAllText(filePath, Encoding.UTF8);
-            return Import(data, csv);
+            return Import(data, File.ReadAllText(filePath, new UTF8Encoding(false, true)), emptyCells);
         }
 
         private static string CsvEscape(string value)
@@ -141,69 +98,53 @@ namespace SimplyLocalize.Editor.Data
             return "\"" + value.Replace("\"", "\"\"") + "\"";
         }
 
-        private static List<List<string>> ParseCsvLines(string csv)
+        internal static List<List<string>> ParseCsvLines(string csv)
         {
-            var result = new List<List<string>>();
-            var currentLine = new List<string>();
-            var currentField = new StringBuilder();
-            bool inQuotes = false;
-
+            if (csv == null) throw new ArgumentNullException(nameof(csv));
+            if (csv.Length > 0 && csv[0] == '\uFEFF') csv = csv.Substring(1);
+            var rows = new List<List<string>>();
+            var row = new List<string>();
+            var field = new StringBuilder();
+            bool quoted = false, closedQuote = false, started = false;
+            int line = 1;
             for (int i = 0; i < csv.Length; i++)
             {
                 char c = csv[i];
-
-                if (inQuotes)
+                if (quoted)
                 {
                     if (c == '"')
                     {
-                        if (i + 1 < csv.Length && csv[i + 1] == '"')
-                        {
-                            currentField.Append('"');
-                            i++;
-                        }
-                        else
-                        {
-                            inQuotes = false;
-                        }
+                        if (i + 1 < csv.Length && csv[i + 1] == '"') { field.Append('"'); i++; }
+                        else { quoted = false; closedQuote = true; }
                     }
-                    else
-                    {
-                        currentField.Append(c);
-                    }
+                    else { field.Append(c); if (c == '\n' || c == '\r' && (i + 1 == csv.Length || csv[i + 1] != '\n')) line++; }
+                    continue;
                 }
-                else
+                if (c == ',' || c == '\r' || c == '\n')
                 {
-                    if (c == '"')
-                    {
-                        inQuotes = true;
-                    }
-                    else if (c == ',')
-                    {
-                        currentLine.Add(currentField.ToString());
-                        currentField.Clear();
-                    }
-                    else if (c == '\n')
-                    {
-                        currentLine.Add(currentField.ToString());
-                        currentField.Clear();
-                        result.Add(currentLine);
-                        currentLine = new List<string>();
-                    }
-                    else if (c != '\r')
-                    {
-                        currentField.Append(c);
-                    }
+                    row.Add(field.ToString()); field.Clear(); closedQuote = false;
+                    if (c == ',') { started = true; continue; }
+                    if (started || row.Count > 1 || !string.IsNullOrWhiteSpace(row[0])) rows.Add(row);
+                    row = new List<string>(); started = false;
+                    if (c == '\r' && i + 1 < csv.Length && csv[i + 1] == '\n') i++;
+                    line++; continue;
                 }
+                if (closedQuote) throw new FormatException($"CSV line {line}, field {row.Count + 1}: unexpected character after closing quote.");
+                if (c == '"')
+                {
+                    if (field.Length != 0) throw new FormatException($"CSV line {line}, field {row.Count + 1}: quote inside an unquoted field.");
+                    quoted = true;
+                }
+                else field.Append(c);
+                started = true;
             }
-
-            // Last field/line
-            if (currentField.Length > 0 || currentLine.Count > 0)
+            if (quoted) throw new FormatException($"CSV line {line}, field {row.Count + 1}: unterminated quoted field.");
+            if (started || row.Count > 0)
             {
-                currentLine.Add(currentField.ToString());
-                result.Add(currentLine);
+                row.Add(field.ToString());
+                if (row.Count > 1 || !string.IsNullOrWhiteSpace(row[0])) rows.Add(row);
             }
-
-            return result;
+            return rows;
         }
     }
 }
