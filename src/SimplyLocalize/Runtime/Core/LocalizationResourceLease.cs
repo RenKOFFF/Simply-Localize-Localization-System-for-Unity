@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using TMPro;
 using Object = UnityEngine.Object;
 
 namespace SimplyLocalize
@@ -110,6 +111,15 @@ namespace SimplyLocalize
             if (asset is LocalizationAssetTable table)
                 foreach (var item in table.Entries) Track(item.asset, address, language);
             else if (asset is Sprite sprite) Track(sprite.texture, address, language);
+            else if (asset is TMP_FontAsset font)
+            {
+                Track(font.material, address, language);
+                foreach (var atlas in font.atlasTextures ?? Array.Empty<Texture2D>()) Track(atlas, address, language);
+                Track(font.sourceFontFile, address, language);
+                if (font.fallbackFontAssetTable != null)
+                    foreach (var fallback in font.fallbackFontAssetTable) Track(fallback, address, language);
+            }
+            else if (asset is Font legacyFont) Track(legacyFont.material, address, language);
             if (asset is ILocalizationAssetDependencies dependencies)
                 foreach (var dependency in dependencies.GetLocalizationDependencies() ?? Array.Empty<Object>()) Track(dependency, address, language);
         }

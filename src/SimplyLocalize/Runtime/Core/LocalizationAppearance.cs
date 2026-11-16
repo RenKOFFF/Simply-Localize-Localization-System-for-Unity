@@ -1,11 +1,12 @@
 using TMPro;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace SimplyLocalize
 {
     /// <summary>Loadable presentation only. Project language definitions refer to its address, not this asset.</summary>
     [CreateAssetMenu(fileName = "LanguageAppearance", menuName = "SimplyLocalize/Language Appearance")]
-    public sealed class LocalizationAppearance : ScriptableObject
+    public sealed class LocalizationAppearance : ScriptableObject, ILocalizationAssetDependencies
     {
         public bool overrideFont;
         public TMP_FontAsset primaryFont;
@@ -23,5 +24,12 @@ namespace SimplyLocalize
         public TextDirection textDirection;
         public bool overrideAlignment;
         public TextAlignmentOptions alignmentOverride = TextAlignmentOptions.Right;
+
+        public IEnumerable<Object> GetLocalizationDependencies()
+        {
+            if (primaryFont != null) yield return primaryFont;
+            if (fallbackFont != null) yield return fallbackFont;
+            if (legacyFont != null) yield return legacyFont;
+        }
     }
 }

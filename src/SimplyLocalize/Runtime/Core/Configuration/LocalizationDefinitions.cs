@@ -23,6 +23,9 @@ namespace SimplyLocalize
             return id;
         }
         internal static bool IsValid(string id) => Guid.TryParseExact(id, "N", out var value) && value != Guid.Empty && value.ToString("N") == id;
+        internal static bool IsProviderId(string id) => !string.IsNullOrWhiteSpace(id)
+            && id.All(c => char.IsLetterOrDigit(c) || c == '-' || c == '_' || c == '.')
+            && (id == "resources" || !string.Equals(id, "resources", StringComparison.OrdinalIgnoreCase));
         internal static string Name(string value)
         {
             if (string.IsNullOrWhiteSpace(value) || value.Any(char.IsControl)) throw new ArgumentException("A non-empty name without control characters is required.");

@@ -38,10 +38,8 @@ namespace SimplyLocalize
             void Source(LocalizationSourceReference source, string path, bool appearance)
             {
                 if (source == null) { Error("empty-source", path, "Source is empty."); return; }
-                if (string.IsNullOrWhiteSpace(source.ProviderId) || source.ProviderId.Any(c => !char.IsLetterOrDigit(c) && c != '-' && c != '_' && c != '.'))
+                if (!LocalizationIdentity.IsProviderId(source.ProviderId))
                     Error("invalid-provider", path, "Use a provider identifier consisting of letters, digits, '.', '_' or '-'.");
-                if (source.ProviderId != "resources" && string.Equals(source.ProviderId, "resources", StringComparison.OrdinalIgnoreCase))
-                    Error("invalid-provider", path, "The built-in provider identifier is resources (lowercase).");
                 if (string.IsNullOrWhiteSpace(source.Address) || source.Address != source.Address.Trim() || source.Address.Any(char.IsControl))
                     Error("invalid-address", path, "Source address is empty or contains whitespace/control characters at its boundary.");
                 else if (source.ProviderId == LocalizationSourceReference.ResourcesProvider &&

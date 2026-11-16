@@ -9,6 +9,12 @@ files and GUIDs. They are reusable test inputs, not disposable run output.
 - `Voice/ru/Clips`: only `audio/primary` (a different clip).
 - `Images/en/Image`: one `picture` entry; used as the state retained after an
   over-budget audio candidate fails.
+- `Voice/Large`: 64 entries sharing the same four clips. Proves that selecting
+  one key still loads the whole Resources table and its direct dependencies.
+- `Text`: three entries for source-size, entry-count and decoded-text budgets.
+- `Appearance`: a minimal non-rendering TMP font with a material, the existing
+  2x2 image as its atlas, and a cyclic fallback reference. Exercises dependency
+  ownership and cycle termination, not typography or glyph coverage.
 
 Resources addresses start with `SimplyLocalizeTests/Lifecycle/`. Audio and image
 files themselves are outside Resources and referenced by the tables. None of the
