@@ -63,6 +63,14 @@ namespace SimplyLocalize.Editor
             return Apply(config, languageCodes, null, null, false);
         }
 
+        internal static Result AddSelection(LocalizationConfig config, LanguageDefinition language)
+        {
+            if (config == null || !AssetDatabase.Contains(config)) throw new ArgumentException("Select a saved config before adding languages.");
+            ValidateCodes(new[] { language.Code });
+            return Apply(config, new[] { language.Code }, null, null, false,
+                new Dictionary<string, LanguageDefinition> { [language.Code] = language });
+        }
+
         private static void ValidateCodes(string[] codes)
         {
             if (codes == null || codes.Length == 0) throw new ArgumentException("At least one language code is required.");

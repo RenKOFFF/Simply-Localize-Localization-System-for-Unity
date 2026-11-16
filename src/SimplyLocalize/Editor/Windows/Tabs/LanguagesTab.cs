@@ -14,7 +14,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private readonly LocalizationConfig _config;
         private readonly LocalizationEditorWindow _window;
         private string _message;
-        private string _languageCodes = "";
         private bool _error;
 
         public LanguagesTab(EditorLocalizationData data, LocalizationConfig config,
@@ -44,6 +43,15 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             var btnGroup = new VisualElement();
             btnGroup.style.flexDirection = FlexDirection.Row;
+            btnGroup.Add(LanguagePickerPopup.CreateButton(_window,
+                code => (_config.languages ?? new List<LanguageProfile>()).Any(p => p != null && string.Equals(p.Code, code, System.StringComparison.OrdinalIgnoreCase)),
+                language =>
+                {
+                    LocalizationProjectSetup.AddSelection(_config, language);
+                    _message = null;
+                    _data.Reload(_config);
+                    _window.RefreshCurrentTab();
+                }));
 
             var addExistingBtn = new Button(OnAddExistingProfileClicked);
             addExistingBtn.text = "+ Add existing profile";
@@ -65,35 +73,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 configSection.Add(LanguageChoice("Default language", "defaultLanguage", _config.defaultLanguage, false));
                 configSection.Add(LanguageChoice("Fallback language", "fallbackLanguage", _config.fallbackLanguage, true));
-                configSection.Add(new HelpBox("Default is the starting language. Fallback supplies missing translations.", HelpBoxMessageType.Info));
-
-                var codes = new TextField("Add language codes") { name = "addLanguageCodes", value = _languageCodes, tooltip = "One or more codes separated by commas, for example pl,de." };
-                codes.RegisterValueChangedCallback(evt => _languageCodes = evt.newValue);
-                codes.style.marginTop = 12;
-                configSection.Add(codes);
-                configSection.Add(new Button(() =>
-                {
-                    try
-                    {
-                        var result = LocalizationProjectSetup.AddLanguages(_config,
-                            System.Array.ConvertAll(codes.value.Split(','), code => code.Trim()));
-                        _message = "Languages ready. Created " + result.CreatedPaths.Count + " files. Existing translations preserved.";
-                        _error = false;
-                        _languageCodes = "";
-                        _data.Reload(_config);
-                        _window.RefreshCurrentTab();
-                    }
-                    catch (System.Exception error)
-                    {
-                        _message = error.Message;
-                        _error = true;
-                        var message = configSection.Q<HelpBox>("languageMessage");
-                        message.text = _message;
-                        message.messageType = HelpBoxMessageType.Error;
-                        message.style.display = DisplayStyle.Flex;
-                    }
-                }) { name = "addLanguages", text = "Add languages and missing files" });
-                configSection.Add(new Label("Names, fonts and per-language fallback: use Edit profile below.") { style = { whiteSpace = WhiteSpace.Normal, marginTop = 6 } });
                 var status = new HelpBox(_message ?? "", _error ? HelpBoxMessageType.Error : HelpBoxMessageType.Info) { name = "languageMessage" };
                 status.style.display = string.IsNullOrEmpty(_message) ? DisplayStyle.None : DisplayStyle.Flex;
                 configSection.Add(status);
@@ -170,13 +149,12 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             var codeLabel = new Label($"  ({profile.Code})");
             codeLabel.style.fontSize = 11;
-            codeLabel.style.color = new Color(0.5f, 0.5f, 0.5f);
+            codeLabel.text = profile.Code;
+            codeLabel.style.marginLeft = 8;
+            LanguagePickerStyle.Badge(codeLabel);
             nameRow.Add(codeLabel);
 
-            var sysLangLabel = new Label($"  SystemLanguage.{profile.systemLanguage}");
-            sysLangLabel.style.fontSize = 10;
-            sysLangLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
-            nameRow.Add(sysLangLabel);
+            nameRow.tooltip = "Device language: " + profile.systemLanguage;
 
             info.Add(nameRow);
 
@@ -193,10 +171,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 {
                     flagsRow.Add(MakeBadge(typeName, true));
                 }
-            }
-            else
-            {
-                flagsRow.Add(MakeBadge("No assets", false));
             }
 
             if (profile.primaryFont != null)
@@ -360,7 +334,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 EditorUtility.DisplayDialog("No profiles available",
                     "All existing LanguageProfile assets are already in the config.\n" +
-                    "Enter language codes in the Languages tab to add new languages.", "OK");
+                    "Use Add language to create a new language.", "OK");
                 return;
             }
 

@@ -117,15 +117,15 @@ Open **Window → Simply Localize → Localization Editor**. All primary setup h
 
 ### 2. Create the Config and Languages
 
-On the setup screen, search by language name (English, Russian or native spelling) or code and click **Add selected language**. For example, `Ан` finds English, `ru` finds Russian and `ro` finds Romanian. The offline catalog combines Unicode CLDR names with cultures available in the editor. Choose default and fallback from your selected languages; fallback may be `(none)`. Click **Create config and languages**. This creates the startup config at `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`, language profiles and empty translation files. Automatic startup is enabled. Existing translations are preserved.
+On the setup screen, click **+ Add language** to open the compact picker. Search by language name (English, Russian or native spelling) or code, then click **Add language**. You can add several languages before closing the picker. For example, `Ан` finds English, `ru` finds Russian and `ro` finds Romanian. The offline catalog combines Unicode CLDR names with cultures available in the editor. Choose default and fallback from your selected languages; fallback may be `(none)`. Click **Create localization**. This creates the startup config at `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`, language profiles and empty translation files. Automatic startup is enabled. Existing translations are preserved.
 
-If a language is missing, expand **Language not listed? Add a custom language**. Enter a registered code such as `pt-BR` or a private code such as `x-elvish`, plus a display name. The picker normalizes casing/separators (`PT_br` → `pt-BR`), resolves known ISO aliases (`rus` → `ru`) and rejects invalid codes. It does not rename existing project codes.
+If a language is missing, click **Add a custom language** in the picker. Enter a registered code such as `pt-BR` or a private code such as `x-elvish`, plus a display name. The picker normalizes casing/separators (`PT_br` → `pt-BR`), resolves known ISO aliases (`rus` → `ru`) and rejects invalid codes. It does not rename existing project codes.
 
 Already have a config? Select it in the **Config** field and open **Settings → Move config and enable automatic startup**. Its GUID and references are retained; language profiles and translations stay in place.
 
 ### 3. Manage Languages in the Window
 
-**Languages** lets you add more codes and choose default/fallback languages. **Edit profile** opens the selected language in **Profiles**, where you can edit its name, fonts, typography and overrides. **Settings** controls startup and data loading. JSON translations can also be edited in an external text editor.
+**Languages** uses the same **+ Add language** picker, including **Add a custom language**. It also lets you choose default/fallback languages. **Edit profile** opens the selected language in **Profiles**, where you can edit its name, fonts, typography and overrides. **Settings** controls startup and data loading. JSON translations can also be edited in an external text editor.
 
 The window has 8 tabs: **Translations**, **Assets**, **Languages**, **Profiles**, **Coverage**, **Auto Localize**, **Tools**, **Settings**.
 

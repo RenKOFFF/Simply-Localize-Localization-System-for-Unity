@@ -270,19 +270,23 @@ namespace SimplyLocalize.Editor.Windows
             setup.style.paddingTop = 24;
             setup.style.paddingLeft = 24;
             setup.style.paddingRight = 24;
+            setup.contentContainer.style.maxWidth = 720;
+            setup.contentContainer.style.width = Length.Percent(100);
+            setup.contentContainer.style.alignSelf = Align.Center;
             var title = new Label("Set up localization");
             title.style.fontSize = 20;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             title.style.marginBottom = 12;
             setup.Add(title);
-            setup.Add(new HelpBox("Create your config, language profiles and translation files here. You can edit translations in this window or in an external text editor.", HelpBoxMessageType.Info));
-            var languages = new SetupLanguagePicker();
+            setup.Add(new Label("Choose your languages. The config and translation files will be created automatically.") { style = { whiteSpace = WhiteSpace.Normal } });
+            var languages = new SetupLanguagePicker(this);
             setup.Add(languages);
-            var path = new Label("Config: " + LocalizationProjectSetup.ConfigAssetPath);
+            var path = new Label(LocalizationProjectSetup.ConfigAssetPath);
+            path.style.fontSize = 10;
             path.style.whiteSpace = WhiteSpace.Normal;
             path.style.marginTop = 16;
             setup.Add(path);
-            setup.Add(new Label("Automatic startup will be enabled. Existing translation files are preserved.") { style = { whiteSpace = WhiteSpace.Normal } });
+
             var message = new HelpBox("", HelpBoxMessageType.Error) { name = "setupMessage" };
             message.style.display = DisplayStyle.None;
             var create = new Button(() =>
@@ -298,14 +302,15 @@ namespace SimplyLocalize.Editor.Windows
                     message.text = error.Message;
                     message.style.display = DisplayStyle.Flex;
                 }
-            }) { name = "createConfig", text = "Create config and languages" };
+            }) { name = "createConfig", text = "Create localization" };
             languages.Changed += () => create.SetEnabled(languages.Selected.Count > 0);
             create.SetEnabled(languages.Selected.Count > 0);
+            LanguagePickerStyle.Primary(create);
             create.style.marginTop = 16;
             create.style.height = 30;
             setup.Add(create);
             setup.Add(message);
-            var existing = new HelpBox("Already have a config? Select it in the Config field above. Open Settings to use it for automatic startup.", HelpBoxMessageType.Info);
+            var existing = new Label("Existing config? Select it in the Config field above.") { style = { whiteSpace = WhiteSpace.Normal } };
             existing.style.marginTop = 20;
             setup.Add(existing);
             container.Add(setup);
