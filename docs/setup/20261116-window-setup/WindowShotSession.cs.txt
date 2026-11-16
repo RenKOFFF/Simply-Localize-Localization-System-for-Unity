@@ -1,0 +1,120 @@
+using System;
+using System.IO;
+using SimplyLocalize;
+using SimplyLocalize.Editor;
+using SimplyLocalize.Editor.Windows;
+using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public static class WindowShotSession
+{
+    private static LocalizationEditorWindow window;
+    private static LocalizationConfig config;
+    private static int step;
+    private static double next;
+    private static string guid;
+    private static readonly string Output = Path.GetFullPath("../Screenshots");
+
+    public static void Begin()
+    {
+        if (!Application.dataPath.Replace('\\', '/').EndsWith("/TestResults/WindowSetup/WindowDemo/Assets"))
+            throw new Exception("Only the disposable screenshot fixture may be used.");
+        Directory.CreateDirectory(Output);
+        if (AssetDatabase.IsValidFolder("Assets/SimplyLocalize")) AssetDatabase.DeleteAsset("Assets/SimplyLocalize");
+        if (AssetDatabase.IsValidFolder("Assets/LegacySettings")) AssetDatabase.DeleteAsset("Assets/LegacySettings");
+        AssetDatabase.Refresh();
+        window = ScriptableObject.CreateInstance<LocalizationEditorWindow>();
+        window.titleContent = new GUIContent("Simply Localize");
+        window.ShowUtility();
+        window.position = new Rect(70, 70, 1060, 680);
+        window.Focus();
+        next = EditorApplication.timeSinceStartup + 5;
+        EditorApplication.update += Tick;
+    }
+
+    private static void Click(string name)
+    {
+        var button = window.rootVisualElement.Q<Button>(name);
+        if (button == null || !button.enabledInHierarchy) throw new Exception("Missing button: " + name);
+        using var submit = NavigationSubmitEvent.GetPooled();
+        submit.target = button;
+        button.SendEvent(submit);
+    }
+
+    private static void Capture(string name)
+    {
+        Rect rect = window.position;
+        float dpi = EditorGUIUtility.pixelsPerPoint;
+        int w = Mathf.RoundToInt(rect.width * dpi), h = Mathf.RoundToInt(rect.height * dpi);
+        var texture = new Texture2D(w, h, TextureFormat.RGB24, false);
+        texture.SetPixels(UnityEditorInternal.InternalEditorUtility.ReadScreenPixel(rect.position * dpi, w, h));
+        texture.Apply();
+        File.WriteAllBytes(Output + "/" + name + ".png", texture.EncodeToPNG());
+        UnityEngine.Object.DestroyImmediate(texture);
+    }
+
+    private static void Tick()
+    {
+        if (EditorApplication.timeSinceStartup < next) return;
+        next = EditorApplication.timeSinceStartup + 4;
+        try
+        {
+            switch (step++)
+            {
+                case 0:
+                    Capture("01-create-config");
+                    Click("createConfig");
+                    config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath);
+                    if (config == null || config.languages.Count != 2) throw new Exception("Create button did not configure languages.");
+                    window.rootVisualElement.Q<TextField>("addLanguageCodes").value = "pl";
+                    break;
+                case 1:
+                    Capture("02-add-language");
+                    Click("addLanguages");
+                    if (config.languages.Count != 3) throw new Exception("Add language button failed.");
+                    window.rootVisualElement.Q<PopupField<LanguageProfile>>("defaultLanguage").value = config.GetProfile("ru");
+                    break;
+                case 2:
+                    Capture("03-languages-ready");
+                    Click("editProfile_pl");
+                    break;
+                case 3:
+                    Capture("04-edit-profile");
+                    AssetDatabase.CreateFolder("Assets", "LegacySettings");
+                    string error = AssetDatabase.MoveAsset(LocalizationProjectSetup.ConfigAssetPath, "Assets/LegacySettings/GameLocalization.asset");
+                    if (!string.IsNullOrEmpty(error)) throw new Exception(error);
+                    config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>("Assets/LegacySettings/GameLocalization.asset");
+                    config.autoInitialize = false;
+                    EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config);
+                    guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(config));
+                    window.rootVisualElement.Q<ObjectField>("configField").value = config;
+                    Click("tabSettings");
+                    break;
+                case 4:
+                    Capture("05-migrate-old-config");
+                    Click("useForAutomaticStartup");
+                    if (AssetDatabase.GetAssetPath(config) != LocalizationProjectSetup.ConfigAssetPath ||
+                        AssetDatabase.AssetPathToGUID(LocalizationProjectSetup.ConfigAssetPath) != guid ||
+                        config.name != "SimplyLocalizeSettings" || !config.autoInitialize)
+                        throw new Exception("Migration verification failed.");
+                    break;
+                case 5:
+                    Capture("06-migration-complete");
+                    File.WriteAllText(Output + "/result.txt", "PASS: actual window buttons created en/ru, added pl, selected ru default, opened pl profile, and migrated config preserving GUID and name.");
+                    EditorApplication.update -= Tick;
+                    EditorApplication.Exit(0);
+                    break;
+            }
+            if (window != null) { window.Repaint(); window.Focus(); }
+        }
+        catch (Exception error)
+        {
+            File.WriteAllText(Output + "/result.txt", error.ToString());
+            EditorApplication.update -= Tick;
+            Debug.LogException(error);
+            EditorApplication.Exit(1);
+        }
+    }
+}

@@ -7,6 +7,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
     public class ProfilesTab : IEditorTab
     {
         private readonly LocalizationConfig _config;
+        private int _selectedIndex;
 
         public ProfilesTab(LocalizationConfig config)
         {
@@ -15,7 +16,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         public void Build(VisualElement container)
         {
-            var root = new VisualElement();
+            var root = new ScrollView();
             root.style.paddingTop = 12;
             root.style.paddingLeft = 16;
             root.style.paddingRight = 16;
@@ -46,7 +47,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
 
             var dropdown = new PopupField<string>(names.Length > 0
-                ? new System.Collections.Generic.List<string>(names) : new() { "(none)" }, 0);
+                ? new System.Collections.Generic.List<string>(names) : new() { "(none)" }, Mathf.Clamp(_selectedIndex, 0, names.Length - 1));
+            dropdown.name = "profileSelector";
             dropdown.style.flexGrow = 1;
             selectorRow.Add(dropdown);
 
@@ -54,19 +56,19 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
             // Embedded inspector
             var inspectorContainer = new IMGUIContainer();
-            int selectedIndex = dropdown.index;
+            _selectedIndex = dropdown.index;
 
             dropdown.RegisterValueChangedCallback(evt =>
             {
-                selectedIndex = dropdown.index;
+                _selectedIndex = dropdown.index;
                 inspectorContainer.MarkDirtyRepaint();
             });
 
             inspectorContainer.onGUIHandler = () =>
             {
-                if (selectedIndex < 0 || selectedIndex >= _config.languages.Count) return;
+                if (_selectedIndex < 0 || _selectedIndex >= _config.languages.Count) return;
 
-                var profile = _config.languages[selectedIndex];
+                var profile = _config.languages[_selectedIndex];
                 if (profile == null) return;
 
                 var editor = UnityEditor.Editor.CreateEditor(profile);

@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace SimplyLocalize.Editor
 {
-    /// <summary>Editor-only project setup. No dialogs: usable from the Inspector, scripts and -executeMethod.</summary>
+    /// <summary>Editor-only project setup. No dialogs: usable from the editor window, scripts and -executeMethod.</summary>
     public static class LocalizationProjectSetup
     {
         public const string ConfigAssetPath = "Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset";
@@ -191,7 +191,7 @@ namespace SimplyLocalize.Editor
                     string error = AssetDatabase.MoveAsset(source, ConfigAssetPath);
                     if (!string.IsNullOrEmpty(error)) throw new IOException(error);
                     moved = true;
-                    // MoveAsset may reimport the object from disk; retain pending Inspector edits.
+                    // MoveAsset may reimport the object from disk; retain pending edits.
                     EditorJsonUtility.FromJsonOverwrite(before, config);
                 }
                 using var transaction = new EditorFileTransaction();
@@ -199,6 +199,7 @@ namespace SimplyLocalize.Editor
                 transaction.Execute(() =>
                 {
                     config.autoInitialize = true;
+                    config.name = Path.GetFileNameWithoutExtension(ConfigAssetPath);
                     transaction.TouchExternal(ConfigAssetPath);
                     EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config);
                     if (EditorUtility.IsDirty(config)) throw new IOException("Could not save startup config.");

@@ -13,6 +13,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private readonly EditorLocalizationData _data;
         private readonly LocalizationConfig _config;
         private readonly LocalizationEditorWindow _window;
+        private string _message;
+        private string _languageCodes = "";
+        private bool _error;
 
         public LanguagesTab(EditorLocalizationData data, LocalizationConfig config,
             LocalizationEditorWindow window)
@@ -24,7 +27,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         public void Build(VisualElement container)
         {
-            var root = new VisualElement();
+            var root = new ScrollView();
             root.style.paddingTop = 12;
             root.style.paddingLeft = 16;
             root.style.paddingRight = 16;
@@ -48,11 +51,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             addExistingBtn.style.marginRight = 4;
             btnGroup.Add(addExistingBtn);
 
-            var addBtn = new Button(OnAddLanguageClicked);
-            addBtn.text = "+ Create new language";
-            addBtn.style.fontSize = 12;
-            btnGroup.Add(addBtn);
-
             headerRow.Add(btnGroup);
 
             root.Add(headerRow);
@@ -65,31 +63,44 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 configSection.style.borderBottomWidth = 1;
                 configSection.style.borderBottomColor = new Color(0, 0, 0, 0.1f);
 
-                var defaultField = new UnityEditor.UIElements.ObjectField("Default language");
-                defaultField.objectType = typeof(LanguageProfile);
-                defaultField.value = _config.defaultLanguage;
-                defaultField.RegisterValueChangedCallback(evt =>
-                {
-                    Undo.RecordObject(_config, "Change default language");
-                    _config.defaultLanguage = evt.newValue as LanguageProfile;
-                    EditorUtility.SetDirty(_config);
-                });
-                configSection.Add(defaultField);
+                configSection.Add(LanguageChoice("Default language", "defaultLanguage", _config.defaultLanguage, false));
+                configSection.Add(LanguageChoice("Fallback language", "fallbackLanguage", _config.fallbackLanguage, true));
+                configSection.Add(new HelpBox("Default is the starting language. Fallback supplies missing translations.", HelpBoxMessageType.Info));
 
-                var fallbackField = new UnityEditor.UIElements.ObjectField("Fallback language");
-                fallbackField.objectType = typeof(LanguageProfile);
-                fallbackField.value = _config.fallbackLanguage;
-                fallbackField.RegisterValueChangedCallback(evt =>
+                var codes = new TextField("Add language codes") { name = "addLanguageCodes", value = _languageCodes, tooltip = "One or more codes separated by commas, for example pl,de." };
+                codes.RegisterValueChangedCallback(evt => _languageCodes = evt.newValue);
+                codes.style.marginTop = 12;
+                configSection.Add(codes);
+                configSection.Add(new Button(() =>
                 {
-                    Undo.RecordObject(_config, "Change fallback language");
-                    _config.fallbackLanguage = evt.newValue as LanguageProfile;
-                    EditorUtility.SetDirty(_config);
-                });
-                configSection.Add(fallbackField);
+                    try
+                    {
+                        var result = LocalizationProjectSetup.AddLanguages(_config,
+                            System.Array.ConvertAll(codes.value.Split(','), code => code.Trim()));
+                        _message = "Languages ready. Created " + result.CreatedPaths.Count + " files. Existing translations preserved.";
+                        _error = false;
+                        _languageCodes = "";
+                        _data.Reload(_config);
+                        _window.RefreshCurrentTab();
+                    }
+                    catch (System.Exception error)
+                    {
+                        _message = error.Message;
+                        _error = true;
+                        var message = configSection.Q<HelpBox>("languageMessage");
+                        message.text = _message;
+                        message.messageType = HelpBoxMessageType.Error;
+                        message.style.display = DisplayStyle.Flex;
+                    }
+                }) { name = "addLanguages", text = "Add languages and missing files" });
+                configSection.Add(new Label("Names, fonts and per-language fallback: use Edit profile below.") { style = { whiteSpace = WhiteSpace.Normal, marginTop = 6 } });
+                var status = new HelpBox(_message ?? "", _error ? HelpBoxMessageType.Error : HelpBoxMessageType.Info) { name = "languageMessage" };
+                status.style.display = string.IsNullOrEmpty(_message) ? DisplayStyle.None : DisplayStyle.Flex;
+                configSection.Add(status);
 
                 root.Add(configSection);
 
-                foreach (var profile in _config.languages)
+                foreach (var profile in _config.languages ?? new List<LanguageProfile>())
                 {
                     if (profile == null) continue;
                     root.Add(BuildLanguageCard(profile));
@@ -97,6 +108,42 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             }
 
             container.Add(root);
+        }
+
+        private PopupField<LanguageProfile> LanguageChoice(string label, string name, LanguageProfile current, bool fallback)
+        {
+            var choices = new List<LanguageProfile> { null };
+            choices.AddRange((_config.languages ?? new List<LanguageProfile>()).Where(p => p != null).Distinct());
+            if (current != null && !choices.Contains(current)) choices.Add(current);
+            string Format(LanguageProfile p) => p == null ? "(none)" : $"{p.displayName} ({p.Code})";
+            var field = new PopupField<LanguageProfile>(label, choices, choices.IndexOf(current), Format, Format) { name = name };
+            field.RegisterValueChangedCallback(evt =>
+            {
+                var previous = fallback ? _config.fallbackLanguage : _config.defaultLanguage;
+                bool dirty = EditorUtility.IsDirty(_config);
+                try
+                {
+                    string path = AssetDatabase.GetAssetPath(_config);
+                    using (var probe = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete)) { }
+                    if (!AssetDatabase.IsOpenForEdit(path)) throw new IOException("Config is not editable: " + path);
+                    Undo.RecordObject(_config, fallback ? "Change fallback language" : "Change default language");
+                    if (fallback) _config.fallbackLanguage = evt.newValue;
+                    else _config.defaultLanguage = evt.newValue;
+                    EditorUtility.SetDirty(_config);
+                    AssetDatabase.SaveAssetIfDirty(_config);
+                    _message = null;
+                }
+                catch (System.Exception error)
+                {
+                    if (fallback) _config.fallbackLanguage = previous;
+                    else _config.defaultLanguage = previous;
+                    if (dirty) EditorUtility.SetDirty(_config); else EditorUtility.ClearDirty(_config);
+                    _message = error.Message;
+                    _error = true;
+                }
+                _window.RefreshCurrentTab();
+            });
+            return field;
         }
 
         private VisualElement BuildLanguageCard(LanguageProfile profile)
@@ -176,12 +223,9 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             info.Add(flagsRow);
             card.Add(info);
 
-            var selectBtn = new Button(() =>
-            {
-                Selection.activeObject = profile;
-                EditorGUIUtility.PingObject(profile);
-            });
-            selectBtn.text = "Select";
+            var selectBtn = new Button(() => _window.EditProfile(profile));
+            selectBtn.name = "editProfile_" + profile.Code;
+            selectBtn.text = "Edit profile";
             selectBtn.style.fontSize = 11;
             selectBtn.style.marginRight = 4;
             card.Add(selectBtn);
@@ -294,15 +338,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             return result;
         }
 
-        private void OnAddLanguageClicked()
-        {
-            var popup = ScriptableObject.CreateInstance<AddLanguagePopup>();
-            popup.Init(_config, _data, () => _window.FullRefresh());
-            popup.ShowUtility();
-            popup.position = new Rect(
-                Screen.width / 2f - 150, Screen.height / 2f - 100, 300, 180);
-        }
-
         private void OnAddExistingProfileClicked()
         {
             // Find all LanguageProfile assets in the project that aren't already in the config
@@ -325,7 +360,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 EditorUtility.DisplayDialog("No profiles available",
                     "All existing LanguageProfile assets are already in the config.\n" +
-                    "Use 'Create new language' to make a new one.", "OK");
+                    "Enter language codes in the Languages tab to add new languages.", "OK");
                 return;
             }
 
@@ -441,6 +476,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private string _code = "";
         private string _displayName = "";
         private SystemLanguage _systemLanguage = SystemLanguage.Unknown;
+        private string _error;
 
         public void Init(LocalizationConfig config, EditorLocalizationData data, System.Action onCreated)
         {
@@ -464,72 +500,35 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             {
                 EditorGUILayout.HelpBox(
                     $"Will create:\n" +
-                    $"• Profile_{_code}.asset\n" +
-                    $"• {_code}/text/ folder with JSON files for all existing source files",
+                    $"• Language profile\n" +
+                    $"• Missing translation files (existing data is preserved)",
                     MessageType.Info);
             }
 
             EditorGUILayout.Space(4);
 
+            if (!string.IsNullOrEmpty(_error)) EditorGUILayout.HelpBox(_error, MessageType.Error);
+
             using (new EditorGUI.DisabledScope(string.IsNullOrEmpty(_code) || string.IsNullOrEmpty(_displayName)))
             {
                 if (GUILayout.Button("Create"))
                 {
-                    CreateLanguage();
-                    Close();
+                    try { CreateLanguage(); Close(); }
+                    catch (System.Exception error) { _error = error.Message; }
                 }
             }
         }
 
         private void CreateLanguage()
         {
-            // Create profile asset
-            var profile = ScriptableObject.CreateInstance<LanguageProfile>();
-            profile.languageCode = _code;
+            string code = _code.Trim();
+            if (_config.GetProfile(code) != null) throw new System.ArgumentException("Language already exists: " + code);
+            LocalizationProjectSetup.AddLanguages(_config, code);
+            var profile = _config.GetProfile(code);
             profile.displayName = _displayName;
             profile.systemLanguage = _systemLanguage;
-
-            string configPath = AssetDatabase.GetAssetPath(_config);
-            string configDir = Path.GetDirectoryName(configPath);
-            string profilePath = Path.Combine(configDir ?? "Assets", $"Profile_{_code}.asset");
-            profilePath = AssetDatabase.GenerateUniqueAssetPath(profilePath);
-
-            AssetDatabase.CreateAsset(profile, profilePath);
-
-            // Add to config
-            Undo.RecordObject(_config, "Add language");
-            _config.languages.Add(profile);
-            EditorUtility.SetDirty(_config);
-
-            // Create text folder and JSON files for ALL existing source files
-            if (!string.IsNullOrEmpty(_data.BasePath))
-            {
-                string textDir = Path.Combine(_data.BasePath, _code, "text");
-                Directory.CreateDirectory(textDir);
-
-                var existingFiles = _data.SourceFiles;
-
-                if (existingFiles.Count > 0)
-                {
-                    // Create empty JSON for every existing source file
-                    foreach (var fileName in existingFiles)
-                    {
-                        string jsonPath = Path.Combine(textDir, fileName + ".json");
-
-                        if (!File.Exists(jsonPath))
-                            File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
-                    }
-                }
-                else
-                {
-                    // No existing files — create global.json as default
-                    string jsonPath = Path.Combine(textDir, "global.json");
-                    File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
-                }
-            }
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssetIfDirty(profile);
             _onCreated?.Invoke();
         }
     }

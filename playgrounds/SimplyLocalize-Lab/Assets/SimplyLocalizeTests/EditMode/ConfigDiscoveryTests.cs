@@ -88,6 +88,7 @@ namespace SimplyLocalize.Tests
             LocalizationProjectSetup.UseForAutomaticStartup(config);
             Assert.That(AssetDatabase.AssetPathToGUID(LocalizationProjectSetup.ConfigAssetPath), Is.EqualTo(guid));
             Assert.That(config.defaultLanguage, Is.SameAs(language)); Assert.That(config.autoInitialize, Is.True);
+            Assert.That(config.name, Is.EqualTo("SimplyLocalizeSettings"));
             LocalizationProjectSetup.UseForAutomaticStartup(config); Assert.That(Find(true), Is.SameAs(config));
         }
         [Test] public void Migration_RefusesOccupiedDestinationWithoutChangingSource()

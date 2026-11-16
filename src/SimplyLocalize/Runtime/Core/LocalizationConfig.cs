@@ -19,7 +19,7 @@ namespace SimplyLocalize
         public const string StartupResourcePath = "SimplyLocalizeSettings";
 
         [Header("Initialization")]
-        [Tooltip("Automatically initialize on game start from Resources/SimplyLocalizeSettings.asset. Use the Inspector setup action to move an existing config. Explicit config references work at any path.")]
+        [Tooltip("Automatically initialize on game start from Resources/SimplyLocalizeSettings.asset. Use Simply Localize > Settings to move an existing config. Explicit config references work at any path.")]
         public bool autoInitialize;
 
         [Tooltip("Auto-detect language from device SystemLanguage on first launch")]

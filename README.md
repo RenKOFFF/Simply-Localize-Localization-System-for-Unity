@@ -111,28 +111,21 @@ Add to your `Packages/manifest.json`:
 
 ## Quick Start
 
-### 1. Create a Localization Config
+### 1. Open Simply Localize
 
-`Create → SimplyLocalize → Localization Config`
+Open **Window → Simply Localize → Localization Editor**. All primary setup happens in this window; opening an Inspector is optional.
 
-Open Simply Localize and choose **Set up localization**. The startup config is created at `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`. In its Inspector, use **Add languages and missing files**, select default/fallback languages and enable Auto Initialize. For an existing config use **Use for automatic startup**.
+### 2. Create the Config and Languages
 
-### 2. Create Language Profiles
+On the setup screen, enter language codes (for example `en,ru`), the default language and the fallback language. Click **Create config and languages**. This creates the startup config at `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`, language profiles and empty translation files. Automatic startup is enabled. Existing translations are preserved.
 
-`Create → SimplyLocalize → Language Profile` for each language (English, Russian, Japanese, etc.)
+Already have a config? Select it in the **Config** field and open **Settings → Move config and enable automatic startup**. Its GUID and references are retained; language profiles and translations stay in place.
 
-Fill in the `languageCode`, `displayName`, `systemLanguage` fields and add the profile to your `LocalizationConfig.languages` list.
+### 3. Manage Languages in the Window
 
-> **Tip:** You can also create languages directly from the editor window via the **Languages** tab — it auto-generates the folder structure and JSON files for you.
-
-### 3. Open the Editor Window
-
-`Window → SimplyLocalize → Localization Editor`
+**Languages** lets you add more codes and choose default/fallback languages. **Edit profile** opens the selected language in **Profiles**, where you can edit its name, fonts, typography and overrides. **Settings** controls startup and data loading. JSON translations can also be edited in an external text editor.
 
 The window has 8 tabs: **Translations**, **Assets**, **Languages**, **Profiles**, **Coverage**, **Auto Localize**, **Tools**, **Settings**.
-
-![Editor window overview](docs/images/editor-overview.gif)
-<!-- TODO: replace with actual screenshot -->
 
 ### 4. Add Your First Keys
 
@@ -176,7 +169,7 @@ Or drop a `LocalizedText` component onto any TextMeshPro / legacy Text element a
 
 Startup ownership: the first successful initializer wins for scene bootstraps. Duplicate bootstraps leave the current manager and language intact; a conflicting config is reported. Only the bootstrap that created the active manager shuts it down on destruction. `DontDestroyOnLoad` keeps that owner alive across scene loads. A manually or automatically initialized manager remains caller-owned. Use `Localization.Initialize(config, ...)` explicitly to replace it; a validation/loading failure preserves the previous working manager. Normal `Shutdown()`/reinitialization preserves facade subscribers and disconnects the old manager's event forwarding.
 
-Each new Play session resets the static manager, facade events and custom plural registrations, including with Domain Reload disabled (tested with Scene Reload enabled). Register custom rules again during startup, after subsystem registration. Disabling both Domain Reload and Scene Reload is outside the verified lifecycle matrix. Config validation reports duplicate codes, conflicting profile references, invalid language/path values and a default profile missing from `languages`. Empty slots are ignored; external fallback profiles and cycle-safe chains remain supported. `GetValidationErrors()` inspects a config without changing it. A config without a default requires an explicit language selection. Automatic startup considers only configs with `autoInitialize`; multiple candidates are reported rather than selected arbitrarily.
+Each new Play session resets the static manager, facade events and custom plural registrations, including with Domain Reload disabled (tested with Scene Reload enabled). Register custom rules again during startup, after subsystem registration. Disabling both Domain Reload and Scene Reload is outside the verified lifecycle matrix. Config validation reports duplicate codes, conflicting profile references, invalid language/path values and a default profile missing from `languages`. Empty slots are ignored; external fallback profiles and cycle-safe chains remain supported. `GetValidationErrors()` inspects a config without changing it. A config without a default requires an explicit language selection. Automatic startup loads only the reserved `SimplyLocalizeSettings` address and respects `autoInitialize`; duplicate reserved addresses are rejected during setup/build checks.
 
 ---
 
@@ -895,9 +888,9 @@ MIT — see [LICENSE.txt](LICENSE.txt).
 
 Issues and pull requests welcome at [github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity](https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity).
 
-Automatic startup and parameterless `Localization.Initialize()` load only `SimplyLocalizeSettings`. The catalog and Builder have been removed. When upgrading, move the startup config with **Use for automatic startup** (GUID retained); update any custom string loading paths. Explicit `Localization.Initialize(config)` and custom providers remain supported. The old GeneratedConfigCatalog.asset is unused and can be removed.
+Automatic startup and parameterless `Localization.Initialize()` load only `SimplyLocalizeSettings`. The catalog and Builder have been removed. When upgrading, move the startup config in **Simply Localize → Settings → Move config and enable automatic startup** (GUID retained); update any custom string loading paths. Explicit `Localization.Initialize(config)` and custom providers remain supported. The old GeneratedConfigCatalog.asset is unused and can be removed.
 
-For an audio/image-only context, disable **Load text translations** in the config Inspector or the Settings tab (`loadTextData = false`). Language changes, Reload and provider replacement then skip text requests, including fallbacks. Text queries return no entries (Get retains its missing-key policy); asset lookup keeps its existing behavior. The default is true for existing data. Configure this before initializing a manager, or Reload after changing it.
+For an audio/image-only context, disable **Load text translations** in **Simply Localize → Settings** (or, optionally, in the config Inspector) (`loadTextData = false`). Language changes, Reload and provider replacement then skip text requests, including fallbacks. Text queries return no entries (Get retains its missing-key policy); asset lookup keeps its existing behavior. The default is true for existing data. Configure this before initializing a manager, or Reload after changing it.
 
 ### Editor scripting and automated setup
 

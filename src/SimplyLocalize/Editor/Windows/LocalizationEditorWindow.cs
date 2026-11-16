@@ -8,12 +8,12 @@ namespace SimplyLocalize.Editor.Windows
 {
     public class LocalizationEditorWindow : EditorWindow
     {
-        private LocalizationConfig _config;
+        [SerializeField] private LocalizationConfig _config;
         private EditorLocalizationData _data;
 
         private VisualElement _tabContent;
         private VisualElement _tabBar;
-        private int _activeTabIndex;
+        [SerializeField] private int _activeTabIndex;
 
         private IEditorTab[] _tabs;
         private string[] _tabNames;
@@ -24,6 +24,22 @@ namespace SimplyLocalize.Editor.Windows
             var window = GetWindow<LocalizationEditorWindow>();
             window.titleContent = new GUIContent("Simply Localize");
             window.minSize = new Vector2(700, 400);
+        }
+
+        public static void OpenConfig(LocalizationConfig config)
+        {
+            Open();
+            var window = GetWindow<LocalizationEditorWindow>();
+            window.AssignConfig(config);
+        }
+
+        private void AssignConfig(LocalizationConfig config)
+        {
+            _data?.FlushPendingAssetRefresh();
+            _config = config;
+            _data = new EditorLocalizationData();
+            if (_config != null) _data.Load(_config);
+            BuildUI();
         }
 
         private void OnEnable()
@@ -99,33 +115,17 @@ namespace SimplyLocalize.Editor.Windows
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             header.Add(title);
 
-            if (_config == null)
-            {
-                var setup = new Button(() =>
-                {
-                    try
-                    {
-                        var result = LocalizationProjectSetup.Configure(new[] { "en" }, "en", "en");
-                        _config = result.Config;
-                        Selection.activeObject = _config;
-                        _data.Load(_config);
-                        BuildUI();
-                    }
-                    catch (System.Exception error) { Debug.LogError("[SimplyLocalize] Setup: " + error.Message); }
-                }) { text = "Set up localization" };
-                header.Add(setup);
-            }
-
             var configField = new UnityEditor.UIElements.ObjectField("Config");
+            configField.name = "configField";
             configField.objectType = typeof(LocalizationConfig);
+            configField.allowSceneObjects = false;
             configField.value = _config;
-            configField.style.width = 300;
+            configField.style.width = 350;
+            configField.labelElement.style.minWidth = 50;
+            configField.labelElement.style.width = 50;
             configField.RegisterValueChangedCallback(evt =>
             {
-                _config = evt.newValue as LocalizationConfig;
-                if (_config != null) _data.Load(_config);
-                RebuildTabs();
-                RefreshActiveTab();
+                AssignConfig(evt.newValue as LocalizationConfig);
             });
             header.Add(configField);
 
@@ -145,7 +145,7 @@ namespace SimplyLocalize.Editor.Windows
             rootVisualElement.Add(_tabContent);
 
             RebuildTabs();
-            SetActiveTab(0);
+            SetActiveTab(_activeTabIndex);
         }
 
         private void RebuildTabs()
@@ -217,6 +217,8 @@ namespace SimplyLocalize.Editor.Windows
             {
                 int index = i;
                 var btn = new Button(() => SetActiveTab(index));
+                btn.name = "tab" + _tabNames[i].Replace(" ", "");
+                btn.SetEnabled(_config != null);
                 btn.text = _tabNames[i];
                 btn.style.borderBottomWidth = 2;
                 btn.style.borderLeftWidth = 0;
@@ -249,12 +251,7 @@ namespace SimplyLocalize.Editor.Windows
 
             if (_config == null)
             {
-                var msg = new Label("No LocalizationConfig assigned. Create one via\nCreate → SimplyLocalize → Localization Config\nand assign it above.");
-                msg.style.paddingTop = 40;
-                msg.style.paddingLeft = 20;
-                msg.style.whiteSpace = WhiteSpace.Normal;
-                msg.style.color = new Color(0.5f, 0.5f, 0.5f);
-                _tabContent.Add(msg);
+                BuildSetup(_tabContent);
                 return;
             }
 
@@ -264,11 +261,60 @@ namespace SimplyLocalize.Editor.Windows
 
         private void RefreshActiveTab()
         {
-            if (_activeTabIndex >= 0 && _activeTabIndex < _tabs.Length)
+            SetActiveTab(_activeTabIndex);
+        }
+
+        private void BuildSetup(VisualElement container)
+        {
+            var setup = new ScrollView { name = "projectSetup" };
+            setup.style.paddingTop = 24;
+            setup.style.paddingLeft = 24;
+            setup.style.paddingRight = 24;
+            var title = new Label("Set up localization");
+            title.style.fontSize = 20;
+            title.style.unityFontStyleAndWeight = FontStyle.Bold;
+            title.style.marginBottom = 12;
+            setup.Add(title);
+            setup.Add(new HelpBox("Create your config, language profiles and translation files here. You can edit translations in this window or in an external text editor.", HelpBoxMessageType.Info));
+            var codes = new TextField("Language codes") { name = "setupLanguages", value = "en,ru", tooltip = "Comma-separated codes, for example en, ru, pl." };
+            codes.style.marginTop = 16;
+            var defaultCode = new TextField("Default language") { name = "setupDefault", value = "en" };
+            var fallbackCode = new TextField("Fallback language") { name = "setupFallback", value = "en", tooltip = "Used when a translation is missing. Leave empty to disable global fallback." };
+            setup.Add(codes);
+            setup.Add(defaultCode);
+            setup.Add(fallbackCode);
+            var path = new Label("Config: " + LocalizationProjectSetup.ConfigAssetPath);
+            path.style.whiteSpace = WhiteSpace.Normal;
+            path.style.marginTop = 16;
+            setup.Add(path);
+            setup.Add(new Label("Automatic startup will be enabled. Existing translation files are preserved.") { style = { whiteSpace = WhiteSpace.Normal } });
+            var message = new HelpBox("", HelpBoxMessageType.Error) { name = "setupMessage" };
+            message.style.display = DisplayStyle.None;
+            var create = new Button(() =>
             {
-                _tabContent.Clear();
-                _tabs[_activeTabIndex].Build(_tabContent);
-            }
+                try
+                {
+                    string fallback = fallbackCode.value.Trim();
+                    var result = LocalizationProjectSetup.Configure(
+                        System.Array.ConvertAll(codes.value.Split(','), code => code.Trim()),
+                        defaultCode.value.Trim(), fallback.Length == 0 ? null : fallback);
+                    _activeTabIndex = 2;
+                    AssignConfig(result.Config);
+                }
+                catch (System.Exception error)
+                {
+                    message.text = error.Message;
+                    message.style.display = DisplayStyle.Flex;
+                }
+            }) { name = "createConfig", text = "Create config and languages" };
+            create.style.marginTop = 16;
+            create.style.height = 30;
+            setup.Add(create);
+            setup.Add(message);
+            var existing = new HelpBox("Already have a config? Select it in the Config field above. Open Settings to use it for automatic startup.", HelpBoxMessageType.Info);
+            existing.style.marginTop = 20;
+            setup.Add(existing);
+            container.Add(setup);
         }
 
         // ──────────────────────────────────────────────
@@ -286,12 +332,22 @@ namespace SimplyLocalize.Editor.Windows
 
         public void RefreshCurrentTab() => RefreshActiveTab();
 
+        internal void EditProfile(LanguageProfile profile)
+        {
+            SetActiveTab(3);
+            var selector = _tabContent.Q<PopupField<string>>("profileSelector");
+            if (selector != null) selector.index = _config.languages.IndexOf(profile);
+        }
+
         // ──────────────────────────────────────────────
         //  Helpers
         // ──────────────────────────────────────────────
 
         private void FindConfig()
         {
+            if (_config != null) return;
+
+            _config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath);
             if (_config != null) return;
 
             // Search by type name. If the user's project has a different class named

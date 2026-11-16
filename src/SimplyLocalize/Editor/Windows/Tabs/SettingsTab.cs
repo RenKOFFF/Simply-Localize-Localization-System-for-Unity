@@ -8,6 +8,8 @@ namespace SimplyLocalize.Editor.Windows.Tabs
     {
         private readonly LocalizationConfig _config;
         private readonly LocalizationEditorWindow _window;
+        private string _startupMessage;
+        private bool _startupError;
 
         public SettingsTab(LocalizationConfig config, LocalizationEditorWindow window)
         {
@@ -17,7 +19,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
         public void Build(VisualElement container)
         {
-            var root = new VisualElement();
+            var root = new ScrollView();
             root.style.paddingTop = 12;
             root.style.paddingLeft = 16;
             root.style.paddingRight = 16;
@@ -29,12 +31,36 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 return;
             }
 
+            var startupTitle = new Label("Automatic startup");
+            startupTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
+            startupTitle.style.fontSize = 14;
+            root.Add(startupTitle);
+            bool atStartupPath = IsConfigInResources();
+            root.Add(new Label("Current config: " + AssetDatabase.GetAssetPath(_config)) { style = { whiteSpace = WhiteSpace.Normal, marginTop = 8 } });
+            root.Add(new Label("Startup path: " + LocalizationProjectSetup.ConfigAssetPath) { style = { whiteSpace = WhiteSpace.Normal } });
+            root.Add(new HelpBox(atStartupPath
+                ? "This config is at the startup path. Auto-initialize controls whether it starts before the first scene."
+                : "To use this config automatically, move it to the startup path. Language profiles and translation files stay where they are; existing references are preserved.",
+                atStartupPath ? HelpBoxMessageType.Info : HelpBoxMessageType.Warning));
+            if (!atStartupPath)
+                root.Add(new Button(() =>
+                {
+                    try
+                    {
+                        LocalizationProjectSetup.UseForAutomaticStartup(_config);
+                        _startupMessage = "Config moved. References preserved. Automatic startup enabled.";
+                        _startupError = false;
+                    }
+                    catch (System.Exception error) { _startupMessage = error.Message; _startupError = true; }
+                    _window.RefreshCurrentTab();
+                }) { name = "useForAutomaticStartup", text = "Move config and enable automatic startup" });
+            if (!string.IsNullOrEmpty(_startupMessage))
+                root.Add(new HelpBox(_startupMessage, _startupError ? HelpBoxMessageType.Error : HelpBoxMessageType.Info) { name = "startupMessage" });
+
             var imgui = new IMGUIContainer(() =>
             {
                 // ── Initialization ──
                 EditorGUILayout.LabelField("Initialization", EditorStyles.boldLabel);
-
-                bool configInResources = IsConfigInResources();
 
                 EditorGUI.BeginChangeCheck();
 
@@ -42,25 +68,6 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                     new GUIContent("Auto-initialize",
                         "Initialize localization automatically before scene load. Config must use the fixed startup path."),
                     _config.autoInitialize);
-
-                if (autoInit && !configInResources)
-                {
-                    EditorGUILayout.HelpBox(
-                        "Config is not at the startup path. Auto-initialize will not use this config.\n" +
-                        "Use the button below to move it with its GUID preserved.",
-                        MessageType.Warning);
-
-                    if (GUILayout.Button("Use for automatic startup"))
-                    {
-                        MoveConfigToResources();
-                    }
-                }
-                else if (autoInit && configInResources)
-                {
-                    EditorGUILayout.HelpBox(
-                        "Config is at the startup path. Check languages and default/fallback settings below.",
-                        MessageType.Info);
-                }
 
                 bool autoDetect = _config.autoDetectLanguage;
 
@@ -168,10 +175,5 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             return !string.IsNullOrEmpty(path) && path == LocalizationProjectSetup.ConfigAssetPath;
         }
 
-        private void MoveConfigToResources()
-        {
-            try { LocalizationProjectSetup.UseForAutomaticStartup(_config); }
-            catch (System.Exception error) { EditorUtility.DisplayDialog("Setup failed", error.Message, "OK"); }
-        }
     }
 }
