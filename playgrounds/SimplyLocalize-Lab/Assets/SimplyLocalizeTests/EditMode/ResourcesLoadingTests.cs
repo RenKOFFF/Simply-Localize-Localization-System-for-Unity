@@ -24,7 +24,6 @@ namespace SimplyLocalize.Tests
         private LocalizationConfig _config;
         private LanguageProfile _en;
         private LanguageProfile _ru;
-        private LocalizationManager _manager;
         private readonly List<LocalizationProjectConfig> _projects = new();
 
         [SetUp]
@@ -46,7 +45,6 @@ namespace SimplyLocalize.Tests
             _config.languages.Add(_ru);
             _config.fallbackLanguage = _en;
             _config.resourcesBasePath = _basePath;
-            _manager = new LocalizationManager(_config);
         }
 
         [UnityTearDown]
@@ -55,40 +53,47 @@ namespace SimplyLocalize.Tests
             yield return Done(Localization.ShutdownAsync());
             foreach (var config in _projects) Object.DestroyImmediate(config);
             _projects.Clear();
-            _manager?.ClearCaches();
             Object.DestroyImmediate(_config);
             Object.DestroyImmediate(_en);
             Object.DestroyImmediate(_ru);
             if (!string.IsNullOrEmpty(_root)) AssetDatabase.DeleteAsset(_root);
         }
 
-        [Test]
-        public void Resources_MergesExistingJsonFilesAndLoadsGlobalFallback()
+        [UnityTest]
+        public IEnumerator Resources_ReadsRegisteredJsonFilesAndGlobalFallback()
         {
-            _manager.SetLanguage("ru");
-            Assert.That(_manager.Get("greeting"), Is.EqualTo("Привет"));
-            Assert.That(_manager.Get("second"), Is.EqualTo("Second file"));
-            Assert.That(_manager.Get("fallback"), Is.EqualTo("English fallback"));
-            Assert.That(_manager.Get("empty"), Is.EqualTo("empty"));
-            Assert.That(_manager.HasTranslation("empty", "ru"), Is.True);
+            yield return Done(Localization.InitializeAsync(Project(), "ru"));
+            Assert.That(Localization.Get("greeting"), Is.EqualTo("Привет"));
+            Assert.That(Localization.Get("second"), Is.EqualTo("Second file"));
+            Assert.That(Localization.Get("fallback"), Is.EqualTo("English fallback"));
+            Assert.That(Localization.Get("empty"), Is.EqualTo("empty"));
+            Assert.That(Localization.Runtime.GetChannel().TryGetText("empty", out _), Is.False);
         }
 
-        [TestCase("ru")]
-        [TestCase("en")]
-        public void Resources_FailedReloadKeepsState_AndCanRecover(string language)
+        [UnityTest]
+        public IEnumerator Resources_FailedReloadKeepsState_AndCanRecover()
         {
-            _manager.SetLanguage("ru");
-            Write("ru", "first", "{\"translations\":{\"greeting\":\"Updated\"}}");
-            Write(language, "broken", "not a JSON object");
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            Assert.Throws<FormatException>(() => _manager.Reload());
-            Assert.That(_manager.Get("greeting"), Is.EqualTo("Привет"));
-            Assert.That(_manager.Get("fallback"), Is.EqualTo("English fallback"));
-
-            Write(language, "broken", "{\"translations\":{}}");
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            _manager.Reload();
-            Assert.That(_manager.Get("greeting"), Is.EqualTo("Updated"));
+            foreach (string language in new[] { "ru", "en" })
+            {
+                Write("ru", "first", "{\"translations\":{\"greeting\":\"Привет\"}}");
+                Write("en", "first", "{\"translations\":{\"fallback\":\"English fallback\"}}");
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                yield return Done(Localization.InitializeAsync(Project(), "ru"));
+                var before = Localization.Runtime.GetChannel();
+                Write("ru", "first", "{\"translations\":{\"greeting\":\"Updated\"}}");
+                Write(language, "first", "not a JSON object");
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                var reload = Localization.ReloadAsync(); yield return Done(reload, false);
+                Assert.Throws<FormatException>(() => reload.GetAwaiter().GetResult());
+                Assert.That(Localization.Runtime.GetChannel(), Is.SameAs(before));
+                Assert.That(Localization.Get("greeting"), Is.EqualTo("Привет"));
+                Assert.That(Localization.Get("fallback"), Is.EqualTo("English fallback"));
+                Write("ru", "first", "{\"translations\":{\"greeting\":\"Updated\"}}");
+                Write("en", "first", "{\"translations\":{\"fallback\":\"English fallback\"}}");
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                yield return Done(Localization.ReloadAsync());
+                Assert.That(Localization.Get("greeting"), Is.EqualTo("Updated"));
+            }
         }
 
         [UnityTest]

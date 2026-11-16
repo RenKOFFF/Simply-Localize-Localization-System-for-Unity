@@ -26,7 +26,7 @@ namespace SimplyLocalize.Tests
                     {
                         var importer = (AudioImporter)AssetImporter.GetAtPath(dependency);
                         Assert.That(importer.defaultSampleSettings.preloadAudioData, Is.False,
-                            "Audio readiness must be exercised by LocalizationContext, not hidden by importer preloading.");
+                            "Audio readiness must be exercised by LocalizationRuntime, not hidden by importer preloading.");
                     }
                 }
             }

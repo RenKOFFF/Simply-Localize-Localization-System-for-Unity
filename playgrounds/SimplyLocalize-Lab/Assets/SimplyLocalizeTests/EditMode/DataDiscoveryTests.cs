@@ -200,10 +200,24 @@ namespace SimplyLocalize.Tests
             Assert.That(ru.EmptyKeys, Is.EquivalentTo(new[] { "empty", "fallback" })); Assert.That(ru.WhitespaceKeys, Is.EqualTo(new[] { "space" }));
             Assert.That(ru.UnavailableKeys, Is.EqualTo(new[] { "empty" }));
             Assert.That(report.Warnings.Any(w => w.Message.Contains("Whitespace-only")), Is.True);
-            var manager = new LocalizationManager(_config);
-            manager.SetDataProvider(provider);
-            manager.SetLanguage("ru"); Assert.That(manager.HasKey("empty"), Is.True); Assert.That(manager.Get("empty"), Is.EqualTo("empty"));
-            Assert.That(manager.Get("fallback"), Is.EqualTo("Hello")); Assert.That(manager.Get("space"), Is.EqualTo(" \n"));
+            var project = LocalizationProjectConfig.Create(new[] { "en", "ru" });
+            try
+            {
+                foreach (string key in new[] { "fallback", "empty", "only.en", "space" }) project.Sets[0].AddEntry(key);
+                foreach (string code in new[] { "en", "ru" })
+                    project.Sets[0].SetSources(code, new LocalizationSourceReference("test", "text", LocalizationSourceKind.TextTable));
+                project.MainChannel.FallbackLanguage = "en";
+                var registry = new LocalizationSourceRegistry(false); registry.Register("test", provider);
+                using var runtime = new LocalizationRuntime(project, registry);
+                Assert.That(runtime.InitializeAsync("ru").IsCompletedSuccessfully, Is.True);
+                var snapshot = runtime.GetChannel();
+                var unchangedReport = CoverageAnalyzer.Analyze(_config, null, provider);
+                Assert.That(unchangedReport.TextCoverage.Single(c => c.LanguageCode == "ru").PresentCount, Is.EqualTo(3));
+                Assert.That(runtime.GetChannel(), Is.SameAs(snapshot));
+                Assert.That(runtime.Get("empty"), Is.EqualTo("empty"));
+                Assert.That(runtime.Get("fallback"), Is.EqualTo("Hello")); Assert.That(runtime.Get("space"), Is.EqualTo(" \n"));
+            }
+            finally { Object.DestroyImmediate(project); }
         }
 
         [Test] public void Coverage_WithFailedDiscovery_CannotReportAnUnqualifiedSuccessfulCheck()
@@ -251,13 +265,16 @@ namespace SimplyLocalize.Tests
             finally { Assert.That(AssetDatabase.DeleteAsset(package.assetPath + "/" + name), Is.True); }
         }
 
-        private sealed class Provider : ILocalizationDataProvider
+        private sealed class Provider : ILocalizationDataProvider, ILocalizationSourceProvider
         {
             internal readonly Dictionary<string, Dictionary<string, string>> Text = new();
             public Dictionary<string, string> LoadTextData(string languageCode) => Text.TryGetValue(languageCode, out var entries) ? entries : new();
             public List<LocalizationAssetTable> LoadAssetTables(string languageCode) => new();
             public T LoadAsset<T>(string languageCode, string path) where T : Object => null;
             public bool HasTextData(string languageCode) => Text.ContainsKey(languageCode);
+            public LocalizationProviderCapabilities GetCapabilities(LocalizationSourceKind kind) => new(LocalizationLoadUnit.Table, false, false);
+            public System.Threading.Tasks.Task<LocalizationSourceLease> LoadAsync(LocalizationSourceRequest request, System.Threading.CancellationToken token)
+                => System.Threading.Tasks.Task.FromResult(new LocalizationSourceLease(LocalizationSourceData.FromText(LoadTextData(request.Language)), () => System.Threading.Tasks.Task.CompletedTask));
         }
     }
 }

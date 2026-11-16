@@ -131,9 +131,8 @@ namespace SimplyLocalize.Tests
             fallback.languageCode = "uk";
             _config.fallbackLanguage = fallback;
             _config.languages[1].fallbackProfile = fallback;
-            fallback.fallbackProfile = _config.languages[1]; // Cycles already have bounded runtime resolution.
+            fallback.fallbackProfile = _config.languages[1]; // Legacy authoring preview must stay bounded until its C5 replacement.
             Assert.That(_config.GetValidationErrors(), Is.Empty);
-            Assert.DoesNotThrow(() => new LocalizationManager(_config));
             var data = new EditorLocalizationData();
             Assert.DoesNotThrow(() => CoverageAnalyzer.ComputeWarnings(data, _config));
         }
@@ -156,7 +155,7 @@ namespace SimplyLocalize.Tests
             Assert.That(_config.GetLanguageCodes(), Is.Empty);
             Assert.That(_config.GetProfile("en"), Is.Null);
             Assert.That(_config.GetProfileBySystemLanguage(SystemLanguage.English), Is.Null);
-            Assert.DoesNotThrow(() => new LocalizationManager(_config));
+            Assert.That(_config.GetValidationErrors(), Is.Empty);
         }
 
         [Test]

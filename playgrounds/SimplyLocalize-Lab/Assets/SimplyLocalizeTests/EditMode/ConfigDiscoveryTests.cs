@@ -93,10 +93,12 @@ namespace SimplyLocalize.Tests
         }
         [Test] public void ExplicitConfig_RemainsUsableOutsideResources()
         {
-            var config = Config("Manual.asset", false); LocalizationProjectSetup.AddLanguages(config, "en");
-            config.defaultLanguage = config.languages[0];
-            var manager = new LocalizationManager(config); manager.SetLanguage("en");
-            Assert.That(manager.CurrentLanguage, Is.EqualTo("en")); manager.ClearCaches();
+            var config = LocalizationProjectConfig.Create(new[] { "en" });
+            AssetDatabase.CreateAsset(config, _other + "/Manual.asset");
+            using var runtime = new LocalizationRuntime(config);
+            var initialization = runtime.InitializeAsync();
+            Assert.That(initialization.IsCompletedSuccessfully, Is.True);
+            Assert.That(runtime.GetChannel().RequestedLanguage, Is.EqualTo("en"));
         }
         [Test] public void LegacyAutoConfigs_AreNotDiscovered()
         {
