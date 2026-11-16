@@ -27,7 +27,8 @@ namespace SimplyLocalize.Editor.Data
             foreach (string guid in AssetDatabase.FindAssets("t:LocalizationConfigCatalog"))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                if (path != assetPath && LocalizationConfigCatalog.GetResourcePath(path) == LocalizationConfigCatalog.ResourcePath)
+                if (LocalizationConfigCatalog.GetResourcePath(assetPath) == LocalizationConfigCatalog.ResourcePath
+                    && path != assetPath && LocalizationConfigCatalog.GetResourcePath(path) == LocalizationConfigCatalog.ResourcePath)
                     throw new InvalidOperationException("Duplicate generated config catalog: " + path);
             }
             var existing = AssetDatabase.LoadMainAssetAtPath(assetPath);
