@@ -115,7 +115,7 @@ Add to your `Packages/manifest.json`:
 
 `Create → SimplyLocalize → Localization Config`
 
-Place it in any `Resources` folder so it can be auto-loaded at runtime.
+Open Simply Localize and choose **Set up localization**. The startup config is created at `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`. In its Inspector, use **Add languages and missing files**, select default/fallback languages and enable Auto Initialize. For an existing config use **Use for automatic startup**.
 
 ### 2. Create Language Profiles
 
@@ -895,6 +895,22 @@ MIT — see [LICENSE.txt](LICENSE.txt).
 
 Issues and pull requests welcome at [github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity](https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity).
 
-Automatic Resources discovery uses a generated, string-only bootstrap catalog at `Assets/SimplyLocalizeGenerated/Resources/SimplyLocalize/GeneratedConfigCatalog.asset`. It is refreshed before Player builds; Editor play uses current AssetDatabase metadata. Existing config names and paths remain supported. The catalog does not reference localized media. Keep its `.meta` when versioning it; use **Tools > Simply Localize > Rebuild Bootstrap Catalog** to refresh it manually. Duplicate Resources paths are rejected instead of selecting an arbitrary config.
+Automatic startup and parameterless `Localization.Initialize()` load only `SimplyLocalizeSettings`. The catalog and Builder have been removed. When upgrading, move the startup config with **Use for automatic startup** (GUID retained); update any custom string loading paths. Explicit `Localization.Initialize(config)` and custom providers remain supported. The old GeneratedConfigCatalog.asset is unused and can be removed.
 
 For an audio/image-only context, disable **Load text translations** in the config Inspector or the Settings tab (`loadTextData = false`). Language changes, Reload and provider replacement then skip text requests, including fallbacks. Text queries return no entries (Get retains its missing-key policy); asset lookup keeps its existing behavior. The default is true for existing data. Configure this before initializing a manager, or Reload after changing it.
+
+### Editor scripting and automated setup
+
+```csharp
+var result = SimplyLocalize.Editor.LocalizationProjectSetup.Configure(
+    new[] { "en", "ru" }, "en", "en");
+// result.Config, result.CreatedPaths, result.ValidationErrors
+```
+
+Editor-only API without dialogs. Repeated calls preserve translations and profiles. If another config exists, select it and call `UseForAutomaticStartup(config)`. Creating a separate startup config alongside existing configs requires explicit `createAlongsideExistingConfigs: true`. Use `AddLanguages(config, "pl")` to add languages without changing defaults. JSON files can be edited externally; reload data afterwards.
+
+```text
+Unity -batchmode -quit -projectPath <project>
+  -executeMethod SimplyLocalize.Editor.LocalizationProjectSetup.ConfigureFromCommandLine
+  -slLanguages en,ru -slDefault en -slFallback en
+```

@@ -4,7 +4,7 @@ namespace SimplyLocalize
 {
     /// <summary>
     /// Automatically initializes localization before scene load.
-    /// Requires LocalizationConfig to be placed in a Resources folder
+    /// Requires LocalizationConfig at Resources/SimplyLocalizeSettings.asset
     /// (the Settings tab in the editor handles this).
     ///
     /// Protection: if already initialized (e.g. by Bootstrap), does nothing.

@@ -58,7 +58,7 @@ namespace SimplyLocalize.Editor.Utilities
             foreach (var error in config.GetValidationErrors()) Add(warnings, CoverageWarning.Severity.Error, error);
             var profiles = Profiles(config).ToList();
             if (profiles.Count == 0) Add(warnings, CoverageWarning.Severity.Warning, "No languages configured; localization has not been checked.");
-            if (data.KeyCount == 0) Add(warnings, CoverageWarning.Severity.Warning, "No text keys found; localization has not been checked.");
+            if (config.loadTextData && data.KeyCount == 0) Add(warnings, CoverageWarning.Severity.Warning, "No text keys found; localization has not been checked.");
             string reference = config.DefaultLanguageCode ?? profiles.FirstOrDefault()?.Code;
             foreach (var key in data.AllKeys)
             {
@@ -130,7 +130,7 @@ namespace SimplyLocalize.Editor.Utilities
             {
                 try
                 {
-                    var translations = provider.LoadTextData(code) ?? throw new InvalidOperationException("Provider returned null text data.");
+                    var translations = (config.loadTextData ? provider.LoadTextData(code) : new Dictionary<string, string>()) ?? throw new InvalidOperationException("Provider returned null text data.");
                     foreach (var pair in translations)
                     {
                         data.AddKey(pair.Key, "coverage");
@@ -169,7 +169,7 @@ namespace SimplyLocalize.Editor.Utilities
                         data.AddKey(pair.Key, editorData.GetFileForKey(pair.Key) ?? "coverage");
                         data.SetTranslation(pair.Key, language.Key, pair.Value);
                     }
-            report.TextCoverage.AddRange(ComputeCoverage(data, config));
+            if (config.loadTextData) report.TextCoverage.AddRange(ComputeCoverage(data, config));
             report.Warnings.AddRange(ComputeWarnings(data, config));
             report.AssetCoverage.AddRange(Compute(assetKeys, config, (key, code) =>
                 tables.TryGetValue(code, out var list) && list.Any(table => table != null && table.Get(key) != null)));

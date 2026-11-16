@@ -145,41 +145,11 @@ namespace SimplyLocalize.Tests
         }
 
         [Test]
-        public void ResourceConfigSelection_RejectsAmbiguity_AndIgnoresAutoDisabledCandidates()
-        {
-            var selection = typeof(Localization).GetMethod("FindResourceConfig", BindingFlags.NonPublic | BindingFlags.Static);
-            var enabledBefore = Resources.LoadAll<LocalizationConfig>("").Where(c => c.autoInitialize).ToArray();
-            // The added asset is inactive; it must not hide a configured automatic initializer.
-            var extra = ScriptableObject.CreateInstance<LocalizationConfig>();
-            extra.name = "Stage04AdditionalConfig";
-            string path = $"{_root}/Resources/Stage04AdditionalConfig.asset";
-            AssetDatabase.CreateAsset(extra, path);
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            if (enabledBefore.Length <= 1)
-                Assert.That(selection.Invoke(null, new object[] { true }), Is.SameAs(enabledBefore.FirstOrDefault()));
-            else
-            {
-                LogAssert.Expect(LogType.Error, new Regex("Conflicting auto-initialize LocalizationConfigs"));
-                Assert.That(selection.Invoke(null, new object[] { true }), Is.Null);
-            }
-            if (Resources.LoadAll<LocalizationConfig>("").Length > 1)
-            {
-                LogAssert.Expect(LogType.Error, new Regex("Conflicting LocalizationConfigs.*Stage04AdditionalConfig"));
-                Assert.That(selection.Invoke(null, new object[] { false }), Is.Null);
-            }
-            extra.autoInitialize = true;
-            if (enabledBefore.Length > 0)
-            {
-                LogAssert.Expect(LogType.Error, new Regex("Conflicting auto-initialize LocalizationConfigs.*Stage04AdditionalConfig"));
-                Assert.That(selection.Invoke(null, new object[] { true }), Is.Null);
-            }
-        }
-
-        [Test]
         public void Resources_MissingLanguageReturnsEmptyCollections()
         {
             var provider = new ResourcesDataProvider(_basePath);
             Assert.That(provider.HasTextData("missing"), Is.False);
+            LogAssert.Expect(LogType.Warning, new Regex("No text files found.*missing"));
             Assert.That(provider.LoadTextData("missing"), Is.Empty);
             Assert.That(provider.LoadAssetTables("missing"), Is.Empty);
         }

@@ -15,8 +15,11 @@ namespace SimplyLocalize
         menuName = "SimplyLocalize/Localization Config")]
     public class LocalizationConfig : ScriptableObject
     {
+        /// <summary>Reserved Resources address used by automatic and parameterless initialization.</summary>
+        public const string StartupResourcePath = "SimplyLocalizeSettings";
+
         [Header("Initialization")]
-        [Tooltip("Automatically initialize localization on game start. Config must be in a Resources folder for this to work. Alternative: use LocalizationBootstrap component.")]
+        [Tooltip("Automatically initialize on game start from Resources/SimplyLocalizeSettings.asset. Use the Inspector setup action to move an existing config. Explicit config references work at any path.")]
         public bool autoInitialize;
 
         [Tooltip("Auto-detect language from device SystemLanguage on first launch")]

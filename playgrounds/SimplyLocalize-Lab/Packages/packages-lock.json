@@ -6,7 +6,8 @@
       "source": "local",
       "dependencies": {
         "com.unity.textmeshpro": "3.0.9",
-        "com.unity.nuget.newtonsoft-json": "3.2.1"
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.modules.audio": "1.0.0"
       }
     },
     "com.unity.ai.navigation": {

@@ -1,0 +1,2 @@
+[SimplyLocalize] Setup complete: Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset; created 0 files.
+Exiting without the bug reporter. Application will terminate with return code 0

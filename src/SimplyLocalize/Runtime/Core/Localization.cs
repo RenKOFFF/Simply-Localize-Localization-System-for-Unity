@@ -136,8 +136,13 @@ namespace SimplyLocalize
             Pluralization.PluralRuleProvider.ResetRuntimeState();
         }
 
-        internal static LocalizationConfig FindResourceConfig(bool automaticOnly) =>
-            LocalizationConfigCatalog.FindConfig(automaticOnly);
+        internal static LocalizationConfig FindResourceConfig(bool automaticOnly)
+        {
+            var config = Resources.Load<LocalizationConfig>(LocalizationConfig.StartupResourcePath);
+            if (config == null && !automaticOnly)
+                Debug.LogError("[SimplyLocalize] No startup config at Resources/SimplyLocalizeSettings.asset. Run project setup or pass a config to Localization.Initialize(config).");
+            return config != null && (!automaticOnly || config.autoInitialize) ? config : null;
+        }
 
         /// <summary>
         /// Whether the system has been initialized.

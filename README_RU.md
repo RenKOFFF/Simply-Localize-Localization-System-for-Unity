@@ -115,7 +115,7 @@ https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?pa
 
 `Create → SimplyLocalize → Localization Config`
 
-Помести его в любую папку `Resources` чтобы он автоматически загружался при старте.
+Для настройки открой окно Simply Localize и нажми **Set up localization**. Стартовый конфиг создаётся в `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`. В Inspector добавь языки кнопкой **Add languages and missing files**, выбери основной язык/fallback и включи Auto Initialize. Для существующего конфига используй **Use for automatic startup**.
 
 ### 2. Создай Language Profiles
 
@@ -890,6 +890,22 @@ MIT — см. [LICENSE.txt](LICENSE.txt).
 
 Issues и pull requests приветствуются на [github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity](https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity).
 
-Автоматический поиск конфигурации в Resources использует небольшой каталог строк по пути `Assets/SimplyLocalizeGenerated/Resources/SimplyLocalize/GeneratedConfigCatalog.asset`. Он обновляется перед сборкой Player; в Editor используются актуальные метаданные AssetDatabase. Старые имена и пути конфигов поддерживаются без переноса. Каталог не содержит ссылок на локализованные звуки и изображения. При хранении в Git сохраняйте его `.meta`; ручное обновление — **Tools > Simply Localize > Rebuild Bootstrap Catalog**. Одинаковые Resources-пути конфигов считаются ошибкой, а не поводом выбрать случайный конфиг.
+Автозапуск и `Localization.Initialize()` без аргументов используют только адрес `SimplyLocalizeSettings`. Каталог и Builder удалены. При обновлении перенеси стартовый конфиг кнопкой **Use for automatic startup** (GUID сохраняется); собственные строковые пути загрузки потребуется обновить. Явный `Localization.Initialize(config)` и собственные провайдеры сохраняются. Старый GeneratedConfigCatalog.asset можно удалить — он больше не используется.
 
 Для контекста только со звуками/изображениями выключите **Load text translations** в Inspector конфига или Settings (`loadTextData = false`). Смена языка, Reload и замена провайдера тогда не запрашивают тексты, в том числе fallback. Текстовые запросы не находят записей (Get сохраняет обычную политику отсутствующего ключа), а поиск ассетов работает как прежде. Для существующих данных значение по умолчанию — true. Настройте режим до создания менеджера либо выполните Reload после изменения.
+
+### Настройка из кода Editor и автоматизация
+
+```csharp
+var result = SimplyLocalize.Editor.LocalizationProjectSetup.Configure(
+    new[] { "en", "ru" }, "en", "en");
+// result.Config, result.CreatedPaths, result.ValidationErrors
+```
+
+Метод доступен в Editor, без диалогов. Повторный вызов не перезаписывает переводы и профили. Если найден другой конфиг, выбери его и вызови `UseForAutomaticStartup(config)`. Создание отдельного стартового конфига рядом с существующими требует явного `createAlongsideExistingConfigs: true`. Для добавления языков без изменения настроек используй `AddLanguages(config, "pl")`. Текстовые JSON можно редактировать внешним редактором; после изменения перечитай данные.
+
+```text
+Unity -batchmode -quit -projectPath <project>
+  -executeMethod SimplyLocalize.Editor.LocalizationProjectSetup.ConfigureFromCommandLine
+  -slLanguages en,ru -slDefault en -slFallback en
+```

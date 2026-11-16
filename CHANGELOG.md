@@ -6,7 +6,9 @@
 
 - Keep Info logging independent for standalone managers; scope synchronous provider logs to their caller. Public static logging follows the committed Localization facade; warnings and errors remain unconditional.
 
-- Replace root Resources config discovery with a generated path catalog; preserve existing config locations and reject ambiguous Resources paths.
+- Breaking startup change: automatic and parameterless initialization now use Resources/SimplyLocalizeSettings.asset. The generated catalog and Builder are removed. Use the config Inspector to migrate while retaining its GUID; explicit config references remain supported.
+- Add idempotent Editor setup API, Inspector actions and batch-mode entry point. Existing JSON translations are never overwritten. Move internal tests out of the distributed package.
+- Fix asset-only Coverage and declare the required Audio module dependency for clean installations.
 
 - Validate the entire CSV before merging; add a change preview, explicit empty-cell clearing, and delayed profile creation. Empty cells now preserve existing values by default; use `CsvEmptyCellPolicy.Clear` for explicit clearing.
 - Preserve quoted/multiline CSV values, whitespace and rename history; reject ambiguous rows, duplicate columns and unsafe paths.

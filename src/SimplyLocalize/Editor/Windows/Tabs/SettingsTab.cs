@@ -40,17 +40,17 @@ namespace SimplyLocalize.Editor.Windows.Tabs
 
                 bool autoInit = EditorGUILayout.Toggle(
                     new GUIContent("Auto-initialize",
-                        "Initialize localization automatically before scene load. Config must be in a Resources folder."),
+                        "Initialize localization automatically before scene load. Config must use the fixed startup path."),
                     _config.autoInitialize);
 
                 if (autoInit && !configInResources)
                 {
                     EditorGUILayout.HelpBox(
-                        "Config is NOT in a Resources folder. Auto-initialize will not work.\n" +
-                        "Move the config asset into any Resources/ folder, or use the button below.",
+                        "Config is not at the startup path. Auto-initialize will not use this config.\n" +
+                        "Use the button below to move it with its GUID preserved.",
                         MessageType.Warning);
 
-                    if (GUILayout.Button("Move config to Resources"))
+                    if (GUILayout.Button("Use for automatic startup"))
                     {
                         MoveConfigToResources();
                     }
@@ -58,11 +58,11 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                 else if (autoInit && configInResources)
                 {
                     EditorGUILayout.HelpBox(
-                        "Config found in Resources. Auto-initialization will work.",
+                        "Config is at the startup path. Check languages and default/fallback settings below.",
                         MessageType.Info);
                 }
 
-                bool autoDetect = false;
+                bool autoDetect = _config.autoDetectLanguage;
 
                 if (autoInit)
                 {
@@ -165,32 +165,13 @@ namespace SimplyLocalize.Editor.Windows.Tabs
         private bool IsConfigInResources()
         {
             string path = AssetDatabase.GetAssetPath(_config);
-            return !string.IsNullOrEmpty(path) && path.Contains("/Resources/");
+            return !string.IsNullOrEmpty(path) && path == LocalizationProjectSetup.ConfigAssetPath;
         }
 
         private void MoveConfigToResources()
         {
-            string currentPath = AssetDatabase.GetAssetPath(_config);
-
-            if (string.IsNullOrEmpty(currentPath))
-                return;
-
-            // Find or create a Resources folder near the config
-            string dir = System.IO.Path.GetDirectoryName(currentPath);
-            string resourcesDir = System.IO.Path.Combine(dir, "Resources");
-
-            if (!System.IO.Directory.Exists(resourcesDir))
-                System.IO.Directory.CreateDirectory(resourcesDir);
-
-            string fileName = System.IO.Path.GetFileName(currentPath);
-            string newPath = System.IO.Path.Combine(resourcesDir, fileName);
-            newPath = AssetDatabase.GenerateUniqueAssetPath(newPath);
-
-            AssetDatabase.MoveAsset(currentPath, newPath);
-            AssetDatabase.Refresh();
-
-            EditorUtility.DisplayDialog("Moved",
-                $"Config moved to:\n{newPath}", "OK");
+            try { LocalizationProjectSetup.UseForAutomaticStartup(_config); }
+            catch (System.Exception error) { EditorUtility.DisplayDialog("Setup failed", error.Message, "OK"); }
         }
     }
 }

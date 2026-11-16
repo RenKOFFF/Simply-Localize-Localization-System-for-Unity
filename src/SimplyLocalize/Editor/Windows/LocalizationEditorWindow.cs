@@ -99,6 +99,23 @@ namespace SimplyLocalize.Editor.Windows
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             header.Add(title);
 
+            if (_config == null)
+            {
+                var setup = new Button(() =>
+                {
+                    try
+                    {
+                        var result = LocalizationProjectSetup.Configure(new[] { "en" }, "en", "en");
+                        _config = result.Config;
+                        Selection.activeObject = _config;
+                        _data.Load(_config);
+                        BuildUI();
+                    }
+                    catch (System.Exception error) { Debug.LogError("[SimplyLocalize] Setup: " + error.Message); }
+                }) { text = "Set up localization" };
+                header.Add(setup);
+            }
+
             var configField = new UnityEditor.UIElements.ObjectField("Config");
             configField.objectType = typeof(LocalizationConfig);
             configField.value = _config;
