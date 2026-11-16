@@ -37,6 +37,7 @@ namespace SimplyLocalize.Editor.Windows
         {
             _data?.FlushPendingAssetRefresh();
             _config = config;
+            EditorDataCache.SelectConfig(config);
             _data = new EditorLocalizationData();
             if (_config != null) _data.Load(_config);
             BuildUI();
@@ -45,6 +46,7 @@ namespace SimplyLocalize.Editor.Windows
         private void OnEnable()
         {
             FindConfig();
+            if (_config != null) EditorDataCache.SelectConfig(_config);
             _data = new EditorLocalizationData();
 
             if (_config != null)
@@ -78,6 +80,7 @@ namespace SimplyLocalize.Editor.Windows
         {
             if (_config != null && _data != null)
             {
+                EditorDataCache.SelectConfig(_config);
                 // Only reload from disk if there are no pending in-memory edits waiting to flush.
                 // Reloading would clobber unsaved-to-AssetDatabase changes with stale cached data.
                 if (!_data.HasPendingAssetRefresh)
@@ -255,6 +258,12 @@ namespace SimplyLocalize.Editor.Windows
                 return;
             }
 
+            if (_data?.LoadError != null)
+            {
+                _tabContent.Add(new HelpBox(_data.LoadError + "\nEditing translations is blocked until this is resolved.", HelpBoxMessageType.Error));
+                _tabContent.Add(new Button(FullRefresh) { text = "Reload data" });
+                if (index != 2 && index != 3 && index != 4 && index != 7) return;
+            }
             if (index >= 0 && index < _tabs.Length)
                 _tabs[index].Build(_tabContent);
         }
@@ -278,6 +287,8 @@ namespace SimplyLocalize.Editor.Windows
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             title.style.marginBottom = 12;
             setup.Add(title);
+            if (!string.IsNullOrEmpty(EditorDataCache.SelectionMessage))
+                setup.Add(new HelpBox(EditorDataCache.SelectionMessage, HelpBoxMessageType.Warning));
             setup.Add(new Label("Choose your languages. The config and translation files will be created automatically.") { style = { whiteSpace = WhiteSpace.Normal } });
             var languages = new SetupLanguagePicker(this);
             setup.Add(languages);
@@ -346,25 +357,7 @@ namespace SimplyLocalize.Editor.Windows
         {
             if (_config != null) return;
 
-            _config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath);
-            if (_config != null) return;
-
-            // Search by type name. If the user's project has a different class named
-            // "LocalizationConfig" in another namespace, LoadAssetAtPath<LocalizationConfig>
-            // will return null for it — we skip and try the next match.
-            var guids = AssetDatabase.FindAssets("t:LocalizationConfig");
-
-            foreach (var guid in guids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                var candidate = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(path);
-
-                if (candidate != null)
-                {
-                    _config = candidate;
-                    return;
-                }
-            }
+            _config = EditorDataCache.Config;
         }
     }
 }

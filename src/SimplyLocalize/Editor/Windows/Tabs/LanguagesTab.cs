@@ -365,6 +365,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
                         {
                             string jsonPath = System.IO.Path.Combine(textDir, fileName + ".json");
 
+                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(jsonPath));
                             if (!System.IO.File.Exists(jsonPath))
                                 System.IO.File.WriteAllText(jsonPath, "{\n  \"translations\": {}\n}");
                         }

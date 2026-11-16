@@ -56,6 +56,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             sectionTitle.style.unityFontStyleAndWeight = FontStyle.Bold;
             sectionTitle.style.marginBottom = 8;
             root.Add(sectionTitle);
+            root.Add(new HelpBox("An entry can exist without a usable translation. Direct counts non-empty values; with fallback includes usable fallback values. Whitespace is reported separately and keeps its existing runtime behavior.", HelpBoxMessageType.Info));
 
             foreach (var coverage in coverages)
             {
@@ -127,13 +128,14 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             row.Add(barBg);
 
             var countLabel = new Label(coverage.TotalCount == 0 ? "No data" :
-                $"Direct {coverage.TranslatedCount}/{coverage.TotalCount}; with fallback {coverage.AvailableCount}/{coverage.TotalCount}");
-            countLabel.style.width = 255;
+                $"Entries {coverage.PresentCount}; direct {coverage.TranslatedCount}/{coverage.TotalCount}; with fallback {coverage.AvailableCount}/{coverage.TotalCount}");
+            countLabel.style.width = 330;
             countLabel.style.fontSize = 11;
             countLabel.style.unityTextAlign = TextAnchor.MiddleRight;
             countLabel.style.color = pct >= 1f
                 ? new Color(0.25f, 0.6f, 0.25f)
                 : new Color(0.8f, 0.5f, 0.15f);
+            countLabel.tooltip = $"Entries: {coverage.PresentCount}; empty: {coverage.EmptyKeys?.Count ?? 0}; whitespace-only: {coverage.WhitespaceKeys?.Count ?? 0}; unavailable even with fallback: {coverage.UnavailableKeys?.Count ?? 0}";
             row.Add(countLabel);
 
             return row;

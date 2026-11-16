@@ -89,7 +89,7 @@ namespace SimplyLocalize.Editor.Data
                 string file = fields[1].Trim();
                 string previousFile = data.GetFileForKey(key);
                 if (file.Length == 0) file = previousFile ?? "global";
-                EditorDataPath.ValidateName(file, "source file name");
+                data.ValidateSourceFileName(file);
                 if (previousFile != null && previousFile != file)
                     throw new FormatException($"CSV row {row + 1}: key '{key}' belongs to '{previousFile}', not '{file}'. Move it explicitly in the editor first.");
                 if (files.Any(f => f != file && f.Equals(file, StringComparison.OrdinalIgnoreCase)))

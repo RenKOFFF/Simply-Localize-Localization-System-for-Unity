@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Discover editor JSON sources across all configured languages and nested folders; preserve existing file paths and extra JSON fields through saves, CSV and key renames. Block saves after malformed data, conflicting source ownership or ambiguous Resources roots.
+- Share explicit config selection between Simply Localize and inspectors; prefer the startup config and require a choice when automatic selection is ambiguous.
+- Distinguish entry presence, empty values, whitespace and usable fallback in Coverage; honor current complete editor snapshots, including deletions. Runtime HasKey/fallback behavior is unchanged.
+
 - Make editor key renames transactional across translations, metadata, asset tables and serialized references; preflight conflicts and unwritable files, and restore files/objects on caught save failures.
 - Update marked fields in ScriptableObjects, sub-assets and custom components; handle closed scenes, prefab inheritance, simultaneous mappings and cyclic managed references. Keep text and asset keys independent.
 - Preserve existing APIs, data formats and GUIDs. Add an Editor rename API and lab-only regression tests; explain project-wide Undo limits in the rename window.

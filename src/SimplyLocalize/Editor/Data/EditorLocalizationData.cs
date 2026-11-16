@@ -64,6 +64,12 @@ namespace SimplyLocalize.Editor.Data
 
         /// <summary>Reference language code used to discover files and keys</summary>
         private string _referenceLanguage;
+        private string _loadError;
+        private readonly Dictionary<string, string> _discoveredPaths = new(StringComparer.Ordinal);
+        private readonly HashSet<string> _discoveredFiles = new(StringComparer.Ordinal);
+
+        /// <summary>Discovery failed; no partial dataset is published and saving is blocked until reload.</summary>
+        public string LoadError => _loadError;
 
         // ──────────────────────────────────────────────
         //  Key Metadata
@@ -160,37 +166,36 @@ namespace SimplyLocalize.Editor.Data
         public void Load(LocalizationConfig config)
         {
             Clear();
-
-            if (config == null)
-                return;
-
-            LoadedResourcesPath = config.resourcesBasePath;
-            _basePath = FindLocalizationBasePath(LoadedResourcesPath);
-
-            if (string.IsNullOrEmpty(_basePath))
+            if (config == null) return;
+            try
             {
-                Debug.LogWarning("[SimplyLocalize Editor] Could not find localization folder in Resources");
-                return;
+                var errors = config.GetValidationErrors();
+                if (errors.Count > 0) throw new InvalidOperationException(string.Join("\n", errors));
+                LoadedResourcesPath = config.resourcesBasePath;
+                _basePath = FindLocalizationBasePath(LoadedResourcesPath);
+                if (string.IsNullOrEmpty(_basePath))
+                {
+                    // Empty projects have no data yet. Pick the same location as Setup without creating files.
+                    string configPath = UnityEditor.AssetDatabase.GetAssetPath(config);
+                    string parent = configPath.StartsWith("Assets/", StringComparison.Ordinal)
+                        ? Path.GetDirectoryName(Path.GetFullPath(configPath)) : Application.dataPath;
+                    string resourceRoot = Path.GetFileName(parent) == "Resources" ? parent : Path.Combine(parent, "Resources");
+                    _basePath = Path.GetFullPath(Path.Combine(resourceRoot, LoadedResourcesPath));
+                }
+                var profiles = (config.languages ?? new List<LanguageProfile>()).Where(p => p != null).Distinct().ToList();
+                _referenceLanguage = config.DefaultLanguageCode ?? profiles.FirstOrDefault()?.Code;
+                foreach (var profile in profiles) DiscoverSourceFiles(profile.Code);
+                _sourceFiles.Sort(StringComparer.Ordinal);
+                foreach (var profile in profiles) LoadLanguage(profile.Code);
+                LoadMeta();
             }
-
-            _referenceLanguage = config.DefaultLanguageCode
-                ?? (config.languages.Count > 0 ? config.languages[0].Code : null);
-
-            if (string.IsNullOrEmpty(_referenceLanguage))
-                return;
-
-            // Discover files from reference language
-            DiscoverSourceFiles(_referenceLanguage);
-
-            // Load all languages
-            foreach (var profile in config.languages)
+            catch (Exception error)
             {
-                if (profile == null) continue;
-                LoadLanguage(profile.Code);
+                Clear();
+                LoadedResourcesPath = config.resourcesBasePath;
+                _loadError = error.Message;
+                Debug.LogWarning("[SimplyLocalize Editor] Cannot load localization data: " + _loadError + ". Saving is blocked; resolve the problem and reload.");
             }
-
-            // Load key metadata
-            LoadMeta();
         }
 
         /// <summary>
@@ -214,6 +219,9 @@ namespace SimplyLocalize.Editor.Data
             _basePath = null;
             LoadedResourcesPath = null;
             _referenceLanguage = null;
+            _loadError = null;
+            _discoveredFiles.Clear();
+            _discoveredPaths.Clear();
             InvalidateCaches();
         }
 
@@ -229,6 +237,14 @@ namespace SimplyLocalize.Editor.Data
                 return value;
 
             return null;
+        }
+
+        internal void SetSnapshotTranslation(string key, string language, string value, string file)
+        {
+            _keyToFile[key] = file;
+            if (!_sourceFiles.Contains(file)) _sourceFiles.Add(file);
+            SetTranslation(key, language, value);
+            InvalidateCaches();
         }
 
         /// <summary>Returns all keys belonging to a specific source file.</summary>
@@ -464,6 +480,8 @@ namespace SimplyLocalize.Editor.Data
 
         private void SaveFiles(IEnumerable<(string file, string language)> files, bool includeMetadata, Action afterWrite = null, Action<EditorFileTransaction> enlist = null)
         {
+            if (_loadError != null) throw new InvalidOperationException("Cannot save after a discovery error: " + _loadError + ". Reload first.");
+            if (LoadedResourcesPath != null) FindLocalizationBasePath(LoadedResourcesPath); // Recheck ambiguous roots introduced after loading.
             var writes = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
             foreach (var (file, language) in files)
             {
@@ -536,6 +554,9 @@ namespace SimplyLocalize.Editor.Data
             _basePath = source._basePath;
             LoadedResourcesPath = source.LoadedResourcesPath;
             _referenceLanguage = source._referenceLanguage;
+            _loadError = source._loadError;
+            _discoveredFiles.Clear(); _discoveredFiles.UnionWith(source._discoveredFiles);
+            _discoveredPaths.Clear(); foreach (var pair in source._discoveredPaths) _discoveredPaths.Add(pair.Key, pair.Value);
             _metaLoadError = source._metaLoadError;
             _metaSnapshot = source._metaSnapshot;
             _metaFileSnapshot = source._metaFileSnapshot;
@@ -554,7 +575,7 @@ namespace SimplyLocalize.Editor.Data
 
         internal string StateSignature() => Newtonsoft.Json.JsonConvert.SerializeObject(new
         {
-            path = _basePath, reference = _referenceLanguage, files = _sourceFiles, keys = _keyToFile,
+            path = _basePath, reference = _referenceLanguage, loadError = _loadError, discoveredFiles = _discoveredFiles, files = _sourceFiles, keys = _keyToFile,
             translations = _translations, metadata = EditorMetadataJson.Serialize(_keyMeta),
             metaError = _metaLoadError, metaSnapshot = _metaSnapshot
         });
@@ -565,25 +586,35 @@ namespace SimplyLocalize.Editor.Data
 
         private void DiscoverSourceFiles(string languageCode)
         {
-            string textFolder = Path.Combine(_basePath, languageCode, "text");
-
-            if (!Directory.Exists(textFolder))
+            EditorDataPath.ValidateName(languageCode, "language code");
+            string textFolder = EditorDataPath.Resolve(_basePath, languageCode + "/text");
+            if (!Directory.Exists(textFolder)) return;
+            foreach (var filePath in TextFiles(textFolder)
+                .Where(p => string.Equals(Path.GetExtension(p), ".json", StringComparison.OrdinalIgnoreCase)).OrderBy(p => p, StringComparer.Ordinal))
             {
-                Debug.LogWarning($"[SimplyLocalize Editor] Text folder not found: {textFolder}");
-                return;
+                string fileName = Path.GetRelativePath(textFolder, filePath).Replace('\\', '/');
+                fileName = fileName.Substring(0, fileName.Length - 5);
+                foreach (string part in fileName.Split('/')) EditorDataPath.ValidateName(part, "source file path segment");
+                EditorDataPath.Resolve(_basePath, languageCode + "/text/" + fileName + ".json");
+                if (_sourceFiles.Any(f => f != fileName && string.Equals(f, fileName, StringComparison.OrdinalIgnoreCase)))
+                    throw new InvalidOperationException("Source file paths differ only in case: " + fileName);
+                if (!_sourceFiles.Contains(fileName)) _sourceFiles.Add(fileName);
+                _discoveredFiles.Add(fileName);
+                string identity = languageCode + "/" + fileName;
+                if (_discoveredPaths.ContainsKey(identity)) throw new InvalidOperationException("Duplicate source file: " + filePath);
+                _discoveredPaths.Add(identity, filePath);
             }
+        }
 
-            var jsonFiles = Directory.GetFiles(textFolder, "*.json");
-
-            foreach (var filePath in jsonFiles)
+        private static IEnumerable<string> TextFiles(string directory)
+        {
+            foreach (string file in Directory.GetFiles(directory)) yield return file;
+            foreach (string child in Directory.GetDirectories(directory))
             {
-                string fileName = Path.GetFileNameWithoutExtension(filePath);
-
-                if (!_sourceFiles.Contains(fileName))
-                    _sourceFiles.Add(fileName);
+                if ((File.GetAttributes(child) & FileAttributes.ReparsePoint) != 0)
+                    throw new IOException("Localization folders cannot traverse a symbolic link or junction: " + child);
+                foreach (string file in TextFiles(child)) yield return file;
             }
-
-            _sourceFiles.Sort();
         }
 
         private void LoadLanguage(string languageCode)
@@ -600,15 +631,26 @@ namespace SimplyLocalize.Editor.Data
                     continue;
 
                 string json = DecodeFile(original);
-                var parsed = LocalizationFileParser.Parse(json);
+                Dictionary<string, string> parsed;
+                try
+                {
+                    using var reader = new Newtonsoft.Json.JsonTextReader(new StringReader(json));
+                    var document = Newtonsoft.Json.Linq.JObject.Load(reader, new Newtonsoft.Json.Linq.JsonLoadSettings
+                    { DuplicatePropertyNameHandling = Newtonsoft.Json.Linq.DuplicatePropertyNameHandling.Error });
+                    if (reader.Read()) throw new FormatException("Trailing JSON content.");
+                    if (document["translations"] != null && !(document["translations"] is Newtonsoft.Json.Linq.JObject))
+                        throw new FormatException("Expected a translations object.");
+                    parsed = LocalizationFileParser.Parse(json);
+                }
+                catch (Exception error) { throw new FormatException("Invalid translation file '" + filePath + "': " + error.Message, error); }
 
                 foreach (var kvp in parsed)
                 {
                     langData[kvp.Key] = kvp.Value;
 
-                    // Track key → file mapping (first language to define it wins)
-                    if (!_keyToFile.ContainsKey(kvp.Key))
-                        _keyToFile[kvp.Key] = fileName;
+                    if (_keyToFile.TryGetValue(kvp.Key, out string owner) && owner != fileName)
+                        throw new InvalidOperationException("Key '" + kvp.Key + "' belongs to both '" + owner + "' and '" + fileName + "'. Use the same source file for a key in every language.");
+                    _keyToFile[kvp.Key] = fileName;
                 }
             }
 
@@ -618,33 +660,55 @@ namespace SimplyLocalize.Editor.Data
         private string GetJsonFilePath(string languageCode, string fileName)
         {
             EditorDataPath.ValidateName(languageCode, "language code");
-            EditorDataPath.ValidateName(fileName, "source file name");
+            ValidateSourceFileName(fileName);
+            if (_discoveredPaths.TryGetValue(languageCode + "/" + fileName, out string existing))
+                return EditorDataPath.Resolve(_basePath, Path.GetRelativePath(_basePath, existing));
             return EditorDataPath.Resolve(_basePath, Path.Combine(languageCode, "text", fileName + ".json"));
         }
 
-        /// <summary>
-        /// Finds the absolute path to the localization base folder.
-        /// Searches all Resources folders in the project.
-        /// </summary>
+        // Permit existing nested sources without widening the contract for new file names.
+        internal void ValidateSourceFileName(string fileName)
+        {
+            // Existing nested files can round-trip through CSV. New names retain the single-file contract.
+            if (_discoveredFiles.Contains(fileName))
+                foreach (string part in fileName.Split('/')) EditorDataPath.ValidateName(part, "source file path segment");
+            else EditorDataPath.ValidateName(fileName, "source file name");
+        }
+
         private static string FindLocalizationBasePath(string resourcesSubPath)
         {
-            string[] resourcesDirs = Directory.GetDirectories(
-                Application.dataPath, "Resources", SearchOption.AllDirectories);
-
-            foreach (var resDir in resourcesDirs)
+            var candidates = new SortedSet<string>(StringComparer.Ordinal);
+            foreach (string resourceRoot in ResourceDirectories(Application.dataPath))
             {
-                string candidate = Path.Combine(resDir, resourcesSubPath);
-
-                if (Directory.Exists(candidate))
-                    return candidate;
+                string candidate = Path.GetFullPath(Path.Combine(resourceRoot, resourcesSubPath));
+                if (Directory.Exists(candidate)) candidates.Add(candidate);
             }
+            // Packages use virtual AssetDatabase paths. Never treat them as project-relative disk paths.
+            foreach (string root in UnityEditor.AssetDatabase.GetAllAssetPaths().Where(p => p.StartsWith("Packages/") && p.EndsWith("/Resources")
+                && !p.Split('/').Contains("Editor") && UnityEditor.AssetDatabase.IsValidFolder(p)))
+            {
+                var package = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(root);
+                if (package == null) continue;
+                string candidate = Path.GetFullPath(Path.Combine(package.resolvedPath, root.Substring(package.assetPath.Length + 1), resourcesSubPath));
+                if (Directory.Exists(candidate)) candidates.Add(candidate);
+            }
+            if (candidates.Count > 1)
+                throw new InvalidOperationException("Several localization folders share Resources/" + resourcesSubPath + ": " + string.Join("; ", candidates) + ". Consolidate this dataset into one folder before editing");
+            string result = candidates.SingleOrDefault();
+            if (result != null && !result.StartsWith(Path.GetFullPath(Application.dataPath) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Localization data is in a package and cannot be edited here: " + result);
+            return result;
+        }
 
-            // Try direct path
-            string directPath = Path.Combine(Application.dataPath, "Resources", resourcesSubPath);
-            if (Directory.Exists(directPath))
-                return directPath;
-
-            return null;
+        private static IEnumerable<string> ResourceDirectories(string directory)
+        {
+            foreach (string child in Directory.GetDirectories(directory).OrderBy(p => p, StringComparer.Ordinal))
+            {
+                if (Path.GetFileName(child) == "Editor" || Path.GetFileName(child).StartsWith(".")
+                    || (File.GetAttributes(child) & FileAttributes.ReparsePoint) != 0) continue;
+                if (Path.GetFileName(child) == "Resources") yield return child;
+                foreach (string nested in ResourceDirectories(child)) yield return nested;
+            }
         }
 
         // ──────────────────────────────────────────────

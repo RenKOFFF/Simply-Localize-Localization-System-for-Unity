@@ -15,6 +15,17 @@ namespace SimplyLocalize.Editor.Data
         private static LocalizationConfig _config;
         private static List<string> _sortedKeys;
         private static bool _dirty = true;
+        private static LocalizationConfig _selectedConfig;
+        private static string _selectionMessage;
+
+        /// <summary>Explicit editor context, shared by the window and inspectors; does not change runtime startup.</summary>
+        public static void SelectConfig(LocalizationConfig config)
+        {
+            if (ReferenceEquals(_selectedConfig, config)) return;
+            _selectedConfig = config; MarkDirty();
+        }
+
+        public static string SelectionMessage { get { EnsureLoaded(); return _selectionMessage; } }
 
         static EditorDataCache()
         {
@@ -59,10 +70,11 @@ namespace SimplyLocalize.Editor.Data
 
         private static void EnsureLoaded()
         {
-            if (!_dirty && _data != null && _config != null)
+            if (!_dirty && (_config != null || ReferenceEquals(_config, null)))
                 return;
 
-            _config = FindConfig();
+            _selectionMessage = null;
+            _config = _selectedConfig != null ? _selectedConfig : EditorConfigSelection.Find(out _selectionMessage);
 
             if (_config == null)
             {
@@ -78,17 +90,5 @@ namespace SimplyLocalize.Editor.Data
             _dirty = false;
         }
 
-        private static LocalizationConfig FindConfig()
-        {
-            var guids = AssetDatabase.FindAssets("t:LocalizationConfig");
-
-            if (guids.Length > 0)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                return AssetDatabase.LoadAssetAtPath<LocalizationConfig>(path);
-            }
-
-            return null;
-        }
     }
 }

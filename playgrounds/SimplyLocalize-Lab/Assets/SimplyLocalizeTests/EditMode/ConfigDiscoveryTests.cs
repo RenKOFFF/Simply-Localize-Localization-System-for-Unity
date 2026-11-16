@@ -144,5 +144,17 @@ namespace SimplyLocalize.Tests
             Assert.That(report.TextCoverage, Is.Empty); Assert.That(report.Warnings.Any(w => w.Message.Contains("No text keys")), Is.False);
             LogAssert.NoUnexpectedReceived();
         }
+        [Test] public void FreshSetup_EditorCacheAndDiskEditingUseTheSameConfiguration()
+        {
+            var result = Create();
+            SimplyLocalize.Editor.Data.EditorDataCache.SelectConfig(null);
+            SimplyLocalize.Editor.Data.EditorDataCache.Invalidate();
+            Assert.That(SimplyLocalize.Editor.Data.EditorDataCache.Config, Is.SameAs(result.Config));
+            var data = new SimplyLocalize.Editor.Data.EditorLocalizationData(); data.Load(result.Config);
+            Assert.That(data.LoadError, Is.Null); Assert.That(data.LoadedLanguages, Is.EquivalentTo(new[] { "en", "ru" }));
+            data.AddKey("setup.test", "main"); data.SetTranslation("setup.test", "en", "Ready"); data.SaveAll();
+            data.Reload(result.Config); Assert.That(data.GetTranslation("setup.test", "en"), Is.EqualTo("Ready"));
+            Assert.That(AssetDatabase.GetAssetPath(result.Config), Is.EqualTo(LocalizationProjectSetup.ConfigAssetPath));
+        }
     }
 }

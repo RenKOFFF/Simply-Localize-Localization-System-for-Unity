@@ -44,8 +44,8 @@ namespace SimplyLocalize.Editor
             if (config == null)
             {
                 EnsureVacant(ConfigAssetPath);
-                var alternatives = AssetDatabase.FindAssets("t:LocalizationConfig");
-                if (alternatives.Length != 0 && !createAlongsideExistingConfigs)
+                var alternatives = EditorConfigSelection.Candidates();
+                if (alternatives.Count != 0 && !createAlongsideExistingConfigs)
                     throw new InvalidOperationException("Existing localization configs found. Select one and use Use for automatic startup; no new config was created.");
                 config = ScriptableObject.CreateInstance<LocalizationConfig>();
                 config.autoInitialize = true;
@@ -302,7 +302,7 @@ namespace SimplyLocalize.Editor
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 var config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(path);
-                if (config.autoInitialize && path != LocalizationProjectSetup.ConfigAssetPath)
+                if (config != null && config.autoInitialize && path != LocalizationProjectSetup.ConfigAssetPath)
                     Debug.LogWarning("[SimplyLocalize] Auto-initialize config is outside the startup path: " + path + ". Use its Inspector to move it, or disable auto-initialize and pass the config explicitly.", config);
             }
         }

@@ -19,6 +19,9 @@ namespace SimplyLocalize.Editor.Utilities
         public int AvailableCount;
         public float AvailablePercentage;
         public List<string> UnavailableKeys;
+        public int PresentCount;
+        public List<string> EmptyKeys;
+        public List<string> WhitespaceKeys;
     }
 
     public struct CoverageWarning
@@ -43,8 +46,17 @@ namespace SimplyLocalize.Editor.Utilities
     {
         public static List<LanguageCoverage> ComputeCoverage(EditorLocalizationData data, LocalizationConfig config)
         {
-            if (data == null || config == null) return new();
-            return Compute(data.AllKeys, config, (key, code) => !string.IsNullOrEmpty(data.GetTranslation(key, code)));
+            if (data == null || config == null || data.LoadError != null) return new();
+            var result = Compute(data.AllKeys, config, (key, code) => !string.IsNullOrEmpty(data.GetTranslation(key, code)),
+                (key, code) => data.Translations.TryGetValue(code, out var entries) && entries.ContainsKey(key));
+            for (int i = 0; i < result.Count; i++)
+            {
+                var row = result[i];
+                row.WhitespaceKeys = data.AllKeys.Where(key => { string value = data.GetTranslation(key, row.LanguageCode);
+                    return !string.IsNullOrEmpty(value) && string.IsNullOrWhiteSpace(value); }).OrderBy(k => k, StringComparer.Ordinal).ToList();
+                result[i] = row;
+            }
+            return result;
         }
 
         public static List<CoverageWarning> ComputeWarnings(EditorLocalizationData data, LocalizationConfig config)
@@ -55,6 +67,8 @@ namespace SimplyLocalize.Editor.Utilities
                 Add(warnings, CoverageWarning.Severity.Error, "Coverage requires a configuration and loaded data.");
                 return warnings;
             }
+            if (data.LoadError != null)
+            { Add(warnings, CoverageWarning.Severity.Error, "Editor discovery failed: " + data.LoadError); return warnings; }
             foreach (var error in config.GetValidationErrors()) Add(warnings, CoverageWarning.Severity.Error, error);
             var profiles = Profiles(config).ToList();
             if (profiles.Count == 0) Add(warnings, CoverageWarning.Severity.Warning, "No languages configured; localization has not been checked.");
@@ -71,10 +85,13 @@ namespace SimplyLocalize.Editor.Utilities
                     {
                         var fallback = FallbackResolver.ResolveTranslation(data, config, key, profile.Code);
                         Add(warnings, CoverageWarning.Severity.Warning,
+                            (data.Translations.TryGetValue(profile.Code, out var entries) && entries.ContainsKey(key) ? "Empty entry. " : "No entry. ") +
                             $"Missing direct translation for '{key}' in {profile.Code}" +
                             (fallback.Value != null ? $"; available via {fallback.FromLanguage}." : "; no fallback available."), key, profile.Code);
                         continue;
                     }
+                    if (string.IsNullOrWhiteSpace(value)) Add(warnings, CoverageWarning.Severity.Warning,
+                        $"Whitespace-only translation for '{key}' ({profile.Code}); runtime treats it as a value and does not use fallback.", key, profile.Code);
                     foreach (var token in TokenParser.Parse(value).Tokens)
                     {
                         if (token.Type == TokenType.Text) continue;
@@ -120,6 +137,8 @@ namespace SimplyLocalize.Editor.Utilities
                 foreach (var error in errors) Add(report.Warnings, CoverageWarning.Severity.Error, error);
                 return report;
             }
+            bool fullEditorSnapshot = editorData != null && editorData.LoadError == null
+                && editorData.LoadedResourcesPath == config.resourcesBasePath;
             provider ??= new ResourcesDataProvider(config.resourcesBasePath);
             var data = new EditorLocalizationData();
             var tables = new Dictionary<string, List<LocalizationAssetTable>>();
@@ -131,10 +150,11 @@ namespace SimplyLocalize.Editor.Utilities
                 try
                 {
                     var translations = (config.loadTextData ? provider.LoadTextData(code) : new Dictionary<string, string>()) ?? throw new InvalidOperationException("Provider returned null text data.");
+                    if (config.loadTextData && fullEditorSnapshot && editorData.Translations.TryGetValue(code, out var current))
+                        translations = current; // Authoritative for loaded languages, including deletions not imported yet.
                     foreach (var pair in translations)
                     {
-                        data.AddKey(pair.Key, "coverage");
-                        data.SetTranslation(pair.Key, code, pair.Value);
+                        data.SetSnapshotTranslation(pair.Key, code, pair.Value, "coverage");
                     }
                 }
                 catch (Exception error)
@@ -162,17 +182,21 @@ namespace SimplyLocalize.Editor.Utilities
                     Add(report.Warnings, CoverageWarning.Severity.Error, $"Cannot check assets for '{code}': {error.Message}", language: code);
                 }
             }
-            if (editorData != null)
+            if (editorData?.LoadError != null)
+                Add(report.Warnings, CoverageWarning.Severity.Error, "Editor discovery failed: " + editorData.LoadError);
+            else if (editorData?.LoadedResourcesPath != null && editorData.LoadedResourcesPath != config.resourcesBasePath)
+                Add(report.Warnings, CoverageWarning.Severity.Error, "Editor data belongs to another Resources path; reload the selected config before checking coverage.");
+            else if (editorData != null && config.loadTextData)
                 foreach (var language in editorData.Translations)
                     foreach (var pair in language.Value)
                     {
-                        data.AddKey(pair.Key, editorData.GetFileForKey(pair.Key) ?? "coverage");
-                        data.SetTranslation(pair.Key, language.Key, pair.Value);
+                        data.SetSnapshotTranslation(pair.Key, language.Key, pair.Value, editorData.GetFileForKey(pair.Key) ?? "coverage");
                     }
             if (config.loadTextData) report.TextCoverage.AddRange(ComputeCoverage(data, config));
             report.Warnings.AddRange(ComputeWarnings(data, config));
             report.AssetCoverage.AddRange(Compute(assetKeys, config, (key, code) =>
-                tables.TryGetValue(code, out var list) && list.Any(table => table != null && table.Get(key) != null)));
+                tables.TryGetValue(code, out var list) && list.Any(table => table != null && table.Get(key) != null),
+                (key, code) => tables.TryGetValue(code, out var list) && list.Any(table => table != null && table.HasKey(key))));
             return report;
         }
 
@@ -187,7 +211,7 @@ namespace SimplyLocalize.Editor.Utilities
             if (config.fallbackLanguage != null && seen.Add(config.fallbackLanguage.Code)) yield return config.fallbackLanguage.Code;
         }
 
-        private static List<LanguageCoverage> Compute(IEnumerable<string> keys, LocalizationConfig config, Func<string, string, bool> hasValue)
+        private static List<LanguageCoverage> Compute(IEnumerable<string> keys, LocalizationConfig config, Func<string, string, bool> hasValue, Func<string, string, bool> hasEntry)
         {
             var allKeys = keys.Distinct().OrderBy(k => k, StringComparer.Ordinal).ToList();
             var results = new List<LanguageCoverage>();
@@ -199,6 +223,9 @@ namespace SimplyLocalize.Editor.Utilities
                 results.Add(new LanguageCoverage
                 {
                     LanguageCode = profile.Code, DisplayName = profile.displayName,
+                    PresentCount = allKeys.Count(key => hasEntry(key, profile.Code)),
+                    EmptyKeys = allKeys.Where(key => hasEntry(key, profile.Code) && !hasValue(key, profile.Code)).ToList(),
+                    WhitespaceKeys = new List<string>(),
                     TotalCount = allKeys.Count, TranslatedCount = allKeys.Count - missing.Count,
                     MissingKeys = missing, UnavailableKeys = unavailable, AvailableCount = allKeys.Count - unavailable.Count,
                     Percentage = allKeys.Count == 0 ? 0 : (float)(allKeys.Count - missing.Count) / allKeys.Count,
