@@ -17,7 +17,7 @@ namespace SimplyLocalize.Editor.Windows
         internal string DefaultCode => _default.value;
         internal string FallbackCode => string.IsNullOrEmpty(_fallback.value) ? null : _fallback.value;
 
-        internal SetupLanguagePicker(LocalizationEditorWindow window)
+        internal SetupLanguagePicker(UnityEditor.EditorWindow window)
         {
             name = "setupLanguagePicker";
             var languages = new VisualElement();

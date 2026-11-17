@@ -161,6 +161,41 @@ namespace SimplyLocalize.Tests
             Assert.That(ResourcesEditorTextReader.ResourceAddress("Assets/Resources/Editor/menu.json"), Is.Null);
             Assert.That(ResourcesEditorTextReader.ResourceAddress("Packages/example/Resources/Text/menu.json"), Is.EqualTo("Text/menu"));
         }
+        [Test] public void LocalUpmSourceUsesResolvedDiskPathAndCannotBeWrittenByProjectEdits()
+        {
+            var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(LocalizationRuntime).Assembly);
+            Assert.That(package.source, Is.EqualTo(UnityEditor.PackageManager.PackageSource.Local), "This repository test runs against its local UPM package.");
+            string name = "EditorSourceRegression_" + Guid.NewGuid().ToString("N");
+            string directory = Path.GetFullPath(Path.Combine(package.resolvedPath, name));
+            Assert.That(directory.StartsWith(Path.GetFullPath(package.resolvedPath) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase), Is.True);
+            string logical = package.assetPath + "/" + name + "/Resources/" + name + ".json";
+            string physical = Path.Combine(directory, "Resources", name + ".json");
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes("{\"translations\":{\"hello\":\"Package\"}}");
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(physical)); File.WriteAllBytes(physical, bytes);
+                root = "Assets/" + name; Directory.CreateDirectory(root);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                foreach (var code in new[] { "en", "ru", "pl" }) config.Sets[0].SetSources(code, Source(name, "resources"));
+                AssetDatabase.CreateAsset(config, root + "/Config.asset"); AssetDatabase.SaveAssetIfDirty(config);
+                Assert.That(Path.GetFullPath(ResourcesEditorTextReader.ResolveFilePath(logical)), Is.EqualTo(physical));
+                var data = EditorProjectTextData.Load(config);
+                Assert.That(data.TryResolve(entry, "ru", out var cell), Is.True); Assert.That(cell.Value, Is.EqualTo("Package"));
+                Assert.That(cell.AssetPath, Is.EqualTo(logical));
+                using (var metadata = new LocalizationProjectEdit(config, config.Sets[0].Id))
+                { metadata.Draft.Languages[0].DisplayName = "English metadata"; metadata.Commit(); }
+                using (var text = new LocalizationProjectEdit(config, config.Sets[0].Id))
+                { text.SetTranslation(entry, "en", "Changed"); Assert.Throws<InvalidOperationException>(() => text.Commit()); }
+                Assert.That(File.ReadAllBytes(physical), Is.EqualTo(bytes));
+            }
+            finally
+            {
+                // Only the unique fixture created above belongs to this test, never a package/cache root.
+                if (Directory.Exists(directory)) Directory.Delete(directory, true);
+                if (File.Exists(directory + ".meta")) File.Delete(directory + ".meta");
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            }
+        }
         private string CreateDiskSource()
         {
             root = "Assets/SimplyLocalizeEditorProjectTests_" + Guid.NewGuid().ToString("N");

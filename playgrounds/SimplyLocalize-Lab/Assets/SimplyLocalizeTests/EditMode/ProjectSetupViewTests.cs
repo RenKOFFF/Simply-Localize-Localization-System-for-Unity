@@ -1,0 +1,82 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using NUnit.Framework;
+using SimplyLocalize.Editor;
+using SimplyLocalize.Editor.Data;
+using SimplyLocalize.Editor.Windows;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace SimplyLocalize.Tests
+{
+    public class ProjectSetupViewTests
+    {
+        private const string Root = "Assets/SimplyLocalize";
+        private bool ownsRoot;
+        private EditorWindow host;
+        private LocalizationProjectConfig selected;
+        [SetUp] public void Setup()
+        {
+            ownsRoot = false; host = null; selected = null;
+            if (Directory.Exists(Root) || File.Exists(Root + ".meta")) Assert.Ignore("Use a clean lab without a user-owned SimplyLocalize setup folder.");
+            ownsRoot = true;
+            host = ScriptableObject.CreateInstance<SetupHost>(); host.ShowUtility();
+            host.rootVisualElement.Add(new ProjectSetupView(host, config => selected = config));
+        }
+        [TearDown] public void Cleanup()
+        {
+            if (host != null) host.Close();
+            if (ownsRoot) AssetDatabase.DeleteAsset(Root);
+        }
+        private void Submit()
+        {
+            var button = host.rootVisualElement.Q<Button>("createConfig"); Assert.That(button.enabledInHierarchy, Is.True);
+            using var submit = NavigationSubmitEvent.GetPooled(); submit.target = button; button.SendEvent(submit);
+        }
+        [Test] public void CreateButtonPublishesProjectConfigWithMainCommonAndPreservesEditorSelection()
+        {
+            var before = Selection.activeObject; Submit();
+            Assert.That(selected, Is.Not.Null); Assert.That(selected.AutoInitialize, Is.True);
+            Assert.That(selected.MainChannel.Name, Is.EqualTo("Main")); Assert.That(selected.Sets[0].Name, Is.EqualTo("Common"));
+            Assert.That(selected.Languages.Select(l => l.Code), Is.EqualTo(new[] { "en", "ru" }));
+            Assert.That(Selection.activeObject, Is.SameAs(before)); Assert.That(selected.MainChannel.FallbackLanguage, Is.EqualTo("en"));
+        }
+        [Test] public void OccupiedStartupAddressProducesInlineErrorAndLeavesForeignData()
+        {
+            Directory.CreateDirectory(Root + "/Resources"); string path = Root + "/Resources/SimplyLocalizeSettings.txt";
+            File.WriteAllText(path, "Foreign"); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport); Submit();
+            Assert.That(selected, Is.Null); Assert.That(File.ReadAllText(path), Is.EqualTo("Foreign"));
+            Assert.That(host.rootVisualElement.Q<HelpBox>("setupMessage").text, Does.Contain("occupied"));
+            Assert.That(File.Exists(LocalizationProjectAuthoring.ConfigAssetPath), Is.False);
+        }
+        [Test] public void RepeatedSetupPreservesIdsNamesAndExternalTranslations()
+        {
+            var first = LocalizationProjectAuthoring.Configure(new[] { "en", "ru" }, "en", "en",
+                new Dictionary<string, string> { ["en"] = "My English" }).Config;
+            string main = first.MainChannelId, set = first.Sets[0].Id;
+            string file = Root + "/Resources/SimplyLocalize/Translations/en/Common.json";
+            File.WriteAllText(file, "{\"translations\":{\"external\":\"Keep\"}}"); byte[] before = File.ReadAllBytes(file);
+            var result = LocalizationProjectAuthoring.Configure(new[] { "en", "ru", "x-elvish" }, "ru", null,
+                new Dictionary<string, string> { ["en"] = "English", ["x-elvish"] = "Elvish" });
+            Assert.That(result.Config, Is.SameAs(first)); Assert.That(first.MainChannelId, Is.EqualTo(main)); Assert.That(first.Sets[0].Id, Is.EqualTo(set));
+            Assert.That(first.Languages.Single(l => l.Code == "en").DisplayName, Is.EqualTo("My English"));
+            Assert.That(first.Languages.Single(l => l.Code == "x-elvish").DisplayName, Is.EqualTo("Elvish"));
+            Assert.That(first.MainChannel.DefaultLanguage, Is.EqualTo("ru")); Assert.That(first.MainChannel.FallbackLanguage, Is.Empty.Or.Null);
+            Assert.That(File.ReadAllBytes(file), Is.EqualTo(before));
+        }
+        [Test] public void MultiLanguageSetupFailureDoesNotLeaveEarlierPartialLanguage()
+        {
+            var config = LocalizationProjectAuthoring.Configure(new[] { "en", "ru" }, "en", "en").Config;
+            string conflict = Root + "/Resources/SimplyLocalize/Translations/de/Common.json";
+            Directory.CreateDirectory(Path.GetDirectoryName(conflict)); File.WriteAllText(conflict, "Foreign");
+            Assert.Catch<Exception>(() => LocalizationProjectAuthoring.Configure(new[] { "en", "ru", "pl", "de" }, "en", "en"));
+            Assert.That(config.Languages.Select(l => l.Code), Is.EqualTo(new[] { "en", "ru" }));
+            Assert.That(File.Exists(Root + "/Resources/SimplyLocalize/Translations/pl/Common.json"), Is.False);
+            Assert.That(File.ReadAllText(conflict), Is.EqualTo("Foreign"));
+        }
+        private sealed class SetupHost : EditorWindow { }
+    }
+}

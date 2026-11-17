@@ -38,7 +38,7 @@ namespace SimplyLocalize.Editor.Data
             EditorJsonUtility.FromJsonOverwrite(originalJson, Draft); Draft.hideFlags = HideFlags.HideAndDontSave;
             try
             {
-                var reader = new ResourcesEditorTextReader();
+                var reader = included.Count == 0 ? null : new ResourcesEditorTextReader();
                 foreach (string id in included)
                 {
                     var set = Set(id);
@@ -63,10 +63,47 @@ namespace SimplyLocalize.Editor.Data
             var destination = Destination(candidates, entry.Key, destinationAddress, present);
             destination.Text[entry.Key] = value;
         }
+        /// <summary>Stages a new empty JSON and its exact source binding. Existing files/addresses are never adopted or overwritten.</summary>
+        public void CreateTextSource(string setId, string language, string assetPath)
+        {
+            EnsureOpen(); RequireIncluded(setId); var set = Set(setId);
+            language = LocalizationLanguageCode.Normalize(language);
+            if (!Draft.Languages.Any(l => l.Code == language)) throw new ArgumentException("Add the language definition before its source.", nameof(language));
+            if (Routes(set) != originalRoutes[setId]) throw new InvalidOperationException("Source routing changed. Open a fresh edit before adding a source.");
+            LocalizationProjectChange.ValidateWritable(assetPath);
+            string address = ResourcesEditorTextReader.ResourceAddress(assetPath);
+            if (!assetPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || !LocalizationResourceAddress.IsValid(address))
+                throw new ArgumentException("Choose a JSON file inside a non-Editor Resources folder.", nameof(assetPath));
+            if (File.Exists(assetPath) || Directory.Exists(assetPath) || File.Exists(assetPath + ".meta") || addresses.ContainsKey(address))
+                throw new IOException("Source destination already exists: " + assetPath);
+            if (AssetDatabase.GetAllAssetPaths().Any(p => !AssetDatabase.IsValidFolder(p) && string.Equals(ResourcesEditorTextReader.ResourceAddress(p), address, StringComparison.OrdinalIgnoreCase)))
+                throw new IOException("Resources address already exists: " + address);
+            var document = new Document(assetPath, create: true); documents.Add(assetPath, document); addresses.Add(address, document);
+            var sources = set.Sources.FirstOrDefault(s => s.Language == language)?.Sources ?? Array.Empty<LocalizationSourceReference>();
+            set.SetSources(language, sources.Concat(new[] { new LocalizationSourceReference("resources", address, LocalizationSourceKind.TextTable) }).ToArray());
+            originalRoutes[setId] = Routes(set);
+        }
         public void RemoveTranslation(string entryId, string language)
         {
             EnsureOpen(); var (set, entry) = Entry(entryId);
             Locate(Documents(set, language), entry.Key)?.Text.Property(entry.Key)?.Remove();
+        }
+        /// <summary>Registers an existing exact text asset without changing its contents or inventing entry IDs.</summary>
+        public void RegisterTextSource(string setId, string language, string assetPath)
+        {
+            EnsureOpen(); RequireIncluded(setId); var set = Set(setId); language = LocalizationLanguageCode.Normalize(language);
+            if (!Draft.Languages.Any(l => l.Code == language)) throw new ArgumentException("Add the language definition before its source.");
+            if (Routes(set) != originalRoutes[setId]) throw new InvalidOperationException("Source routing changed. Open a fresh edit.");
+            string address = ResourcesEditorTextReader.ResourceAddress(assetPath);
+            var source = new LocalizationSourceReference("resources", address, LocalizationSourceKind.TextTable);
+            if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) == null) AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceSynchronousImport);
+            var reader = new ResourcesEditorTextReader();
+            if (reader.ResolveAssetPath(source) != assetPath) throw new ArgumentException("Source path does not match its Resources address.");
+            if (!documents.TryGetValue(assetPath, out var document)) documents.Add(assetPath, document = new Document(assetPath));
+            addresses[address] = document;
+            var sources = set.Sources.FirstOrDefault(s => s.Language == language)?.Sources ?? Array.Empty<LocalizationSourceReference>();
+            if (sources.Any(s => s.ProviderId == source.ProviderId && s.Kind == source.Kind && string.Equals(s.Address, address, StringComparison.OrdinalIgnoreCase))) return;
+            set.SetSources(language, sources.Concat(new[] { source }).ToArray()); originalRoutes[setId] = Routes(set);
         }
         public void RenameTextEntry(string entryId, string key)
         {
@@ -122,11 +159,16 @@ namespace SimplyLocalize.Editor.Data
         public LocalizationProjectChange Commit()
         {
             EnsureOpen(); Draft.ValidateOrThrow();
-            var currentPaths = new ResourcesEditorTextReader();
+            var currentPaths = addresses.Count == 0 ? null : new ResourcesEditorTextReader();
             foreach (var pair in addresses)
-                if (currentPaths.ResolveAssetPath(new("resources", pair.Key, LocalizationSourceKind.TextTable)) != pair.Value.Path)
+                if (pair.Value.Before == null)
+                {
+                    if (AssetDatabase.GetAllAssetPaths().Any(p => !AssetDatabase.IsValidFolder(p) && string.Equals(ResourcesEditorTextReader.ResourceAddress(p), pair.Key, StringComparison.OrdinalIgnoreCase)))
+                        throw new IOException("Resources address appeared during the edit: " + pair.Key);
+                }
+                else if (currentPaths.ResolveAssetPath(new("resources", pair.Key, LocalizationSourceKind.TextTable)) != pair.Value.Path)
                     throw new InvalidOperationException("Source address changed. Reload before saving: " + pair.Key);
-            var files = documents.Values.Select(d => new LocalizationProjectChange.FileChange(d.Path, d.Before, d.Encode())).ToArray();
+            var files = documents.Values.Select(d => new LocalizationProjectChange.FileChange(d.ReadPath, d.Before, d.Encode())).ToArray();
             if (files.Any(f => !EditorFileTransaction.Equal(f.Before, f.After)))
                 foreach (var route in originalRoutes)
                 {
@@ -201,15 +243,22 @@ namespace SimplyLocalize.Editor.Data
         private sealed class Document
         {
             internal readonly string Path;
+            internal string ReadPath => ResourcesEditorTextReader.ResolveFilePath(Path);
             internal readonly byte[] Before;
             internal readonly JObject Root, Original;
             private readonly Encoding encoding;
             private readonly bool bom;
             private readonly string newline;
             internal JObject Text => (JObject)Root["translations"];
-            internal Document(string path)
+            internal Document(string path, bool create = false)
             {
-                Path = path; Before = File.ReadAllBytes(path);
+                Path = path;
+                if (create)
+                {
+                    Root = new JObject { ["translations"] = new JObject() }; Original = (JObject)Root.DeepClone();
+                    encoding = new UTF8Encoding(false); newline = "\n"; return;
+                }
+                Before = File.ReadAllBytes(ReadPath);
                 using var stream = new StreamReader(new MemoryStream(Before), Encoding.UTF8, true);
                 string json = stream.ReadToEnd(); encoding = stream.CurrentEncoding;
                 byte[] preamble = encoding.GetPreamble(); bom = preamble.Length > 0 && Before.Take(preamble.Length).SequenceEqual(preamble);
@@ -224,7 +273,7 @@ namespace SimplyLocalize.Editor.Data
             }
             internal byte[] Encode()
             {
-                if (JToken.DeepEquals(Root, Original)) return Before;
+                if (Before != null && JToken.DeepEquals(Root, Original)) return Before;
                 var output = new StringWriter { NewLine = newline };
                 using (var writer = new JsonTextWriter(output) { Formatting = Formatting.Indented }) Root.WriteTo(writer);
                 byte[] body = encoding.GetBytes(output.ToString());
@@ -257,6 +306,9 @@ namespace SimplyLocalize.Editor.Data
         internal void Apply()
         {
             Write(false, beforeConfig, beforeJson, afterJson); afterConfig = File.ReadAllBytes(path); isApplied = true;
+            // Refresh generated the GUIDs of new text assets. Keep them with the file for native Undo/Redo.
+            files = files.Concat(files.Where(f => f.Before == null && File.Exists(f.Path + ".meta"))
+                .Select(f => new FileChange(f.Path + ".meta", null, File.ReadAllBytes(f.Path + ".meta")))).ToArray();
             // Initial save checks every loaded dependency. History only owns files it actually changed.
             files = files.Where(f => !EditorFileTransaction.Equal(f.Before, f.After)).ToArray();
         }
@@ -274,6 +326,9 @@ namespace SimplyLocalize.Editor.Data
             {
                 if (!EditorFileTransaction.Equal(file.Before, file.After)) ValidateWritable(file.Path);
                 transaction.Add(file.Path, undo ? file.After : file.Before, undo ? file.Before : file.After);
+                if (!undo && file.Before == null && !file.Path.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)
+                    && !files.Any(f => f.Path == file.Path + ".meta"))
+                    transaction.Add(file.Path + ".meta", null, null);
             }
             bool changeConfig = expectedJson != targetJson;
             if (changeConfig) transaction.TrackExternalSnapshot(path, expectedConfig); else transaction.Add(path, expectedConfig, expectedConfig);

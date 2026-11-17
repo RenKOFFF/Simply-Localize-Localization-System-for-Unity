@@ -198,6 +198,11 @@ namespace SimplyLocalize
             var replacement = new LocalizationSetSources(language, sources);
             _sources.RemoveAll(s => s.Language == replacement.Language); _sources.Add(replacement);
         }
+        public bool RemoveSources(string language)
+        {
+            language = LocalizationLanguageCode.Normalize(language);
+            return _sources.RemoveAll(s => s.Language == language) > 0;
+        }
         internal void Accept(LocalizationEntryDefinition entry)
         {
             if (_entries.Any(e => e.Id == entry.Id || e.Key == entry.Key)) throw new ArgumentException("Target set already contains this identity or key.");

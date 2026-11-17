@@ -150,7 +150,16 @@ namespace SimplyLocalize.Editor.Data
         public LocalizationEditorTextSource Read(LocalizationSourceReference source)
         {
             string path = ResolveAssetPath(source);
-            return new LocalizationEditorTextSource(LocalizationFileParser.Parse(File.ReadAllText(path)), path);
+            return new LocalizationEditorTextSource(LocalizationFileParser.Parse(File.ReadAllText(ResolveFilePath(path))), path);
+        }
+        /// <summary>Packages/... is an AssetDatabase address, not necessarily a physical project directory.</summary>
+        public static string ResolveFilePath(string assetPath)
+        {
+            if (!assetPath.StartsWith("Packages/", StringComparison.Ordinal)) return assetPath;
+            var package = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(assetPath);
+            if (package == null || !assetPath.StartsWith(package.assetPath + "/", StringComparison.Ordinal))
+                throw new IOException("Cannot resolve the package source: " + assetPath);
+            return Path.Combine(package.resolvedPath, assetPath.Substring(package.assetPath.Length + 1));
         }
         public string ResolveAssetPath(LocalizationSourceReference source)
         {
