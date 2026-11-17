@@ -116,5 +116,74 @@ namespace SimplyLocalize.Tests
             }
             finally { Object.DestroyImmediate(transient); }
         }
+        private LocalizationAssetTable NewTable(string name, Object value = null, bool entryExists = false)
+        {
+            var result = ScriptableObject.CreateInstance<LocalizationAssetTable>(); if (entryExists) result.Set("image", value);
+            AssetDatabase.CreateAsset(result, root + "/Resources/" + prefix + "/" + name + ".asset"); AssetDatabase.SaveAssetIfDirty(result); return result;
+        }
+        private LocalizationSourceReference Source(string name) => new("resources", prefix + "/" + name, LocalizationSourceKind.AssetTable);
+        private void SaveConfig() { EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config); }
+        [Test] public void RenameSharedEntryKeepsOldKeyForOtherRegisteredConsumer()
+        {
+            table.Set("image", texture); EditorUtility.SetDirty(table); AssetDatabase.SaveAssetIfDirty(table);
+            var other = config.AddSet("Shared"); other.AddEntry("image", LocalizationEntryKind.Asset); other.SetSources("en", Source("Table")); config.MainChannel.IncludeSet(other.Id); SaveConfig();
+            using var edit = new LocalizationProjectAssetEdit(config); edit.RenameAssetEntry(entry, "picture");
+            using var record = LocalizationProjectUndo.Record(edit.Commit(), "Rename shared asset entry");
+            Assert.That(table.Get("picture") == texture && table.Get("image") == texture, Is.True); Assert.That(config.Sets[0].Entries[0].Id, Is.EqualTo(entry));
+            Undo.PerformUndo(); Assert.That(table.HasKey("picture"), Is.False); Assert.That(table.Get("image") == texture, Is.True);
+        }
+        [Test] public void MoveEntryTransfersAllLanguagesAndKeepsItsIdentity()
+        {
+            table.Set("image", texture); EditorUtility.SetDirty(table); AssetDatabase.SaveAssetIfDirty(table);
+            var ru = NewTable("Ru", appearance, true); config.Sets[0].SetSources("ru", Source("Ru"));
+            var target = config.AddSet("Target"); string targetId = target.Id;
+            var enTarget = NewTable("TargetEn"); var ruTarget = NewTable("TargetRu");
+            target.SetSources("en", Source("TargetEn")); target.SetSources("ru", Source("TargetRu")); config.MainChannel.IncludeSet(targetId); SaveConfig();
+            using var edit = new LocalizationProjectAssetEdit(config); edit.MoveAssetEntry(entry, targetId); var change = edit.Commit();
+            Assert.That(config.Sets[0].Entries.Any(e => e.Id == entry), Is.False); Assert.That(config.Sets.Single(s => s.Id == targetId).Entries[0].Id, Is.EqualTo(entry));
+            Assert.That(enTarget.Get("image") == texture, Is.True); Assert.That(ruTarget.Get("image") == appearance, Is.True);
+            Assert.That(table.HasKey("image") || ru.HasKey("image"), Is.False);
+            change.Undo(); Assert.That(config.Sets[0].Entries[0].Id, Is.EqualTo(entry)); Assert.That(ru.Get("image") == appearance, Is.True);
+        }
+        [Test] public void MoveRefusesForeignTargetKeyAndDifferentLanguagesSharingOneDestination()
+        {
+            var target = config.AddSet("Target"); var targetTable = NewTable("Target", texture, true); target.SetSources("en", Source("Target")); config.MainChannel.IncludeSet(target.Id); SaveConfig();
+            using (var edit = new LocalizationProjectAssetEdit(config)) Assert.Throws<InvalidOperationException>(() => edit.MoveAssetEntry(entry, target.Id));
+            Assert.That(targetTable.Get("image") == texture, Is.True);
+            targetTable.Remove("image"); EditorUtility.SetDirty(targetTable); AssetDatabase.SaveAssetIfDirty(targetTable);
+            NewTable("Ru", appearance, true); config.Sets[0].SetSources("ru", Source("Ru")); target.SetSources("ru", Source("Target")); SaveConfig();
+            using (var edit = new LocalizationProjectAssetEdit(config))
+            { Assert.That(Assert.Throws<InvalidOperationException>(() => edit.MoveAssetEntry(entry, target.Id)).Message, Does.Contain("Different language")); }
+            Assert.That(targetTable.HasKey("image"), Is.False); Assert.That(config.Sets[0].Entries[0].Id, Is.EqualTo(entry));
+        }
+        [Test] public void NewEntryRequiresExplicitDestinationWhenSeveralTablesAreConnected()
+        {
+            var second = NewTable("Second"); config.Sets[0].SetSources("en", Source("Table"), Source("Second")); SaveConfig();
+            using var edit = new LocalizationProjectAssetEdit(config); string id = edit.Draft.Sets[0].AddEntry("new", LocalizationEntryKind.Asset).Id;
+            Assert.Throws<InvalidOperationException>(() => edit.SetAsset(id, "en", texture));
+            edit.SetAsset(id, "en", texture, prefix + "/Second"); edit.Commit();
+            Assert.That(second.Get("new") == texture, Is.True); Assert.That(table.HasKey("new"), Is.False);
+        }
+        [Test] public void RemovingSharedDefinitionKeepsValueUntilLastRegisteredConsumerIsRemoved()
+        {
+            var other = config.AddSet("Shared"); string otherEntry = other.AddEntry("image", LocalizationEntryKind.Asset).Id; other.SetSources("en", Source("Table")); SaveConfig();
+            using (var edit = new LocalizationProjectAssetEdit(config)) { edit.RemoveAssetEntry(entry); edit.Commit(); }
+            Assert.That(table.HasKey("image"), Is.True);
+            using (var edit = new LocalizationProjectAssetEdit(config)) { edit.RemoveAssetEntry(otherEntry); edit.Commit(); }
+            Assert.That(table.HasKey("image"), Is.False);
+        }
+        [Test] public void SourceRoutingCannotChangeAfterEntryChangesHaveBeenStaged()
+        {
+            using var edit = new LocalizationProjectAssetEdit(config); edit.SetAsset(entry, "en", texture);
+            edit.Draft.Sets[0].SetSources("en", Source("Other"));
+            Assert.That(Assert.Throws<InvalidOperationException>(() => edit.Commit()).Message, Does.Contain("routing changed")); Assert.That(table.Get("image"), Is.Null);
+        }
+        [Test] public void AddressBecomingAmbiguousAfterSourceEditBlocksCommit()
+        {
+            using var edit = new LocalizationProjectAssetEdit(config); edit.SetAsset(entry, "en", texture);
+            string duplicate = root + "/Duplicate/Resources/" + prefix + "/Table.asset";
+            Directory.CreateDirectory(Path.GetDirectoryName(duplicate)); File.Copy(tablePath, duplicate); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            Assert.That(Assert.Throws<InvalidOperationException>(() => edit.Commit()).Message, Does.Contain("Ambiguous")); Assert.That(table.Get("image"), Is.Null);
+        }
     }
 }

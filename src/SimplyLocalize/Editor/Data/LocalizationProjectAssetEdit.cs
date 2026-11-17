@@ -11,7 +11,7 @@ namespace SimplyLocalize.Editor.Data
 {
     /// <summary>Isolated project/ScriptableObject drafts saved together with rollback and localization Undo.
     /// Uses Unity serialization for native assets, never a handwritten YAML writer. Only editable Assets paths are writable.</summary>
-    public sealed class LocalizationProjectAssetEdit : IDisposable
+    public sealed partial class LocalizationProjectAssetEdit : IDisposable
     {
         private sealed class AssetDraft
         {
@@ -58,6 +58,7 @@ namespace SimplyLocalize.Editor.Data
         public LocalizationProjectChange Commit()
         {
             EnsureOpen(); Draft.ValidateOrThrow(); string targetConfig = Json(Draft);
+            ValidateEntryRoutes();
             if (original == null || AssetDatabase.GetAssetPath(original) != configPath || Json(original) != configJson)
                 throw new InvalidOperationException("Config changed. Reload before saving.");
             foreach (var asset in assets.Values.Where(a => a.Bytes != null))
