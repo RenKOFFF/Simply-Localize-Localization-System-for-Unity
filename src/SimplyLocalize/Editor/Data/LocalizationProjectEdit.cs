@@ -299,9 +299,7 @@ namespace SimplyLocalize.Editor.Data
                     encoding = new UTF8Encoding(false); newline = "\n"; return;
                 }
                 Before = File.ReadAllBytes(ReadPath);
-                using var stream = new StreamReader(new MemoryStream(Before), Encoding.UTF8, true);
-                string json = stream.ReadToEnd(); encoding = stream.CurrentEncoding;
-                byte[] preamble = encoding.GetPreamble(); bom = preamble.Length > 0 && Before.Take(preamble.Length).SequenceEqual(preamble);
+                string json = EditorTextEncoding.Decode(Before, path, out encoding, out bom);
                 newline = json.Contains("\r\n") ? "\r\n" : "\n";
                 // Match runtime validation, then retain unknown JSON fields and untouched value types.
                 SimplyLocalize.Data.LocalizationFileParser.Parse(json);

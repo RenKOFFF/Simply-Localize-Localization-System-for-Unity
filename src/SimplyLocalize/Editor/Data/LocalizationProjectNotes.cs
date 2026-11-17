@@ -38,8 +38,7 @@ namespace SimplyLocalize.Editor.Data
             if (Before == null) root = new JObject { ["descriptions"] = new JObject() };
             else
             {
-                using var stream = new StreamReader(new MemoryStream(Before), encoding, true);
-                string json = stream.ReadToEnd(); encoding = stream.CurrentEncoding; bom = encoding.GetPreamble().Length > 0 && Before.Take(encoding.GetPreamble().Length).SequenceEqual(encoding.GetPreamble());
+                string json = EditorTextEncoding.Decode(Before, Path, out encoding, out bom);
                 newline = json.Contains("\r\n") ? "\r\n" : "\n";
                 using var input = new JsonTextReader(new StringReader(json)) { DateParseHandling = DateParseHandling.None, MaxDepth = 32 };
                 root = JObject.Load(input, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });

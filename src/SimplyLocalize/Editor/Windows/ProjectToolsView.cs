@@ -59,8 +59,7 @@ namespace SimplyLocalize.Editor.Windows
             actions.Add(new Button(() =>
             {
                 string path = EditorUtility.OpenFilePanel("Preview localization CSV", "", "csv"); if (path.Length == 0) return;
-                try { PreviewCsv(File.ReadAllText(path, new UTF8Encoding(false, true))); }
-                catch (Exception failure) { ClearPreview(); ShowError(failure.Message); }
+                PreviewFile(path);
             }) { text = "Preview CSV", name = "csvImport" }); Add(actions);
             status = new HelpBox("", HelpBoxMessageType.Error) { name = "csvStatus" }; status.style.display = DisplayStyle.None; Add(status);
             summary = new Label("No import preview.") { name = "csvSummary", style = { whiteSpace = WhiteSpace.Normal, marginTop = 12 } }; Add(summary);
@@ -78,6 +77,16 @@ namespace SimplyLocalize.Editor.Windows
             recovered.Add(new TextField { name = "csvRecoveredInput", multiline = true, isReadOnly = true }); Add(recovered);
             var rebuild = new Button(() => PreviewCsv(pendingCsv)) { name = "csvRebuild", text = "Rebuild import preview" }; rebuild.style.display = DisplayStyle.None; Add(rebuild);
             RegisterCallback<DetachFromPanelEvent>(_ => Dispose());
+        }
+        public bool PreviewFile(string path)
+        {
+            var recovery = recoveredPreview ? CaptureState() : null;
+            try { return PreviewCsv(EditorTextEncoding.Decode(File.ReadAllBytes(path), path, out _, out _)); }
+            catch (Exception failure)
+            {
+                ClearPreview(); if (recovery != null) RestoreState(recovery);
+                ShowError(failure.Message); return false;
+            }
         }
         public bool PreviewCsv(string csv)
         {

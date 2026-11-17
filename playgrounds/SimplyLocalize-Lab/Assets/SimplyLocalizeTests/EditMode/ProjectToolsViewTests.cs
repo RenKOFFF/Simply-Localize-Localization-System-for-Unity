@@ -65,6 +65,20 @@ namespace SimplyLocalize.Tests
             view.PreviewCsv("Key,en\nhello,Previous\n"); Assert.That(view.PreviewCsv("Key,en\nhello,\"broken"), Is.False);
             Assert.That(view.Preview, Is.Null); Assert.That(view.ApplyPreview(), Is.False); Assert.That(File.ReadAllText(source), Does.Not.Contain("Previous"));
         }
+        [TestCase(false)][TestCase(true)] public void InvalidFileEncodingCannotPublishOrApplyAReplacementPreview(bool bom)
+        {
+            string path = root + "/Invalid.csv"; byte[] bytes = System.Text.Encoding.UTF8.GetBytes("Key,en\nhello,").Concat(new byte[] { 0xff }).ToArray();
+            if (bom) bytes = new byte[] { 0xef, 0xbb, 0xbf }.Concat(bytes).ToArray(); File.WriteAllBytes(path, bytes);
+            view.PreviewCsv("Key,en\nhello,Previous\n"); Assert.That(view.PreviewFile(path), Is.False); Assert.That(view.Preview, Is.Null);
+            Assert.That(Field<HelpBox>("csvStatus").text, Does.Contain("encoding").And.Contain("Invalid.csv"));
+            Assert.That(view.ApplyPreview(), Is.False); Assert.That(File.ReadAllText(source), Does.Not.Contain("Previous")); Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes));
+        }
+        [Test] public void UnicodeFilePreviewRemainsReadOnlyUntilApply()
+        {
+            string path = root + "/Unicode.csv"; File.WriteAllText(path, "Key,en\nhello,Привет\n", new System.Text.UnicodeEncoding(true, true, true));
+            byte[] before = File.ReadAllBytes(source); Assert.That(view.PreviewFile(path), Is.True); Assert.That(File.ReadAllBytes(source), Is.EqualTo(before));
+            Assert.That(view.ApplyPreview(), Is.True); Assert.That(File.ReadAllText(source), Does.Contain("Привет"));
+        }
         [Test] public void ExportContainsSavedIdentityAndNotesWithoutApplyingPreview()
         {
             using (var edit = new LocalizationProjectEdit(config, config.Sets[0].Id)) { edit.SetDescription(entry, "Saved note"); edit.Commit(); }

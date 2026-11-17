@@ -115,6 +115,9 @@ namespace SimplyLocalize.Tests
             window.ShowTab(6); const string csv = "Key,en\nhello,Imported\n";
             Assert.That(View<ProjectToolsView>().PreviewCsv(csv), Is.True); Assert.That(window.hasUnsavedChanges, Is.True);
             RebuildAfterReload(); Assert.That(View<ProjectToolsView>().Preview, Is.Null); Assert.That(window.SavePendingChanges(), Is.False);
+            string invalidFile = root + "/Invalid.csv"; File.WriteAllBytes(invalidFile, new byte[] { 0xef, 0xbb, 0xbf, 0xff });
+            Assert.That(View<ProjectToolsView>().PreviewFile(invalidFile), Is.False);
+            Assert.That(Field<TextField>("csvRecoveredInput").value, Is.EqualTo(csv)); Assert.That(window.HasPendingChanges, Is.True);
             File.WriteAllText(source, "malformed JSON"); Click("csvRebuild");
             Assert.That(Field<TextField>("csvRecoveredInput").value, Is.EqualTo(csv)); Assert.That(window.HasPendingChanges, Is.True);
             File.WriteAllText(source, "{\"translations\":{\"hello\":\"Hello\"}}"); EditorProjectSelection.Invalidate(); Click("csvRebuild");

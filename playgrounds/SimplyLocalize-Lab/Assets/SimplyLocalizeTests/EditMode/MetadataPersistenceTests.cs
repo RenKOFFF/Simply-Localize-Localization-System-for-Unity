@@ -1,273 +1,154 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using System.Text;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using SimplyLocalize.Editor;
 using SimplyLocalize.Editor.Data;
-using UnityEngine;
-using UnityEngine.TestTools;
-using Object = UnityEngine.Object;
+using UnityEditor;
 
 namespace SimplyLocalize.Tests
 {
+    // Ported from key/history metadata: stable entry IDs replace historical-name lookup.
+    // The same corruption, external-change and write-failure guarantees remain required.
     public class MetadataPersistenceTests
     {
-        private string _root, _folder, _path;
-        private LocalizationConfig _config;
-        private LanguageProfile _en;
-
-        [SetUp]
-        public void SetUp()
+        private string root, path, source, entry;
+        private LocalizationProjectConfig config;
+        private ProjectNotesTestScope cleanup;
+        [SetUp] public void Setup()
         {
-            string id = "MetadataTests_" + Guid.NewGuid().ToString("N");
-            _root = Path.Combine(Application.dataPath, "__" + id);
-            _folder = Path.Combine(_root, "Resources", id);
-            _path = Path.Combine(_folder, "_meta.json");
-            Directory.CreateDirectory(Path.Combine(_folder, "en", "text"));
-            File.WriteAllText(Path.Combine(_folder, "en", "text", "test.json"),
-                "{\"translations\":{\"key\":\"value\"}}");
-            _en = ScriptableObject.CreateInstance<LanguageProfile>();
-            _en.languageCode = "en";
-            _config = ScriptableObject.CreateInstance<LocalizationConfig>();
-            _config.resourcesBasePath = id;
-            _config.languages.Add(_en);
-            _config.defaultLanguage = _en;
+            root = "Assets/SimplyLocalizeMetadata_" + Guid.NewGuid().ToString("N"); Directory.CreateDirectory(root); AssetDatabase.Refresh();
+            config = LocalizationProjectAuthoring.Create(new[] { "en" }, "en", "en", root + "/Project.asset", false);
+            entry = config.Sets[0].AddEntry("key").Id; EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config);
+            cleanup = new ProjectNotesTestScope(config); path = LocalizationProjectNotes.GetAssetPath(config);
+            source = root + "/Resources/SimplyLocalize/Translations/en/Common.json";
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
         }
-
-        [TearDown]
-        public void TearDown()
+        [TearDown] public void Cleanup() { cleanup?.Dispose(); AssetDatabase.DeleteAsset(root); }
+        private LocalizationProjectEdit Edit() => new(config, config.Sets[0].Id);
+        private string Json(string value = "original") => new JObject { ["descriptions"] = new JObject { [entry] = value } }.ToString();
+        private void Write(string json) => File.WriteAllText(path, json.Replace("$ID", entry));
+        private void RejectUnchanged()
         {
-            Object.DestroyImmediate(_config);
-            Object.DestroyImmediate(_en);
-            if (Directory.Exists(_root)) Directory.Delete(_root, true);
-            if (File.Exists(_root + ".meta")) File.Delete(_root + ".meta");
+            byte[] original = File.ReadAllBytes(path), text = File.ReadAllBytes(source);
+            Assert.Catch<Exception>(() => LocalizationProjectNotes.Load(config));
+            using var edit = Edit(); Assert.Catch<Exception>(() => edit.SetDescription(entry, "Replacement"));
+            Assert.That(File.ReadAllBytes(path), Is.EqualTo(original)); Assert.That(File.ReadAllBytes(source), Is.EqualTo(text));
         }
-
-        private EditorLocalizationData Load(string json = null)
+        [Test] public void EscapedMetadataRoundTripsThroughEntryRenameWithoutLosingCharacters()
         {
-            if (json != null) File.WriteAllText(_path, json);
-            var data = new EditorLocalizationData();
-            data.Load(_config);
-            return data;
-        }
-
-        [Test]
-        public void EscapedMetadata_RoundTripsWithoutLosingCharacters()
-        {
-            var data = Load("{\"key\":{\"description\":\"\\u041F\\b\\f\\u0001\\n\\t\\r\\\\\\\"/\",\"previousKeys\":[\"\\u043A\\\\old\"]}}");
-            Assert.That(data.GetDescription("key"), Is.EqualTo("П\b\f\u0001\n\t\r\\\"/"));
-            Assert.That(data.GetPreviousKeys("key"), Is.EqualTo(new[] { "к\\old" }));
-            const string unusualKey = "Ключ/\"\\\u0002";
-            data.SetDescription(unusualKey, "Unicode key");
-            data.SaveMeta();
-            var reloaded = Load();
-            Assert.That(reloaded.GetDescription(unusualKey), Is.EqualTo("Unicode key"));
-            Assert.That(reloaded.GetDescription("key"), Is.EqualTo(data.GetDescription("key")));
-            Assert.That(reloaded.GetPreviousKeys("key"), Is.EqualTo(data.GetPreviousKeys("key")));
-        }
-
-        [TestCase("null")]
-        [TestCase("42")]
-        [TestCase("true")]
-        [TestCase("{}")]
-        [TestCase("[]")]
-        [Timeout(3000)]
-        public void NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(string element)
-        {
-            string json = "{\"good\":{\"description\":\"ok\"},\"key\":{\"previousKeys\":[\"old\"," + element + "]}}";
-            LogAssert.Expect(LogType.Warning, new Regex(@"Failed to load meta.*_meta\.json.*previousKeys\[1\].*line", RegexOptions.Singleline));
-            var data = Load(json);
-            Assert.That(data.GetMeta("good"), Is.Null);
-            Assert.That(data.GetMeta("key"), Is.Null);
-            Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            Assert.That(File.ReadAllText(_path), Is.EqualTo(json));
-        }
-
-        [TestCase("")]
-        [TestCase("{")]
-        [TestCase("[]")]
-        [TestCase("null")]
-        [TestCase("{\"key\":{\"description\":42}}")]
-        [TestCase("{\"key\":{\"previousKeys\":\"old\"}}")]
-        [TestCase("{\"key\":null}")]
-        [TestCase("{\"key\":{\"description\":\"unterminated}}")]
-        [TestCase("{\"key\":{\"description\":\"ok\"}} trailing")]
-        [TestCase("{\"key\":{},\"key\":{}}")]
-        [TestCase("{\"key\":{\"description\":\"a\",\"description\":\"b\"}}")]
-        public void InvalidFile_IsDiagnosedAndNeverOverwritten(string json)
-        {
-            LogAssert.Expect(LogType.Warning, new Regex(@"Failed to load meta.*_meta\.json", RegexOptions.Singleline));
-            var data = Load(json);
-            data.SetDescription("key", "new description");
-            var error = Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            StringAssert.Contains("_meta.json", error.Message);
-            Assert.That(File.ReadAllText(_path), Is.EqualTo(json));
-        }
-
-        [Test]
-        public void RepairRequiresReload_ThenSavingWorks()
-        {
-            LogAssert.Expect(LogType.Warning, new Regex("Failed to load meta"));
-            var data = Load("{");
-            File.WriteAllText(_path, "{\"key\":{\"description\":\"repaired\"}}");
-            Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            data.Reload(_config);
-            Assert.That(data.GetDescription("key"), Is.EqualTo("repaired"));
-            data.SetDescription("key", "edited");
-            data.SaveMeta();
-            Assert.That(Load().GetDescription("key"), Is.EqualTo("edited"));
-        }
-
-        [Test]
-        public void InvalidUtf8_IsNotSilentlyReplacedAndSaved()
-        {
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes("{\"key\":{\"description\":\"x\"}}");
-            bytes[Array.IndexOf(bytes, (byte)'x')] = 0xff;
-            File.WriteAllBytes(_path, bytes);
-            LogAssert.Expect(LogType.Warning, new Regex(@"Failed to load meta.*_meta\.json", RegexOptions.Singleline));
-            var data = Load();
-            Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            Assert.That(File.ReadAllBytes(_path), Is.EqualTo(bytes));
-        }
-
-        [Test, Timeout(3000)]
-        public void ExcessiveNesting_IsDiagnosedWithoutPublishingOrOverwriting()
-        {
-            string json = "{\"key\":{\"extra\":" + new string('[', 100) + "0" + new string(']', 100) + "}}";
-            LogAssert.Expect(LogType.Warning, new Regex(@"Failed to load meta.*MaxDepth", RegexOptions.Singleline));
-            var data = Load(json);
-            Assert.That(data.GetMeta("key"), Is.Null);
-            Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            Assert.That(File.ReadAllText(_path), Is.EqualTo(json));
-        }
-
-        [Test, Platform("Win")]
-        public void ReadFailure_BlocksSavingEvenAfterFileBecomesReadable()
-        {
-            const string original = "{\"key\":{\"description\":\"keep\"}}";
-            File.WriteAllText(_path, original);
-            EditorLocalizationData data;
-            using (new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.None))
+            const string value = "П\b\f\u0001\n\t\r\\\"/";
+            Write(Json(value)); using (var edit = Edit())
             {
-                LogAssert.Expect(LogType.Warning, new Regex(@"Failed to load meta.*_meta\.json", RegexOptions.Singleline));
-                data = Load();
+                Assert.That(edit.GetDescription(entry), Is.EqualTo(value));
+                Assert.Throws<ArgumentException>(() => edit.RenameTextEntry(entry, "Ключ/\"\\\u0002"));
+                edit.RenameTextEntry(entry, "Ключ/\"\\"); edit.SetDescription(entry, value + " changed"); edit.Commit();
             }
-            Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            Assert.That(File.ReadAllText(_path), Is.EqualTo(original));
-            data.Reload(_config);
-            Assert.That(data.GetDescription("key"), Is.EqualTo("keep"));
+            Assert.That(LocalizationProjectNotes.Load(config)[entry], Is.EqualTo(value + " changed")); Assert.That(config.Sets[0].Entries[0].Id, Is.EqualTo(entry));
         }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void ExternalChangeOrDeletion_RequiresReload(bool delete)
+        [TestCase("")][TestCase("{")][TestCase("[]")][TestCase("null")]
+        [TestCase("{}")][TestCase("{\"descriptions\":null}")]
+        [TestCase("{\"descriptions\":{\"$ID\":\"unterminated}}")]
+        [TestCase("{\"descriptions\":{}} trailing")]
+        [TestCase("{\"descriptions\":{},\"descriptions\":{}}")]
+        [TestCase("{\"descriptions\":{\"$ID\":\"a\",\"$ID\":\"b\"}}")]
+        [TestCase("{\"descriptions\":{\"not-an-id\":\"a\"}}")]
+        [TestCase("{\"descriptions\":{\"00000000000000000000000000000000\":\"a\"}}")]
+        public void InvalidFileIsRejectedWithoutPublishingOrOverwriting(string json) { Write(json); RejectUnchanged(); }
+        [TestCase("null")][TestCase("42")][TestCase("true")][TestCase("{}")][TestCase("[]")]
+        [Timeout(3000)] public void NonStringDescriptionRejectsWholeDocument(string token)
+        { Write("{\"descriptions\":{\"" + Guid.NewGuid().ToString("N") + "\":\"good\",\"$ID\":" + token + "}}"); RejectUnchanged(); }
+        [TestCase(false)][TestCase(true)] public void InvalidUtf8IsNeverReplacedAndSaved(bool bom)
         {
-            var data = Load("{\"key\":{\"description\":\"original\"}}");
-            data.SetDescription("key", "local edit");
-            const string external = "{\"key\":{\"description\":\"external edit\"}}";
-            if (delete) File.Delete(_path); else File.WriteAllText(_path, external);
-            Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            if (delete) Assert.That(File.Exists(_path), Is.False);
-            else Assert.That(File.ReadAllText(_path), Is.EqualTo(external));
+            byte[] bytes = Encoding.UTF8.GetBytes(Json("x")); bytes[Array.IndexOf(bytes, (byte)'x')] = 0xff;
+            File.WriteAllBytes(path, bom ? new byte[] { 0xef, 0xbb, 0xbf }.Concat(bytes).ToArray() : bytes); RejectUnchanged();
         }
-
-        [Test]
-        public void FileCreatedAfterLoad_IsNotOverwritten()
+        [Test] public void InvalidUtf16SurrogateIsRejected()
         {
-            var data = Load();
-            File.WriteAllText(_path, "{}");
-            data.SetDescription("key", "local");
-            Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            Assert.That(File.ReadAllText(_path), Is.EqualTo("{}"));
+            byte[] bytes = Encoding.Unicode.GetBytes(Json("x")); int index = Array.IndexOf(bytes, (byte)'x'); bytes[index] = 0; bytes[index + 1] = 0xd8;
+            File.WriteAllBytes(path, Encoding.Unicode.GetPreamble().Concat(bytes).ToArray()); RejectUnchanged();
         }
-
-        [Test]
-        public void UnknownFields_SurviveEditsAndMetadataRename()
+        [TestCase(false)][TestCase(true)] public void DamagedTranslationBytesCannotBecomeWritableReplacementCharacters(bool bom)
         {
-            var data = Load("{\"key\":{\"description\":\"old\",\"extra\":{\"text\":\"} ] \\\" \",\"date\":\"2026-01-02T00:00:00Z\",\"flags\":[true,null,7]}}}");
-            var extra = JObject.Parse(File.ReadAllText(_path))["key"]["extra"].DeepClone();
-            data.SetDescription("key", null);
-            data.RenameKey("key", "renamed");
-            data.SaveMeta();
-            var written = JObject.Parse(File.ReadAllText(_path));
-            Assert.That(JToken.DeepEquals(written["renamed"]["extra"], extra), Is.True);
-            Assert.That(Load().GetPreviousKeys("renamed"), Is.EqualTo(new[] { "key" }));
+            byte[] bytes = Encoding.UTF8.GetBytes("{\"translations\":{\"key\":\"x\"}}"); bytes[Array.IndexOf(bytes, (byte)'x')] = 0xff;
+            if (bom) bytes = new byte[] { 0xef, 0xbb, 0xbf }.Concat(bytes).ToArray(); File.WriteAllBytes(source, bytes);
+            Assert.Catch<Exception>(() => EditorProjectTextData.Load(config)); Assert.Throws<InvalidDataException>(() => Edit());
+            Assert.That(File.ReadAllBytes(source), Is.EqualTo(bytes)); Assert.That(File.Exists(path), Is.False);
         }
-
-        [Test]
-        public void UnknownOnlyMetadata_IsNotDeletedAsEmpty()
+        [Test] public void TranslationEditingPreservesUnicodeEncodingAndReadsTheSavedValue()
         {
-            var data = Load("{\"key\":{\"extra\":{\"note\":\"keep\"}}}");
-            data.SetDescription("key", null);
-            data.SaveMeta();
-            Assert.That(JObject.Parse(File.ReadAllText(_path))["key"]["extra"]["note"].Value<string>(), Is.EqualTo("keep"));
+            var encoding = new UnicodeEncoding(true, true, true);
+            File.WriteAllBytes(source, encoding.GetPreamble().Concat(encoding.GetBytes("{\"translations\":{\"key\":\"Привет\"},\"custom\":42}")).ToArray());
+            Assert.That(EditorProjectTextData.Load(config).TryGetDirect(entry, "en", out var before), Is.True); Assert.That(before.Value, Is.EqualTo("Привет"));
+            using (var edit = Edit()) { edit.SetTranslation(entry, "en", "Добрый день"); edit.Commit(); }
+            byte[] saved = File.ReadAllBytes(source); Assert.That(saved.Take(2), Is.EqualTo(encoding.GetPreamble()));
+            Assert.That(encoding.GetString(saved), Does.Contain("custom").And.Contain("Добрый день"));
+            Assert.That(EditorProjectTextData.Load(config).TryGetDirect(entry, "en", out var after), Is.True); Assert.That(after.Value, Is.EqualTo("Добрый день"));
         }
-
-        [Test]
-        public void LegacyNullFields_AndMissingFileRemainSupported()
+        [Test, Timeout(3000)] public void ExcessiveNestingRejectsUnknownFieldsToo()
+        { Write("{\"descriptions\":{},\"extra\":" + new string('[', 100) + "0" + new string(']', 100) + "}"); RejectUnchanged(); }
+        [Test] public void RepairRequiresAnExplicitSuccessfulReadBeforeStagingNewNotes()
         {
-            var data = Load("{\"key\":{\"description\":null,\"previousKeys\":null}}");
-            Assert.That(data.GetDescription("key"), Is.Null);
-            Assert.That(data.GetPreviousKeys("key"), Is.Empty);
-            data.SaveMeta();
-            Assert.That(File.Exists(_path), Is.False);
-            data.SetDescription("key", "новое описание 😀");
-            data.SaveMeta();
-            Assert.That(Load().GetDescription("key"), Is.EqualTo("новое описание 😀"));
-            Assert.That(data.HasPendingAssetRefresh, Is.True);
+            Write("{"); using var edit = Edit(); Assert.Catch<Exception>(() => edit.SetDescription(entry, "lost"));
+            Write(Json("repaired")); Assert.That(edit.GetDescription(entry), Is.EqualTo("repaired")); edit.SetDescription(entry, "edited"); edit.Commit();
+            Assert.That(LocalizationProjectNotes.Load(config)[entry], Is.EqualTo("edited"));
         }
-
-        [Test]
-        public void PublicMutableHistory_WithNullEntryDoesNotCorruptFile()
+        [Test, Platform("Win")] public void ReadFailureDoesNotPublishAnEmptyWritableDocument()
         {
-            const string original = "{\"key\":{\"previousKeys\":[\"old\"]}}";
-            var data = Load(original);
-            data.GetMeta("key").previousKeys.Add(null);
-            Assert.Throws<FormatException>(() => data.SaveMeta());
-            Assert.That(File.ReadAllText(_path), Is.EqualTo(original));
-            Assert.That(data.GetMeta("key").previousKeys.Count, Is.EqualTo(2));
+            Write(Json()); using var edit = Edit();
+            using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None)) Assert.Catch<IOException>(() => edit.SetDescription(entry, "lost"));
+            Assert.That(edit.GetDescription(entry), Is.EqualTo("original")); edit.Commit(); Assert.That(LocalizationProjectNotes.Load(config)[entry], Is.EqualTo("original"));
         }
-
-        [Test]
-        public void MissingBasePath_FailsExplicitly()
+        [TestCase(false)][TestCase(true)] public void ExternalChangeOrDeletionRequiresFreshEdit(bool delete)
         {
-            var data = new EditorLocalizationData();
-            data.SetDescription("key", "unsaved");
-            Assert.Throws<InvalidOperationException>(() => data.SaveMeta());
-            Assert.That(data.GetDescription("key"), Is.EqualTo("unsaved"));
+            Write(Json()); using var edit = Edit(); edit.SetDescription(entry, "local");
+            if (delete) File.Delete(path); else Write(Json("external"));
+            Assert.Throws<InvalidOperationException>(() => edit.Commit());
+            if (delete) Assert.That(File.Exists(path), Is.False); else Assert.That(LocalizationProjectNotes.Load(config)[entry], Is.EqualTo("external"));
         }
-
-        [Test, Platform("Win")]
-        public void ReplacementFailure_PreservesOriginalAndPendingEdits_ThenCanRetry()
+        [Test] public void FileCreatedAfterReadingMissingNotesCannotBeOverwritten()
         {
-            const string original = "{\"key\":{\"description\":\"old\"}}";
-            var data = Load(original);
-            data.SetDescription("key", "new");
-            // Reading is allowed, but Windows denies replacement without FileShare.Delete.
-            using (new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                Assert.Throws<IOException>(() => data.SaveMeta());
-                Assert.That(File.ReadAllText(_path), Is.EqualTo(original));
-            }
-            Assert.That(Directory.GetFiles(_folder, "*.tmp"), Is.Empty);
-            Assert.That(data.GetDescription("key"), Is.EqualTo("new"));
-            data.SaveMeta();
-            Assert.That(Load().GetDescription("key"), Is.EqualTo("new"));
+            using var edit = Edit(); Assert.That(edit.GetDescription(entry), Is.Empty); Write(Json("external")); edit.SetDescription(entry, "local");
+            Assert.Throws<InvalidOperationException>(() => edit.Commit()); Assert.That(LocalizationProjectNotes.Load(config)[entry], Is.EqualTo("external"));
         }
-
-        [Test]
-        public void RepeatedSaveAndReload_PreservesHistoryAndDoesNotLeaveTemporaryFiles()
+        [Test] public void UnknownFieldsAndForeignNotesSurviveRemovingTheLastKnownNote()
         {
-            var data = Load();
-            data.SetDescription("key", "description");
-            data.RenameKey("key", "renamed");
-            data.SaveMeta();
-            string first = File.ReadAllText(_path);
-            data.SaveMeta();
-            Assert.That(File.ReadAllText(_path), Is.EqualTo(first));
-            Assert.That(Load().FindKeyByPreviousName("key"), Is.EqualTo("renamed"));
-            Assert.That(Directory.GetFiles(_folder).Select(Path.GetFileName), Is.EqualTo(new[] { "_meta.json" }));
+            var data = JObject.Parse(Json()); string foreign = Guid.NewGuid().ToString("N"); data["descriptions"][foreign] = "Keep";
+            data["custom"] = JObject.Parse("{\"text\":\"} ] \\\"\",\"date\":\"2026-01-02T00:00:00Z\",\"flags\":[true,null,7]}");
+            Write(data.ToString()); using (var edit = Edit()) { edit.SetDescription(entry, null); edit.Commit(); }
+            var written = JObject.Parse(File.ReadAllText(path)); Assert.That(JToken.DeepEquals(written["custom"], data["custom"]), Is.True);
+            Assert.That(LocalizationProjectNotes.Load(config)[foreign], Is.EqualTo("Keep")); Assert.That(LocalizationProjectNotes.Load(config).ContainsKey(entry), Is.False);
+        }
+        [Test] public void MissingFileAndNullDescriptionDoNotCreateEmptyMetadata()
+        { using var edit = Edit(); Assert.That(edit.GetDescription(entry), Is.Empty); edit.SetDescription(entry, null); edit.Commit(); Assert.That(File.Exists(path), Is.False); }
+        [Test] public void UnsavedConfigCannotChooseAHiddenNotesDestination()
+        {
+            var unsaved = LocalizationProjectConfig.Create(new[] { "en" });
+            try { Assert.Throws<InvalidOperationException>(() => LocalizationProjectNotes.GetAssetPath(unsaved)); }
+            finally { UnityEngine.Object.DestroyImmediate(unsaved); }
+        }
+        [Test, Platform("Win")] public void ReplacementFailureKeepsNotesTranslationsAndPendingEditsForRetry()
+        {
+            Write(Json()); byte[] original = File.ReadAllBytes(path), beforeText = File.ReadAllBytes(source); using var edit = Edit();
+            edit.SetDescription(entry, "changed"); edit.SetTranslation(entry, "en", "changed");
+            // Managed file replacement fails before the transaction invokes any Unity import.
+            using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)) Assert.Catch<IOException>(() => edit.Commit());
+            Assert.That(File.ReadAllBytes(path), Is.EqualTo(original)); Assert.That(File.ReadAllBytes(source), Is.EqualTo(beforeText));
+            Assert.That(edit.GetDescription(entry), Is.EqualTo("changed")); edit.Commit(); Assert.That(LocalizationProjectNotes.Load(config)[entry], Is.EqualTo("changed"));
+            Assert.That(Directory.GetFiles(Path.GetDirectoryName(path)).Where(p => p.Contains(".tmp") || p.Contains(".bak")), Is.Empty);
+        }
+        [TestCase("utf8")][TestCase("utf8bom")][TestCase("utf16le")][TestCase("utf16be")][TestCase("utf32le")][TestCase("utf32be")]
+        public void RepeatedSavePreservesEncodingBomUnknownFieldsAndNoOpBytes(string kind)
+        {
+            Encoding encoding = kind switch { "utf8" => new UTF8Encoding(false, true), "utf8bom" => new UTF8Encoding(true, true), "utf16le" => new UnicodeEncoding(false, true, true), "utf16be" => new UnicodeEncoding(true, true, true), "utf32le" => new UTF32Encoding(false, true, true), _ => new UTF32Encoding(true, true, true) };
+            byte[] bytes = encoding.GetPreamble().Concat(encoding.GetBytes(Json("Привет"))).ToArray(); File.WriteAllBytes(path, bytes);
+            using (var edit = Edit()) { edit.SetDescription(entry, "Привет"); edit.Commit(); } Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes));
+            using (var edit = Edit()) { edit.SetDescription(entry, "До свидания"); edit.Commit(); }
+            byte[] saved = File.ReadAllBytes(path); Assert.That(saved.Take(encoding.GetPreamble().Length), Is.EqualTo(encoding.GetPreamble()));
+            Assert.That(encoding.GetString(saved), Does.Contain("До свидания")); Assert.That(LocalizationProjectNotes.Load(config)[entry], Is.EqualTo("До свидания"));
+            using (var edit = Edit()) { edit.GetDescription(entry); Assert.That(edit.Commit().HasChanges, Is.False); } Assert.That(File.ReadAllBytes(path), Is.EqualTo(saved));
         }
     }
 }
