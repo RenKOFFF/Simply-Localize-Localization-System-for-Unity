@@ -24,9 +24,10 @@ namespace SimplyLocalize.Editor.Windows
         private ScrollView details;
         private HelpBox message;
         private string selected, pendingKey, query = "", editError;
+        private string originalDescription, pendingDescription;
         private Button save;
         private bool disposed;
-        public bool HasPendingChanges => edit != null && (values.Count > 0 || pendingKey != data.Entries[selected]);
+        public bool HasPendingChanges => edit != null && (values.Count > 0 || pendingKey != data.Entries[selected] || pendingDescription != originalDescription);
         public string SelectedEntryId => selected;
         public ProjectTranslationsView(LocalizationProjectConfig config, string channelId = null, string setId = null,
             Action changed = null, ILocalizationEditorTextReader reader = null)
@@ -98,7 +99,9 @@ namespace SimplyLocalize.Editor.Windows
                 catch (Exception failure) { editError = failure.Message; }
                 data = EditorProjectTextData.Load(config, channelId, setId, reader);
                 if (!data.Entries.ContainsKey(entryId)) throw new ArgumentException("This text entry no longer belongs to the selected set.");
-                pendingKey = data.Entries[entryId]; ShowError(null); BuildDetails(); RestoreSelection();
+                pendingKey = data.Entries[entryId];
+                originalDescription = pendingDescription = edit != null ? edit.GetDescription(entryId) : LocalizationProjectNotes.Load(config).TryGetValue(entryId, out var note) ? note : "";
+                ShowError(null); BuildDetails(); RestoreSelection();
             }
             catch (Exception failure) { CloseEdit(); selected = null; details.Clear(); ShowError(failure.Message); }
         }
@@ -108,6 +111,8 @@ namespace SimplyLocalize.Editor.Windows
             var key = new TextField("Key") { name = "entryKey", value = pendingKey }; key.SetEnabled(edit != null);
             key.RegisterValueChangedCallback(e => { pendingKey = e.newValue; UpdateSave(); }); details.Add(key);
             details.Add(new TextField("ID") { name = "entryId", value = selected, isReadOnly = true });
+            var description = new TextField("Translator note") { name = "entryDescription", value = pendingDescription, multiline = true }; description.SetEnabled(edit != null);
+            description.RegisterValueChangedCallback(e => { if (edit == null) return; pendingDescription = e.newValue; UpdateSave(); }); details.Add(description);
             if (edit == null) details.Add(new HelpBox("Preview only. " + editError, HelpBoxMessageType.Warning));
             foreach (string code in data.Languages)
             {
@@ -152,6 +157,7 @@ namespace SimplyLocalize.Editor.Windows
             {
                 edit.ResetChanges();
                 edit.RenameTextEntry(selected, pendingKey);
+                edit.SetDescription(selected, pendingDescription);
                 foreach (var pair in values)
                     if (pair.Value == null) edit.RemoveTranslation(selected, pair.Key);
                     else edit.SetTranslation(selected, pair.Key, pair.Value, destinations.TryGetValue(pair.Key, out var address) ? address : null);

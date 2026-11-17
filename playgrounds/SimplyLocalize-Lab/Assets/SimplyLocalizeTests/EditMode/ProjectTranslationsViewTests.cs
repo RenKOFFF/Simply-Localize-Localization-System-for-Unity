@@ -21,11 +21,13 @@ namespace SimplyLocalize.Tests
         private EditorWindow host;
         private ProjectTranslationsView view;
         private HashSet<int> previousUndo;
+        private ProjectNotesTestScope notesCleanup;
         [SetUp] public void Setup()
         {
             root = "Assets/SimplyLocalizeTextView_" + Guid.NewGuid().ToString("N");
             Directory.CreateDirectory(root); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             config = LocalizationProjectAuthoring.Create(new[] { "en", "ru" }, "en", "en", root + "/Project.asset", false);
+            notesCleanup = new ProjectNotesTestScope(config);
             entry = config.Sets[0].AddEntry("hello").Id; SaveConfig();
             File.WriteAllText(PathFor("en"), "{\"translations\":{\"hello\":\"Hello\",\"external\":\"Register me\"}}");
             File.WriteAllText(PathFor("ru"), "{\"translations\":{\"hello\":\"\"}}");
@@ -36,7 +38,7 @@ namespace SimplyLocalize.Tests
         {
             view?.Dispose(); if (host != null) host.Close();
             if (previousUndo != null) foreach (var record in Resources.FindObjectsOfTypeAll<LocalizationProjectUndo>().Where(r => !previousUndo.Contains(r.GetInstanceID()))) record.Dispose();
-            AssetDatabase.DeleteAsset(root);
+            notesCleanup?.Dispose(); AssetDatabase.DeleteAsset(root);
         }
         private string PathFor(string code) => root + "/Resources/SimplyLocalize/Translations/" + code + "/Common.json";
         private void SaveConfig() { EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config); }
@@ -168,6 +170,14 @@ namespace SimplyLocalize.Tests
             Open(reader: new Reader()); view.SelectEntry(entry);
             Assert.That(Field<TextField>("translation_en").value, Is.EqualTo("External reader")); Assert.That(Field<TextField>("translation_en").enabledSelf, Is.False);
             Assert.That(view.AddEntry("new"), Is.True); Assert.That(config.Sets[0].Entries.Any(e => e.Key == "new"), Is.True);
+        }
+        [Test] public void TranslatorNoteIsAnExplicitPendingEditAndUndoRestoresIt()
+        {
+            Open(); view.SelectEntry(entry); Field<TextField>("entryDescription").value = "Menu greeting";
+            Assert.That(view.HasPendingChanges, Is.True); Assert.That(LocalizationProjectNotes.Load(config), Is.Empty);
+            Assert.That(view.SaveChanges(), Is.True); Assert.That(LocalizationProjectNotes.Load(config)[entry], Is.EqualTo("Menu greeting"));
+            Undo.PerformUndo(); Assert.That(Field<TextField>("entryDescription").value, Is.Empty);
+            Undo.PerformRedo(); Assert.That(Field<TextField>("entryDescription").value, Is.EqualTo("Menu greeting"));
         }
         private sealed class Reader : ILocalizationEditorTextReader
         { public LocalizationEditorTextSource Read(LocalizationSourceReference source) => new(new Dictionary<string, string> { ["hello"] = "External reader" }); }

@@ -153,6 +153,10 @@ passed. Основное окно и остальные редакторские
 Подготовлен Coverage по выбранным каналу/набору: прямые/fallback-значения,
 параметры/plural и явные ошибки чтения. 7 новых тестов прошли. Подключение
 страниц, CSV/Tools/AutoLocalize, Inspector/drawers и общая приёмка C5 ещё впереди.
+Подготовлены CSV/Tools и заметки переводчика по ID: совместное сохранение,
+preview/apply/rollback, rename/move, создание языков/источников и Undo/Redo.
+Полный прогон — 680 EditMode passed. Auto-Localize, общий Editor-контекст,
+Inspector/drawers, черновики при перезагрузке, главное окно и приёмка ещё впереди.
 
 - Setup, Languages, Translations, Assets, Coverage, Tools и Diagnostics работают
   с одной моделью. Каналы и наборы появляются по мере необходимости.

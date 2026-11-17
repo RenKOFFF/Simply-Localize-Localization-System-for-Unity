@@ -24,6 +24,7 @@ namespace SimplyLocalize.Editor.Data
         private readonly Dictionary<string, string> originalRoutes = new(StringComparer.Ordinal);
         private readonly HashSet<string> initialPaths, initialAddresses;
         private bool committed, disposed;
+        private ProjectNotesDocument notes;
         public LocalizationProjectConfig Draft { get; }
 
         public LocalizationProjectEdit(LocalizationProjectConfig config, params string[] setIds)
@@ -65,6 +66,7 @@ namespace SimplyLocalize.Editor.Data
             foreach (string path in documents.Keys.Where(p => !initialPaths.Contains(p)).ToArray()) documents.Remove(path);
             foreach (string address in addresses.Keys.Where(a => !initialAddresses.Contains(a)).ToArray()) addresses.Remove(address);
             foreach (var document in documents.Values) document.Reset();
+            notes?.Reset();
             originalRoutes.Clear(); foreach (string id in included) originalRoutes.Add(id, Routes(Set(id)));
         }
 
@@ -77,6 +79,17 @@ namespace SimplyLocalize.Editor.Data
             var destination = Destination(candidates, entry.Key, destinationAddress, present);
             destination.Text[entry.Key] = value;
         }
+        internal string ResolveTextWritePath(string entryId, string language, string destinationAddress)
+        {
+            EnsureOpen(); var (set, entry) = Entry(entryId); var candidates = Documents(set, language);
+            return Destination(candidates, entry.Key, destinationAddress, Locate(candidates, entry.Key)).Path;
+        }
+        internal void ValidateTextEntrySources(string entryId)
+        { EnsureOpen(); var (set, entry) = Entry(entryId); AllLocations(set, entry.Key); }
+        public string GetDescription(string entryId)
+        { EnsureOpen(); Entry(entryId); return (notes ??= new ProjectNotesDocument(original)).Get(entryId); }
+        public void SetDescription(string entryId, string description)
+        { EnsureOpen(); Entry(entryId); (notes ??= new ProjectNotesDocument(original)).Set(entryId, description); }
         /// <summary>Stages a new empty JSON and its exact source binding. Existing files/addresses are never adopted or overwritten.</summary>
         public void CreateTextSource(string setId, string language, string assetPath)
         {
@@ -165,6 +178,7 @@ namespace SimplyLocalize.Editor.Data
         public void RemoveTextEntry(string entryId)
         {
             EnsureOpen(); var (set, entry) = Entry(entryId); var locations = AllLocations(set, entry.Key);
+            (notes ??= new ProjectNotesDocument(original)).Set(entryId, null);
             set.RemoveEntry(entryId);
             foreach (var document in locations)
                 if (!OtherEntryUses(document, entry.Key, entryId)) document.Text.Property(entry.Key).Remove();
@@ -182,8 +196,9 @@ namespace SimplyLocalize.Editor.Data
                 }
                 else if (currentPaths.ResolveAssetPath(new("resources", pair.Key, LocalizationSourceKind.TextTable)) != pair.Value.Path)
                     throw new InvalidOperationException("Source address changed. Reload before saving: " + pair.Key);
-            var files = documents.Values.Select(d => new LocalizationProjectChange.FileChange(d.ReadPath, d.Before, d.Encode())).ToArray();
-            if (files.Any(f => !EditorFileTransaction.Equal(f.Before, f.After)))
+            var textFiles = documents.Values.Select(d => new LocalizationProjectChange.FileChange(d.ReadPath, d.Before, d.Encode())).ToArray();
+            var files = notes == null ? textFiles : textFiles.Concat(new[] { new LocalizationProjectChange.FileChange(notes.Path, notes.Before, notes.Encode()) }).ToArray();
+            if (textFiles.Any(f => !EditorFileTransaction.Equal(f.Before, f.After)))
                 foreach (var route in originalRoutes)
                 {
                     var set = Draft.Sets.SingleOrDefault(s => s.Id == route.Key);
