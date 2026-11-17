@@ -27,6 +27,14 @@ namespace SimplyLocalize.Editor.Data
         private ProjectNotesDocument notes;
         public LocalizationProjectConfig Draft { get; }
 
+        internal LocalizationDraftBaseline CaptureBaseline()
+        {
+            EnsureOpen(); var baseline = new LocalizationDraftBaseline(original, configPath, originalJson, originalBytes);
+            foreach (var document in documents.Values) baseline.AddFile(document.ReadPath, document.Before);
+            if (notes != null) baseline.AddFile(notes.Path, notes.Before);
+            return baseline;
+        }
+
         public LocalizationProjectEdit(LocalizationProjectConfig config, params string[] setIds)
         {
             if (config == null) throw new ArgumentNullException(nameof(config));

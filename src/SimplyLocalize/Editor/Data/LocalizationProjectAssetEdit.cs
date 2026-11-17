@@ -26,6 +26,17 @@ namespace SimplyLocalize.Editor.Data
         private readonly Dictionary<string, AssetDraft> assets = new(StringComparer.OrdinalIgnoreCase);
         private bool disposed, committed;
         public LocalizationProjectConfig Draft { get; }
+        internal LocalizationDraftBaseline CaptureBaseline()
+        {
+            EnsureOpen(); var baseline = new LocalizationDraftBaseline(original, configPath, configJson, configBytes);
+            foreach (var asset in assets.Values)
+            {
+                baseline.AddFile(asset.Path, asset.Bytes);
+                if (asset.Bytes != null) baseline.AddNative(asset.Original, asset.Path, asset.State);
+            }
+            return baseline;
+        }
+        internal static string NativeState(ScriptableObject asset) => State(asset);
         public bool HasChanges
         {
             get { EnsureOpen(); return Json(Draft) != configJson || assets.Values.Any(a => a.Bytes == null || State(a.Draft) != a.State); }

@@ -27,7 +27,36 @@ namespace SimplyLocalize.Editor.Windows
         private string originalDescription, pendingDescription;
         private Button save;
         private bool disposed;
-        public bool HasPendingChanges => edit != null && (values.Count > 0 || pendingKey != data.Entries[selected] || pendingDescription != originalDescription);
+        private LocalizationDraftBaseline restoredBaseline;
+        private ProjectViewDraft blockedDraft;
+        public bool HasPendingChanges => blockedDraft != null || edit != null && (values.Count > 0 || pendingKey != data.Entries[selected] || pendingDescription != originalDescription);
+        public event Action DraftChanged;
+        public ProjectViewDraft CaptureDraft()
+        {
+            if (blockedDraft != null) return blockedDraft.Copy();
+            if (!HasPendingChanges) return null;
+            return new ProjectViewDraft { Active = true, Kind = ProjectViewDraft.DraftKind.Text, Config = config, Channel = channelId, Set = setId, Entry = selected,
+                Key = pendingKey, Description = pendingDescription, Baseline = restoredBaseline ?? edit.CaptureBaseline(),
+                Values = values.Select(p => new ProjectViewDraft.Value { Language = p.Key, Text = p.Value, Removed = p.Value == null,
+                    Destination = destinations.TryGetValue(p.Key, out var address) ? address : null }).ToList() };
+        }
+        public void RestoreDraft(ProjectViewDraft snapshot)
+        {
+            snapshot.ValidateRoute(config, ProjectViewDraft.DraftKind.Text, channelId, setId);
+            if (HasPendingChanges) throw new InvalidOperationException("Save or discard the existing draft first.");
+            SelectEntry(snapshot.Entry);
+            if (edit == null || data == null || snapshot.Values.Any(v => !data.Languages.Contains(v.Language)))
+            {
+                CloseEdit(); blockedDraft = snapshot.Copy();
+                details.Clear(); details.Add(new ProjectDraftRecoveryView(blockedDraft, "The entry or its source is no longer available for editing.", RetryDraft, () => Reload(true)));
+                DraftChanged?.Invoke(); return;
+            }
+            restoredBaseline = snapshot.Baseline; pendingKey = snapshot.Key; pendingDescription = snapshot.Description;
+            foreach (var item in snapshot.Values) { values[item.Language] = item.Removed ? null : item.Text; if (!string.IsNullOrEmpty(item.Destination)) destinations[item.Language] = item.Destination; }
+            BuildDetails(); UpdateSave();
+            try { restoredBaseline.Validate(); } catch (Exception failure) { ShowError(failure.Message); }
+        }
+        private void RetryDraft() { using var snapshot = CaptureDraft(); CloseEdit(); Reload(); RestoreDraft(snapshot); }
         public string SelectedEntryId => selected;
         public ProjectTranslationsView(LocalizationProjectConfig config, string channelId = null, string setId = null,
             Action changed = null, ILocalizationEditorTextReader reader = null)
@@ -119,7 +148,7 @@ namespace SimplyLocalize.Editor.Windows
                 var card = new VisualElement(); LanguagePickerStyle.Card(card);
                 card.Add(LanguagePickerStyle.Heading(config.Languages.Single(l => l.Code == code).DisplayName + " · " + code));
                 bool exists = data.TryGetDirect(selected, code, out var direct);
-                var value = new TextField { name = "translation_" + code, value = direct?.Value ?? "", multiline = true };
+                var value = new TextField { name = "translation_" + code, value = values.TryGetValue(code, out var pending) ? pending ?? "" : direct?.Value ?? "", multiline = true };
                 value.style.minHeight = 50; value.style.whiteSpace = WhiteSpace.Normal; value.SetEnabled(edit != null);
                 value.RegisterValueChangedCallback(e => { if (exists && e.newValue == direct.Value) values.Remove(code); else values[code] = e.newValue; UpdateSave(); }); card.Add(value);
                 card.Add(new Label(exists ? "Source: " + direct.Source.ProviderId + ":" + direct.Source.Address : "No direct translation")
@@ -131,7 +160,8 @@ namespace SimplyLocalize.Editor.Windows
                 if (!exists && sources.Count > 1)
                 {
                     var destination = new DropdownField("Write to", new[] { "Choose a source" }.Concat(sources).ToList(), "Choose a source") { name = "translationDestination_" + code };
-                    destination.RegisterValueChangedCallback(e => { if (sources.Contains(e.newValue)) destinations[code] = e.newValue; else destinations.Remove(code); }); card.Add(destination);
+                    if (destinations.TryGetValue(code, out var chosen)) destination.SetValueWithoutNotify(chosen);
+                    destination.RegisterValueChangedCallback(e => { if (sources.Contains(e.newValue)) destinations[code] = e.newValue; else destinations.Remove(code); UpdateSave(); }); card.Add(destination);
                 }
                 if (exists)
                 {
@@ -155,6 +185,8 @@ namespace SimplyLocalize.Editor.Windows
             if (!HasPendingChanges) return true;
             try
             {
+                if (blockedDraft != null) throw new InvalidOperationException("Restore the missing source or discard the recovered draft before saving.");
+                restoredBaseline?.Validate();
                 edit.ResetChanges();
                 edit.RenameTextEntry(selected, pendingKey);
                 edit.SetDescription(selected, pendingDescription);
@@ -209,10 +241,10 @@ namespace SimplyLocalize.Editor.Windows
             list.Rebuild(); RestoreSelection();
         }
         private void RestoreSelection() { int index = visible.FindIndex(p => p.Key == selected); list.SetSelectionWithoutNotify(index < 0 ? Array.Empty<int>() : new[] { index }); }
-        private void UpdateSave() { save?.SetEnabled(HasPendingChanges); }
+        private void UpdateSave() { save?.SetEnabled(HasPendingChanges); DraftChanged?.Invoke(); }
         private void ShowError(string error) { message.text = error ?? ""; message.style.display = string.IsNullOrEmpty(error) ? DisplayStyle.None : DisplayStyle.Flex; }
         private void OnHistory() { if (HasPendingChanges) ShowError("History changed while this edit was open. Discard and reload before saving."); else Reload(); }
-        private void CloseEdit() { edit?.Dispose(); edit = null; values.Clear(); destinations.Clear(); editError = null; }
+        private void CloseEdit() { edit?.Dispose(); edit = null; values.Clear(); destinations.Clear(); editError = null; restoredBaseline = null; blockedDraft?.Dispose(); blockedDraft = null; }
         public void Dispose() { if (disposed) return; disposed = true; LocalizationProjectUndo.Changed -= OnHistory; CloseEdit(); }
     }
 }

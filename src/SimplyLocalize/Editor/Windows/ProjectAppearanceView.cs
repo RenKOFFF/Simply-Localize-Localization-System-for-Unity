@@ -21,9 +21,41 @@ namespace SimplyLocalize.Editor.Windows
         private LocalizationAppearance original, draft;
         private Button save;
         private HelpBox message;
+        private LocalizationDraftBaseline restoredBaseline;
+        private ProjectViewDraft blockedDraft;
         public string SelectedLanguage => language;
-        public bool HasPendingChanges => edit != null && edit.HasChanges;
+        public bool HasPendingChanges => blockedDraft != null || edit != null && edit.HasChanges;
         public event Action DraftChanged;
+        public ProjectViewDraft CaptureDraft()
+        {
+            if (blockedDraft != null) return blockedDraft.Copy();
+            if (!HasPendingChanges) return null;
+            var snapshot = new ProjectViewDraft { Active = true, Kind = ProjectViewDraft.DraftKind.Appearance, Config = config,
+                Language = language, Baseline = restoredBaseline ?? edit.CaptureBaseline(), Appearance = (LocalizationAppearance)ScriptableObject.CreateInstance(draft.GetType()) };
+            EditorUtility.CopySerialized(draft, snapshot.Appearance); snapshot.Appearance.hideFlags = HideFlags.HideAndDontSave;
+            using var serialized = new SerializedObject(snapshot.Appearance); var property = serialized.GetIterator();
+            while (property.Next(true)) if (property.propertyType == SerializedPropertyType.ObjectReference && property.objectReferenceValue != null)
+                snapshot.AppearanceReferences.Add(property.objectReferenceValue);
+            return snapshot;
+        }
+        public void RestoreDraft(ProjectViewDraft snapshot)
+        {
+            snapshot.ValidateRoute(config, ProjectViewDraft.DraftKind.Appearance);
+            if (HasPendingChanges) throw new InvalidOperationException("Save or discard the existing draft first.");
+            string reason = null;
+            try { snapshot.ValidateValues(); SelectLanguage(snapshot.Language); }
+            catch (Exception failure) { reason = failure.Message; }
+            if (reason != null || edit == null || draft == null || snapshot.Appearance == null || draft.GetType() != snapshot.Appearance.GetType())
+            {
+                CloseEdit(); blockedDraft = snapshot.Copy(); Clear();
+                Add(new ProjectDraftRecoveryView(blockedDraft, reason ?? "The appearance source is no longer available for editing.", RetryDraft, () => Reload(true)));
+                DraftChanged?.Invoke(); return;
+            }
+            restoredBaseline = snapshot.Baseline; EditorUtility.CopySerialized(snapshot.Appearance, draft); draft.hideFlags = HideFlags.HideAndDontSave;
+            Build(); DraftChanged?.Invoke();
+            try { restoredBaseline.Validate(); } catch (Exception failure) { ShowError(failure.Message); }
+        }
+        private void RetryDraft() { using var snapshot = CaptureDraft(); CloseEdit(); Reload(); RestoreDraft(snapshot); }
         public ProjectAppearanceView(LocalizationProjectConfig config, string language = null, Action changed = null,
             Func<LocalizationSourceReference, LocalizationAppearance> reader = null)
         {
@@ -163,7 +195,12 @@ namespace SimplyLocalize.Editor.Windows
         public bool SaveChanges()
         {
             if (!HasPendingChanges) return true;
-            try { LocalizationProjectUndo.Record(edit.Commit(), "Edit language appearance"); CloseEdit(); Reload(); changed?.Invoke(); return true; }
+            try
+            {
+                if (blockedDraft != null) throw new InvalidOperationException("Restore the missing source or discard the recovered draft before saving.");
+                restoredBaseline?.Validate();
+                LocalizationProjectUndo.Record(edit.Commit(), "Edit language appearance"); CloseEdit(); Reload(); changed?.Invoke(); return true;
+            }
             catch (Exception failure) { ShowError(failure.Message); return false; }
         }
         private VisualElement Section(string title, string name, bool enabled, Action<bool> set)
@@ -183,7 +220,7 @@ namespace SimplyLocalize.Editor.Windows
         private void UpdateSave() => save?.SetEnabled(HasPendingChanges);
         private void ShowError(string value) { error = value; if (message != null) { message.text = value ?? ""; message.style.display = value == null ? DisplayStyle.None : DisplayStyle.Flex; } }
         private void OnHistory() { if (HasPendingChanges) ShowError("History changed. Save may conflict; keep your draft or discard and reload."); else Reload(); }
-        private void CloseEdit() { edit?.Dispose(); edit = null; original = null; draft = null; save = null; }
+        private void CloseEdit() { edit?.Dispose(); edit = null; original = null; draft = null; save = null; restoredBaseline = null; blockedDraft?.Dispose(); blockedDraft = null; }
         public void Dispose() { LocalizationProjectUndo.Changed -= OnHistory; CloseEdit(); }
     }
 }
