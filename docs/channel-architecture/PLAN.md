@@ -157,6 +157,10 @@ passed. Основное окно и остальные редакторские
 preview/apply/rollback, rename/move, создание языков/источников и Undo/Redo.
 Полный прогон — 680 EditMode passed. Auto-Localize, общий Editor-контекст,
 Inspector/drawers, черновики при перезагрузке, главное окно и приёмка ещё впереди.
+Подготовлен Auto-Localize: привязки по ID, явные режимы prefab, предпросмотр,
+совместное сохранение и Undo/Redo со сценой. Полный прогон — **704 EditMode
+passed**. Общий Editor-контекст, Inspector/drawers, сохранность черновиков,
+переключение главного окна и общая приёмка C5 остаются незавершёнными.
 
 - Setup, Languages, Translations, Assets, Coverage, Tools и Diagnostics работают
   с одной моделью. Каналы и наборы появляются по мере необходимости.

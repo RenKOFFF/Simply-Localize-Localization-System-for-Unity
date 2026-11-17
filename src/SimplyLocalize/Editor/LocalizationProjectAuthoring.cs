@@ -242,15 +242,22 @@ namespace SimplyLocalize.Editor
             string parent = Path.GetDirectoryName(configPath).Replace('\\', '/');
             return parent.EndsWith("/Resources", StringComparison.Ordinal) ? parent : parent + "/Resources";
         }
-        private static string AvailableAssetPath(string preferred)
+        internal static string SuggestTextSourcePath(LocalizationProjectConfig config, LocalizationContentSet set, string language, ISet<string> reserved = null)
+        {
+            string filename = new string(set.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c).ToArray()).Trim('.', ' ');
+            if (filename.Length == 0) filename = "Translations";
+            return AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Translations/" + LocalizationLanguageCode.Normalize(language) + "/" + filename + ".json", reserved);
+        }
+        private static string AvailableAssetPath(string preferred, ISet<string> reserved = null)
         {
             // GenerateUniqueAssetPath can return empty when the parent has not been imported yet.
             // Keep preparation read-only; the transaction creates folders only after validation.
             var addresses = new HashSet<string>(AssetDatabase.GetAllAssetPaths().Where(p => !AssetDatabase.IsValidFolder(p))
                 .Select(ResourcesEditorTextReader.ResourceAddress).Where(a => a != null), StringComparer.OrdinalIgnoreCase);
+            if (reserved != null) addresses.UnionWith(reserved);
             for (int suffix = 0; suffix < 10000; suffix++)
             {
-                string candidate = suffix == 0 ? preferred : Path.ChangeExtension(preferred, null) + "-" + suffix + ".asset";
+                string candidate = suffix == 0 ? preferred : Path.ChangeExtension(preferred, null) + "-" + suffix + Path.GetExtension(preferred);
                 if (!File.Exists(candidate) && !Directory.Exists(candidate) && !File.Exists(candidate + ".meta")
                     && !addresses.Contains(ResourcesEditorTextReader.ResourceAddress(candidate))) return candidate;
             }

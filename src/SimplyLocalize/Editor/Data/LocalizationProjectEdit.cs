@@ -86,6 +86,8 @@ namespace SimplyLocalize.Editor.Data
         }
         internal void ValidateTextEntrySources(string entryId)
         { EnsureOpen(); var (set, entry) = Entry(entryId); AllLocations(set, entry.Key); }
+        internal bool HasStoredTextEntry(string entryId)
+        { EnsureOpen(); var (set, entry) = Entry(entryId); return AllLocations(set, entry.Key).Length > 0; }
         public string GetDescription(string entryId)
         { EnsureOpen(); Entry(entryId); return (notes ??= new ProjectNotesDocument(original)).Get(entryId); }
         public void SetDescription(string entryId, string description)
@@ -184,7 +186,8 @@ namespace SimplyLocalize.Editor.Data
                 if (!OtherEntryUses(document, entry.Key, entryId)) document.Text.Property(entry.Key).Remove();
         }
 
-        public LocalizationProjectChange Commit()
+        public LocalizationProjectChange Commit() => CommitWithNativeFiles(null, null);
+        internal LocalizationProjectChange CommitWithNativeFiles(IReadOnlyDictionary<string, byte[]> nativeFiles, Action<EditorFileTransaction> writeNative)
         {
             EnsureOpen(); Draft.ValidateOrThrow();
             var currentPaths = addresses.Count == 0 ? null : new ResourcesEditorTextReader();
@@ -206,7 +209,7 @@ namespace SimplyLocalize.Editor.Data
                         throw new InvalidOperationException("Source routing changed while editing text. Save routing separately, then open a fresh text edit.");
                 }
             var change = new LocalizationProjectChange(original, configPath, originalJson, ConfigJson(Draft), originalBytes, files);
-            change.Apply(); committed = true; return change;
+            change.Apply(nativeFiles, writeNative); committed = true; return change;
         }
         public void Dispose() { if (disposed) return; disposed = true; if (Draft != null) Object.DestroyImmediate(Draft); }
         private void EnsureOpen()
@@ -337,9 +340,9 @@ namespace SimplyLocalize.Editor.Data
         public bool HasChanges => beforeJson != afterJson || files.Any(f => !EditorFileTransaction.Equal(f.Before, f.After));
         internal LocalizationProjectChange(LocalizationProjectConfig config, string path, string beforeJson, string afterJson, byte[] beforeConfig, FileChange[] files)
         { this.config = config; this.path = path; this.beforeJson = beforeJson; this.afterJson = afterJson; this.beforeConfig = beforeConfig; this.files = files; }
-        internal void Apply()
+        internal void Apply(IReadOnlyDictionary<string, byte[]> nativeFiles = null, Action<EditorFileTransaction> writeNative = null)
         {
-            Write(false, beforeConfig, beforeJson, afterJson); FinishApplied();
+            Write(false, beforeConfig, beforeJson, afterJson, nativeFiles, writeNative, true);
         }
         internal static LocalizationProjectChange CaptureApplied(LocalizationProjectConfig config, string path, string beforeJson,
             string afterJson, byte[] beforeConfig, FileChange[] files)
@@ -351,7 +354,7 @@ namespace SimplyLocalize.Editor.Data
         {
             afterConfig = File.ReadAllBytes(path); isApplied = true;
             // Unity generated the GUIDs of new assets. Keep them with the file for native Undo/Redo.
-            files = files.Concat(files.Where(f => f.Before == null && File.Exists(f.Path + ".meta"))
+            files = files.Concat(files.Where(f => f.Before == null && f.After != null && File.Exists(f.Path + ".meta"))
                 .Select(f => new FileChange(f.Path + ".meta", null, File.ReadAllBytes(f.Path + ".meta")))).ToArray();
             // Initial save checks every loaded dependency. History only owns files it actually changed.
             files = files.Where(f => !EditorFileTransaction.Equal(f.Before, f.After)).ToArray();
@@ -360,20 +363,26 @@ namespace SimplyLocalize.Editor.Data
         { if (!IsApplied) return; Write(true, afterConfig, afterJson, beforeJson); undoneConfig = File.ReadAllBytes(path); isApplied = false; }
         public void Redo()
         { if (IsApplied) return; Write(false, undoneConfig, beforeJson, afterJson); afterConfig = File.ReadAllBytes(path); isApplied = true; }
-        private void Write(bool undo, byte[] expectedConfig, string expectedJson, string targetJson)
+        private void Write(bool undo, byte[] expectedConfig, string expectedJson, string targetJson,
+            IReadOnlyDictionary<string, byte[]> nativeFiles = null, Action<EditorFileTransaction> writeNative = null, bool captureInitial = false)
         {
             if (config == null || AssetDatabase.GetAssetPath(config) != path || LocalizationProjectEdit.ConfigJson(config) != expectedJson)
                 throw new InvalidOperationException("Config changed. Reload before applying this edit.");
             ValidateWritable(path); bool wasDirty = EditorUtility.IsDirty(config);
             using var transaction = new EditorFileTransaction();
+            var generatedMeta = new List<string>();
             foreach (var file in files)
             {
                 if (!EditorFileTransaction.Equal(file.Before, file.After)) ValidateWritable(file.Path);
                 transaction.Add(file.Path, undo ? file.After : file.Before, undo ? file.Before : file.After);
-                if (!undo && file.Before == null && !file.Path.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)
+                if (!undo && file.Before == null && file.After != null && !file.Path.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)
                     && !files.Any(f => f.Path == file.Path + ".meta"))
-                    transaction.Add(file.Path + ".meta", null, null);
+                {
+                    transaction.TrackExternalSnapshot(file.Path + ".meta", null); generatedMeta.Add(file.Path + ".meta");
+                }
             }
+            if (nativeFiles != null) foreach (var file in nativeFiles)
+            { ValidateWritable(file.Key); transaction.TrackExternalSnapshot(file.Key, file.Value); }
             bool changeConfig = expectedJson != targetJson;
             if (changeConfig) transaction.TrackExternalSnapshot(path, expectedConfig); else transaction.Add(path, expectedConfig, expectedConfig);
             bool configTouched = false;
@@ -381,12 +390,21 @@ namespace SimplyLocalize.Editor.Data
             {
                 transaction.Execute(() =>
                 {
-                    if (!changeConfig) return;
-                    if (LocalizationProjectEdit.ConfigJson(config) != expectedJson) throw new InvalidOperationException("Config changed while saving.");
-                    transaction.TouchExternal(path);
-                    configTouched = true;
-                    EditorJsonUtility.FromJsonOverwrite(targetJson, config); EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config);
-                    if (EditorUtility.IsDirty(config)) throw new IOException("Unity did not save the config: " + path);
+                    foreach (string meta in generatedMeta) transaction.TouchExternal(meta);
+                    if (changeConfig)
+                    {
+                        if (LocalizationProjectEdit.ConfigJson(config) != expectedJson) throw new InvalidOperationException("Config changed while saving.");
+                        transaction.TouchExternal(path); configTouched = true;
+                        EditorJsonUtility.FromJsonOverwrite(targetJson, config); EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config);
+                        if (EditorUtility.IsDirty(config)) throw new IOException("Unity did not save the config: " + path);
+                    }
+                    writeNative?.Invoke(transaction);
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                    if (captureInitial)
+                    {
+                        if (nativeFiles != null) files = files.Concat(nativeFiles.Select(f => new FileChange(f.Key, f.Value, File.ReadAllBytes(f.Key)))).ToArray();
+                        FinishApplied();
+                    }
                 });
             }
             catch
@@ -396,9 +414,9 @@ namespace SimplyLocalize.Editor.Data
                     EditorJsonUtility.FromJsonOverwrite(expectedJson, config);
                     if (wasDirty) EditorUtility.SetDirty(config); else EditorUtility.ClearDirty(config);
                 }
+                if (nativeFiles != null) AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                 throw;
             }
-            AssetDatabase.Refresh();
         }
         internal static void ValidateWritable(string path)
         {

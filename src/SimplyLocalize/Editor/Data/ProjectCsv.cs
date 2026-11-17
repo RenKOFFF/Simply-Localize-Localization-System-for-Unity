@@ -151,7 +151,7 @@ namespace SimplyLocalize.Editor.Data
                             || row.Values.TryGetValue(code, out var value) && (value.Length > 0 || policy == CsvEmptyCellPolicy.Clear);
                         if (!needsSource || target.Sources.Any(s => s.Language == code && s.Sources.Any(r => r.Kind == LocalizationSourceKind.TextTable))) continue;
                         if (row.Sources.ContainsKey(code)) throw new FormatException("CSV destination is not connected for " + row.Key + " / " + code + ". Connect it in Settings first.");
-                        string path = newSourcePath != null ? newSourcePath(target.Id, code) : NewPath(config, target, code, reserved);
+                        string path = newSourcePath != null ? newSourcePath(target.Id, code) : LocalizationProjectAuthoring.SuggestTextSourcePath(config, target, code, reserved);
                         result.edit.CreateTextSource(target.Id, code, path); reserved.Add(ResourcesEditorTextReader.ResourceAddress(path));
                         Change(ProjectCsvChangeKind.CreateSource, row, code, after: path);
                     }
@@ -199,19 +199,6 @@ namespace SimplyLocalize.Editor.Data
                 draft.ValidateOrThrow(); result.Changes = changes.AsReadOnly(); result.NewLanguages = newLanguages.AsReadOnly(); result.Warnings = warnings.OrderBy(w => w, StringComparer.Ordinal).ToList().AsReadOnly(); return result;
             }
             catch { result.Dispose(); throw; }
-        }
-        private static string NewPath(LocalizationProjectConfig config, LocalizationContentSet set, string code, HashSet<string> reserved)
-        {
-            string parent = Path.GetDirectoryName(AssetDatabase.GetAssetPath(config)).Replace('\\', '/');
-            string root = parent.EndsWith("/Resources", StringComparison.Ordinal) ? parent : parent + "/Resources";
-            string name = new string(set.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c).ToArray()).Trim('.', ' ');
-            if (name.Length == 0) name = "Translations";
-            for (int i = 0; i < 10000; i++)
-            {
-                string path = root + "/SimplyLocalize/Translations/" + code + "/" + name + (i == 0 ? "" : "-" + i) + ".json";
-                if (!File.Exists(path) && !Directory.Exists(path) && !File.Exists(path + ".meta") && !reserved.Contains(ResourcesEditorTextReader.ResourceAddress(path))) return path;
-            }
-            throw new IOException("Choose a free text source path for " + set.Name + " / " + code);
         }
         public LocalizationProjectChange Apply()
         {
