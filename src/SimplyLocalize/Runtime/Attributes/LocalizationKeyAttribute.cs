@@ -6,7 +6,8 @@ namespace SimplyLocalize
     /// <summary>
     /// Marks a string field as a localization key.
     /// Replaces the default text field with the localization key search dropdown.
-    /// Allows selecting from existing keys and creating new ones.
+    /// Selects existing text keys from Main's default set. Create entries in the Simply Localize window.
+    /// Use LocalizationEntryReference for other channels/sets and rename-safe bindings.
     ///
     /// Usage:
     ///   [LocalizationKey]
