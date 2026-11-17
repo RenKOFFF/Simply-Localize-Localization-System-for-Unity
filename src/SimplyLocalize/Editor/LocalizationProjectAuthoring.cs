@@ -72,14 +72,14 @@ namespace SimplyLocalize.Editor
             fallbackLanguage = string.IsNullOrEmpty(fallbackLanguage) ? null : LocalizationLanguageCode.Normalize(fallbackLanguage);
             if (!codes.Contains(defaultLanguage) || fallbackLanguage != null && !codes.Contains(fallbackLanguage))
                 throw new ArgumentException("Choose default and fallback from the selected languages.");
-            LocalizationProjectChange.ValidateWritable(assetPath); Vacant(assetPath);
+            EditorDataPath.ValidateNewAssetPath(assetPath); LocalizationProjectChange.ValidateWritable(assetPath); Vacant(assetPath);
             if (!assetPath.EndsWith(".asset", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Choose a .asset config path.");
             if (automaticStartup && ResourcesEditorTextReader.ResourceAddress(assetPath) != LocalizationProjectConfig.StartupResourcePath)
                 throw new ArgumentException("Automatic startup requires the reserved Resources address; disable it for an explicit bootstrap config.");
             if (automaticStartup) ValidateStartupAddress();
             string resourceRoot = ResourceRoot(assetPath);
-            var files = codes.ToDictionary(code => code, code => resourceRoot + "/SimplyLocalize/Translations/" + code + "/Common.json", StringComparer.Ordinal);
-            foreach (string file in files.Values) { LocalizationProjectChange.ValidateWritable(file); Vacant(file); ValidateNewAddress(file); }
+            var files = codes.ToDictionary(code => code, code => resourceRoot + "/SimplyLocalize/Translations/" + EditorDataPath.StorageName(code, "lang") + "/Common.json", StringComparer.Ordinal);
+            foreach (string file in files.Values) { EditorDataPath.ValidateNewAssetPath(file); LocalizationProjectChange.ValidateWritable(file); Vacant(file); ValidateNewAddress(file); }
             // Validate caller-supplied names before allocating an unsaved Unity object.
             if (displayNames != null)
                 foreach (string code in codes)
@@ -154,7 +154,7 @@ namespace SimplyLocalize.Editor
                 var draftCommon = createText ? edit.Draft.Sets.Single(s => s.Id == common.Id) : null;
                 if (createText && !draftCommon.Sources.Any(s => s.Language == language && s.Sources.Any(r => r.Kind == LocalizationSourceKind.TextTable)))
                 {
-                    string path = ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Translations/" + language + "/Common.json";
+                    string path = ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Translations/" + EditorDataPath.StorageName(language, "lang") + "/Common.json";
                     if (File.Exists(path)) edit.RegisterTextSource(common.Id, language, path);
                     else edit.CreateTextSource(common.Id, language, path);
                 }
@@ -176,7 +176,7 @@ namespace SimplyLocalize.Editor
             if (config == null) throw new ArgumentNullException(nameof(config)); language = LocalizationLanguageCode.Normalize(language);
             using var edit = new LocalizationProjectAssetEdit(config);
             var definition = edit.Draft.Languages.SingleOrDefault(l => l.Code == language) ?? throw new ArgumentException("Unknown project language.", nameof(language));
-            assetPath ??= AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Appearance/" + language + ".asset");
+            assetPath ??= AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Appearance/" + EditorDataPath.StorageName(language, "lang") + ".asset");
             string address = ResourcesEditorTextReader.ResourceAddress(assetPath);
             if (!LocalizationResourceAddress.IsValid(address)) throw new ArgumentException("Choose an appearance path inside a Resources folder.", nameof(assetPath));
             var appearance = edit.Create<LocalizationAppearance>(assetPath);
@@ -192,8 +192,8 @@ namespace SimplyLocalize.Editor
             using var edit = new LocalizationProjectAssetEdit(config);
             if (!edit.Draft.Languages.Any(l => l.Code == language)) throw new ArgumentException("Unknown project language.", nameof(language));
             var set = edit.Draft.Sets.SingleOrDefault(s => s.Id == setId) ?? throw new ArgumentException("Unknown content set.", nameof(setId));
-            string filename = new string(set.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c).ToArray()).Trim('.', ' ') + "Assets";
-            assetPath ??= AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Assets/" + language + "/" + filename + ".asset");
+            string filename = EditorDataPath.StorageName(set.Name, "Content") + "Assets";
+            assetPath ??= AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Assets/" + EditorDataPath.StorageName(language, "lang") + "/" + filename + ".asset");
             string address = ResourcesEditorTextReader.ResourceAddress(assetPath);
             if (!LocalizationResourceAddress.IsValid(address)) throw new ArgumentException("Choose an asset table path inside a Resources folder.", nameof(assetPath));
             edit.Create<LocalizationAssetTable>(assetPath);
@@ -270,9 +270,8 @@ namespace SimplyLocalize.Editor
         }
         internal static string SuggestTextSourcePath(LocalizationProjectConfig config, LocalizationContentSet set, string language, ISet<string> reserved = null)
         {
-            string filename = new string(set.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c).ToArray()).Trim('.', ' ');
-            if (filename.Length == 0) filename = "Translations";
-            return AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Translations/" + LocalizationLanguageCode.Normalize(language) + "/" + filename + ".json", reserved);
+            string filename = EditorDataPath.StorageName(set.Name, "Translations");
+            return AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Translations/" + EditorDataPath.StorageName(LocalizationLanguageCode.Normalize(language), "lang") + "/" + filename + ".json", reserved);
         }
         private static string AvailableAssetPath(string preferred, ISet<string> reserved = null)
         {

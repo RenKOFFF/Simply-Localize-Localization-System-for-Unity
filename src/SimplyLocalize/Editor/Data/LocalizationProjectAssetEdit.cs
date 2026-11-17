@@ -62,7 +62,7 @@ namespace SimplyLocalize.Editor.Data
         }
         public T Create<T>(string path) where T : ScriptableObject
         {
-            EnsureOpen(); LocalizationProjectChange.ValidateWritable(path);
+            EnsureOpen(); EditorDataPath.ValidateNewAssetPath(path); LocalizationProjectChange.ValidateWritable(path);
             if (!path.EndsWith(".asset", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Choose a .asset path.", nameof(path));
             if (path == configPath || assets.ContainsKey(path) || File.Exists(path) || Directory.Exists(path) || File.Exists(path + ".meta"))
                 throw new IOException("Destination already exists: " + path);

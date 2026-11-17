@@ -98,8 +98,12 @@ namespace SimplyLocalize.Editor.Data
             // the next editor update so a rejected file edit cannot leave dangling scene bindings.
             bool requested = records[0].proxy.Applied; long revision = historyRevision;
             string groupName = Undo.GetCurrentGroupName();
-            EditorApplication.delayCall += () =>
+            // delayCall waits for Inspector processing and can be suspended while editor updates
+            // still run. Restoring native scene history must not depend on a visible Inspector.
+            EditorApplication.update += Restore;
+            void Restore()
             {
+                EditorApplication.update -= Restore;
                 if (records.Any(r => r == null || r.proxy == null) || records.All(r => r.proxy.Applied == r.change.IsApplied)) return;
                 // Group numbers advance during ordinary editor updates even without new edits.
                 // Check history events, recorded property edits and the operation label instead.
@@ -113,7 +117,7 @@ namespace SimplyLocalize.Editor.Data
                 finally { applying = false; }
                 if (records.Any(r => r.proxy.Applied != r.change.IsApplied))
                     Debug.LogError("[SimplyLocalize Editor] Could not restore the Auto-Localize scene history.");
-            };
+            }
         }
         public void Dispose()
         {

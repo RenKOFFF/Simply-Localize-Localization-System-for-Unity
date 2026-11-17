@@ -107,8 +107,7 @@ namespace SimplyLocalize.Editor.Data
             language = LocalizationLanguageCode.Normalize(language);
             if (!Draft.Languages.Any(l => l.Code == language)) throw new ArgumentException("Add the language definition before its source.", nameof(language));
             if (Routes(set) != originalRoutes[setId]) throw new InvalidOperationException("Source routing changed. Open a fresh edit before adding a source.");
-            LocalizationProjectChange.ValidateWritable(assetPath);
-            foreach (string part in assetPath.Split('/')) EditorDataPath.ValidateName(part, "source path segment");
+            EditorDataPath.ValidateNewAssetPath(assetPath); LocalizationProjectChange.ValidateWritable(assetPath);
             string address = ResourcesEditorTextReader.ResourceAddress(assetPath);
             if (!assetPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || !LocalizationResourceAddress.IsValid(address))
                 throw new ArgumentException("Choose a JSON file inside a non-Editor Resources folder.", nameof(assetPath));

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using SimplyLocalize.Data;
 using SimplyLocalize.Editor.Data;
@@ -12,7 +14,6 @@ namespace SimplyLocalize.Tests
     public class LifecycleDiagnosticsTests
     {
         private readonly List<Object> _objects = new();
-        private LocalizationConfig _config;
         private LocalizationProjectConfig _project;
         private Action<string> _languageHandler;
         private Action<LocalizationRuntime> _profileHandler;
@@ -21,13 +22,6 @@ namespace SimplyLocalize.Tests
         public void SetUp()
         {
             Completed(Localization.ShutdownAsync());
-            _config = Create<LocalizationConfig>();
-            foreach (var code in new[] { "en", "ru" })
-            {
-                var profile = Create<LanguageProfile>();
-                profile.languageCode = code;
-                _config.languages.Add(profile);
-            }
             _project ??= LocalizationProjectConfig.Create(new[] { "en", "ru" });
             Completed(Localization.InitializeAsync(_project));
         }
@@ -102,88 +96,95 @@ namespace SimplyLocalize.Tests
         [TestCase("Bad\\Path")]
         public void InvalidResourcePath_IsRejectedWithUsefulArgumentError(string path)
         {
-            Assert.Throws<ArgumentException>(() => new EditorResourcesDataSource(path));
+            var config = Diagnostics(); config.Sets[0].SetSources("en", new LocalizationSourceReference("resources", path, LocalizationSourceKind.TextTable));
+            Assert.Throws<ArgumentException>(config.ValidateOrThrow);
         }
 
         [Test]
         public void Coverage_EscapedBracesAndLiteralMalformedTokensAreNotParameters()
         {
-            var data = new EditorLocalizationData();
-            data.AddKey("key", "test");
-            data.SetTranslation("key", "en", "{{literal}} {player} {bad{nested}}");
-            data.SetTranslation("key", "ru", "{player}");
-            Assert.That(CoverageAnalyzer.ComputeWarnings(data, _config), Is.Empty);
+            var config = Diagnostics(); config.Sets[0].AddEntry("key");
+            var reader = new Reader(); reader.Text["en"]["key"] = "{{literal}} {player} {bad{nested}}"; reader.Text["ru"]["key"] = "{player}";
+            Assert.That(ProjectCoverageAnalyzer.Analyze(config, textReader: reader).Warnings, Is.Empty);
         }
 
         [Test]
-        public void Coverage_EmptyDatasetIsNotComplete()
+        public void Coverage_EmptyDatasetIsNotReportedAs100Percent()
         {
-            var data = new EditorLocalizationData();
-            Assert.That(CoverageAnalyzer.ComputeCoverage(data, _config)[0].Percentage, Is.Zero);
-            Assert.That(CoverageAnalyzer.ComputeWarnings(data, _config), Is.Not.Empty);
+            var report = ProjectCoverageAnalyzer.Analyze(Diagnostics(), textReader: new Reader());
+            Assert.That(report.TextCoverage.All(r => r.TotalCount == 0 && r.Percentage == 0 && r.AvailablePercentage == 0), Is.True);
         }
 
         [Test]
-        public void Configuration_NullSlotsAndExternalFallbackRemainCompatible()
+        public void Configuration_NullLanguageSlotIsDiagnosedBeforeReadingSources()
         {
-            _config.languages.Insert(0, null);
-            var fallback = Create<LanguageProfile>();
-            fallback.languageCode = "uk";
-            _config.fallbackLanguage = fallback;
-            _config.languages[1].fallbackProfile = fallback;
-            fallback.fallbackProfile = _config.languages[1]; // Legacy authoring preview must stay bounded until its C5 replacement.
-            Assert.That(_config.GetValidationErrors(), Is.Empty);
-            var data = new EditorLocalizationData();
-            Assert.DoesNotThrow(() => CoverageAnalyzer.ComputeWarnings(data, _config));
+            var config = Diagnostics(); var field = typeof(LocalizationProjectConfig).GetField("_languages", BindingFlags.Instance | BindingFlags.NonPublic);
+            ((System.Collections.IList)field.GetValue(config)).Add(null);
+            var reader = new Reader(); var report = ProjectCoverageAnalyzer.Analyze(config, textReader: reader);
+            Assert.That(report.IsComplete, Is.False); Assert.That(report.TextCoverage, Is.Empty); Assert.That(reader.Reads, Is.Zero);
+            Assert.That(report.Warnings.Any(w => w.Message.Contains("Language definition is empty")), Is.True);
         }
 
         [Test]
-        public void Configuration_MissingDefaultReferenceAndUnsafeFallbackAreDiagnosed()
+        public void Configuration_UnselectedDefaultAndUnsafeFallbackAreDiagnosed()
         {
-            var external = Create<LanguageProfile>();
-            external.languageCode = "../outside";
-            _config.defaultLanguage = _config.fallbackLanguage = external;
-            var errors = _config.GetValidationErrors();
-            Assert.That(errors.Exists(e => e.Contains("defaultLanguage")), Is.True);
-            Assert.That(errors.Exists(e => e.Contains("../outside")), Is.True);
+            var config = Diagnostics();
+            Assert.Throws<ArgumentException>(() => config.MainChannel.SetFallback("en", "../outside"));
+            config.MainChannel.DefaultLanguage = "uk";
+            var report = ProjectCoverageAnalyzer.Analyze(config, textReader: new Reader());
+            Assert.That(report.IsComplete, Is.False); Assert.That(report.Warnings.Any(w => w.Message.Contains("Default language")), Is.True);
         }
 
         [Test]
         public void Configuration_NullLanguageListCanBeQueriedDuringSetup()
         {
-            _config.languages = null;
-            Assert.That(_config.GetLanguageCodes(), Is.Empty);
-            Assert.That(_config.GetProfile("en"), Is.Null);
-            Assert.That(_config.GetProfileBySystemLanguage(SystemLanguage.English), Is.Null);
-            Assert.That(_config.GetValidationErrors(), Is.Empty);
+            var config = Diagnostics(); typeof(LocalizationProjectConfig).GetField("_languages", BindingFlags.Instance | BindingFlags.NonPublic).SetValue(config, null);
+            Assert.That(config.Languages, Is.Empty);
+            Assert.That(ProjectCoverageAnalyzer.Analyze(config, textReader: new Reader()).IsComplete, Is.False);
         }
 
         [Test]
-        public void Coverage_DistinguishesDirectAndFallbackIncludingWhitespaceAndCycles()
+        public void Coverage_DistinguishesDirectFallbackAndWhitespaceWithoutChangingRuntime()
         {
-            _config.languages[1].fallbackProfile = _config.languages[0];
-            _config.languages[0].fallbackProfile = _config.languages[1];
-            var data = new EditorLocalizationData();
-            foreach (var key in new[] { "available", "space", "missing" }) data.AddKey(key, "test");
-            data.SetTranslation("available", "en", "Hello");
-            data.SetTranslation("available", "ru", "");
-            data.SetTranslation("space", "ru", " \n");
-            var coverage = CoverageAnalyzer.ComputeCoverage(data, _config)[1];
+            var config = Diagnostics(); config.MainChannel.SetFallback("ru", "en");
+            foreach (var key in new[] { "available", "space", "missing" }) config.Sets[0].AddEntry(key);
+            var reader = new Reader(); reader.Text["en"]["available"] = "Hello"; reader.Text["ru"]["available"] = ""; reader.Text["ru"]["space"] = " \n";
+            var live = Localization.Runtime.GetChannel(); var coverage = ProjectCoverageAnalyzer.Analyze(config, textReader: reader).TextCoverage.Single(r => r.LanguageCode == "ru");
             Assert.That(coverage.TranslatedCount, Is.EqualTo(1));
             Assert.That(coverage.AvailableCount, Is.EqualTo(2));
             Assert.That(coverage.UnavailableKeys, Is.EqualTo(new[] { "missing" }));
+            Assert.That(Localization.Runtime.GetChannel(), Is.SameAs(live));
+        }
+
+        [TestCase(false)][TestCase(true)] public void InvalidFallbackCycleOrUnselectedTargetDoesNotReadSources(bool cycle)
+        {
+            var config = Diagnostics(); config.MainChannel.SetFallback("ru", "en");
+            if (cycle) config.MainChannel.SetFallback("en", "ru"); else { config.AddLanguage("uk"); config.MainChannel.SetFallback("en", "uk"); }
+            var reader = new Reader(); var report = ProjectCoverageAnalyzer.Analyze(config, textReader: reader);
+            Assert.That(report.IsComplete, Is.False); Assert.That(report.TextCoverage, Is.Empty); Assert.That(reader.Reads, Is.Zero);
         }
 
         [Test]
         public void Coverage_ReportsInsufficientFormsInReferenceLanguageToo()
         {
-            var data = new EditorLocalizationData();
-            data.AddKey("key", "test");
-            data.SetTranslation("key", "en", "{0|coin}");
-            data.SetTranslation("key", "ru", "{0|монета|монеты}");
-            var warnings = CoverageAnalyzer.ComputeWarnings(data, _config);
+            var config = Diagnostics(); config.Sets[0].AddEntry("key"); var reader = new Reader();
+            reader.Text["en"]["key"] = "{0|coin}"; reader.Text["ru"]["key"] = "{0|монета|монеты}";
+            var warnings = ProjectCoverageAnalyzer.Analyze(config, textReader: reader).Warnings;
             Assert.That(warnings.Exists(w => w.LanguageCode == "en" && w.Message.Contains("forms")), Is.True);
             Assert.That(warnings.Exists(w => w.LanguageCode == "ru" && w.Message.Contains("forms")), Is.True);
+        }
+
+        private LocalizationProjectConfig Diagnostics()
+        {
+            var config = LocalizationProjectConfig.Create(new[] { "en", "ru" }); _objects.Add(config);
+            foreach (string code in new[] { "en", "ru" }) config.Sets[0].SetSources(code, new LocalizationSourceReference("test", code, LocalizationSourceKind.TextTable));
+            return config;
+        }
+        private sealed class Reader : ILocalizationEditorTextReader
+        {
+            internal int Reads;
+            internal readonly Dictionary<string, Dictionary<string, string>> Text = new() { ["en"] = new(), ["ru"] = new() };
+            public LocalizationEditorTextSource Read(LocalizationSourceReference source) { Reads++; return new(Text[source.Address]); }
         }
 
         private T Create<T>() where T : ScriptableObject

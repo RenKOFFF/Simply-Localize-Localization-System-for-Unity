@@ -21,6 +21,75 @@ namespace SimplyLocalize.Tests
         private LocalizationProjectConfig Create() => LocalizationProjectAuthoring.Create(new[] { "en", "ru" }, "en", "en", root + "/Project.asset", false);
         private string SourcePath(string language) => root + "/Resources/SimplyLocalize/Translations/" + language + "/Common.json";
 
+        [TestCase("Resources/CON.asset")][TestCase("Resources/AUX.asset")][TestCase("Resources/LPT1.asset")]
+        [TestCase("Resources/COM¹.asset")][TestCase("Resources/LPT²/Appearance.asset")]
+        [TestCase("Resources/Folder./Appearance.asset")][TestCase("Resources/Folder /Appearance.asset")]
+        [TestCase("Resources/../Appearance.asset")][TestCase("Resources//Appearance.asset")][TestCase("Resources/a\\b.asset")]
+        [TestCase("Resources/.hidden/Appearance.asset")][TestCase("Resources/Folder~/Appearance.asset")]
+        [TestCase("Resources/cvs/Appearance.asset")][TestCase("Resources/CVS/Appearance.asset")][TestCase("Resources/.Appearance.asset")]
+        public void InvalidNewAssetPathsFailBeforeNativeCreationAndLeaveNoDirectories(string relative)
+        {
+            var config = Create(); string path = root + "/" + relative;
+            var files = Directory.GetFiles(root, "*", SearchOption.AllDirectories).ToDictionary(p => p, File.ReadAllBytes);
+            var folders = Directory.GetDirectories(root, "*", SearchOption.AllDirectories); string json = EditorJsonUtility.ToJson(config);
+            Assert.Throws<FormatException>(() => LocalizationProjectAuthoring.Create(new[] { "en" }, "en", null, path, false));
+            using (var edit = new LocalizationProjectAssetEdit(config)) Assert.Throws<FormatException>(() => edit.Create<LocalizationAppearance>(path));
+            Assert.Catch<Exception>(() => LocalizationProjectAuthoring.CreateAppearance(config, "en", path));
+            Assert.Catch<Exception>(() => LocalizationProjectAuthoring.CreateAssetTable(config, config.Sets[0].Id, "en", path));
+            Assert.That(Directory.GetFiles(root, "*", SearchOption.AllDirectories), Is.EquivalentTo(files.Keys));
+            foreach (var file in files) Assert.That(File.ReadAllBytes(file.Key), Is.EqualTo(file.Value));
+            Assert.That(Directory.GetDirectories(root, "*", SearchOption.AllDirectories), Is.EquivalentTo(folders));
+            Assert.That(EditorJsonUtility.ToJson(config), Is.EqualTo(json)); Assert.That(EditorUtility.IsDirty(config), Is.False);
+        }
+        [Test] public void HiddenParentIsRejectedBeforeNativeCreation()
+        {
+            string folder = root + "/Hidden"; Directory.CreateDirectory(folder);
+            var attributes = File.GetAttributes(folder); File.SetAttributes(folder, attributes | FileAttributes.Hidden);
+            try
+            {
+                Assert.Throws<FormatException>(() => LocalizationProjectAuthoring.Create(new[] { "en" }, "en", null, folder + "/Project.asset", false));
+                Assert.That(Directory.GetFiles(folder, "*", SearchOption.AllDirectories), Is.Empty);
+            }
+            finally { File.SetAttributes(folder, attributes); }
+        }
+        [TestCase("con")][TestCase("aux")][TestCase("prn")][TestCase("nul")]
+        public void StandardLanguageCodeCanUsePortableStorageWithoutChangingIdentity(string code)
+        {
+            var config = LocalizationProjectAuthoring.Create(new[] { "en", code }, code, "en", root + "/Project.asset", false);
+            Assert.That(config.MainChannel.DefaultLanguage, Is.EqualTo(code)); Assert.That(config.Languages.Last().Code, Is.EqualTo(code));
+            string address = config.Sets[0].Sources.Single(s => s.Language == code).Sources[0].Address;
+            Assert.That(address, Is.EqualTo("SimplyLocalize/Translations/lang-" + code + "/Common"));
+            Assert.That(File.Exists(root + "/Resources/" + address + ".json"), Is.True);
+            string entry;
+            using (var edit = new LocalizationProjectEdit(config, config.Sets[0].Id))
+            { entry = edit.Draft.Sets[0].AddEntry("hello").Id; edit.SetTranslation(entry, code, "Hello"); edit.Commit(); }
+            Assert.That(EditorProjectTextData.Load(config).TryGetDirect(entry, code, out var cell), Is.True); Assert.That(cell.Value, Is.EqualTo("Hello"));
+            LocalizationProjectAuthoring.CreateAppearance(config, code);
+            Assert.That(config.Languages.Last().Appearance.Address, Is.EqualTo("SimplyLocalize/Appearance/lang-" + code));
+            LocalizationProjectAuthoring.CreateAssetTable(config, config.Sets[0].Id, code);
+            Assert.That(config.Sets[0].Sources.Single(s => s.Language == code).Sources.Any(s => s.Kind == LocalizationSourceKind.AssetTable
+                && s.Address.Contains("/lang-" + code + "/")), Is.True);
+        }
+        [Test] public void AddingReservedCodeAndCsvImportUsePortableSourceAddresses()
+        {
+            var config = Create(); LocalizationProjectAuthoring.AddLanguage(config, "con");
+            Assert.That(File.Exists(SourcePath("lang-con")), Is.True);
+            using var plan = ProjectCsv.Preview(config, "Key,aux\nhello,Hello"); plan.Apply();
+            Assert.That(config.Languages.Any(l => l.Code == "aux"), Is.True); Assert.That(File.Exists(SourcePath("lang-aux")), Is.True);
+            string entry = config.Sets[0].Entries.Single().Id;
+            Assert.That(EditorProjectTextData.Load(config).TryGetDirect(entry, "aux", out var cell), Is.True); Assert.That(cell.Value, Is.EqualTo("Hello"));
+        }
+        [TestCase("CON", "Translations-CON")][TestCase("AUX", "Translations-AUX")]
+        [TestCase("COM³", "Translations-COM³")]
+        [TestCase("Menu:Main", "Menu_Main")][TestCase("Folder/Main", "Folder_Main")][TestCase("...", "Translations")]
+        [TestCase("CVS", "Translations-CVS")][TestCase(".Menu", "Menu")][TestCase("Menu~", "Menu")]
+        public void AutomaticCsvSourceNamesArePortableAndDoNotRenameTheSet(string setName, string stem)
+        {
+            var config = Create(); config.Sets[0].Name = setName; EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config);
+            using var plan = ProjectCsv.Preview(config, "Key,pl\nhello,Cześć"); plan.Apply();
+            Assert.That(config.Sets[0].Name, Is.EqualTo(setName)); Assert.That(File.Exists(root + "/Resources/SimplyLocalize/Translations/pl/" + stem + ".json"), Is.True);
+        }
+
         [Test] public void CreationBuildsOneLightweightConfigAndExactSourcesWithoutProfiles()
         {
             var config = Create(); config.ValidateOrThrow();

@@ -52,6 +52,13 @@ namespace SimplyLocalize.Tests
         }
         private AutoLocalizeOptions Options(AutoLocalizePrefabMode prefabs = AutoLocalizePrefabMode.Skip) => new() { Prefabs = prefabs, KeyPattern = AutoLocalizeKeyPattern.ObjectName };
         private void SaveConfig() { EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config); }
+        private static IEnumerator WaitForSceneRestoration(Func<bool> restored)
+        {
+            // Wait for the observable result, not one assumed ordering of Test Runner callbacks.
+            double deadline = EditorApplication.timeSinceStartup + 10;
+            while (!restored() && EditorApplication.timeSinceStartup < deadline) yield return null;
+            Assert.That(restored(), Is.True, "Rejected Undo/Redo did not restore the scene binding.");
+        }
         private string Prefab(bool duplicateNames = false)
         {
             var go = new GameObject("Panel", typeof(RectTransform)); SceneManager.MoveGameObjectToScene(go, scene);
@@ -93,7 +100,8 @@ namespace SimplyLocalize.Tests
             var go = Label("Greeting", "Hello"); using var plan = ProjectAutoLocalize.Preview(config, ProjectAutoLocalize.Scan(config, new[] { go }, Options()));
             using var record = plan.Apply(); string id = go.GetComponent<LocalizedText>().Entry.EntryId;
             byte[] saved = File.ReadAllBytes(source); File.AppendAllText(source, " \n"); byte[] external = File.ReadAllBytes(source);
-            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformUndo(); yield return null;
+            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformUndo();
+            yield return WaitForSceneRestoration(() => go.GetComponent<LocalizedText>() != null);
             Assert.That(go.GetComponent<LocalizedText>(), Is.Not.Null); Assert.That(go.GetComponent<LocalizedText>().Entry.EntryId, Is.EqualTo(id));
             Assert.That(config.Sets[0].Entries.Single().Id, Is.EqualTo(id)); Assert.That(File.ReadAllBytes(source), Is.EqualTo(external));
             File.WriteAllBytes(source, saved); Undo.PerformUndo(); Assert.That(go.GetComponent<LocalizedText>(), Is.Null); Assert.That(config.Sets[0].Entries, Is.Empty);
@@ -103,9 +111,27 @@ namespace SimplyLocalize.Tests
             var go = Label("Greeting", "Hello"); using var plan = ProjectAutoLocalize.Preview(config, ProjectAutoLocalize.Scan(config, new[] { go }, Options()));
             using var record = plan.Apply(); Undo.PerformUndo(); byte[] saved = File.ReadAllBytes(source);
             File.AppendAllText(source, " \n"); byte[] external = File.ReadAllBytes(source);
-            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformRedo(); yield return null;
+            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformRedo();
+            yield return WaitForSceneRestoration(() => go.GetComponent<LocalizedText>() == null);
             Assert.That(go.GetComponent<LocalizedText>(), Is.Null); Assert.That(config.Sets[0].Entries, Is.Empty); Assert.That(File.ReadAllBytes(source), Is.EqualTo(external));
             File.WriteAllBytes(source, saved); Undo.PerformRedo(); Assert.That(go.GetComponent<LocalizedText>(), Is.Not.Null);
+        }
+        [UnityTest] public IEnumerator RejectedUndoDoesNotReverseANewerUserEdit()
+        {
+            var go = Label("Greeting", "Hello"); using var plan = ProjectAutoLocalize.Preview(config, ProjectAutoLocalize.Scan(config, new[] { go }, Options()));
+            using var record = plan.Apply(); File.AppendAllText(source, " \n"); byte[] external = File.ReadAllBytes(source);
+            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformUndo();
+            Undo.IncrementCurrentGroup(); Undo.RegisterCompleteObjectUndo(go.transform, "User changed position");
+            go.transform.localPosition = new Vector3(12, 34, 0);
+            Assert.That(Undo.GetCurrentGroupName(), Is.EqualTo("User changed position"), "The fixture must create a real native history step.");
+            LogAssert.Expect(LogType.Error, new Regex("Undo history changed before the scene could be restored"));
+            bool updated = false;
+            void MarkUpdate() => updated = true;
+            EditorApplication.update += MarkUpdate;
+            try { yield return WaitForSceneRestoration(() => updated); }
+            finally { EditorApplication.update -= MarkUpdate; }
+            Assert.That(go.transform.localPosition, Is.EqualTo(new Vector3(12, 34, 0)));
+            Assert.That(go.GetComponent<LocalizedText>(), Is.Null); Assert.That(File.ReadAllBytes(source), Is.EqualTo(external));
         }
         [UnityTest] public IEnumerator GroupedUndoFailureRestoresEarlierFileStepsAndBothSceneBindings()
         {
@@ -116,7 +142,8 @@ namespace SimplyLocalize.Tests
             using var secondPlan = ProjectAutoLocalize.Preview(config, ProjectAutoLocalize.Scan(config, new[] { second }, Options()), setId: other.Id); using var secondRecord = secondPlan.Apply();
             string secondSource = secondPlan.CreatedSourcePath; byte[] secondBytes = File.ReadAllBytes(secondSource);
             Undo.CollapseUndoOperations(group); Undo.IncrementCurrentGroup(); File.AppendAllText(source, " \n"); byte[] external = File.ReadAllBytes(source);
-            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformUndo(); yield return null;
+            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformUndo();
+            yield return WaitForSceneRestoration(() => first.GetComponent<LocalizedText>() != null && second.GetComponent<LocalizedText>() != null);
             Assert.That(first.GetComponent<LocalizedText>(), Is.Not.Null); Assert.That(second.GetComponent<LocalizedText>(), Is.Not.Null);
             Assert.That(config.Sets.All(s => s.Entries.Count == 1), Is.True); Assert.That(File.ReadAllBytes(source), Is.EqualTo(external)); Assert.That(File.ReadAllBytes(secondSource), Is.EqualTo(secondBytes));
         }
@@ -131,7 +158,8 @@ namespace SimplyLocalize.Tests
             using var secondPlan = ProjectAutoLocalize.Preview(config, ProjectAutoLocalize.Scan(config, new[] { second }, Options()), setId: other.Id); using var secondRecord = secondPlan.Apply();
             Undo.CollapseUndoOperations(group); Undo.IncrementCurrentGroup(); Undo.PerformUndo(); byte[] firstBytes = File.ReadAllBytes(source);
             File.AppendAllText(otherSource, " \n"); byte[] external = File.ReadAllBytes(otherSource);
-            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformRedo(); yield return null;
+            LogAssert.Expect(LogType.Error, new Regex("Undo/Redo stopped:")); Undo.PerformRedo();
+            yield return WaitForSceneRestoration(() => first.GetComponent<LocalizedText>() == null && second.GetComponent<LocalizedText>() == null);
             Assert.That(first.GetComponent<LocalizedText>(), Is.Null); Assert.That(second.GetComponent<LocalizedText>(), Is.Null);
             Assert.That(config.Sets.All(s => s.Entries.Count == 0), Is.True); Assert.That(File.ReadAllBytes(source), Is.EqualTo(firstBytes)); Assert.That(File.ReadAllBytes(otherSource), Is.EqualTo(external));
         }
