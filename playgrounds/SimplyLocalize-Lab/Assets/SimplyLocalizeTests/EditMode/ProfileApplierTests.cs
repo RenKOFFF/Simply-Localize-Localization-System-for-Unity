@@ -256,12 +256,12 @@ namespace SimplyLocalize.Tests
             Assert.That(variant == null, Is.True); Assert.That(source.fallbackFontAssetTable, Is.Empty); Assert.That(source.material != null && source.atlasTexture != null, Is.True);
         }
         [Test]
-        public void ExistingSerializedProfileFieldsStillPopulateTheSharedAppearanceModel()
+        public void SerializedAppearanceFieldsStillPopulateTheSharedAppearanceModel()
         {
             var profile = Profile();
-            EditorJsonUtility.FromJsonOverwrite("{\"MonoBehaviour\":{\"languageCode\":\"ru\",\"overrideTypography\":true,\"fontSizeMultiplier\":1.5,\"overrideSpacing\":true,\"lineSpacingAdjustment\":4}}", profile);
+            EditorJsonUtility.FromJsonOverwrite("{\"MonoBehaviour\":{\"overrideTypography\":true,\"fontSizeMultiplier\":1.5,\"overrideSpacing\":true,\"lineSpacingAdjustment\":4}}", profile);
             var text = MakeLegacy(); text.fontSize = 20; using var applier = new ProfileApplier(); applier.CacheOriginals(text);
-            applier.Apply(text, profile); Assert.That(text.fontSize, Is.EqualTo(30)); Assert.That(profile.Code, Is.EqualTo("ru"));
+            applier.Apply(text, profile); Assert.That(text.fontSize, Is.EqualTo(30));
             Assert.That(profile.lineSpacingAdjustment, Is.EqualTo(4)); applier.Restore(); Assert.That(text.fontSize, Is.EqualTo(20));
         }
 
@@ -271,7 +271,7 @@ namespace SimplyLocalize.Tests
                 FontStyles.Normal, FontWeight.Regular, out _);
 
         private T Track<T>(T obj) where T : Object { _objects.Add(obj); return obj; }
-        private LanguageProfile Profile() => Track(ScriptableObject.CreateInstance<LanguageProfile>());
+        private LocalizationAppearance Profile() => Track(ScriptableObject.CreateInstance<LocalizationAppearance>());
         private Text MakeLegacy() => Track(new GameObject("Legacy profile test", typeof(RectTransform))).AddComponent<Text>();
         private TMP_Text MakeTMP(TMP_FontAsset font = null)
         {

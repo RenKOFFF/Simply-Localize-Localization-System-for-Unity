@@ -19,7 +19,7 @@ namespace SimplyLocalize.Editor.Windows
         private EditorProjectTextData data;
         private LocalizationProjectEdit edit;
         private readonly Dictionary<string, string> values = new(), destinations = new();
-        private readonly List<KeyValuePair<string, string>> visible = new();
+        private readonly List<KeyValuePair<string, string>> visibleRows = new();
         private ListView list;
         private ScrollView details;
         private HelpBox message;
@@ -79,8 +79,8 @@ namespace SimplyLocalize.Editor.Windows
             message = new HelpBox("", HelpBoxMessageType.Error) { name = "textMessage" }; message.style.display = DisplayStyle.None; Add(message);
             var split = new TwoPaneSplitView(0, 240, TwoPaneSplitViewOrientation.Horizontal); split.style.flexGrow = 1; Add(split);
             var left = new VisualElement { style = { minWidth = 180 } };
-            list = new ListView(visible, 25, () => new Label(), (element, index) =>
-            { var label = (Label)element; label.text = visible[index].Value; label.tooltip = visible[index].Key; })
+            list = new ListView(visibleRows, 25, () => new Label(), (element, index) =>
+            { var label = (Label)element; label.text = visibleRows[index].Value; label.tooltip = visibleRows[index].Key; })
             { name = "textEntries", selectionType = SelectionType.Single, virtualizationMethod = CollectionVirtualizationMethod.FixedHeight };
             list.style.flexGrow = 1; list.selectionChanged += items =>
             {
@@ -115,7 +115,7 @@ namespace SimplyLocalize.Editor.Windows
                 else { selected = null; ShowEmpty(); }
                 return true;
             }
-            catch (Exception failure) { data = null; visible.Clear(); list.Rebuild(); details.Clear(); ShowError(failure.Message); return false; }
+            catch (Exception failure) { data = null; visibleRows.Clear(); list.Rebuild(); details.Clear(); ShowError(failure.Message); return false; }
         }
         public void SelectEntry(string entryId)
         {
@@ -237,10 +237,10 @@ namespace SimplyLocalize.Editor.Windows
         }
         private void Filter()
         {
-            visible.Clear(); if (data != null) visible.AddRange(data.Entries.Where(p => p.Value.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0).OrderBy(p => p.Value, StringComparer.Ordinal));
+            visibleRows.Clear(); if (data != null) visibleRows.AddRange(data.Entries.Where(p => p.Value.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0).OrderBy(p => p.Value, StringComparer.Ordinal));
             list.Rebuild(); RestoreSelection();
         }
-        private void RestoreSelection() { int index = visible.FindIndex(p => p.Key == selected); list.SetSelectionWithoutNotify(index < 0 ? Array.Empty<int>() : new[] { index }); }
+        private void RestoreSelection() { int index = visibleRows.FindIndex(p => p.Key == selected); list.SetSelectionWithoutNotify(index < 0 ? Array.Empty<int>() : new[] { index }); }
         private void UpdateSave() { save?.SetEnabled(HasPendingChanges); DraftChanged?.Invoke(); }
         private void ShowError(string error) { message.text = error ?? ""; message.style.display = string.IsNullOrEmpty(error) ? DisplayStyle.None : DisplayStyle.Flex; }
         private void OnHistory() { if (HasPendingChanges) ShowError("History changed while this edit was open. Discard and reload before saving."); else Reload(); }

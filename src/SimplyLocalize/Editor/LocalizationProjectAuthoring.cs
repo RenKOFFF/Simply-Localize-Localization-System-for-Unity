@@ -36,6 +36,32 @@ namespace SimplyLocalize.Editor
             .Select(AssetDatabase.GUIDToAssetPath).OrderBy(p => p, StringComparer.Ordinal)
             .Select(AssetDatabase.LoadAssetAtPath<LocalizationProjectConfig>).Where(c => c != null).ToArray();
 
+        /// <summary>Batch entry: -executeMethod SimplyLocalize.Editor.LocalizationProjectAuthoring.ConfigureFromCommandLine
+        /// -slLanguages en,ru -slDefault en [-slFallback en]. No dialogs; errors propagate to batch mode.</summary>
+        public static void ConfigureFromCommandLine()
+        {
+            var result = ConfigureFromArguments(Environment.GetCommandLineArgs());
+            Debug.Log("[SimplyLocalize] Setup complete: " + AssetDatabase.GetAssetPath(result.Config));
+        }
+        internal static Result ConfigureFromArguments(string[] args)
+        {
+            if (args == null) throw new ArgumentNullException(nameof(args));
+            string Read(string option, bool required)
+            {
+                int index = Array.IndexOf(args, option);
+                if (index < 0)
+                {
+                    if (required) throw new ArgumentException("Missing argument: " + option);
+                    return null;
+                }
+                if (Array.LastIndexOf(args, option) != index) throw new ArgumentException("Repeated argument: " + option);
+                if (index + 1 >= args.Length || string.IsNullOrWhiteSpace(args[index + 1]) || args[index + 1].StartsWith("-"))
+                    throw new ArgumentException("Missing value for argument: " + option);
+                return args[index + 1];
+            }
+            return Configure(Read("-slLanguages", true).Split(','), Read("-slDefault", true), Read("-slFallback", false));
+        }
+
         /// <summary>Creates Main/Common and empty exact text sources. An occupied path/address is an error, never an implicit migration.</summary>
         public static LocalizationProjectConfig Create(IEnumerable<string> languages, string defaultLanguage, string fallbackLanguage = null,
             string assetPath = ConfigAssetPath, bool automaticStartup = true, IReadOnlyDictionary<string, string> displayNames = null)

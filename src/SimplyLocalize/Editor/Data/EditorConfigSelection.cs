@@ -13,9 +13,9 @@ namespace SimplyLocalize.Editor.Data
 
         internal static LocalizationConfig Find(out string message)
         {
-            try { LocalizationProjectSetup.ValidateStartupAddress(); }
+            try { LocalizationProjectAuthoring.ValidateStartupAddress(LocalizationProjectAuthoring.ConfigAssetPath); }
             catch (Exception error) { message = error.Message; return null; }
-            return Choose(Candidates(), AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath), out message);
+            return Choose(Candidates(), AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectAuthoring.ConfigAssetPath), out message);
         }
 
         internal static LocalizationConfig Choose(IReadOnlyList<LocalizationConfig> candidates, LocalizationConfig startup, out string message)

@@ -894,22 +894,22 @@ MIT — см. [LICENSE.txt](LICENSE.txt).
 
 Issues и pull requests приветствуются на [github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity](https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity).
 
-Автозапуск и `Localization.Initialize()` без аргументов используют только адрес `SimplyLocalizeSettings`. Каталог и Builder удалены. При обновлении перенеси стартовый конфиг кнопкой **Use for automatic startup** (GUID сохраняется); собственные строковые пути загрузки потребуется обновить. Явный `Localization.Initialize(config)` и собственные провайдеры сохраняются. Старый GeneratedConfigCatalog.asset можно удалить — он больше не используется.
+Автозапуск и `Localization.InitializeAsync()` без аргументов используют проектный конфиг по Resources-адресу `SimplyLocalizeSettings`. Setup создаёт его в `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`. Каталог и Builder больше не используются. **Simply Localize → Settings → Move config and enable automatic startup** переносит проектный конфиг с сохранением GUID и адресов источников. Это не преобразование старого `LocalizationConfig`: его настройки нужно воссоздать явно. Собственный запуск использует `Localization.InitializeAsync(config)` или отдельный `LocalizationRuntime`.
 
-Для контекста только со звуками/изображениями выключите **Load text translations** в Inspector конфига или Settings (`loadTextData = false`). Смена языка, Reload и замена провайдера тогда не запрашивают тексты, в том числе fallback. Текстовые запросы не находят записей (Get сохраняет обычную политику отсутствующего ключа), а поиск ассетов работает как прежде. Для существующих данных значение по умолчанию — true. Настройте режим до создания менеджера либо выполните Reload после изменения.
+Для звуков/изображений зарегистрируйте в наборе записи и источники ассетов. Текстовый источник и второй конфиг не нужны. Независимый канал выбирает свой язык; FollowMain следует за Main. В загрузке при смене языка участвуют только активные наборы. Сохранённый конфиг отделён от работающего экземпляра: правки в редакторе не заменяют его настройки незаметно.
 
 ### Настройка из кода Editor и автоматизация
 
 ```csharp
-var result = SimplyLocalize.Editor.LocalizationProjectSetup.Configure(
+var result = SimplyLocalize.Editor.LocalizationProjectAuthoring.Configure(
     new[] { "en", "ru" }, "en", "en");
-// result.Config, result.CreatedPaths, result.ValidationErrors
+// result.Config; result.Change при обновлении существующего стартового конфига
 ```
 
-Метод доступен в Editor, без диалогов. Повторный вызов не перезаписывает переводы и профили. Если найден другой конфиг, выбери его и вызови `UseForAutomaticStartup(config)`. Создание отдельного стартового конфига рядом с существующими требует явного `createAlongsideExistingConfigs: true`. Для добавления языков без изменения настроек используй `AddLanguages(config, "pl")`. Текстовые JSON можно редактировать внешним редактором; после изменения перечитай данные.
+Метод доступен в Editor без диалогов. Configure явно работает с фиксированным стартовым путём. Повторный вызов сохраняет ID, существующие названия, флаги запуска и файлы переводов; переданные default/fallback применяются к Main. Чтобы использовать конфиг из другого места, вызови `LocalizationProjectAuthoring.UseForAutomaticStartup(config)`. `LocalizationProjectAuthoring.AddLanguage(config, "pl")` добавляет язык без смены default; независимые каналы настраиваются явно. JSON можно редактировать вне Unity, затем обновить снимок редактора. Ручные правки конфига сначала нужно сохранить. Конфликт или неверный ввод вызывают исключение без частичной настройки. Проверка перед сборкой валидирует адрес, тип и настройки стартового конфига; она не запускает провайдеры и не требует стартового конфига при явном bootstrap.
 
 ```text
 Unity -batchmode -quit -projectPath <project>
-  -executeMethod SimplyLocalize.Editor.LocalizationProjectSetup.ConfigureFromCommandLine
+  -executeMethod SimplyLocalize.Editor.LocalizationProjectAuthoring.ConfigureFromCommandLine
   -slLanguages en,ru -slDefault en -slFallback en
 ```

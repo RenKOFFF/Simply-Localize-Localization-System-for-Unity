@@ -895,22 +895,22 @@ MIT — see [LICENSE.txt](LICENSE.txt).
 
 Issues and pull requests welcome at [github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity](https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity).
 
-Automatic startup and parameterless `Localization.Initialize()` load only `SimplyLocalizeSettings`. The catalog and Builder have been removed. When upgrading, move the startup config in **Simply Localize → Settings → Move config and enable automatic startup** (GUID retained); update any custom string loading paths. Explicit `Localization.Initialize(config)` and custom providers remain supported. The old GeneratedConfigCatalog.asset is unused and can be removed.
+Automatic startup and parameterless `Localization.InitializeAsync()` load only the project config at Resources address `SimplyLocalizeSettings`. Setup creates it at `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`. The catalog and Builder are no longer used. **Simply Localize → Settings → Move config and enable automatic startup** relocates a project config while retaining its GUID and source addresses. This does not convert old `LocalizationConfig` assets; recreate their configuration explicitly. Custom bootstraps use `Localization.InitializeAsync(config)` or a separate `LocalizationRuntime`.
 
-For an audio/image-only context, disable **Load text translations** in **Simply Localize → Settings** (or, optionally, in the config Inspector) (`loadTextData = false`). Language changes, Reload and provider replacement then skip text requests, including fallbacks. Text queries return no entries (Get retains its missing-key policy); asset lookup keeps its existing behavior. The default is true for existing data. Configure this before initializing a manager, or Reload after changing it.
+For audio/image-only content, register asset entries and asset sources in a content set. No text source or second config is required. An independent channel can choose its own language; a FollowMain channel follows Main. Only active sets participate in language loading. Saved configuration is separate from the running instance; editor changes do not silently replace its configuration.
 
 ### Editor scripting and automated setup
 
 ```csharp
-var result = SimplyLocalize.Editor.LocalizationProjectSetup.Configure(
+var result = SimplyLocalize.Editor.LocalizationProjectAuthoring.Configure(
     new[] { "en", "ru" }, "en", "en");
-// result.Config, result.CreatedPaths, result.ValidationErrors
+// result.Config; result.Change for an update to an existing startup config
 ```
 
-Editor-only API without dialogs. Repeated calls preserve translations and profiles. If another config exists, select it and call `UseForAutomaticStartup(config)`. Creating a separate startup config alongside existing configs requires explicit `createAlongsideExistingConfigs: true`. Use `AddLanguages(config, "pl")` to add languages without changing defaults. JSON files can be edited externally; reload data afterwards.
+Editor-only API without dialogs. Configure explicitly targets the fixed startup path. Repeated calls preserve identities, existing names, startup flags and translation files; supplied default/fallback choices are applied to Main. To reuse a config elsewhere, call `LocalizationProjectAuthoring.UseForAutomaticStartup(config)` instead. Use `LocalizationProjectAuthoring.AddLanguage(config, "pl")` without changing defaults; independent channels remain explicit. JSON files can be edited externally; refresh the editor snapshot afterwards. Unsaved config edits must be saved first. Existing conflicts or invalid input cause an exception rather than partial setup. The build check validates the reserved startup address/type/config; it does not initialize providers or require a startup config for an explicit bootstrap.
 
 ```text
 Unity -batchmode -quit -projectPath <project>
-  -executeMethod SimplyLocalize.Editor.LocalizationProjectSetup.ConfigureFromCommandLine
+  -executeMethod SimplyLocalize.Editor.LocalizationProjectAuthoring.ConfigureFromCommandLine
   -slLanguages en,ru -slDefault en -slFallback en
 ```

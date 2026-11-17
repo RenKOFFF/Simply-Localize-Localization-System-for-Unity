@@ -21,9 +21,6 @@ namespace SimplyLocalize.Tests
     {
         private string _root;
         private string _basePath;
-        private LocalizationConfig _config;
-        private LanguageProfile _en;
-        private LanguageProfile _ru;
         private readonly List<LocalizationProjectConfig> _projects = new();
 
         [SetUp]
@@ -36,15 +33,6 @@ namespace SimplyLocalize.Tests
             Write("ru", "first", "{\"translations\":{\"greeting\":\"Привет\",\"empty\":\"\"}}");
             Write("ru", "second", "{\"translations\":{\"second\":\"Second file\"}}");
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            _config = ScriptableObject.CreateInstance<LocalizationConfig>();
-            _en = ScriptableObject.CreateInstance<LanguageProfile>();
-            _ru = ScriptableObject.CreateInstance<LanguageProfile>();
-            _en.languageCode = "en";
-            _ru.languageCode = "ru";
-            _config.languages.Add(_en);
-            _config.languages.Add(_ru);
-            _config.fallbackLanguage = _en;
-            _config.resourcesBasePath = _basePath;
         }
 
         [UnityTearDown]
@@ -53,9 +41,6 @@ namespace SimplyLocalize.Tests
             yield return Done(Localization.ShutdownAsync());
             foreach (var config in _projects) Object.DestroyImmediate(config);
             _projects.Clear();
-            Object.DestroyImmediate(_config);
-            Object.DestroyImmediate(_en);
-            Object.DestroyImmediate(_ru);
             if (!string.IsNullOrEmpty(_root)) AssetDatabase.DeleteAsset(_root);
         }
 
@@ -116,7 +101,7 @@ namespace SimplyLocalize.Tests
             }
         }
         [UnityTest]
-        public IEnumerator Coverage_LoadsOtherLanguageFilesNestedFilesAndAllTablesWithoutChangingLiveState()
+        public IEnumerator CoverageLoadsRegisteredNestedFilesAndTablesWithoutChangingLiveState()
         {
             Write("ru", "nested/extra", "{\"translations\":{\"nested\":\"Nested\"}}");
             string secondRoot = $"{_root}/Second/Resources/{_basePath}/en/text";
@@ -131,20 +116,29 @@ namespace SimplyLocalize.Tests
                 AssetDatabase.CreateAsset(table, $"{_root}/Resources/{_basePath}/en/table{i}.asset");
             }
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            yield return Done(Localization.InitializeAsync(Project(), "ru"));
+            var project = Project(); var set = project.Sets[0];
+            set.AddEntry("nested"); set.AddEntry("other-root");
+            for (int i = 0; i < 2; i++) set.AddEntry("asset" + i, LocalizationEntryKind.Asset);
+            var en = set.Sources.Single(s => s.Language == "en").Sources.ToList();
+            en.Add(new LocalizationSourceReference("resources", _basePath + "/en/text/extra", LocalizationSourceKind.TextTable));
+            for (int i = 0; i < 2; i++) en.Add(new LocalizationSourceReference("resources", _basePath + "/en/table" + i, LocalizationSourceKind.AssetTable));
+            set.SetSources("en", en.ToArray());
+            set.SetSources("ru", set.Sources.Single(s => s.Language == "ru").Sources.Concat(new[] {
+                new LocalizationSourceReference("resources", _basePath + "/ru/text/nested/extra", LocalizationSourceKind.TextTable) }).ToArray());
+            yield return Done(Localization.InitializeAsync(project, "ru"));
             var live = Localization.Runtime;
-            var edited = new EditorLocalizationData();
-            edited.AddKey("greeting", "first");
-            edited.SetTranslation("greeting", "ru", "");
-            var report = CoverageAnalyzer.Analyze(_config, edited);
+            var snapshot = live.GetChannel();
+            // Saved disk edits are visible to the Editor, while the live runtime retains its ready snapshot.
+            Write("ru", "first", "{\"translations\":{\"greeting\":\"\",\"empty\":\"\"}}");
+            var report = ProjectCoverageAnalyzer.Analyze(project);
             var ru = report.TextCoverage.Find(c => c.LanguageCode == "ru");
             Assert.That(ru.TotalCount, Is.EqualTo(6));
-            Assert.That(ru.TranslatedCount, Is.EqualTo(2)); // second + nested; edited greeting is empty
+            Assert.That(ru.TranslatedCount, Is.EqualTo(2)); // second + nested; saved greeting is empty
             Assert.That(ru.AvailableCount, Is.EqualTo(4)); // plus fallback + other-root
             Assert.That(report.AssetCoverage.Find(c => c.LanguageCode == "ru").AvailableCount, Is.EqualTo(2));
             Assert.That(Localization.Runtime, Is.SameAs(live));
             Assert.That(Localization.Get("greeting"), Is.EqualTo("Привет"));
-            Assert.That(edited.KeyCount, Is.EqualTo(1));
+            Assert.That(live.GetChannel(), Is.SameAs(snapshot)); Assert.That(texture != null, Is.True);
         }
 
         [Test]
@@ -152,26 +146,38 @@ namespace SimplyLocalize.Tests
         {
             Write("ru", "broken", "bad JSON");
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            var report = CoverageAnalyzer.Analyze(_config);
+            var project = Project(); var set = project.Sets[0];
+            set.SetSources("ru", set.Sources.Single(s => s.Language == "ru").Sources.Concat(new[] {
+                new LocalizationSourceReference("resources", _basePath + "/ru/text/broken", LocalizationSourceKind.TextTable) }).ToArray());
+            var report = ProjectCoverageAnalyzer.Analyze(project);
             Assert.That(report.IsComplete, Is.False);
-            Assert.That(report.Warnings.Exists(w => w.Message.Contains("broken") && w.LanguageCode == "ru"), Is.True);
+            Assert.That(report.TextCoverage, Is.Empty);
+            Assert.That(report.Warnings.Exists(w => w.Message.Contains(_basePath + "/ru/text/broken")), Is.True);
         }
 
         [Test]
-        public void Resources_MissingLanguageReturnsEmptyCollections()
+        public void LanguageWithoutSourcesHasNoDirectEditorData()
         {
-            var provider = new EditorResourcesDataSource(_basePath);
-            Assert.That(provider.HasTextData("missing"), Is.False);
-            LogAssert.Expect(LogType.Warning, new Regex("No text files found.*missing"));
-            Assert.That(provider.LoadTextData("missing"), Is.Empty);
-            Assert.That(provider.LoadAssetTables("missing"), Is.Empty);
+            var project = Project(); project.AddLanguage("pl"); project.MainChannel.SetLanguages(new[] { "en", "ru", "pl" });
+            var data = EditorProjectTextData.Load(project); string entry = project.Sets[0].Entries.Single(e => e.Key == "fallback").Id;
+            Assert.That(data.TryGetDirect(entry, "pl", out _), Is.False); Assert.That(data.GetUnregistered("pl"), Is.Empty); LogAssert.NoUnexpectedReceived();
+        }
+        [UnityTest] public IEnumerator MissingRegisteredResourceFailsWithoutReplacingActiveRuntime()
+        {
+            yield return Done(Localization.InitializeAsync(Project(), "ru")); var runtime = Localization.Runtime;
+            var project = Project(); string address = _basePath + "/en/text/not-created";
+            project.Sets[0].SetSources("en", new LocalizationSourceReference("resources", address, LocalizationSourceKind.TextTable));
+            var task = Localization.InitializeAsync(project, "en"); yield return Done(task, false);
+            Assert.That(Assert.Throws<InvalidOperationException>(() => task.GetAwaiter().GetResult()).Message, Does.Contain(address));
+            Assert.That(Localization.Runtime, Is.SameAs(runtime)); Assert.That(Localization.Get("greeting"), Is.EqualTo("Привет"));
         }
 
         private LocalizationProjectConfig Project(bool broken = false)
         {
             var project = LocalizationProjectConfig.Create(new[] { "en", "ru" }); _projects.Add(project);
             var set = project.Sets[0];
-            foreach (string key in new[] { "greeting", "fallback", "empty", "second", "bad" }) set.AddEntry(key);
+            foreach (string key in new[] { "greeting", "fallback", "empty", "second" }) set.AddEntry(key);
+            if (broken) set.AddEntry("bad");
             var en = new List<LocalizationSourceReference> { new("resources", _basePath + "/en/text/first", LocalizationSourceKind.TextTable) };
             if (broken) en.Add(new("resources", _basePath + "/en/text/broken", LocalizationSourceKind.TextTable));
             set.SetSources("en", en.ToArray());

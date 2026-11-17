@@ -1,12 +1,17 @@
 using System;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using SimplyLocalize.Editor;
+using SimplyLocalize.Editor.Data;
 using SimplyLocalize.Editor.Utilities;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -15,181 +20,201 @@ namespace SimplyLocalize.Tests
     public class ConfigDiscoveryTests
     {
         private const string Root = "Assets/SimplyLocalize";
-        private string _other;
+        private const string Startup = LocalizationProjectAuthoring.ConfigAssetPath;
+        private string other;
+        private string[] selection;
+        private static readonly string[] SelectionKeys = { "SimplyLocalize.ProjectEditor.Config", "SimplyLocalize.ProjectEditor.Channel", "SimplyLocalize.ProjectEditor.Set" };
         [SetUp] public void Setup()
         {
             if (Directory.Exists(Root) || File.Exists(Root + ".meta")) Assert.Ignore("Existing project setup; use the dedicated lab.");
-            _other = "Assets/SetupRegression_" + Guid.NewGuid().ToString("N");
-            Directory.CreateDirectory(_other); AssetDatabase.Refresh();
+            selection = SelectionKeys.Select(k => SessionState.GetString(k, "")).ToArray();
+            other = "Assets/SetupRegression_" + Guid.NewGuid().ToString("N"); Directory.CreateDirectory(other); AssetDatabase.Refresh();
         }
-        [TearDown] public void Cleanup()
+        [UnityTearDown] public IEnumerator Cleanup()
         {
-            if (_other == null) return;
-            AssetDatabase.DeleteAsset(Root); AssetDatabase.DeleteAsset(_other); _other = null;
+            if (other == null) yield break;
+            yield return Done(Localization.ShutdownAsync()); AssetDatabase.DeleteAsset(Root); AssetDatabase.DeleteAsset(other); other = null;
+            for (int i = 0; i < SelectionKeys.Length; i++) SessionState.SetString(SelectionKeys[i], selection[i]);
+            EditorProjectSelection.Invalidate();
         }
-        // These assertions describe the authoring output. Async runtime discovery is checked separately below.
-        private static LocalizationConfig Find(bool automatic)
+        private static IEnumerator Done(Task task) { while (!task.IsCompleted) yield return null; task.GetAwaiter().GetResult(); }
+        private static LocalizationProjectConfig Find(bool automatic)
         {
-            var config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath);
-            return automatic && config != null && !config.autoInitialize ? null : config;
+            var config = AssetDatabase.LoadAssetAtPath<LocalizationProjectConfig>(Startup);
+            return automatic && config != null && !config.AutoInitialize ? null : config;
         }
-        private LocalizationProjectSetup.Result Create() => LocalizationProjectSetup.Configure(new[] { "en", "ru" }, "en", "en", true);
-
-        [UnityTest] public System.Collections.IEnumerator RuntimeDiscovery_RequiresNewTypeAtFixedAddressAndHonorsAutoFlag()
+        private static LocalizationProjectConfig Create() => LocalizationProjectAuthoring.Configure(new[] { "en", "ru" }, "en", "en").Config;
+        private static void Save(LocalizationProjectConfig config) { EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config); }
+        private LocalizationProjectConfig Config(string relative, bool automatic = false)
         {
-            var old = Create().Config;
-            var missing = Localization.InitializeAsync();
-            while (!missing.IsCompleted) yield return null;
-            Assert.That(missing.IsFaulted, Is.True);
-            StringAssert.Contains("Project Configuration", missing.Exception.ToString());
-            AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(old));
-            var project = LocalizationProjectConfig.Create(new[] { "en", "ru" });
-            project.AutoInitialize = true;
-            AssetDatabase.CreateAsset(project, LocalizationProjectSetup.ConfigAssetPath);
-            AssetDatabase.SaveAssets(); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            var initialized = Localization.InitializeAsync();
-            while (!initialized.IsCompleted) yield return null;
-            initialized.GetAwaiter().GetResult();
-            Assert.That(Localization.Config, Is.SameAs(project));
-            Assert.That(Localization.CurrentLanguage, Is.EqualTo("en"));
-            var close = Localization.ShutdownAsync();
-            while (!close.IsCompleted) yield return null;
-            close.GetAwaiter().GetResult();
-            project.AutoInitialize = false;
-            var automatic = (System.Threading.Tasks.Task<LocalizationRuntime>)typeof(Localization)
-                .GetMethod("InitializeAutomaticallyAsync", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
-            while (!automatic.IsCompleted) yield return null;
-            Assert.That(automatic.GetAwaiter().GetResult(), Is.Null);
-            Assert.That(Localization.IsInitialized, Is.False);
+            string path = other + "/" + relative; Directory.CreateDirectory(Path.GetDirectoryName(path)); AssetDatabase.Refresh();
+            var config = LocalizationProjectConfig.Create(new[] { "en" }); config.AutoInitialize = automatic;
+            AssetDatabase.CreateAsset(config, path); Save(config); return config;
         }
-        private LocalizationConfig Config(string relative, bool automatic)
+        private static void ForeignStartup()
         {
-            string path = _other + "/" + relative;
-            Directory.CreateDirectory(Path.GetDirectoryName(path)); AssetDatabase.Refresh();
-            var config = ScriptableObject.CreateInstance<LocalizationConfig>(); config.autoInitialize = automatic;
-            AssetDatabase.CreateAsset(config, path); return config;
+            Directory.CreateDirectory(Path.GetDirectoryName(Startup)); AssetDatabase.Refresh();
+            AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<LocalizationAppearance>(), Startup);
         }
-        [Test] public void Setup_CreatesUsableLanguagesAndFixedStartupConfig()
+        private static Task<LocalizationProjectConfig> Discover(bool automatic) => (Task<LocalizationProjectConfig>)typeof(Localization)
+            .GetMethod("FindResourceConfigAsync", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { automatic });
+        [UnityTest] public IEnumerator RuntimeDiscoveryRequiresProjectTypeAtFixedAddressAndHonorsAutoFlag()
         {
-            var result = Create();
-            Assert.That(result.ValidationErrors, Is.Empty); Assert.That(result.CreatedPaths.Count, Is.EqualTo(5));
-            Assert.That(result.Config.languages.Select(p => p.Code), Is.EqualTo(new[] { "en", "ru" }));
-            Assert.That(Find(true), Is.SameAs(result.Config)); Assert.That(Find(false), Is.SameAs(result.Config));
-            Assert.That(result.Config.defaultLanguage.Code, Is.EqualTo("en"));
+            ForeignStartup(); var missing = Localization.InitializeAsync(); while (!missing.IsCompleted) yield return null;
+            Assert.That(missing.IsFaulted, Is.True); Assert.That(missing.Exception.ToString(), Does.Contain("Project Configuration"));
+            AssetDatabase.DeleteAsset(Startup); var project = Create();
+            yield return Done(Localization.InitializeAsync()); Assert.That(Localization.Config, Is.SameAs(project)); Assert.That(Localization.CurrentLanguage, Is.EqualTo("en"));
+            yield return Done(Localization.ShutdownAsync()); project.AutoInitialize = false; Save(project);
+            var automatic = (Task<LocalizationRuntime>)typeof(Localization).GetMethod("InitializeAutomaticallyAsync", BindingFlags.NonPublic | BindingFlags.Static).Invoke(null, null);
+            yield return Done(automatic); Assert.That(automatic.Result, Is.Null); Assert.That(Localization.IsInitialized, Is.False);
+            yield return Done(Localization.InitializeAsync()); Assert.That(Localization.Config, Is.SameAs(project), "Explicit initialization may use a config with AutoInitialize disabled.");
         }
-        [Test] public void RepeatSetup_PreservesGuidExternalTranslationsAndFlags()
+        [Test] public void SetupCreatesOneLightweightConfigWithUsableLanguagesAndExactSources()
         {
-            var first = Create(); first.Config.enableLogging = true; first.Config.autoInitialize = false;
-            EditorUtility.SetDirty(first.Config); AssetDatabase.SaveAssetIfDirty(first.Config);
-            string guid = AssetDatabase.AssetPathToGUID(LocalizationProjectSetup.ConfigAssetPath);
-            string text = first.CreatedPaths.First(p => p.EndsWith("/en/text/main.json"));
-            File.WriteAllText(text, "{\"translations\":{\"Menu/Play\":\"External edit\"},\"custom\":42}");
-            byte[] before = File.ReadAllBytes(text);
-            var second = Create();
-            Assert.That(second.CreatedPaths, Is.Empty); Assert.That(second.Config.enableLogging, Is.True);
-            Assert.That(Find(true), Is.Null); Assert.That(Find(false), Is.SameAs(first.Config));
-            Assert.That(File.ReadAllBytes(text), Is.EqualTo(before));
-            Assert.That(AssetDatabase.AssetPathToGUID(LocalizationProjectSetup.ConfigAssetPath), Is.EqualTo(guid));
+            var config = Create(); Assert.That(config.Validate(), Is.Empty);
+            Assert.That(config.Languages.Select(l => l.Code), Is.EqualTo(new[] { "en", "ru" })); Assert.That(Find(true), Is.SameAs(config));
+            Assert.That(config.MainChannel.DefaultLanguage, Is.EqualTo("en")); Assert.That(config.MainChannel.FallbackLanguage, Is.EqualTo("en"));
+            Assert.That(AssetDatabase.FindAssets("t:LanguageProfile", new[] { Root }), Is.Empty);
+            Assert.That(Directory.GetFiles(Root, "*.json", SearchOption.AllDirectories).Length, Is.EqualTo(2));
         }
-        [Test] public void ExplicitConfig_RemainsUsableOutsideResources()
+        [Test] public void RepeatSetupPreservesGuidExternalTranslationsFlagsAndIdentities()
         {
-            var config = LocalizationProjectConfig.Create(new[] { "en" });
-            AssetDatabase.CreateAsset(config, _other + "/Manual.asset");
-            using var runtime = new LocalizationRuntime(config);
-            var initialization = runtime.InitializeAsync();
-            Assert.That(initialization.IsCompletedSuccessfully, Is.True);
-            Assert.That(runtime.GetChannel().RequestedLanguage, Is.EqualTo("en"));
+            var config = Create(); config.AutoDetectLanguage = true; config.AutoInitialize = false; Save(config);
+            string guid = AssetDatabase.AssetPathToGUID(Startup), channel = config.MainChannelId, set = config.Sets[0].Id;
+            string path = Root + "/Resources/SimplyLocalize/Translations/en/Common.json";
+            File.WriteAllText(path, "{\"translations\":{\"Menu/Play\":\"External edit\"},\"custom\":42}"); byte[] before = File.ReadAllBytes(path);
+            var again = LocalizationProjectAuthoring.Configure(new[] { "en", "ru" }, "en", "en");
+            Assert.That(again.Config, Is.SameAs(config)); Assert.That(again.Change.HasChanges, Is.False);
+            Assert.That(config.AutoDetectLanguage, Is.True); Assert.That(Find(true), Is.Null); Assert.That(Find(false), Is.SameAs(config));
+            Assert.That(config.MainChannelId, Is.EqualTo(channel)); Assert.That(config.Sets[0].Id, Is.EqualTo(set));
+            Assert.That(File.ReadAllBytes(path), Is.EqualTo(before)); Assert.That(AssetDatabase.AssetPathToGUID(Startup), Is.EqualTo(guid));
         }
-        [Test] public void LegacyAutoConfigs_AreNotDiscovered()
+        [Test] public void ExplicitConfigRemainsUsableOutsideResources()
         {
-            Config("Resources/Nested/Old.asset", true); Assert.That(Find(true), Is.Null);
-            Assert.That(Find(false), Is.Null);
+            var config = Config("Manual.asset"); using var runtime = new LocalizationRuntime(config);
+            Assert.That(runtime.InitializeAsync().IsCompletedSuccessfully, Is.True); Assert.That(runtime.GetChannel().RequestedLanguage, Is.EqualTo("en"));
         }
-        [Test] public void FixedAddress_IgnoresOtherAutomaticConfigs()
+        [UnityTest] public IEnumerator AutomaticConfigsAtOtherAddressesAreNotDiscovered()
         {
-            var config = Create().Config; Config("Resources/Old.asset", true); Assert.That(Find(true), Is.SameAs(config));
+            Config("Resources/Nested/Other.asset", true); var task = Discover(true); yield return Done(task); Assert.That(task.Result, Is.Null);
+            var explicitLookup = Discover(false); while (!explicitLookup.IsCompleted) yield return null;
+            Assert.That(explicitLookup.IsFaulted, Is.True); Assert.That(Localization.IsInitialized, Is.False);
         }
-        [Test] public void Setup_RequiresChoiceWhenExistingConfigsArePresent()
+        [UnityTest] public IEnumerator FixedAddressIgnoresOtherAutomaticConfigs()
         {
-            Config("Manual.asset", false);
-            Assert.Throws<InvalidOperationException>(() => LocalizationProjectSetup.Configure(new[] { "en" }, "en"));
-            Assert.That(Directory.Exists(Root), Is.False);
+            var config = Create(); Config("Resources/Other.asset", true);
+            var task = Discover(true); yield return Done(task); Assert.That(task.Result, Is.SameAs(config));
         }
-        [Test] public void Migration_PreservesGuidSettingsAndLanguageReferences()
+        [Test] public void EditorRequiresExplicitChoiceWhenSeveralManualConfigsExist()
         {
-            var config = Config("Old.asset", false); LocalizationProjectSetup.AddLanguages(config, "en");
-            config.defaultLanguage = config.languages[0]; var language = config.defaultLanguage;
-            string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(config));
-            LocalizationProjectSetup.UseForAutomaticStartup(config);
-            Assert.That(AssetDatabase.AssetPathToGUID(LocalizationProjectSetup.ConfigAssetPath), Is.EqualTo(guid));
-            Assert.That(config.defaultLanguage, Is.SameAs(language)); Assert.That(config.autoInitialize, Is.True);
-            Assert.That(config.name, Is.EqualTo("SimplyLocalizeSettings"));
-            LocalizationProjectSetup.UseForAutomaticStartup(config); Assert.That(Find(true), Is.SameAs(config));
+            Config("One.asset"); var chosen = Config("Two.asset"); EditorProjectSelection.Select(null);
+            Assert.That(EditorProjectSelection.Config, Is.Null); Assert.That(EditorProjectSelection.Message, Does.Contain("Select"));
+            EditorProjectSelection.Select(chosen); Assert.That(EditorProjectSelection.Config, Is.SameAs(chosen)); Assert.That(File.Exists(Startup), Is.False);
         }
-        [Test] public void Migration_RefusesOccupiedDestinationWithoutChangingSource()
+        [Test] public void StartupMovePreservesGuidLanguageIdentitiesAndSourceRouting()
         {
-            var installed = Create().Config; var source = Config("Old.asset", false);
-            string path = AssetDatabase.GetAssetPath(source); byte[] before = File.ReadAllBytes(path);
-            Assert.Throws<IOException>(() => LocalizationProjectSetup.UseForAutomaticStartup(source));
+            var config = LocalizationProjectAuthoring.Create(new[] { "en" }, "en", null, other + "/Manual.asset", false);
+            string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(config)), set = config.Sets[0].Id;
+            string address = config.Sets[0].Sources[0].Sources[0].Address;
+            LocalizationProjectAuthoring.UseForAutomaticStartup(config);
+            Assert.That(AssetDatabase.AssetPathToGUID(Startup), Is.EqualTo(guid)); Assert.That(config.Sets[0].Id, Is.EqualTo(set));
+            Assert.That(config.Sets[0].Sources[0].Sources[0].Address, Is.EqualTo(address)); Assert.That(config.AutoInitialize, Is.True);
+            LocalizationProjectAuthoring.UseForAutomaticStartup(config); Assert.That(Find(true), Is.SameAs(config));
+        }
+        [Test] public void StartupMoveRefusesOccupiedDestinationWithoutChangingSource()
+        {
+            var installed = Create(); var source = Config("Manual.asset"); string path = AssetDatabase.GetAssetPath(source); byte[] before = File.ReadAllBytes(path);
+            Assert.Throws<InvalidOperationException>(() => LocalizationProjectAuthoring.UseForAutomaticStartup(source));
             Assert.That(AssetDatabase.GetAssetPath(source), Is.EqualTo(path)); Assert.That(File.ReadAllBytes(path), Is.EqualTo(before));
-            Assert.That(source.autoInitialize, Is.False); Assert.That(Find(true), Is.SameAs(installed));
+            Assert.That(source.AutoInitialize, Is.False); Assert.That(Find(true), Is.SameAs(installed));
         }
-        [Test] public void DuplicateResourceAddress_IsRejectedBeforeAnyWrites()
+        [Test] public void DuplicateResourceAddressIsRejectedBeforeAnyWrites()
         {
-            Config("Resources/SimplyLocalizeSettings.asset", false);
-            Assert.Throws<InvalidOperationException>(() => Create()); Assert.That(Directory.Exists(Root), Is.False);
+            Config("Resources/SimplyLocalizeSettings.asset"); Assert.Throws<InvalidOperationException>(() => Create()); Assert.That(Directory.Exists(Root), Is.False);
         }
-        [TestCase("../ru")] [TestCase("ru/en")] [TestCase("")]
-        public void InvalidCodes_AreRejectedBeforeWrites(string code)
+        [TestCase("../ru")][TestCase("ru/en")][TestCase("")]
+        public void InvalidCodesAreRejectedBeforeWrites(string code)
+        { Assert.Throws<ArgumentException>(() => LocalizationProjectAuthoring.Configure(new[] { code }, code)); Assert.That(Directory.Exists(Root), Is.False); }
+        [Test] public void DuplicateNormalizedCodesAreRejectedBeforeWrites()
+        { Assert.Throws<ArgumentException>(() => LocalizationProjectAuthoring.Configure(new[] { "en", "EN" }, "en")); Assert.That(Directory.Exists(Root), Is.False); }
+        [Test] public void InvalidExistingSourceDoesNotPartiallyAddLanguages()
         {
-            Assert.That(() => LocalizationProjectSetup.Configure(new[] { code }, code, null, true), Throws.Exception);
-            Assert.That(Directory.Exists(Root), Is.False);
+            var config = Create(); string path = Root + "/Resources/SimplyLocalize/Translations/pl/Common.json";
+            Directory.CreateDirectory(Path.GetDirectoryName(path)); File.WriteAllText(path, "foreign file");
+            Assert.Catch<Exception>(() => LocalizationProjectAuthoring.Configure(new[] { "en", "ru", "de", "pl" }, "en"));
+            Assert.That(config.Languages.Select(l => l.Code), Is.EqualTo(new[] { "en", "ru" })); Assert.That(File.ReadAllText(path), Is.EqualTo("foreign file"));
+            Assert.That(File.Exists(Root + "/Resources/SimplyLocalize/Translations/de/Common.json"), Is.False);
         }
-        [Test] public void DuplicateCodes_AreRejectedBeforeWrites()
+        [Test] public void ReadOnlyConfigDoesNotLeaveNewLanguageOrTranslation()
         {
-            Assert.Throws<ArgumentException>(() => LocalizationProjectSetup.Configure(new[] { "en", "EN" }, "en", null, true));
-            Assert.That(Directory.Exists(Root), Is.False);
+            var config = Create(); var attributes = File.GetAttributes(Startup); File.SetAttributes(Startup, attributes | FileAttributes.ReadOnly);
+            try { Assert.Catch<Exception>(() => LocalizationProjectAuthoring.AddLanguage(config, "pl")); }
+            finally { File.SetAttributes(Startup, attributes); }
+            Assert.That(config.Languages.Any(l => l.Code == "pl"), Is.False); Assert.That(File.Exists(Root + "/Resources/SimplyLocalize/Translations/pl/Common.json"), Is.False);
         }
-        [Test] public void OccupiedProfilePath_DoesNotPartiallyAddLanguages()
+        [Test] public void AssetOnlySetupAndCoverageDoNotCreateTextSources()
         {
-            var config = Create().Config; string path = Root + "/Languages/pl.asset";
-            File.WriteAllText(path, "foreign file");
-            Assert.Throws<IOException>(() => LocalizationProjectSetup.AddLanguages(config, "de", "pl"));
-            Assert.That(config.GetProfile("de"), Is.Null); Assert.That(File.Exists(Root + "/Languages/de.asset"), Is.False);
-            Assert.That(File.ReadAllText(path), Is.EqualTo("foreign file"));
+            var config = Config("AssetsOnly.asset"); config.Sets[0].AddEntry("icon", LocalizationEntryKind.Asset); Save(config);
+            LocalizationProjectAuthoring.AddLanguage(config, "ru");
+            Assert.That(config.Sets[0].Sources, Is.Empty); Assert.That(Directory.GetFiles(other, "*.json", SearchOption.AllDirectories), Is.Empty);
+            var report = ProjectCoverageAnalyzer.Analyze(config); Assert.That(report.TextCoverage.All(row => row.TotalCount == 0), Is.True);
+            Assert.That(report.Warnings.Any(w => w.Message.Contains("No text")), Is.False);
         }
-        [Test] public void ReadOnlyConfig_DoesNotLeaveNewLanguageOrTranslation()
+        [Test] public void FreshSetupEditorSelectionAndExternalEditingUseSameConfiguration()
         {
-            var config = Create().Config; string path = LocalizationProjectSetup.ConfigAssetPath;
-            File.SetAttributes(path, File.GetAttributes(path) | FileAttributes.ReadOnly);
-            try
-            {
-                Assert.That(() => LocalizationProjectSetup.AddLanguages(config, "pl"), Throws.Exception);
-                Assert.That(config.GetProfile("pl"), Is.Null); Assert.That(File.Exists(Root + "/Languages/pl.asset"), Is.False);
-                Assert.That(File.Exists(Root + "/Resources/SimplyLocalize/Translations/pl/text/main.json"), Is.False);
-            }
-            finally { File.SetAttributes(path, File.GetAttributes(path) & ~FileAttributes.ReadOnly); }
+            var config = Create(); EditorProjectSelection.Select(null); Assert.That(EditorProjectSelection.Config, Is.SameAs(config));
+            string entry; using (var edit = new LocalizationProjectEdit(config, config.Sets[0].Id))
+            { entry = edit.Draft.Sets[0].AddEntry("setup.test").Id; edit.SetTranslation(entry, "en", "Ready"); edit.Commit(); }
+            EditorProjectSelection.Invalidate(); Assert.That(EditorProjectSelection.Current.Text.TryGetDirect(entry, "en", out var cell), Is.True); Assert.That(cell.Value, Is.EqualTo("Ready"));
         }
-        [Test] public void AssetOnlySetupAndCoverage_DoNotCreateOrLoadText()
+
+        private static void BuildCheck() => ((IPreprocessBuildWithReport)Activator.CreateInstance(typeof(LocalizationProjectAuthoring).Assembly
+            .GetType("SimplyLocalize.Editor.LocalizationStartupBuildCheck"), true)).OnPreprocessBuild(null);
+        [Test] public void BuildGateAcceptsProjectConfigWithoutLoadingItsContents()
         {
-            var config = Config("AssetsOnly.asset", false); config.loadTextData = false;
-            var result = LocalizationProjectSetup.AddLanguages(config, "en");
-            Assert.That(result.CreatedPaths.Any(p => p.EndsWith(".json")), Is.False);
-            var report = CoverageAnalyzer.Analyze(config);
-            Assert.That(report.TextCoverage, Is.Empty); Assert.That(report.Warnings.Any(w => w.Message.Contains("No text keys")), Is.False);
-            LogAssert.NoUnexpectedReceived();
+            var config = Create(); config.Sets[0].SetSources("en", new LocalizationSourceReference("custom", "remote-table", LocalizationSourceKind.TextTable)); Save(config);
+            Assert.DoesNotThrow(BuildCheck); Assert.That(Localization.IsInitialized, Is.False); LogAssert.NoUnexpectedReceived();
         }
-        [Test] public void FreshSetup_EditorCacheAndDiskEditingUseTheSameConfiguration()
+        [Test] public void BuildGateAllowsExplicitBootstrapWithoutStartupConfig()
+        { Config("Manual.asset"); Assert.DoesNotThrow(BuildCheck); Assert.That(File.Exists(Startup), Is.False); }
+        [Test] public void BuildGateRejectsWrongTypeAtStartupAddress()
+        { ForeignStartup(); Assert.That(Assert.Throws<BuildFailedException>(BuildCheck).Message, Does.Contain("LocalizationProjectConfig").And.Contain(Startup)); }
+        [Test] public void BuildGateRejectsDuplicateAddressWithoutChangingEitherAsset()
         {
-            var result = Create();
-            SimplyLocalize.Editor.Data.EditorDataCache.SelectConfig(null);
-            SimplyLocalize.Editor.Data.EditorDataCache.Invalidate();
-            Assert.That(SimplyLocalize.Editor.Data.EditorDataCache.Config, Is.SameAs(result.Config));
-            var data = new SimplyLocalize.Editor.Data.EditorLocalizationData(); data.Load(result.Config);
-            Assert.That(data.LoadError, Is.Null); Assert.That(data.LoadedLanguages, Is.EquivalentTo(new[] { "en", "ru" }));
-            data.AddKey("setup.test", "main"); data.SetTranslation("setup.test", "en", "Ready"); data.SaveAll();
-            data.Reload(result.Config); Assert.That(data.GetTranslation("setup.test", "en"), Is.EqualTo("Ready"));
-            Assert.That(AssetDatabase.GetAssetPath(result.Config), Is.EqualTo(LocalizationProjectSetup.ConfigAssetPath));
+            Create(); var otherConfig = Config("Resources/SimplyLocalizeSettings.asset"); byte[] before = File.ReadAllBytes(Startup);
+            Assert.That(Assert.Throws<BuildFailedException>(BuildCheck).Message, Does.Contain(AssetDatabase.GetAssetPath(otherConfig)));
+            Assert.That(File.ReadAllBytes(Startup), Is.EqualTo(before));
         }
+        [Test] public void BuildGateRejectsInvalidStartupConfiguration()
+        {
+            var config = Create(); config.MainChannel.DefaultLanguage = "pl"; Save(config);
+            Assert.That(Assert.Throws<BuildFailedException>(BuildCheck).Message, Does.Contain("Default language"));
+        }
+        [Test] public void BuildGateWarnsAboutIgnoredAutomaticConfig()
+        {
+            var config = Config("Resources/Other.asset", true);
+            LogAssert.Expect(LogType.Warning, new Regex("Auto-initialize config is outside the startup path: " + Regex.Escape(AssetDatabase.GetAssetPath(config))));
+            BuildCheck(); LogAssert.NoUnexpectedReceived();
+        }
+        private static LocalizationProjectAuthoring.Result Command(params string[] args)
+        {
+            try { return (LocalizationProjectAuthoring.Result)typeof(LocalizationProjectAuthoring).GetMethod("ConfigureFromArguments", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new object[] { args }); }
+            catch (TargetInvocationException error) { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error.InnerException).Throw(); throw; }
+        }
+        [Test] public void CommandLineUsesSameConfigurationAndRepeatedSetupPreservesExternalText()
+        {
+            var config = Command("Unity", "-batchmode", "-slLanguages", "EN,pt-br", "-slDefault", "en", "-slFallback", "pt-BR").Config;
+            Assert.That(config.Languages.Select(l => l.Code), Is.EqualTo(new[] { "en", "pt-BR" })); Assert.That(config.MainChannel.FallbackLanguage, Is.EqualTo("pt-BR"));
+            string source = Root + "/Resources/SimplyLocalize/Translations/en/Common.json"; File.WriteAllText(source, "{\"translations\":{\"external\":\"Keep\"}}");
+            byte[] before = File.ReadAllBytes(source); string guid = AssetDatabase.AssetPathToGUID(Startup);
+            Command("-slLanguages", "en,pt-BR", "-slDefault", "pt-BR"); Assert.That(config.MainChannel.FallbackLanguage, Is.Null.Or.Empty);
+            Assert.That(File.ReadAllBytes(source), Is.EqualTo(before)); Assert.That(AssetDatabase.AssetPathToGUID(Startup), Is.EqualTo(guid));
+        }
+        [TestCase("")][TestCase("-slLanguages en,ru")][TestCase("-slLanguages -slDefault en")]
+        [TestCase("-slLanguages en,ru -slDefault")][TestCase("-slLanguages en,ru -slDefault en -slFallback")]
+        [TestCase("-slLanguages en,en -slDefault en")][TestCase("-slLanguages en -slDefault ru")]
+        [TestCase("-slLanguages en -slDefault en -slDefault ru")][TestCase("-slLanguages en,,ru -slDefault en")]
+        public void InvalidCommandLineCreatesNothing(string command)
+        { Assert.Throws<ArgumentException>(() => Command(command.Split(' '))); Assert.That(Directory.Exists(Root), Is.False); }
     }
 }

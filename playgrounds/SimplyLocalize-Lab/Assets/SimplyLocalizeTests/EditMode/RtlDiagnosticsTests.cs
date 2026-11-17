@@ -14,7 +14,7 @@ namespace SimplyLocalize.Tests
         private string _root;
         private GameObject _canvas;
         private TMP_FontAsset _font;
-        private LanguageProfile _profile;
+        private LocalizationAppearance _profile;
         private ProfileApplier _applier;
 
         [TearDown]
@@ -53,7 +53,7 @@ namespace SimplyLocalize.Tests
             text.text = rich;
             _applier = new ProfileApplier();
             _applier.CacheOriginals(text);
-            _profile = ScriptableObject.CreateInstance<LanguageProfile>();
+            _profile = ScriptableObject.CreateInstance<LocalizationAppearance>();
             _profile.overrideLayout = _profile.overrideAlignment = true;
             _profile.textDirection = TextDirection.RTL;
             _profile.alignmentOverride = TextAlignmentOptions.TopRight;
