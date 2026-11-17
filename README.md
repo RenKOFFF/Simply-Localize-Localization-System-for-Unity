@@ -298,31 +298,36 @@ Scan a scene for all `TMP_Text` / `Text` components and bulk-add `LocalizedText`
 
 - Export to CSV (for translation services)
 - Import from CSV with validation and a preview before applying
-- Sort keys
-- Find unused keys
 
-CSV accepts both `Key,File,en,ru,...` and `Key,File,Description,en,ru,...` headers.
-Quoted commas, escaped quotes, multiline values, UTF-8 BOM and CR/LF/CRLF are supported.
-Translation/description whitespace is preserved. Malformed quotes, duplicate keys/language columns,
-unsafe paths, inconsistent row widths and implicit moves between source files reject the entire import.
+CSV targets the selected channel and content set. Use `Key,en,ru,...`; optional `SetId`, `EntryId`
+and `Description` columns identify the destination, retain identity across renames/moves, and carry notes.
+Export includes identities. Optional `Source:en` columns select an already connected source address
+when several text files exist. The old `File` column and `CsvExporter` API have been removed;
+export a new CSV before editing. There is no automatic conversion of the old config/profile format.
 
-Empty cells now **keep existing values by default**. Enable **Clear existing values for empty CSV cells**
-to clear them explicitly; omitted language columns always remain unchanged. Review the change list,
-then choose **Apply and save**. Cancel creates no profiles and changes no data. A preview must be
-recreated if the editor data changes. New language profiles are created only on application.
+Quoted commas, escaped quotes, multiline values, BOM and CR/LF/CRLF are supported. File preview
+strictly decodes UTF-8, or UTF-16/UTF-32 with BOM. Translation/description whitespace is preserved;
+keys cannot start/end with whitespace. Language codes are normalized (`EN` → `en`, `pt-br` → `pt-BR`).
+Duplicate normalized columns, conflicting identities, malformed rows and unconnected destinations
+reject the entire preview without writing data.
 
-Existing editor API signatures remain available. `CsvExporter.Import` / `ImportFromFile` merge in memory;
-the new overload with `CsvEmptyCellPolicy.Clear` requests clearing. `CsvExporter.Preview` produces an
-immutable plan: `Apply(data)` changes memory, `Apply(data, true)` also saves JSON, and
-`ApplyAndSave(data, config)` additionally creates missing profiles in a saved config under Assets.
-Headers without rows are a no-op. Import preserves descriptions omitted from CSV and rename history.
+Empty cells **keep existing values by default**; select explicit clearing to erase them.
+Omitted language/description columns remain unchanged. Review the preview and apply it, or cancel
+without creating files or definitions. New languages are enabled only in the selected channel.
+External changes invalidate the preview. After assembly reload, rebuild the preview from retained input.
 
-Saving uses temporary files and per-file replacement. A caught write failure rolls back earlier files;
-CSV application also protects new profiles and the config. Pending memory edits remain available on
-failure. Existing JSON fields outside `translations` are retained. External file changes require Reload
-and a new preview rather than being overwritten. CSV application also saves pending editor changes;
-it is **not a Unity Undo operation**. This is not a crash/power-loss journal: if rollback itself fails,
-the error identifies retained recovery backups. Keep version control/backups for recovery.
+Editor scripts use `ProjectCsv.Export(config)` and `ProjectCsv.Preview(config, csv)`.
+Dispose the preview on cancellation; `plan.Apply()` saves one isolated transaction and returns a
+`LocalizationProjectChange`. To register Unity Undo, use
+`LocalizationProjectUndo.Record(plan.Apply(), "Import CSV")`. The Tools window does this automatically.
+Use `emptyCells: CsvEmptyCellPolicy.Clear` for explicit clearing. A header without rows is a no-op;
+empty input is invalid. Separate pending edits are not saved by importing CSV.
+
+Saving uses temporary files and per-file replacement. A caught failure rolls back earlier writes,
+including config changes and newly created sources. Additional JSON fields are retained. A failed
+preview remains available for retry when the cause can be resolved without invalidating its baseline.
+This is not a crash/power-loss journal; failed rollback reports retained backups. Keep version
+control/backups for recovery.
 
 ### Settings Tab
 

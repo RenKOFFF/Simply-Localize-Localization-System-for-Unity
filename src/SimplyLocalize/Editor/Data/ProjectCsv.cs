@@ -7,6 +7,7 @@ using UnityEditor;
 
 namespace SimplyLocalize.Editor.Data
 {
+    public enum CsvEmptyCellPolicy { Skip, Clear }
     public enum ProjectCsvChangeKind { AddEntry, RenameEntry, MoveEntry, Translation, Description, AddLanguage, EnableLanguage, CreateSource }
     public sealed class ProjectCsvChange
     {
@@ -72,7 +73,7 @@ namespace SimplyLocalize.Editor.Data
             var channel = config.Channels.SingleOrDefault(c => c.Id == (channelId ?? config.MainChannelId)) ?? throw new ArgumentException("Unknown channel identity.");
             setId ??= channel.DefaultSetId;
             if (!channel.SetIds.Contains(setId)) throw new ArgumentException("Default import set is not available in this channel.");
-            var parsed = CsvExporter.ParseCsvLines(csv); if (parsed.Count == 0) throw new FormatException("CSV needs a header with Key and language columns; SetId and EntryId are optional.");
+            var parsed = CsvCodec.ParseCsvLines(csv); if (parsed.Count == 0) throw new FormatException("CSV needs a header with Key and language columns; SetId and EntryId are optional.");
             var header = parsed[0]; var columns = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             var languages = new List<string>(); var languageColumns = new Dictionary<string, int>(); var sourceColumns = new Dictionary<string, int>();
             for (int i = 0; i < header.Count; i++)

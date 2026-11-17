@@ -141,10 +141,15 @@ namespace SimplyLocalize.Tests
 
         [Test] public void NestedFiles_RoundTripThroughCsvCloneAndRename()
         {
-            string path = Write("en", "chapter/main", "old"); _data.Load(_config);
-            string csv = CsvExporter.Export(_data, new List<string> { "en", "ru" });
-            CsvExporter.Import(_data, csv); _data.SaveAll();
-            LocalizationKeyRenamer.RenameText(_data, "old", "new", false);
+            string path = Write("en", "chapter/main", "old"); AssetDatabase.Refresh();
+            var project = LocalizationProjectAuthoring.Create(new[] { "en" }, "en", "en", _root + "/Project.asset", false);
+            string entry = project.Sets[0].AddEntry("old").Id;
+            string address = path.Substring(path.IndexOf("/Resources/", StringComparison.Ordinal) + 11);
+            project.Sets[0].SetSources("en", new LocalizationSourceReference("resources", address.Substring(0, address.Length - 5), LocalizationSourceKind.TextTable));
+            EditorUtility.SetDirty(project); AssetDatabase.SaveAssetIfDirty(project);
+            string csv = ProjectCsv.Export(project, includeSources: true);
+            using (var plan = ProjectCsv.Preview(project, csv)) Assert.That(plan.Apply().HasChanges, Is.False);
+            using (var edit = new LocalizationProjectEdit(project, project.Sets[0].Id)) { edit.RenameTextEntry(entry, "new"); edit.Commit(); }
             var json = JObject.Parse(File.ReadAllText(path));
             Assert.That((string)json["translations"]["new"], Is.EqualTo("en value")); Assert.That(json["translations"]["old"], Is.Null);
         }
