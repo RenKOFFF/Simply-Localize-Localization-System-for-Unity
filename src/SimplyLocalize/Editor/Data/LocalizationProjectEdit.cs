@@ -22,6 +22,7 @@ namespace SimplyLocalize.Editor.Data
         private readonly Dictionary<string, Document> documents = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, Document> addresses = new(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, string> originalRoutes = new(StringComparer.Ordinal);
+        private readonly HashSet<string> initialPaths, initialAddresses;
         private bool committed, disposed;
         public LocalizationProjectConfig Draft { get; }
 
@@ -52,6 +53,19 @@ namespace SimplyLocalize.Editor.Data
                 }
             }
             catch { Object.DestroyImmediate(Draft); throw; }
+            initialPaths = new HashSet<string>(documents.Keys, StringComparer.OrdinalIgnoreCase);
+            initialAddresses = new HashSet<string>(addresses.Keys, StringComparer.OrdinalIgnoreCase);
+        }
+
+        /// <summary>Discards staged changes while retaining the original disk/config baselines.
+        /// Use before replaying a corrected UI draft after a failed save; external changes still conflict.</summary>
+        public void ResetChanges()
+        {
+            EnsureOpen(); EditorJsonUtility.FromJsonOverwrite(originalJson, Draft);
+            foreach (string path in documents.Keys.Where(p => !initialPaths.Contains(p)).ToArray()) documents.Remove(path);
+            foreach (string address in addresses.Keys.Where(a => !initialAddresses.Contains(a)).ToArray()) addresses.Remove(address);
+            foreach (var document in documents.Values) document.Reset();
+            originalRoutes.Clear(); foreach (string id in included) originalRoutes.Add(id, Routes(Set(id)));
         }
 
         public void SetTranslation(string entryId, string language, string value, string destinationAddress = null)
@@ -278,6 +292,11 @@ namespace SimplyLocalize.Editor.Data
                 using (var writer = new JsonTextWriter(output) { Formatting = Formatting.Indented }) Root.WriteTo(writer);
                 byte[] body = encoding.GetBytes(output.ToString());
                 return bom ? encoding.GetPreamble().Concat(body).ToArray() : body;
+            }
+            internal void Reset()
+            {
+                Root.RemoveAll();
+                foreach (var property in Original.Properties()) Root.Add(property.Name, property.Value.DeepClone());
             }
         }
     }

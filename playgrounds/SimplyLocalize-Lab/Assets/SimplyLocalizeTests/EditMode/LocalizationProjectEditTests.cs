@@ -71,6 +71,21 @@ namespace SimplyLocalize.Tests
             var reloaded = AssetDatabase.LoadAssetAtPath<LocalizationProjectConfig>(configPath);
             Assert.That(reloaded.Sets[0].Entries[0].Id, Is.EqualTo(entryId)); Assert.That(reloaded.Sets[0].Entries[0].Key, Is.EqualTo("welcome"));
         }
+        [Test] public void ResetDropsNewSourcesAndMetadataButKeepsOriginalDiskBaselines()
+        {
+            using var edit = new LocalizationProjectEdit(config, setId);
+            edit.Draft.AddLanguage("pl"); edit.CreateTextSource(setId, "pl", PathFor("pl")); edit.RenameTextEntry(entryId, "renamed");
+            edit.ResetChanges(); Assert.That(edit.Draft.Languages.Select(l => l.Code), Does.Not.Contain("pl"));
+            Assert.That(edit.Draft.Sets[0].Entries[0].Key, Is.EqualTo("hello"));
+            Assert.That(edit.Commit().HasChanges, Is.False); Assert.That(File.Exists(PathFor("pl")), Is.False);
+            Assert.That(Text("en", "hello"), Is.EqualTo("en"));
+        }
+        [Test] public void ResetDoesNotSilentlyAcceptExternalChangesAsANewBaseline()
+        {
+            using var edit = new LocalizationProjectEdit(config, setId); edit.SetTranslation(entryId, "en", "Typed");
+            Write("en", "{\"translations\":{\"hello\":\"External\"}}"); edit.ResetChanges(); edit.SetTranslation(entryId, "en", "Retry");
+            Assert.Throws<InvalidOperationException>(() => edit.Commit()); Assert.That(Text("en", "hello"), Is.EqualTo("External"));
+        }
         [Test] public void MoveTransfersEveryTranslationAndKeepsStableEntryRouting()
         {
             string targetId = AddTarget().Id;
