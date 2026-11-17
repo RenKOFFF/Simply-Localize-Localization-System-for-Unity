@@ -324,8 +324,18 @@ namespace SimplyLocalize.Editor.Data
         { this.config = config; this.path = path; this.beforeJson = beforeJson; this.afterJson = afterJson; this.beforeConfig = beforeConfig; this.files = files; }
         internal void Apply()
         {
-            Write(false, beforeConfig, beforeJson, afterJson); afterConfig = File.ReadAllBytes(path); isApplied = true;
-            // Refresh generated the GUIDs of new text assets. Keep them with the file for native Undo/Redo.
+            Write(false, beforeConfig, beforeJson, afterJson); FinishApplied();
+        }
+        internal static LocalizationProjectChange CaptureApplied(LocalizationProjectConfig config, string path, string beforeJson,
+            string afterJson, byte[] beforeConfig, FileChange[] files)
+        {
+            var change = new LocalizationProjectChange(config, path, beforeJson, afterJson, beforeConfig, files);
+            change.FinishApplied(); return change;
+        }
+        private void FinishApplied()
+        {
+            afterConfig = File.ReadAllBytes(path); isApplied = true;
+            // Unity generated the GUIDs of new assets. Keep them with the file for native Undo/Redo.
             files = files.Concat(files.Where(f => f.Before == null && File.Exists(f.Path + ".meta"))
                 .Select(f => new FileChange(f.Path + ".meta", null, File.ReadAllBytes(f.Path + ".meta")))).ToArray();
             // Initial save checks every loaded dependency. History only owns files it actually changed.
