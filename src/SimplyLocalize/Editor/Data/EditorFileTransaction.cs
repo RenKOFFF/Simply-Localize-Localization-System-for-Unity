@@ -52,7 +52,10 @@ namespace SimplyLocalize.Editor.Data
         // Unity serializes profiles/config itself; protect those files alongside JSON writes.
         internal void TrackExternal(string path)
         {
-            var before = Read(path);
+            TrackExternalSnapshot(path, Read(path));
+        }
+        internal void TrackExternalSnapshot(string path, byte[] before)
+        {
             Add(path, before, before);
             _entries[_entries.Count - 1].External = true;
         }

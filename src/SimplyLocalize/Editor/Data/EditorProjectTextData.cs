@@ -149,6 +149,11 @@ namespace SimplyLocalize.Editor.Data
         }
         public LocalizationEditorTextSource Read(LocalizationSourceReference source)
         {
+            string path = ResolveAssetPath(source);
+            return new LocalizationEditorTextSource(LocalizationFileParser.Parse(File.ReadAllText(path)), path);
+        }
+        public string ResolveAssetPath(LocalizationSourceReference source)
+        {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (source.ProviderId != LocalizationSourceReference.ResourcesProvider)
                 throw new NotSupportedException("Register an Editor text reader for provider '" + source.ProviderId + "'.");
@@ -159,7 +164,7 @@ namespace SimplyLocalize.Editor.Data
             string path = matches[0];
             if (AssetDatabase.GetMainAssetTypeAtPath(path) != typeof(UnityEngine.TextAsset))
                 throw new InvalidOperationException("Expected TextAsset at " + path);
-            return new LocalizationEditorTextSource(LocalizationFileParser.Parse(File.ReadAllText(path)), path);
+            return path;
         }
         public static string ResourceAddress(string assetPath)
         {
