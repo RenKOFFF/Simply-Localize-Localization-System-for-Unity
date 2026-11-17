@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: en-Warning
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 927dce9a3b6990d40a9ccb6c25a2dfb4, type: 3}
-  contentLanguage: {fileID: 11400000, guid: 848b9cce37c603040ba34bc2f46aaf3e, type: 2}
+  contentLanguage: en
   containsText: 1

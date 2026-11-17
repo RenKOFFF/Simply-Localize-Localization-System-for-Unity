@@ -33,7 +33,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             var heading = Row(); heading.style.justifyContent = Justify.SpaceBetween; heading.style.flexWrap = Wrap.Wrap; root.Add(heading);
             var intro = new VisualElement(); heading.Add(intro);
             intro.Add(Text("Resource diagnostics", 20, true));
-            intro.Add(Secondary("Live LocalizationContext resources · all configs"));
+            intro.Add(Secondary("Live Resources sources · all localization runtimes"));
             var actions = Row(); actions.style.marginTop = 6; heading.Add(actions);
             var update = new Button(Refresh) { name = "refreshResources", text = "Refresh" }; update.style.height = 28; update.style.marginRight = 12; actions.Add(update);
             var auto = new Toggle("Auto refresh · 1s") { name = "autoRefreshResources" }; actions.Add(auto);
@@ -111,7 +111,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             historyCard.Add(history); eventDetails = Secondary("Select an event for details."); eventDetails.name = "resourceEventDetails"; eventDetails.style.marginTop = 8; historyCard.Add(eventDetails);
 
             var help = new Foldout { text = "What these numbers mean", value = false }; help.style.marginTop = 14; root.Add(help);
-            help.Add(Secondary("Only LocalizationContext resources are tracked. Legacy managers, other Players and external references are outside this view. Owners are prepared sets, including candidates during language changes."));
+            help.Add(Secondary("Sources loaded by the built-in Resources provider are tracked. Other providers, other Players and external references are outside this view. Owners are source leases, including candidates during language changes."));
             help.Add(Secondary("Unloaded: Resources.UnloadAsset completed. Set closed / Borrowed released: ownership ended, not necessarily native residency. These counts are not process RAM."));
             help.Add(Secondary("History starts when recording is enabled and keeps the latest 256 events. No global resource scans or forced unloads are performed."));
             refresh = root.schedule.Execute(Refresh).Every(1000); refresh.Pause();
@@ -149,7 +149,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             resourceCount.text = snapshot.Resources.Count.ToString(); eventCount.text = snapshot.History.Count.ToString();
             summary.text = "Current snapshot · tracked objects, not memory usage";
             sets.Clear();
-            if (snapshot.Sets.Count == 0) sets.Add(Secondary("No prepared contexts. Enter Play Mode and prepare a LocalizationContext."));
+            if (snapshot.Sets.Count == 0) sets.Add(Secondary("No active source leases. Initialize localization or acquire a content set to load its sources."));
             foreach (var set in snapshot.Sets)
             {
                 var card = Card(); card.style.marginBottom = 6; sets.Add(card);

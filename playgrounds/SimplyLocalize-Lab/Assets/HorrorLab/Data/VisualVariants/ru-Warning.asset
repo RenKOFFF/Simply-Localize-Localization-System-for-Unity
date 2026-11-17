@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: ru-Warning
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 76fc779a1ab906b4cb69d3379d96724f, type: 3}
-  contentLanguage: {fileID: 11400000, guid: 20faaf7130111e14aa1ab4b16bdb13eb, type: 2}
+  contentLanguage: ru
   containsText: 1

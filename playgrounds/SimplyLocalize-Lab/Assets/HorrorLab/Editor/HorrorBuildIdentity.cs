@@ -42,7 +42,7 @@ namespace SimplyLocalize.HorrorLab.Editor
         public static void Write()
         {
             string sample = Path.GetFullPath(HorrorLabSetup.Root);
-            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(LocalizationManager).Assembly);
+            var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(LocalizationRuntime).Assembly);
             if (packageInfo == null || packageInfo.name != "com.renkoff.simply-localize")
                 throw new InvalidOperationException("Simply Localize must be installed as a UPM package.");
             string plugin = packageInfo.resolvedPath;
@@ -68,7 +68,7 @@ namespace SimplyLocalize.HorrorLab.Editor
                 ["unityVersion"] = UnityEngine.Application.unityVersion,
                 ["buildKind"] = "Windows x64 Release",
                 ["audioFixture"] = "DecompressOnLoad; PreloadAudioData=false; LoadInBackground=true; no sample LoadAudioData",
-                ["cleanupPolicy"] = "Plugin-owned contexts prepare audio and unload tracked owned resources after last user; game only detaches consumers; no global UnloadUnusedAssets or forced GC"
+                ["cleanupPolicy"] = "Channel set registrations prepare sources and release owned resources after the last owner; game detaches consumers before releasing sets; no global UnloadUnusedAssets or forced GC"
             };
             string json = result.ToString(Formatting.Indented);
             File.WriteAllText(HorrorLabSetup.Root + "/Resources/NightShift/BuildIdentity.json", json);

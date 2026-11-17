@@ -45,7 +45,7 @@ namespace SimplyLocalize.HorrorLab
         {
             if (session == null || sign == null || string.IsNullOrEmpty(sign.textureKey) || string.IsNullOrEmpty(sign.textKey) || mode == InscriptionMode.Off) return false;
             var variant = session.Visual(sign.textureKey);
-            return variant.containsText && (mode == InscriptionMode.Always || variant.contentLanguage.Code != textLocale);
+            return variant.containsText && (mode == InscriptionMode.Always || variant.contentLanguage != textLocale);
         }
         public void Detach()
         {

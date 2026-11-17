@@ -9,7 +9,7 @@ namespace SimplyLocalize.Editor.Utilities
     /// or asset for a key when the target language has no value.
     /// Used by editor previews to show fallback content in grey instead of "(missing)".
     ///
-    /// Runtime fallback resolution lives in LocalizationManager — this editor-side
+    /// Runtime fallback resolution lives in LocalizationRuntime — this editor-side
     /// helper mirrors the same walking logic, but operates on the editor data cache
     /// rather than the runtime text caches.
     /// </summary>

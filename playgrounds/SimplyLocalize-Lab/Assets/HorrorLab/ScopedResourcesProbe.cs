@@ -38,53 +38,48 @@ namespace SimplyLocalize.HorrorLab
         { if (!condition) throw new InvalidOperationException(message); report.checks++; }
         private static int Neighbors() => Resources.FindObjectsOfTypeAll<Texture2D>().Count(t => t.name == "SLScoped_LargeNeighbor")
             + Resources.FindObjectsOfTypeAll<LocalizationAssetTable>().Count(t => t.name == "SLScoped_NeighborTable");
-        private static ScopedResourcesDataProvider Provider() => new(new[] { "en", "ru" }.Select(code =>
-            new ResourcesLanguageSources(code, new[] { "ScopedResourcesProbe/" + code + "/selected" },
-                new[] { "ScopedResourcesProbe/" + code + "/SLScoped_SelectedTable" })));
         private async void Start()
         {
             report.unityVersion = Application.unityVersion; report.graphics = SystemInfo.graphicsDeviceType.ToString();
-            var config = ScriptableObject.CreateInstance<LocalizationConfig>();
-            var en = ScriptableObject.CreateInstance<LanguageProfile>(); en.languageCode = "en";
-            var ru = ScriptableObject.CreateInstance<LanguageProfile>(); ru.languageCode = "ru";
-            config.languages.Add(en); config.languages.Add(ru); config.defaultLanguage = config.fallbackLanguage = en;
-            using var provider = Provider(); using var secondProvider = Provider();
-            var first = new LocalizationManager(config); first.SetDataProvider(provider);
-            var second = new LocalizationManager(config); second.SetDataProvider(secondProvider);
+            var config = LocalizationProjectConfig.Create(new[] { "en", "ru" });
+            config.Sets[0].AddEntry("probe"); config.Sets[0].AddEntry("picture", LocalizationEntryKind.Asset);
+            foreach (string code in new[] { "en", "ru" })
+                config.Sets[0].SetSources(code,
+                    new LocalizationSourceReference("resources", "ScopedResourcesProbe/" + code + "/selected", LocalizationSourceKind.TextTable),
+                    new LocalizationSourceReference("resources", "ScopedResourcesProbe/" + code + "/SLScoped_SelectedTable", LocalizationSourceKind.AssetTable));
+            using var first = new LocalizationRuntime(config);
+            using var second = new LocalizationRuntime(config);
             try
             {
                 report.neighborsBefore = Neighbors(); Check(report.neighborsBefore == 0, "Neighbor fixture was already loaded at startup.");
                 Check(!Resources.FindObjectsOfTypeAll<LocalizationAssetTable>().Any(t => t.name == "SLScoped_SelectedTable"), "Selected fixture was already loaded at startup.");
                 var timer = System.Diagnostics.Stopwatch.StartNew();
-                using (var prepared = await first.PrepareLanguageAsync("ru")) first.ApplyPreparedLanguage(prepared);
+                await first.InitializeAsync("ru");
                 report.preparationMilliseconds = timer.Elapsed.TotalMilliseconds;
                 report.neighborsAfterPreparation = Neighbors(); Check(report.neighborsAfterPreparation == 0, "Scope loaded its neighbor.");
                 report.selectedTables = Resources.FindObjectsOfTypeAll<LocalizationAssetTable>().Count(t => t.name == "SLScoped_SelectedTable");
                 Check(report.selectedTables == 2, "Expected only en/ru selected tables.");
-                var picture = first.ResolvePreparedAsset<Texture2D>("picture");
-                Check(picture.Status == LocalizationResolveStatus.Found && picture.ResolvedLanguage == "en", "Asset fallback failed.");
-                Check(first.ResolvePreparedText("probe").ResolvedLanguage == "en", "Text fallback failed.");
-                Check(first.ResolvePreparedAsset<Texture2D>("neighbor").Status == LocalizationResolveStatus.Missing, "Unselected key leaked into scope.");
-                using (var prepared = await second.PrepareLanguageAsync("en")) second.ApplyPreparedLanguage(prepared);
-                Check(second.ResolvePreparedAsset<Texture2D>("picture").Value == picture.Value, "Shared Unity object identity changed.");
-                provider.Dispose();
-                Check(first.ResolvePreparedAsset<Texture2D>("picture").Value != null, "Provider close destroyed an applied object.");
+                Check(first.GetChannel().TryGetAsset<Texture2D>("picture", out var picture) && picture.Language == "en", "Asset fallback failed.");
+                Check(first.GetChannel().TryGetText("probe", out var text) && text.Language == "en", "Text fallback failed.");
+                Check(first.GetAsset<Texture2D>("neighbor") == null, "Unselected key leaked into scope.");
+                await second.InitializeAsync("en");
+                Check(second.GetAsset<Texture2D>("picture") == picture.Asset, "Shared Unity object identity changed.");
+                await first.ReleaseAsync();
+                Check(second.GetAsset<Texture2D>("picture") != null, "First runtime close destroyed a borrowed object.");
                 for (int i = 0; i < 12; i++)
                 {
-                    using var prepared = await second.PrepareLanguageAsync(i % 2 == 0 ? "ru" : "en");
-                    second.ApplyPreparedLanguage(prepared);
-                    Check(second.ResolvePreparedAsset<Texture2D>("picture").Value == picture.Value, "Repeated scoped switching lost shared data.");
+                    await second.SwitchLanguageAsync(i % 2 == 0 ? "ru" : "en");
+                    Check(second.GetAsset<Texture2D>("picture") == picture.Asset, "Repeated scoped switching lost shared data.");
                 }
-                using (var closing = Provider())
+                using (var closing = new LocalizationRuntime(config))
                 {
-                    var pendingManager = new LocalizationManager(config); pendingManager.SetDataProvider(closing);
-                    var pending = pendingManager.PrepareLanguageAsync("ru"); closing.Dispose();
-                    try { using var unexpected = await pending; throw new InvalidOperationException("Closed provider published pending data."); }
+                    var pending = closing.InitializeAsync("ru"); await closing.ReleaseAsync();
+                    try { await pending; throw new InvalidOperationException("Closed runtime published pending data."); }
                     catch (OperationCanceledException) { }
-                    Check(pendingManager.CurrentLanguage == null && closing.PendingLoadCount == 0, "Close did not drain pending wait.");
+                    Check(closing.IsReleased && !closing.IsInitialized, "Close did not drain pending wait.");
                 }
-                secondProvider.Dispose();
-                Check(second.ResolvePreparedAsset<Texture2D>("picture").Value != null, "Second provider close destroyed borrowed data.");
+                await second.ReleaseAsync();
+                Check(picture.Asset != null, "Second runtime close destroyed borrowed data.");
                 report.neighborsAfterClose = Neighbors(); Check(report.neighborsAfterClose == 0, "Neighbor appeared before positive control.");
                 // Positive control happens LAST: prove the large neighbor exists in this build and can be loaded.
                 var neighbor = Resources.Load<LocalizationAssetTable>("ScopedResourcesProbe/en/SLScoped_NeighborTable");
@@ -99,8 +94,8 @@ namespace SimplyLocalize.HorrorLab
             catch (Exception error) { report.failure = error.ToString(); }
             finally
             {
-                first.ClearCaches(); second.ClearCaches();
-                Destroy(config); Destroy(en); Destroy(ru); Finish();
+                await Task.WhenAll(first.ReleaseAsync(), second.ReleaseAsync());
+                Destroy(config); Finish();
             }
         }
         private void Finish()

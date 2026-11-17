@@ -13,29 +13,33 @@ namespace SimplyLocalize.HorrorLab
             CancellationToken cancellation, Action<string> progress);
     }
 
-    /// <summary>Game context with independent plugin managers, not another resource cache/loader.</summary>
+    /// <summary>A world's registrations in the app runtime. Presentation detaches before these registrations close.</summary>
     public sealed class HorrorWorldSession : IDisposable
     {
-        private LocalizationContext voice, visual;
-        private readonly HorrorLoadMetrics metrics;
+        private LocalizationRuntime runtime;
+        private readonly string voiceChannel, visualChannel;
+        private readonly LocalizationSetLease voiceSet, visualSet;
         private Task release;
         private HorrorWorldDefinition definition;
         public string VoiceLocale { get; }
         public string VisualLocale { get; }
         public bool IsDisposed { get; private set; }
-        internal HorrorWorldSession(HorrorWorldDefinition definition, LocalizationContext voice, LocalizationContext visual, HorrorLoadMetrics metrics)
-        { this.definition = definition; this.voice = voice; this.visual = visual; this.metrics = metrics; VoiceLocale = voice.CurrentLanguage; VisualLocale = visual.CurrentLanguage; }
+        internal HorrorWorldSession(HorrorWorldDefinition definition, LocalizationRuntime runtime, string voiceChannel, string visualChannel,
+            LocalizationSetLease voiceSet, LocalizationSetLease visualSet)
+        {
+            this.definition = definition; this.runtime = runtime; this.voiceChannel = voiceChannel; this.visualChannel = visualChannel;
+            this.voiceSet = voiceSet; this.visualSet = visualSet;
+            VoiceLocale = runtime.GetChannel(voiceChannel).RequestedLanguage; VisualLocale = runtime.GetChannel(visualChannel).RequestedLanguage;
+        }
         public AudioClip Clip(string id)
         {
             if (IsDisposed) throw new ObjectDisposedException(nameof(HorrorWorldSession));
-            var result = voice.ResolveAsset<AudioClip>(id);
-            return result.Value ?? throw new InvalidOperationException("Voice is " + result.Status + ": " + id);
+            return runtime.GetAsset<AudioClip>(id, voiceChannel, definition.voiceSetId) ?? throw new InvalidOperationException("Missing voice: " + id);
         }
         public HorrorVisualVariant Visual(string id)
         {
             if (IsDisposed) throw new ObjectDisposedException(nameof(HorrorWorldSession));
-            var result = visual.ResolveAsset<HorrorVisualVariant>(id);
-            return result.Value ?? throw new InvalidOperationException("Visual is " + result.Status + ": " + id);
+            return runtime.GetAsset<HorrorVisualVariant>(id, visualChannel, definition.visualSetId) ?? throw new InvalidOperationException("Missing visual: " + id);
         }
         public HorrorRadioSequence Dialogue(string id)
         {
@@ -45,14 +49,8 @@ namespace SimplyLocalize.HorrorLab
         public Task ReleaseAsync()
         {
             if (release != null) return release;
-            IsDisposed = true; definition = null;
-            var oldVoice = voice; var oldVisual = visual; voice = visual = null;
-            return release = ReleaseContexts(oldVoice, oldVisual);
-        }
-        private async Task ReleaseContexts(LocalizationContext oldVoice, LocalizationContext oldVisual)
-        {
-            try { await Task.WhenAll(oldVoice.ReleaseAsync(), oldVisual.ReleaseAsync()); }
-            finally { metrics.Finish(oldVoice); metrics.Finish(oldVisual); }
+            IsDisposed = true; definition = null; runtime = null;
+            return release = Task.WhenAll(voiceSet.ReleaseAsync(), visualSet.ReleaseAsync());
         }
         public void Dispose() { var cleanup = ReleaseAsync(); if (!cleanup.IsCompletedSuccessfully) Observe(cleanup); }
         private static async void Observe(Task task) { try { await task; } catch (Exception error) { UnityEngine.Debug.LogException(error); } }
@@ -60,38 +58,38 @@ namespace SimplyLocalize.HorrorLab
 
     public sealed class SimplyLocalizeWorldPreparer : IHorrorWorldPreparer
     {
-        private static LocalizationContext Context(LocalizationConfig config, string table) => new(config,
-            config.languages.Where(p => p != null).Select(p => new SimplyLocalize.Data.ResourcesLanguageSources(p.Code,
-                assetTables: new[] { config.resourcesBasePath + "/" + p.Code + "/" + table })),
-            new LocalizationRuntimeOptions { Ownership = LocalizationResourceOwnership.Owned, PrepareAudio = true, DiagnosticName = "Night Shift / " + table });
+        private readonly LocalizationRuntime runtime;
+        private readonly string voiceChannel, visualChannel;
         private readonly HorrorLoadMetrics metrics;
-        public SimplyLocalizeWorldPreparer(HorrorLoadMetrics metrics) { this.metrics = metrics; }
+        public SimplyLocalizeWorldPreparer(LocalizationRuntime runtime, string voiceChannel, string visualChannel, HorrorLoadMetrics metrics)
+        { this.runtime = runtime; this.voiceChannel = voiceChannel; this.visualChannel = visualChannel; this.metrics = metrics; }
         public async Task<HorrorWorldSession> PrepareAsync(HorrorWorldDefinition definition, string voiceLocale, string visualLocale,
             CancellationToken cancellation, Action<string> progress)
         {
-            HorrorPreferences.Validate(definition.voiceConfig, voiceLocale);
-            HorrorPreferences.Validate(definition.visualConfig, visualLocale);
-            progress?.Invoke("UI/LoadingTables"); await Task.Yield();
-            cancellation.ThrowIfCancellationRequested();
+            if (!runtime.GetAvailableLanguages(voiceChannel).Contains(voiceLocale) || !runtime.GetAvailableLanguages(visualChannel).Contains(visualLocale))
+                throw new ArgumentException("Unsupported world locale.");
+            if (runtime.GetChannel(voiceChannel).ActiveSetIds.Count != 0 || runtime.GetChannel(visualChannel).ActiveSetIds.Count != 0)
+                throw new InvalidOperationException("Close the active world before preparing another world.");
+            progress?.Invoke("UI/LoadingTables"); cancellation.ThrowIfCancellationRequested();
             var timer = Stopwatch.StartNew();
-            var voice = Context(definition.voiceConfig, "Radio");
-            var visual = Context(definition.visualConfig, "Signs");
-            metrics.Track(voice); metrics.Track(visual);
+            LocalizationSetLease voice = null, visual = null;
             try
             {
-                await voice.ChangeLanguageAsync(voiceLocale, cancellation);
-                await visual.ChangeLanguageAsync(visualLocale, cancellation);
+                // Empty channels can choose a language without loading the world's content.
+                await runtime.SwitchLanguageAsync(voiceChannel, voiceLocale, cancellation);
+                await runtime.SwitchLanguageAsync(visualChannel, visualLocale, cancellation);
+                voice = await runtime.AcquireSetAsync(voiceChannel, definition.voiceSetId, cancellation);
+                visual = await runtime.AcquireSetAsync(visualChannel, definition.visualSetId, cancellation);
                 cancellation.ThrowIfCancellationRequested();
                 metrics.lastWorldPrepareMs = timer.Elapsed.TotalMilliseconds;
-                return new HorrorWorldSession(definition, voice, visual, metrics);
+                return new HorrorWorldSession(definition, runtime, voiceChannel, visualChannel, voice, visual);
             }
-            catch
+            catch (Exception error)
             {
-                try { await Task.WhenAll(voice.ReleaseAsync(), visual.ReleaseAsync()); }
-                finally { metrics.Finish(voice); metrics.Finish(visual); }
+                try { await Task.WhenAll(voice?.ReleaseAsync() ?? Task.CompletedTask, visual?.ReleaseAsync() ?? Task.CompletedTask); }
+                catch (Exception cleanup) { throw new AggregateException("World preparation and release failed.", error, cleanup); }
                 throw;
             }
         }
     }
 }
-

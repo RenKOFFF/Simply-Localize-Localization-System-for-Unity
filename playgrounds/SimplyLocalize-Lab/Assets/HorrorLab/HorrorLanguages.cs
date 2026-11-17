@@ -4,15 +4,13 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using SimplyLocalize.Data;
-using TMPro;
 using UnityEngine;
 
 namespace SimplyLocalize.HorrorLab
 {
     public enum InscriptionMode { Off, Auto, Always }
 
-    /// <summary>Sample preferences only. Heavy selections cannot mutate a live session.</summary>
+    /// <summary>Game preferences. Available choices come from the project channels.</summary>
     public sealed class HorrorPreferences
     {
         private const string Prefix = "SimplyLocalize.HorrorLab.v2.";
@@ -22,30 +20,25 @@ namespace SimplyLocalize.HorrorLab
         public string VisualLocale { get; private set; }
         public InscriptionMode Inscriptions { get; private set; }
         public bool Subtitles { get; private set; }
-        public HorrorPreferences(LocalizationConfig text, HorrorWorldDefinition world, bool persist = true)
+        public HorrorPreferences(LocalizationChannelDefinition text, LocalizationChannelDefinition voice, LocalizationChannelDefinition visual, bool persist = true)
         {
             this.persist = persist;
-            string Saved(string field, LocalizationConfig config, string legacy)
+            string Saved(string field, LocalizationChannelDefinition channel)
             {
-                var code = persist ? PlayerPrefs.GetString(Prefix + field, PlayerPrefs.GetString("SimplyLocalize.HorrorLab.v1." + legacy, config.DefaultLanguageCode)) : config.DefaultLanguageCode;
-                return config.HasLanguage(code) ? code : config.DefaultLanguageCode;
+                var code = persist ? PlayerPrefs.GetString(Prefix + field, channel.DefaultLanguage) : channel.DefaultLanguage;
+                return channel.Languages.Contains(code) ? code : channel.DefaultLanguage;
             }
-            TextLocale = Saved("text", text, "text"); VoiceLocale = Saved("voice", world.voiceConfig, "voice");
-            string originalVisual = world.visualConfig.DefaultLanguageCode;
-            if (persist && PlayerPrefs.GetInt("SimplyLocalize.HorrorLab.v1.textures", 0) != 0 && world.visualConfig.HasLanguage(TextLocale)) originalVisual = TextLocale;
-            VisualLocale = persist ? PlayerPrefs.GetString(Prefix + "visual", originalVisual) : originalVisual;
-            if (!world.visualConfig.HasLanguage(VisualLocale)) VisualLocale = world.visualConfig.DefaultLanguageCode;
-            int oldSigns = persist ? PlayerPrefs.GetInt("SimplyLocalize.HorrorLab.v1.signs", 1) : 1;
-            Inscriptions = (InscriptionMode)Mathf.Clamp(persist ? PlayerPrefs.GetInt(Prefix + "inscriptions", oldSigns == 0 ? 0 : 1) : 1, 0, 2);
-            Subtitles = !persist || PlayerPrefs.GetInt(Prefix + "subtitles", PlayerPrefs.GetInt("SimplyLocalize.HorrorLab.v1.subtitles", 1)) != 0;
+            TextLocale = Saved("text", text); VoiceLocale = Saved("voice", voice); VisualLocale = Saved("visual", visual);
+            Inscriptions = (InscriptionMode)Mathf.Clamp(persist ? PlayerPrefs.GetInt(Prefix + "inscriptions", 1) : 1, 0, 2);
+            Subtitles = !persist || PlayerPrefs.GetInt(Prefix + "subtitles", 1) != 0;
         }
         public void SetText(string code) { TextLocale = code; Save(); }
-        public void SetVoice(string code, LocalizationConfig config) { Validate(config, code); VoiceLocale = code; Save(); }
-        public void SetVisual(string code, LocalizationConfig config) { Validate(config, code); VisualLocale = code; Save(); }
+        public void SetVoice(string code, LocalizationChannelDefinition channel) { Validate(channel, code); VoiceLocale = code; Save(); }
+        public void SetVisual(string code, LocalizationChannelDefinition channel) { Validate(channel, code); VisualLocale = code; Save(); }
         public void SetInscriptions(InscriptionMode mode) { if (!Enum.IsDefined(typeof(InscriptionMode), mode)) throw new ArgumentOutOfRangeException(nameof(mode)); Inscriptions = mode; Save(); }
         public void SetSubtitles(bool value) { Subtitles = value; Save(); }
-        public static void Validate(LocalizationConfig config, string code)
-        { if (config == null || !config.HasLanguage(code)) throw new ArgumentException("Unsupported locale: " + code); }
+        public static void Validate(LocalizationChannelDefinition channel, string code)
+        { if (channel == null || !channel.Languages.Contains(code)) throw new ArgumentException("Unsupported locale: " + code); }
         private void Save()
         {
             if (!persist) return;
@@ -60,56 +53,47 @@ namespace SimplyLocalize.HorrorLab
         public int textReads, assetTableReads;
         public double lastTextPrepareMs, lastWorldPrepareMs, lastFirstPlayCallMs;
         public string lastAudioStateBeforePlay;
-        private readonly List<LocalizationContext> contexts = new();
-        public int TotalReads => textReads + assetTableReads + contexts.Sum(c => c.ResourceRequestCount);
-        internal void Track(LocalizationContext context) => contexts.Add(context);
-        internal void Finish(LocalizationContext context) { if (contexts.Remove(context)) assetTableReads += context.ResourceRequestCount; }
+        public int TotalReads => textReads + assetTableReads;
     }
 
-    // Instrumentation only: every operation is forwarded unchanged to the stock provider.
-    internal sealed class ObservedResourcesProvider : ILocalizationDataProvider
+    // Measurement only; resource behavior and ownership belong to the stock provider.
+    internal sealed class ObservedResourcesProvider : ILocalizationSourceProvider
     {
-        private readonly ResourcesDataProvider inner;
+        private readonly ResourcesLocalizationSourceProvider inner = new();
         private readonly HorrorLoadMetrics metrics;
-        public ObservedResourcesProvider(string path, HorrorLoadMetrics metrics)
-        { inner = new ResourcesDataProvider(path); this.metrics = metrics; }
-        public Dictionary<string, string> LoadTextData(string code)
-        { metrics.textReads++; return inner.LoadTextData(code); }
-        public bool HasTextData(string code) => inner.HasTextData(code);
-        public List<LocalizationAssetTable> LoadAssetTables(string code)
-        { metrics.assetTableReads++; return inner.LoadAssetTables(code); }
+        public ObservedResourcesProvider(HorrorLoadMetrics metrics) => this.metrics = metrics;
+        public LocalizationProviderCapabilities GetCapabilities(LocalizationSourceKind kind) => inner.GetCapabilities(kind);
+        public Task<LocalizationSourceLease> LoadAsync(LocalizationSourceRequest request, CancellationToken token)
+        {
+            if (request.Source.Kind == LocalizationSourceKind.TextTable) metrics.textReads++; else metrics.assetTableReads++;
+            return inner.LoadAsync(request, token);
+        }
     }
 
+    /// <summary>Menu presentation adapter. Borrows the app runtime; owns no translations or loading engine.</summary>
     public sealed class HorrorTextService : IDisposable
     {
-        private LocalizationManager manager;
+        private readonly LocalizationRuntime runtime;
         private readonly HorrorLoadMetrics metrics;
         private bool disposed;
-        public string Locale => manager?.CurrentLanguage;
-        public LanguageProfile Profile => manager?.CurrentProfile;
+        public bool IsReady => !disposed && runtime.IsInitialized && !runtime.IsReleased;
+        public string Locale => IsReady ? runtime.GetChannel().RequestedLanguage : null;
+        public LocalizationAppearance Profile => IsReady ? runtime.GetChannel().GetAppearance() : null;
         public event Action Changed;
-        public HorrorTextService(LocalizationConfig config, HorrorLoadMetrics metrics)
-        {
-            this.metrics = metrics;
-            manager = new LocalizationManager(config);
-            manager.SetDataProvider(new ObservedResourcesProvider(config.resourcesBasePath, metrics));
-        }
-        public string Get(string key) => Profile == null ? key : manager.Get(key);
-        public string Format(string key, params object[] args) => Profile == null ? key : manager.Get(key, args);
+        public HorrorTextService(LocalizationRuntime runtime, HorrorLoadMetrics metrics)
+        { this.runtime = runtime; this.metrics = metrics; runtime.Changed += OnChanged; }
+        private void OnChanged(LocalizationRuntime value, IReadOnlyList<string> channels)
+        { if (channels.Contains(value.MainChannelId)) Changed?.Invoke(); }
+        public string Get(string key) => IsReady ? runtime.Get(key) : key;
+        public string Format(string key, params object[] args) => IsReady ? runtime.Get(key, args) : key;
         public async Task ChangeAsync(string locale, CancellationToken cancellation = default)
         {
             if (disposed) throw new ObjectDisposedException(nameof(HorrorTextService));
-            HorrorPreferences.Validate(manager.Config, locale);
-            await Task.Yield();
-            cancellation.ThrowIfCancellationRequested();
-            if (disposed) throw new ObjectDisposedException(nameof(HorrorTextService));
             var timer = Stopwatch.StartNew();
-            // All language caches, fallback, validation and state publication belong to the plugin.
-            // This synchronous call cannot be cancelled midway; no fake rollback is layered over it.
-            manager.SetLanguage(locale);
+            if (runtime.IsInitialized) await runtime.SwitchLanguageAsync(locale, cancellation);
+            else await runtime.InitializeAsync(locale, cancellation);
             metrics.lastTextPrepareMs = timer.Elapsed.TotalMilliseconds;
-            Changed?.Invoke();
         }
-        public void Dispose() { disposed = true; Changed = null; manager = null; }
+        public void Dispose() { if (disposed) return; disposed = true; runtime.Changed -= OnChanged; Changed = null; }
     }
 }

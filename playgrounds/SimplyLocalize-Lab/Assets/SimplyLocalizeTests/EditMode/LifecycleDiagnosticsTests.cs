@@ -102,7 +102,7 @@ namespace SimplyLocalize.Tests
         [TestCase("Bad\\Path")]
         public void InvalidResourcePath_IsRejectedWithUsefulArgumentError(string path)
         {
-            Assert.Throws<ArgumentException>(() => new ResourcesDataProvider(path));
+            Assert.Throws<ArgumentException>(() => new EditorResourcesDataSource(path));
         }
 
         [Test]

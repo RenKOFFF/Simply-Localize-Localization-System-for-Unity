@@ -14,7 +14,11 @@ namespace SimplyLocalize.HorrorLab
     public sealed class HorrorApp : MonoBehaviour
     {
         public static HorrorApp Instance { get; private set; }
-        public LocalizationConfig textConfig;
+        public LocalizationProjectConfig localization;
+        public string voiceChannelId, visualChannelId;
+        public LocalizationChannelDefinition VoiceChannel => localization.Channels.Single(c => c.Id == voiceChannelId);
+        public LocalizationChannelDefinition VisualChannel => localization.Channels.Single(c => c.Id == visualChannelId);
+        public LocalizationRuntime Runtime { get; private set; }
         public TMP_FontAsset font;
         public HorrorWorldDefinition worldDefinition;
         public Camera menuCamera;
@@ -32,6 +36,8 @@ namespace SimplyLocalize.HorrorLab
         public string ErrorKey { get; private set; }
         public event Action Changed;
         public Task Initialization { get; private set; }
+        public Task ReleaseCompletion { get; private set; } = Task.CompletedTask;
+        private Task worldOperation = Task.CompletedTask;
         private IHorrorWorldPreparer preparer;
         private CancellationTokenSource operation, textOperation;
         private readonly CancellationTokenSource lifetime = new();
@@ -43,10 +49,14 @@ namespace SimplyLocalize.HorrorLab
             if (Instance != null) throw new InvalidOperationException("Only one Night Shift bootstrap is allowed.");
             Instance = this; previousBackground = Application.runInBackground; Application.runInBackground = true;
             bool benchmark = Environment.GetCommandLineArgs().Contains("--nightshift-benchmark");
-            Preferences = new HorrorPreferences(textConfig, worldDefinition, !benchmark);
-            Text = new HorrorTextService(textConfig, Metrics);
+            if (localization == null) throw new InvalidOperationException("Assign the Night Shift project configuration.");
+            Preferences = new HorrorPreferences(localization.MainChannel, VoiceChannel, VisualChannel, !benchmark);
+            var providers = new LocalizationSourceRegistry(); providers.Register("resources", new ObservedResourcesProvider(Metrics));
+            Runtime = new LocalizationRuntime(localization, providers, new LocalizationRuntimeOptions {
+                Ownership = LocalizationResourceOwnership.Owned, DiagnosticName = "Night Shift" });
+            Text = new HorrorTextService(Runtime, Metrics);
             Text.Changed += Notify;
-            preparer = new SimplyLocalizeWorldPreparer(Metrics);
+            preparer = CreateWorldPreparer();
             Hud = new HorrorHud(this, font); Changed += Hud.Refresh;
             Initialization = InitializeAsync();
         }
@@ -63,15 +73,16 @@ namespace SimplyLocalize.HorrorLab
         }
         private void LateUpdate() { Hud?.UpdatePosition(); }
         private void Notify() { if (!destroyed) Changed?.Invoke(); }
+        public IHorrorWorldPreparer CreateWorldPreparer() => new SimplyLocalizeWorldPreparer(Runtime, voiceChannelId, visualChannelId, Metrics);
         public void SetPreparer(IHorrorWorldPreparer value)
         {
             if (State != HorrorAppState.Menu || Busy || Session != null) throw new InvalidOperationException("Replace preparation service only in an idle menu.");
             preparer = value ?? throw new ArgumentNullException(nameof(value));
         }
         public void SetVoice(string code)
-        { RequireMenu(); Preferences.SetVoice(code, worldDefinition.voiceConfig); Notify(); }
+        { RequireMenu(); Preferences.SetVoice(code, VoiceChannel); Notify(); }
         public void SetVisual(string code)
-        { RequireMenu(); Preferences.SetVisual(code, worldDefinition.visualConfig); Notify(); }
+        { RequireMenu(); Preferences.SetVisual(code, VisualChannel); Notify(); }
         private void RequireMenu() { if (State != HorrorAppState.Menu || Busy) throw new InvalidOperationException("Heavy locale selections are available before world loading only."); }
         public void SetInscriptions(InscriptionMode mode) { Preferences.SetInscriptions(mode); Notify(); }
         public void SetSubtitles(bool enabled) { Preferences.SetSubtitles(enabled); Notify(); }
@@ -85,10 +96,14 @@ namespace SimplyLocalize.HorrorLab
             finally { textOperation.Dispose(); textOperation = null; TextBusy = false; Notify(); }
         }
         public void CancelPreparation() { operation?.Cancel(); textOperation?.Cancel(); }
-        public async Task StartWorldAsync()
+        public Task StartWorldAsync()
         {
             RequireMenu();
-            if (Text.Profile == null) { ErrorKey = "UI/TextFailed"; Notify(); return; }
+            return worldOperation = StartWorldCoreAsync();
+        }
+        private async Task StartWorldCoreAsync()
+        {
+            if (!Text.IsReady) { ErrorKey = "UI/TextFailed"; Notify(); return; }
             State = HorrorAppState.PreparingWorld; ErrorKey = null;
             operation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token); Notify();
             try
@@ -119,9 +134,13 @@ namespace SimplyLocalize.HorrorLab
             }
             finally { operation.Dispose(); operation = null; Notify(); }
         }
-        public async Task LeaveWorldAsync()
+        public Task LeaveWorldAsync()
         {
-            if (State != HorrorAppState.World || TextBusy) return;
+            if (State != HorrorAppState.World || TextBusy) return Task.CompletedTask;
+            return worldOperation = LeaveWorldCoreAsync();
+        }
+        private async Task LeaveWorldCoreAsync()
+        {
             State = HorrorAppState.LeavingWorld; ProgressKey = "UI/UnloadingWorld"; Notify();
             await ReleaseWorldAsync(); State = HorrorAppState.Menu; Notify();
         }
@@ -129,7 +148,7 @@ namespace SimplyLocalize.HorrorLab
         {
             if (Presentation != null) Presentation.Detach(); Presentation = null;
             if (menuCamera != null) menuCamera.gameObject.SetActive(true);
-            if (gameObject.scene.isLoaded) SceneManager.SetActiveScene(gameObject.scene);
+            if (this != null && gameObject.scene.isLoaded) SceneManager.SetActiveScene(gameObject.scene);
             if (worldScene.IsValid() && worldScene.isLoaded)
             { var unload = SceneManager.UnloadSceneAsync(worldScene); if (unload != null) while (!unload.isDone) await Task.Yield(); }
             worldScene = default;
@@ -145,10 +164,23 @@ namespace SimplyLocalize.HorrorLab
         {
             destroyed = true; lifetime.Cancel(); operation?.Cancel(); textOperation?.Cancel();
             if (Presentation != null) Presentation.Detach();
-            Session?.Dispose(); Session = null;
             Changed = null; Hud?.Dispose(); Text?.Dispose();
             if (Instance == this) Instance = null;
             Application.runInBackground = previousBackground;
+            ReleaseCompletion = ReleaseAppAsync(); Observe(ReleaseCompletion);
+        }
+        private async Task ReleaseAppAsync()
+        {
+            try
+            {
+                await Task.WhenAll(Initialization ?? Task.CompletedTask, worldOperation);
+                await ReleaseWorldAsync();
+            }
+            finally
+            {
+                if (Runtime != null) await Runtime.ReleaseAsync();
+                lifetime.Dispose();
+            }
         }
     }
 }

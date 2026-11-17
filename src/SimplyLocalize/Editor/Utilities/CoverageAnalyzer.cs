@@ -123,7 +123,7 @@ namespace SimplyLocalize.Editor.Utilities
         /// Visible editor values overlay the snapshot. Does not change file ownership or live state.
         /// </summary>
         public static CoverageReport Analyze(LocalizationConfig config, EditorLocalizationData editorData = null,
-            ILocalizationDataProvider provider = null)
+            IEditorLocalizationDataSource provider = null)
         {
             var report = new CoverageReport();
             if (config == null)
@@ -139,7 +139,7 @@ namespace SimplyLocalize.Editor.Utilities
             }
             bool fullEditorSnapshot = editorData != null && editorData.LoadError == null
                 && editorData.LoadedResourcesPath == config.resourcesBasePath;
-            provider ??= new ResourcesDataProvider(config.resourcesBasePath);
+            provider ??= new EditorResourcesDataSource(config.resourcesBasePath);
             var data = new EditorLocalizationData();
             var tables = new Dictionary<string, List<LocalizationAssetTable>>();
             var assetKeys = new HashSet<string>();

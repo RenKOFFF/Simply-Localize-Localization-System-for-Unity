@@ -160,7 +160,7 @@ namespace SimplyLocalize.Tests
         [Test]
         public void Resources_MissingLanguageReturnsEmptyCollections()
         {
-            var provider = new ResourcesDataProvider(_basePath);
+            var provider = new EditorResourcesDataSource(_basePath);
             Assert.That(provider.HasTextData("missing"), Is.False);
             LogAssert.Expect(LogType.Warning, new Regex("No text files found.*missing"));
             Assert.That(provider.LoadTextData("missing"), Is.Empty);

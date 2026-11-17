@@ -1,47 +1,25 @@
+using SimplyLocalize.Data;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SimplyLocalize.Data
+namespace SimplyLocalize.Editor.Data
 {
-    /// <summary>
-    /// Loads localization data from the Resources folder.
-    ///
-    /// Expected folder structure inside Resources:
-    ///
-    ///   {basePath}/
-    ///   ├── en/
-    ///   │   ├── text/              — all .json files are loaded and merged
-    ///   │   │   ├── en.json
-    ///   │   │   ├── items.json
-    ///   │   │   └── menu.json
-    ///   │   └── AssetTable.asset   — per-language asset table (sprites, audio, custom types)
-    ///   ├── ru/
-    ///   │   ├── text/
-    ///   │   └── AssetTable.asset
-    ///   ...
-    ///
-    /// Text:   All .json files inside {basePath}/{lang}/text/ are loaded and merged.
-    ///         Duplicate keys across files: last loaded wins (no guaranteed order).
-    ///
-    /// Assets: Place one or more LocalizationAssetTable SOs in {basePath}/{lang}/.
-    ///         At runtime, call Localization.GetAsset&lt;T&gt;(key) — the manager searches
-    ///         all tables for the current language, then the fallback chain.
-    /// </summary>
-    public class ResourcesDataProvider : ILocalizationDataProvider
+    /// <summary>Editor-only folder discovery for the existing authoring model. Runtime loading uses exact source descriptors.</summary>
+    public class EditorResourcesDataSource : IEditorLocalizationDataSource
     {
         private readonly string _basePath;
 
-        public ResourcesDataProvider(string basePath)
+        public EditorResourcesDataSource(string basePath)
         {
-            if (!LocalizationConfig.IsResourcePathValid(basePath))
+            if (!LocalizationResourceAddress.IsValid(basePath, allowFolder: true))
                 throw new ArgumentException($"Invalid Resources base path '{basePath}': use a relative path with '/'.", nameof(basePath));
             _basePath = basePath.TrimEnd('/');
         }
 
         private string LanguagePath(string languageCode)
         {
-            if (!LocalizationConfig.IsLanguageCodeValid(languageCode))
+            if (!LocalizationResourceAddress.IsValid(languageCode) || languageCode.Contains("/"))
                 throw new ArgumentException($"Invalid language code '{languageCode}' for Resources/{_basePath}.", nameof(languageCode));
             return string.IsNullOrEmpty(_basePath) ? languageCode : $"{_basePath}/{languageCode}";
         }
@@ -53,7 +31,7 @@ namespace SimplyLocalize.Data
 
             if (allTextAssets == null || allTextAssets.Length == 0)
             {
-                LocalizationLogger.LogWarning(
+                UnityEngine.Debug.LogWarning(
                     $"No text files found at Resources/{textFolder}/ for language '{languageCode}'");
                 return new Dictionary<string, string>();
             }
@@ -76,12 +54,12 @@ namespace SimplyLocalize.Data
                     foreach (var kvp in parsed)
                     {
                         if (sources.TryGetValue(kvp.Key, out var previous))
-                            LocalizationLogger.LogWarning($"Duplicate key '{kvp.Key}' for '{languageCode}' in Resources/{textFolder}: '{previous}' and '{asset.name}'. Last loaded value wins; remove the duplicate to avoid load-order dependence.");
+                            UnityEngine.Debug.LogWarning($"Duplicate key '{kvp.Key}' for '{languageCode}' in Resources/{textFolder}: '{previous}' and '{asset.name}'. Last loaded value wins; remove the duplicate to avoid load-order dependence.");
                         merged[kvp.Key] = kvp.Value;
                         sources[kvp.Key] = asset.name;
                     }
 
-                    LocalizationLogger.Log(
+                    LocalizationLogger.LogInfo(
                         $"Loaded {parsed.Count} keys from '{asset.name}.json' ({languageCode})");
                 }
             }
@@ -92,7 +70,7 @@ namespace SimplyLocalize.Data
                     Resources.UnloadAsset(allTextAssets[i]);
             }
 
-            LocalizationLogger.Log(
+            LocalizationLogger.LogInfo(
                 $"Total: {merged.Count} keys from {allTextAssets.Length} file(s) for '{languageCode}'");
 
             return merged;
@@ -123,7 +101,7 @@ namespace SimplyLocalize.Data
             if (tables != null)
             {
                 result.AddRange(tables);
-                LocalizationLogger.Log(
+                LocalizationLogger.LogInfo(
                     $"Loaded {tables.Length} asset table(s) for '{languageCode}'");
             }
 

@@ -74,7 +74,7 @@ namespace SimplyLocalize
         { Session = LocalizationResourceLease.Generation; RecordingEnabled = LocalizationResourceDiagnostics.RecordingEnabled; DroppedEvents = dropped; Sets = Array.AsReadOnly(sets.ToArray()); Resources = Array.AsReadOnly(resources.ToArray()); History = Array.AsReadOnly(history.ToArray()); }
     }
 
-    /// <summary>Unity-thread-only diagnostics for LocalizationContext, not all Unity Resources or legacy managers.
+    /// <summary>Unity-thread-only diagnostics for tracked Resources source leases, not all Unity resources.
     /// Live sets are weakly registered once; snapshots allocate only on request. Recording is opt-in and bounded.
     /// Released/BorrowedReleased do not mean process RAM decreased. Unloaded records a completed Resources.UnloadAsset call.</summary>
     public static class LocalizationResourceDiagnostics

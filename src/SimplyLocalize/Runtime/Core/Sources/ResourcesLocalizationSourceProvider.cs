@@ -28,7 +28,7 @@ namespace SimplyLocalize
             if (request == null) throw new ArgumentNullException(nameof(request));
             GetCapabilities(request.Source.Kind);
             string address = request.Source.Address;
-            if (!LocalizationConfig.IsResourcePathValid(address) || string.IsNullOrEmpty(address) || address.EndsWith("/", StringComparison.Ordinal))
+            if (!LocalizationResourceAddress.IsValid(address))
                 throw new ArgumentException("Expected an exact relative Resources address.");
             if (request.Ownership == LocalizationResourceOwnership.Owned && !Application.isPlaying)
                 throw new InvalidOperationException("Owned Resources loading is runtime-only; use Borrowed in EditMode.");

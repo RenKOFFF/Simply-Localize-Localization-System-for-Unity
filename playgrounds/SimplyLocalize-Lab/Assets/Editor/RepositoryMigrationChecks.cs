@@ -14,7 +14,7 @@ public static class RepositoryMigrationChecks
 {
     public static void Verify()
     {
-        var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(SimplyLocalize.LocalizationManager).Assembly);
+        var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(SimplyLocalize.LocalizationRuntime).Assembly);
         if (package == null || package.source != PackageSource.Local)
             throw new InvalidOperationException("Simply Localize is not a local package.");
         string expected = Path.GetFullPath(Path.Combine(Application.dataPath, "../../../src/SimplyLocalize"));

@@ -7,7 +7,7 @@ namespace SimplyLocalize.HorrorLab
     {
         public string worldId = "precinct";
         public string scenePath = "Assets/HorrorLab/NightShift.unity";
-        public LocalizationConfig voiceConfig, visualConfig;
+        public string voiceSetId, visualSetId;
         public HorrorRadioSequence[] dialogues;
         public string[] visualKeys;
     }

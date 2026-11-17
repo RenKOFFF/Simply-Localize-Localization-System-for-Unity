@@ -1,18 +1,9 @@
 using System.Collections.Generic;
 
-namespace SimplyLocalize.Data
+namespace SimplyLocalize.Editor.Data
 {
-    /// <summary>
-    /// Abstraction for loading localization data.
-    /// Implement this interface to support different data sources (Resources, Addressables, etc.).
-    ///
-    /// Assets (sprites, audio, materials, custom types) are loaded via asset tables:
-    /// call LoadAssetTables() to get the language's tables, then use LocalizationAssetTable.Get&lt;T&gt;(key).
-    /// Providers and Unity assets remain caller-owned; the manager does not dispose/unload them.
-    /// Loading errors should throw. The manager snapshots returned collections, but does not
-    /// clone Unity assets: providers must not mutate active tables during a failed load.
-    /// </summary>
-    public interface ILocalizationDataProvider
+    /// <summary>Editor data discovery seam for Coverage. Runtime extensions implement ILocalizationSourceProvider.</summary>
+    public interface IEditorLocalizationDataSource
     {
         /// <summary>
         /// Loads all text translations for the specified language.

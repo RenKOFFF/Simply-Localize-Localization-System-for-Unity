@@ -265,7 +265,7 @@ namespace SimplyLocalize.Tests
             finally { Assert.That(AssetDatabase.DeleteAsset(package.assetPath + "/" + name), Is.True); }
         }
 
-        private sealed class Provider : ILocalizationDataProvider, ILocalizationSourceProvider
+        private sealed class Provider : IEditorLocalizationDataSource, ILocalizationSourceProvider
         {
             internal readonly Dictionary<string, Dictionary<string, string>> Text = new();
             public Dictionary<string, string> LoadTextData(string languageCode) => Text.TryGetValue(languageCode, out var entries) ? entries : new();

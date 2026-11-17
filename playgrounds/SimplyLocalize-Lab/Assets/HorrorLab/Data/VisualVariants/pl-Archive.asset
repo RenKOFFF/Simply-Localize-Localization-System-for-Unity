@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: pl-Archive
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: 64ef8dbc2e9d0484a98d42eecc7de0de, type: 3}
-  contentLanguage: {fileID: 11400000, guid: 7310bf5addae3614184b3e6897c4d9a8, type: 2}
+  contentLanguage: pl
   containsText: 1

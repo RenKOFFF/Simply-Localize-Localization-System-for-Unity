@@ -179,14 +179,6 @@ namespace SimplyLocalize
             !string.IsNullOrWhiteSpace(code) && code == code.Trim() && !code.Contains("/") && IsResourcePathValid(code);
 
         internal static bool IsResourcePathValid(string path)
-        {
-            if (path == null || path != path.Trim() || path.StartsWith("/")
-                || path.IndexOfAny(new[] { '\\', ':', '*', '?', '"', '<', '>', '|' }) >= 0) return false;
-            foreach (char c in path) if (char.IsControl(c)) return false;
-            if (path.Length == 0) return true; // Resources root is a valid explicit base path.
-            foreach (var part in path.TrimEnd('/').Split('/'))
-                if (part.Length == 0 || part == "." || part == "..") return false;
-            return true;
-        }
+            => LocalizationResourceAddress.IsValid(path, allowFolder: true);
     }
 }

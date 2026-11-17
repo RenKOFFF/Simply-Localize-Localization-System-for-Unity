@@ -77,12 +77,12 @@ namespace SimplyLocalize.HorrorLab
                 if (report.menuAudio.Length > 0) Observe("SL-001", "AudioClip objects already exist before any world: " + string.Join(", ", report.menuAudio));
                 Capture("initial-menu", app);
                 var global = Localization.Runtime;
-                var real = new SimplyLocalizeWorldPreparer(app.Metrics);
+                var real = app.CreateWorldPreparer();
                 // Measure ordinary first use before the matrix and failure-injection tests warm anything.
                 for (int cycle = 0; cycle < 3; cycle++)
                 {
-                    app.SetVoice(app.worldDefinition.voiceConfig.languages[cycle % app.worldDefinition.voiceConfig.languages.Count].Code);
-                    app.SetVisual(app.worldDefinition.visualConfig.languages[cycle % app.worldDefinition.visualConfig.languages.Count].Code);
+                    app.SetVoice(app.VoiceChannel.Languages[cycle % app.VoiceChannel.Languages.Count]);
+                    app.SetVisual(app.VisualChannel.Languages[cycle % app.VisualChannel.Languages.Count]);
                     await app.StartWorldAsync();
                     Check(app.State == HorrorAppState.World && app.Game.Ready, "World " + cycle + " is usable");
                     Check(!app.Hud.VoiceLanguage.interactable && !app.Hud.VisualLanguage.interactable, "Heavy settings locked inside world");
@@ -95,7 +95,7 @@ namespace SimplyLocalize.HorrorLab
                     Check(stateBeforePlay == AudioDataLoadState.Loaded.ToString(), "World " + cycle + ": audio is ready before Play");
                     var clip = app.Presentation.Dialogue.CurrentClip;
                     Check(clip != null, "Dialogue resolves voice through the plugin");
-                    string nextText = app.textConfig.languages[(cycle + 1) % app.textConfig.languages.Count].Code;
+                    string nextText = app.localization.MainChannel.Languages[(cycle + 1) % app.localization.MainChannel.Languages.Count];
                     var voice = app.Session.VoiceLocale; var visual = app.Session.VisualLocale;
                     await app.ChangeTextAsync(nextText);
                     Check(app.Text.Locale == nextText && app.Session.VoiceLocale == voice && app.Session.VisualLocale == visual, "Independent language channels");
@@ -108,7 +108,7 @@ namespace SimplyLocalize.HorrorLab
                     {
                         var variant = app.Session.Visual(sign.textureKey);
                         Check(!app.Presentation.ShouldTranslate(sign, app.Text.Locale, InscriptionMode.Off), "Off hides " + sign.name);
-                        Check(app.Presentation.ShouldTranslate(sign, app.Text.Locale, InscriptionMode.Auto) == (variant.contentLanguage.Code != app.Text.Locale), "Auto uses resolved source of " + sign.name);
+                        Check(app.Presentation.ShouldTranslate(sign, app.Text.Locale, InscriptionMode.Auto) == (variant.contentLanguage != app.Text.Locale), "Auto uses resolved source of " + sign.name);
                         Check(app.Presentation.ShouldTranslate(sign, app.Text.Locale, InscriptionMode.Always), "Always translates " + sign.name);
                     }
                     int interactionReads = app.Metrics.TotalReads;
@@ -133,7 +133,7 @@ namespace SimplyLocalize.HorrorLab
                 using (var cancellation = new CancellationTokenSource())
                 {
                     cancellation.Cancel();
-                    try { await app.Text.ChangeAsync(app.textConfig.languages[0].Code, cancellation.Token); } catch (OperationCanceledException) { }
+                    try { await app.Text.ChangeAsync(app.localization.MainChannel.Languages[0], cancellation.Token); } catch (OperationCanceledException) { }
                 }
                 Check(app.Text.Locale == previous, "Cancellation before synchronous SetLanguage keeps state");
                 await app.ChangeTextAsync("unsupported-test-locale");
@@ -162,22 +162,26 @@ namespace SimplyLocalize.HorrorLab
         private async Task Matrix(HorrorApp app)
         {
             int count = 0;
-            foreach (var voice in app.worldDefinition.voiceConfig.languages)
-            foreach (var visual in app.worldDefinition.visualConfig.languages)
+            foreach (var voice in app.VoiceChannel.Languages)
+            foreach (var visual in app.VisualChannel.Languages)
             {
-                using (var session = await new SimplyLocalizeWorldPreparer(app.Metrics).PrepareAsync(app.worldDefinition, voice.Code, visual.Code, CancellationToken.None, null))
-                foreach (var locale in app.textConfig.languages)
+                var session = await app.CreateWorldPreparer().PrepareAsync(app.worldDefinition, voice, visual, CancellationToken.None, null);
+                try
                 {
-                    await app.ChangeTextAsync(locale.Code);
-                    Check(app.Text.Locale == locale.Code && app.ErrorKey == null, "Matrix text " + locale.Code);
-                    foreach (string key in app.worldDefinition.visualKeys)
+                    foreach (var locale in app.localization.MainChannel.Languages)
                     {
-                        var variant = session.Visual(key);
-                        Check(variant != null && variant.texture != null && variant.contentLanguage != null, "Matrix visual " + visual.Code + "/" + key);
+                        await app.ChangeTextAsync(locale);
+                        Check(app.Text.Locale == locale && app.ErrorKey == null, "Matrix text " + locale);
+                        foreach (string key in app.worldDefinition.visualKeys)
+                        {
+                            var variant = session.Visual(key);
+                            Check(variant != null && variant.texture != null && variant.contentLanguage != null, "Matrix visual " + visual + "/" + key);
+                        }
+                        foreach (var line in app.worldDefinition.dialogues.SelectMany(s => s.lines)) Check(session.Clip(line.audioKey) != null, "Matrix voice " + voice + "/" + line.audioKey);
+                        count++;
                     }
-                    foreach (var line in app.worldDefinition.dialogues.SelectMany(s => s.lines)) Check(session.Clip(line.audioKey) != null, "Matrix voice " + voice.Code + "/" + line.audioKey);
-                    count++;
                 }
+                finally { await session.ReleaseAsync(); }
             }
             Check(count == 18, "18 independent language combinations resolved");
         }

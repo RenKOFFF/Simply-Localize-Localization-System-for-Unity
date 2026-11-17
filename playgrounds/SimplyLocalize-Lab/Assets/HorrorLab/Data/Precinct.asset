@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   worldId: precinct
   scenePath: Assets/HorrorLab/NightShift.unity
-  voiceConfig: {fileID: 11400000, guid: 0831b7f267d488e49b0367b49420795d, type: 2}
-  visualConfig: {fileID: 11400000, guid: fc6375197d8e1734abe3e8e96b567161, type: 2}
+  voiceSetId: 3bd3101f898946089cc7fd42a5ec0440
+  visualSetId: 32a20457b90a4d1bbe47c7df1a682214
   dialogues:
   - {fileID: 11400000, guid: bced31316dffffb4090d57667f745666, type: 2}
   visualKeys:

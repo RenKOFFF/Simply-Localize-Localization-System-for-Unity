@@ -1,7 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
+using SimplyLocalize.Data;
 using UnityEditor;
-using UnityEngine;
 
 namespace SimplyLocalize.HorrorLab.Editor
 {
@@ -9,34 +10,42 @@ namespace SimplyLocalize.HorrorLab.Editor
     {
         public static string Data()
         {
+            var project = AssetDatabase.LoadAssetAtPath<LocalizationProjectConfig>(HorrorArchitectureSetup.ConfigPath);
+            if (project == null) throw new InvalidOperationException("Configure Night Shift channels first.");
+            project.ValidateOrThrow();
             var definition = AssetDatabase.LoadAssetAtPath<HorrorWorldDefinition>(HorrorLabSetup.Root + "/Data/Precinct.asset");
-            var text = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(HorrorLabSetup.Root + "/Data/TextConfig.asset");
-            var global = Localization.Runtime;
-            int checkedVariants = 0;
-            foreach (var locale in definition.visualConfig.languages)
+            foreach (string setId in new[] { definition.voiceSetId, definition.visualSetId })
+                if (!project.Sets.Any(s => s.Id == setId)) throw new InvalidOperationException("Unknown world set: " + setId);
+            int sources = 0, variants = 0;
+            foreach (var set in project.Sets)
+            foreach (var language in set.Sources)
+            foreach (var source in language.Sources)
             {
-                var manager = new LocalizationManager(definition.visualConfig);
-
-                manager.SetLanguage(locale.Code);
-                foreach (var id in definition.visualKeys)
+                string path = HorrorLabSetup.Root + "/Resources/" + source.Address;
+                if (source.Kind == LocalizationSourceKind.TextTable)
                 {
-                    var variant = manager.GetAsset<HorrorVisualVariant>(id);
-                    if (variant == null || variant.texture == null || variant.contentLanguage == null) throw new InvalidOperationException("Visual metadata missing: " + id);
-                    if (locale.Code == "pl" && id == "Signs/Warning" && variant.contentLanguage.Code != definition.visualConfig.FallbackLanguageCode)
-                        throw new InvalidOperationException("Fallback source language was lost.");
-                    checkedVariants++;
+                    var text = LocalizationFileParser.Parse(File.ReadAllText(path + ".json"));
+                    foreach (string key in text.Keys)
+                        if (!set.Entries.Any(e => e.Key == key)) throw new InvalidOperationException("Unregistered key: " + key);
                 }
-
+                else
+                {
+                    var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(path + ".asset");
+                    if (table == null) throw new InvalidOperationException("Missing table: " + path);
+                    foreach (var entry in table.Entries)
+                    {
+                        if (entry.asset == null) throw new InvalidOperationException("Missing asset: " + entry.key);
+                        if (entry.asset is HorrorVisualVariant variant)
+                        {
+                            if (variant.texture == null || !project.Languages.Any(l => l.Code == variant.contentLanguage))
+                                throw new InvalidOperationException("Invalid visual metadata: " + entry.key);
+                            variants++;
+                        }
+                    }
+                }
+                sources++;
             }
-            foreach (var locale in text.languages)
-            {
-                var manager = new LocalizationManager(text); manager.SetLanguage(locale.Code);
-                foreach (var id in new[] { "UI/VisualLanguage", "UI/Auto", "UI/Always", "UI/LoadingWorld", "UI/HeavyLocked", "UI/SubtitleLine" })
-                    if (!manager.HasKey(id) || manager.Get(id) == id) throw new InvalidOperationException("Missing UI translation: " + locale.Code + "/" + id);
-
-            }
-            if (!ReferenceEquals(global, Localization.Runtime)) throw new InvalidOperationException("Global localization was replaced.");
-            return "PASS: " + checkedVariants + " visual resolutions, fallback provenance, menu translations and global-manager isolation. Async integration and memory checks run in the standalone Player.";
+            return "PASS: " + sources + " registered sources, " + variants + " visual metadata entries and world set identities. Runtime fallback, ownership and scene behavior require PlayMode/Player checks.";
         }
     }
 }

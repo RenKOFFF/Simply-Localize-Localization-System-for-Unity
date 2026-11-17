@@ -1,126 +1,104 @@
 using System;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using SimplyLocalize.Data;
 using TMPro;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace SimplyLocalize.HorrorLab.Editor
 {
+    /// <summary>Explicit authoring of this demo only. Never a package migration or runtime config converter.</summary>
     public static class HorrorArchitectureSetup
     {
         public const string Root = HorrorLabSetup.Root;
         public const string MenuPath = Root + "/NightShiftMenu.unity";
-        [MenuItem("Tools/Simply Localize Lab/Upgrade Horror Architecture")]
+        public const string ConfigPath = Root + "/Data/LocalizationProject.asset";
+        [MenuItem("Tools/Simply Localize Lab/Configure Night Shift Channels")]
         public static void Upgrade()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode) throw new InvalidOperationException("Stop Play Mode.");
-            if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-            Directory.CreateDirectory(Root + "/Data/VisualVariants");
-            Directory.CreateDirectory(Root + "/Resources/NightShift/Worlds/Precinct");
-            AssetDatabase.Refresh();
-            MoveFolder(Root + "/Resources/NightShift/Voice", Root + "/Resources/NightShift/Worlds/Precinct/Voice");
-            MoveFolder(Root + "/Resources/NightShift/Art", Root + "/Resources/NightShift/Worlds/Precinct/Visuals");
-            var text = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(Root + "/Data/TextConfig.asset");
-            var voice = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(Root + "/Data/VoiceConfig.asset");
-            var visual = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(Root + "/Data/ArtConfig.asset");
-            voice.loadTextData = false; visual.loadTextData = false;
-            voice.resourcesBasePath = "NightShift/Worlds/Precinct/Voice";
-            visual.resourcesBasePath = "NightShift/Worlds/Precinct/Visuals";
-            EditorUtility.SetDirty(voice); EditorUtility.SetDirty(visual);
-            foreach (var profile in voice.languages)
-            foreach (string file in Directory.GetFiles(Root + "/Media/" + profile.Code, "*.wav"))
-            {
-                var importer = (AudioImporter)AssetImporter.GetAtPath(file.Replace('\\', '/'));
-                var settings = importer.defaultSampleSettings;
-                // Fixed audit fixture: expose first-use behavior; the playground does not decode clips.
-                settings.preloadAudioData = false; settings.loadType = AudioClipLoadType.DecompressOnLoad;
-                importer.defaultSampleSettings = settings; importer.loadInBackground = true;
-                importer.SaveAndReimport();
-            }
-            // Editor-only fixture authoring. Runtime locale choices are entirely data driven.
-            foreach (var profile in visual.languages)
-            {
-                var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(Root + "/Resources/" + visual.resourcesBasePath + "/" + profile.Code + "/Signs.asset");
-                foreach (var id in new[] { "Archive", "Reception", "Warning" })
-                {
-                    string path = Root + "/Data/VisualVariants/" + profile.Code + "-" + id + ".asset";
-                    var variant = AssetDatabase.LoadAssetAtPath<HorrorVisualVariant>(path);
-                    if (variant == null) { variant = ScriptableObject.CreateInstance<HorrorVisualVariant>(); AssetDatabase.CreateAsset(variant, path); }
-                    variant.texture = AssetDatabase.LoadAssetAtPath<Texture2D>(Root + "/Media/" + profile.Code + "/" + id + ".png");
-                    variant.contentLanguage = profile; variant.containsText = true; EditorUtility.SetDirty(variant);
-                    // Deliberate incomplete visual coverage demonstrates actual-source Auto translation.
-                    if (profile.Code == "pl" && id == "Warning") table.Remove("Signs/" + id);
-                    else table.Set("Signs/" + id, variant);
-                }
-                EditorUtility.SetDirty(table);
-            }
-            foreach (var profile in text.languages)
-            {
-                var data = JObject.Parse(File.ReadAllText(Root + "/Content/" + profile.Code + ".json"))["translations"].ToObject<System.Collections.Generic.Dictionary<string, string>>();
-                string folder = Root + "/Resources/" + text.resourcesBasePath + "/" + profile.Code + "/text";
-                Directory.CreateDirectory(folder);
-                foreach (var group in data.GroupBy(pair => pair.Key.Split('/')[0]))
-                    File.WriteAllText(folder + "/" + group.Key + ".json", JsonConvert.SerializeObject(new { translations = group.ToDictionary(p => p.Key, p => p.Value) }, Formatting.Indented));
-            }
-            var sequence = AssetDatabase.LoadAssetAtPath<HorrorRadioSequence>(Root + "/Data/Radio.asset");
-            sequence.sequenceId = "dispatch-intro"; EditorUtility.SetDirty(sequence);
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+                if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty)
+                    throw new InvalidOperationException("Save scene edits before configuring the demo.");
+            var project = AssetDatabase.LoadAssetAtPath<LocalizationProjectConfig>(ConfigPath);
+            if (project == null) project = CreateProject();
+            project.ValidateOrThrow();
+            var voice = project.Channels.Single(c => c.Name == "Voice");
+            var visual = project.Channels.Single(c => c.Name == "Visuals");
             var definition = AssetDatabase.LoadAssetAtPath<HorrorWorldDefinition>(Root + "/Data/Precinct.asset");
-            if (definition == null) { definition = ScriptableObject.CreateInstance<HorrorWorldDefinition>(); AssetDatabase.CreateAsset(definition, Root + "/Data/Precinct.asset"); }
-            definition.voiceConfig = voice; definition.visualConfig = visual; definition.dialogues = new[] { sequence };
-            definition.visualKeys = new[] { "Signs/Archive", "Signs/Reception", "Signs/Warning" }; EditorUtility.SetDirty(definition);
-            AssetDatabase.SaveAssets(); AssetDatabase.Refresh();
-            var worldScene = EditorSceneManager.OpenScene(HorrorLabSetup.ScenePath);
-            var game = UnityEngine.Object.FindFirstObjectByType<HorrorPlayground>();
-            var presentation = game.GetComponent<HorrorWorldPresentation>(); if (presentation == null) presentation = game.gameObject.AddComponent<HorrorWorldPresentation>();
-            presentation.voiceSource = game.GetComponent<AudioSource>();
-            if (presentation.voiceSource == null) presentation.voiceSource = game.gameObject.AddComponent<AudioSource>();
-            presentation.voiceSource.playOnAwake = false;
-            foreach (var target in game.interactables)
+            if (definition == null) throw new InvalidOperationException("Missing Precinct content definition.");
+            definition.voiceSetId = voice.DefaultSetId; definition.visualSetId = visual.DefaultSetId;
+            EditorUtility.SetDirty(definition); AssetDatabase.SaveAssetIfDirty(definition);
+            foreach (string code in new[] { "en", "ru", "pl" })
+            foreach (string id in new[] { "Archive", "Reception", "Warning" })
             {
-                if (target.kind == HorrorInteraction.Radio) target.contentId = "dispatch-intro";
-                if (target.surface != null) target.surface.SetPropertyBlock(null);
-                EditorUtility.SetDirty(target);
+                var variant = AssetDatabase.LoadAssetAtPath<HorrorVisualVariant>(Root + "/Data/VisualVariants/" + code + "-" + id + ".asset");
+                if (variant == null) throw new InvalidOperationException("Missing visual variant: " + code + "/" + id);
+                variant.contentLanguage = code; EditorUtility.SetDirty(variant); AssetDatabase.SaveAssetIfDirty(variant);
             }
-            foreach (var events in UnityEngine.Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None)) UnityEngine.Object.DestroyImmediate(events.gameObject);
-            EditorSceneManager.SaveScene(worldScene);
-            var menuScene = File.Exists(MenuPath) ? EditorSceneManager.OpenScene(MenuPath) : EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var scene = EditorSceneManager.OpenScene(MenuPath);
             var app = UnityEngine.Object.FindFirstObjectByType<HorrorApp>();
-            if (app == null) app = new GameObject("Night Shift Bootstrap", typeof(HorrorApp)).GetComponent<HorrorApp>();
-            app.textConfig = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(Root + "/Data/TextConfig.asset");
-            app.worldDefinition = AssetDatabase.LoadAssetAtPath<HorrorWorldDefinition>(Root + "/Data/Precinct.asset");
-            app.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(Root + "/Data/Font.asset");
-            if (app.menuCamera == null)
-            {
-                app.menuCamera = new GameObject("Menu Camera", typeof(Camera)).GetComponent<Camera>();
-                app.menuCamera.clearFlags = CameraClearFlags.SolidColor; app.menuCamera.backgroundColor = new Color(.022f, .035f, .04f); app.menuCamera.cullingMask = 0;
-            }
-            if (UnityEngine.Object.FindFirstObjectByType<EventSystem>() == null)
-            {
-                var events = new GameObject("EventSystem", typeof(EventSystem));
-#if ENABLE_INPUT_SYSTEM
-                events.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
-#else
-                events.AddComponent<StandaloneInputModule>();
-#endif
-            }
-            EditorSceneManager.SaveScene(menuScene, MenuPath);
-            var scenes = EditorBuildSettings.scenes.ToList();
-            if (!scenes.Any(s => s.path == MenuPath)) scenes.Add(new EditorBuildSettingsScene(MenuPath, true));
-            if (!scenes.Any(s => s.path == HorrorLabSetup.ScenePath)) scenes.Add(new EditorBuildSettingsScene(HorrorLabSetup.ScenePath, true));
-            EditorBuildSettings.scenes = scenes.ToArray(); AssetDatabase.SaveAssets();
-            Debug.Log("Night Shift architecture upgraded. Entry scene: " + MenuPath);
+            if (app == null) throw new InvalidOperationException("Missing Night Shift bootstrap.");
+            app.localization = project; app.voiceChannelId = voice.Id; app.visualChannelId = visual.Id;
+            app.worldDefinition = definition;
+            EditorUtility.SetDirty(app); EditorSceneManager.MarkSceneDirty(scene); EditorSceneManager.SaveScene(scene);
+            Debug.Log("Night Shift uses one project config and Main, Voice, Visuals channels.");
         }
-        private static void MoveFolder(string source, string target)
+        private static LocalizationProjectConfig CreateProject()
         {
-            if (!AssetDatabase.IsValidFolder(source)) return;
-            if (AssetDatabase.IsValidFolder(target)) throw new InvalidOperationException("Both old and new content folders exist: " + target);
-            string error = AssetDatabase.MoveAsset(source, target); if (!string.IsNullOrEmpty(error)) throw new IOException(error);
+            var project = LocalizationProjectConfig.Create(new[] { "en", "ru", "pl" });
+            try
+            {
+                project.AutoInitialize = false; // The demo bootstrap owns its explicit runtime.
+                var common = project.Sets[0];
+                foreach (var language in project.Languages)
+                {
+                    language.DisplayName = language.Code switch { "en" => "English", "ru" => "Русский", "pl" => "Polski", _ => language.Code };
+                    language.SystemLanguage = language.Code switch { "en" => SystemLanguage.English, "ru" => SystemLanguage.Russian, _ => SystemLanguage.Polish };
+                    string folder = Root + "/Resources/NightShift/Text/" + language.Code + "/text";
+                    var files = Directory.GetFiles(folder, "*.json").OrderBy(p => p, StringComparer.Ordinal).ToArray();
+                    if (files.Length == 0) throw new InvalidOperationException("Missing demo text: " + language.Code);
+                    foreach (string path in files)
+                        foreach (string key in LocalizationFileParser.Parse(File.ReadAllText(path)).Keys)
+                            if (!common.Entries.Any(e => e.Key == key)) common.AddEntry(key);
+                    common.SetSources(language.Code, files.Select(path => new LocalizationSourceReference("resources",
+                        "NightShift/Text/" + language.Code + "/text/" + Path.GetFileNameWithoutExtension(path), LocalizationSourceKind.TextTable)).ToArray());
+                }
+                // All three existing demo profiles use this same font and default typography.
+                string appearanceFolder = Root + "/Resources/NightShift/Appearance";
+                Directory.CreateDirectory(appearanceFolder); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                string appearancePath = appearanceFolder + "/Common.asset";
+                var appearance = AssetDatabase.LoadAssetAtPath<LocalizationAppearance>(appearancePath);
+                if (appearance == null)
+                {
+                    appearance = ScriptableObject.CreateInstance<LocalizationAppearance>();
+                    appearance.overrideFont = true; appearance.primaryFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(Root + "/Data/Font.asset");
+                    AssetDatabase.CreateAsset(appearance, appearancePath);
+                }
+                foreach (var language in project.Languages)
+                    language.Appearance = new("resources", "NightShift/Appearance/Common", LocalizationSourceKind.Appearance);
+                AddWorldChannel(project, "Voice", new[] { "en", "ru" }, "Radio");
+                AddWorldChannel(project, "Visuals", new[] { "en", "ru", "pl" }, "Signs");
+                project.ValidateOrThrow(); AssetDatabase.CreateAsset(project, ConfigPath); AssetDatabase.SaveAssetIfDirty(project);
+                return project;
+            }
+            catch { if (!AssetDatabase.Contains(project)) UnityEngine.Object.DestroyImmediate(project); throw; }
+        }
+        private static void AddWorldChannel(LocalizationProjectConfig project, string name, string[] languages, string tableName)
+        {
+            var channel = project.AddChannel(name, languages); channel.FallbackLanguage = "en";
+            var set = project.AddSet("Precinct " + name); channel.IncludeSet(set.Id);
+            foreach (string code in languages)
+            {
+                string address = "NightShift/Worlds/Precinct/" + name + "/" + code + "/" + tableName;
+                var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(Root + "/Resources/" + address + ".asset");
+                if (table == null) throw new InvalidOperationException("Missing table: " + address);
+                foreach (var entry in table.Entries) if (!set.Entries.Any(e => e.Key == entry.key)) set.AddEntry(entry.key, LocalizationEntryKind.Asset);
+                set.SetSources(code, new LocalizationSourceReference("resources", address, LocalizationSourceKind.AssetTable));
+            }
         }
         public static void BuildAndVerify()
         {
@@ -128,17 +106,13 @@ namespace SimplyLocalize.HorrorLab.Editor
             string checks = HorrorLabChecks.Data();
             EditorSceneManager.OpenScene(HorrorLabSetup.ScenePath);
             checks += "\n" + HorrorInteractionChecks.Run() + "\n" + HorrorInteractionChecks.SceneTargets();
-            EditorSceneManager.OpenScene(MenuPath);
-            HorrorBuildIdentity.Write();
-            Directory.CreateDirectory("TestResults/NightShiftArchitecture");
-            File.WriteAllText("TestResults/NightShiftArchitecture/editor-checks.txt", checks);
+            EditorSceneManager.OpenScene(MenuPath); HorrorBuildIdentity.Write();
+            Directory.CreateDirectory("TestResults/NightShiftChannels");
+            File.WriteAllText("TestResults/NightShiftChannels/editor-checks.txt", checks);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions {
                 scenes = new[] { MenuPath, HorrorLabSetup.ScenePath },
-                locationPathName = "Builds/NightShift/NightShift.exe", target = BuildTarget.StandaloneWindows64,
-                // Release player avoids Development PlayerConnection discovery/listening sockets.
-                options = BuildOptions.None
-            });
-            File.WriteAllText("TestResults/NightShiftArchitecture/build.txt", report.summary.result + "\nErrors: " + report.summary.totalErrors + "\nBytes: " + report.summary.totalSize + "\nDuration: " + report.summary.totalTime);
+                locationPathName = "Builds/NightShift/NightShift.exe", target = BuildTarget.StandaloneWindows64, options = BuildOptions.None });
+            File.WriteAllText("TestResults/NightShiftChannels/build.txt", report.summary.result + "\nErrors: " + report.summary.totalErrors + "\nBytes: " + report.summary.totalSize);
             if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("Night Shift player build failed.");
         }
     }

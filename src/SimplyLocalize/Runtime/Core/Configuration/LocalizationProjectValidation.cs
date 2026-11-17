@@ -43,7 +43,7 @@ namespace SimplyLocalize
                 if (string.IsNullOrWhiteSpace(source.Address) || source.Address != source.Address.Trim() || source.Address.Any(char.IsControl))
                     Error("invalid-address", path, "Source address is empty or contains whitespace/control characters at its boundary.");
                 else if (source.ProviderId == LocalizationSourceReference.ResourcesProvider &&
-                    (!LocalizationConfig.IsResourcePathValid(source.Address) || source.Address.EndsWith("/", StringComparison.Ordinal)))
+                    !LocalizationResourceAddress.IsValid(source.Address))
                     Error("invalid-address", path, "Resources requires an exact relative address, without traversal or a trailing '/'.");
                 if (!Enum.IsDefined(typeof(LocalizationSourceKind), source.Kind) || (source.Kind == LocalizationSourceKind.Appearance) != appearance)
                     Error("invalid-source-kind", path, appearance ? "A language appearance must use an Appearance source." : "A content set accepts text/asset tables, not language appearance sources.");

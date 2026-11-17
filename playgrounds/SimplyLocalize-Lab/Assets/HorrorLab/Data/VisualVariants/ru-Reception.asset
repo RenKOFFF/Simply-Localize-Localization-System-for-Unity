@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: ru-Reception
   m_EditorClassIdentifier: 
   texture: {fileID: 2800000, guid: f8474095e910e4a47b69791a4923ffb4, type: 3}
-  contentLanguage: {fileID: 11400000, guid: 20faaf7130111e14aa1ab4b16bdb13eb, type: 2}
+  contentLanguage: ru
   containsText: 1

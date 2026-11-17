@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -40,13 +41,13 @@ namespace SimplyLocalize.HorrorLab
             menu = Panel("Settings", canvas, Vector2.up, Vector2.up, new Vector2(40, -822), new Vector2(710, -140), new Color(.025f, .035f, .04f, .96f));
             Label(menu, "UI/Settings", 29, 28, 20, 610, 44);
             Label(menu, "UI/TextLanguage", 19, 28, 84, 285, 38);
-            textLanguage = Dropdown(menu, 340, 82, app.textConfig, code => app.Observe(app.ChangeTextAsync(code)));
+            textLanguage = Dropdown(menu, 340, 82, app.localization.MainChannel, code => app.Observe(app.ChangeTextAsync(code)));
             Label(menu, "UI/VoiceLanguage", 19, 28, 142, 285, 38);
-            voiceLanguage = Dropdown(menu, 340, 140, app.worldDefinition.voiceConfig, app.SetVoice);
+            voiceLanguage = Dropdown(menu, 340, 140, app.VoiceChannel, app.SetVoice);
             Label(menu, "UI/VisualLanguage", 19, 28, 200, 285, 44);
-            visualLanguage = Dropdown(menu, 340, 198, app.worldDefinition.visualConfig, app.SetVisual);
+            visualLanguage = Dropdown(menu, 340, 198, app.VisualChannel, app.SetVisual);
             Label(menu, "UI/Signs", 19, 28, 262, 285, 45);
-            inscriptionMode = Dropdown(menu, 340, 260, app.textConfig, _ => { });
+            inscriptionMode = Dropdown(menu, 340, 260, app.localization.MainChannel, _ => { });
             inscriptionMode.onValueChanged.RemoveAllListeners(); inscriptionMode.onValueChanged.AddListener(index => app.SetInscriptions((InscriptionMode)index));
             Label(menu, "UI/Subtitles", 19, 28, 324, 340, 45);
             subtitlesValue = Button(menu, "Subtitles", 450, 326, 180, 42, null, () => app.SetSubtitles(!app.Preferences.Subtitles));
@@ -108,7 +109,7 @@ namespace SimplyLocalize.HorrorLab
             if (key != null) Bind(label, key);
             return label;
         }
-        private TMP_Dropdown Dropdown(Transform parent, float x, float y, LocalizationConfig config, Action<string> changed)
+        private TMP_Dropdown Dropdown(Transform parent, float x, float y, LocalizationChannelDefinition channel, Action<string> changed)
         {
             var obj = TMP_DefaultControls.CreateDropdown(new TMP_DefaultControls.Resources()); obj.transform.SetParent(parent, false);
             var rect = (RectTransform)obj.transform; Place(rect, Vector2.up, Vector2.up, new Vector2(x, -y - 44), new Vector2(x + 290, -y));
@@ -117,8 +118,8 @@ namespace SimplyLocalize.HorrorLab
             var item = drop.template.GetComponentInChildren<Toggle>(true);
             item.graphic = ReplaceIcon(item.graphic, true);
             foreach (var text in obj.GetComponentsInChildren<TMP_Text>(true)) { text.font = font; text.fontSize = 20; text.color = new Color(.08f, .1f, .1f); }
-            var options = new List<string>(); foreach (var language in config.languages) options.Add(language.displayName);
-            drop.AddOptions(options); drop.onValueChanged.AddListener(index => changed(config.languages[index].Code)); return drop;
+            var options = channel.Languages.Select(code => app.localization.Languages.Single(l => l.Code == code).DisplayName).ToList();
+            drop.AddOptions(options); drop.onValueChanged.AddListener(index => changed(channel.Languages[index])); return drop;
         }
         private static Graphic ReplaceIcon(Graphic original, bool checkmark)
         {
@@ -138,16 +139,16 @@ namespace SimplyLocalize.HorrorLab
             backdrop.gameObject.SetActive(!inWorld); intro.gameObject.SetActive(!inWorld);
             menu.gameObject.SetActive(!inWorld || game.MenuOpen);
             objective.gameObject.SetActive(inWorld);
-            textLanguage.SetValueWithoutNotify(Mathf.Max(0, app.textConfig.languages.FindIndex(p => p.Code == (text.Locale ?? settings.TextLocale))));
-            voiceLanguage.SetValueWithoutNotify(app.worldDefinition.voiceConfig.languages.FindIndex(p => p.Code == settings.VoiceLocale));
-            visualLanguage.SetValueWithoutNotify(app.worldDefinition.visualConfig.languages.FindIndex(p => p.Code == settings.VisualLocale));
+            textLanguage.SetValueWithoutNotify(Mathf.Max(0, app.localization.MainChannel.Languages.ToList().IndexOf(text.Locale ?? settings.TextLocale)));
+            voiceLanguage.SetValueWithoutNotify(app.VoiceChannel.Languages.ToList().IndexOf(settings.VoiceLocale));
+            visualLanguage.SetValueWithoutNotify(app.VisualChannel.Languages.ToList().IndexOf(settings.VisualLocale));
             textLanguage.interactable = !app.Busy;
             voiceLanguage.interactable = visualLanguage.interactable = app.State == HorrorAppState.Menu && !app.Busy;
             inscriptionMode.ClearOptions(); inscriptionMode.AddOptions(new List<string> { text.Get("UI/Off"), text.Get("UI/Auto"), text.Get("UI/Always") });
             inscriptionMode.SetValueWithoutNotify((int)settings.Inscriptions);
             Assign(subtitlesValue, text.Get(settings.Subtitles ? "UI/On" : "UI/Off"));
             Assign(hint, text.Get(inWorld ? "UI/HeavyLocked" : "UI/HeavyMenuHint"));
-            start.gameObject.SetActive(!inWorld); start.interactable = !app.Busy && text.Profile != null;
+            start.gameObject.SetActive(!inWorld); start.interactable = !app.Busy && text.IsReady;
             resume.gameObject.SetActive(inWorld); replay.gameObject.SetActive(inWorld); leave.gameObject.SetActive(inWorld);
             resume.interactable = replay.interactable = leave.interactable = !app.Busy;
             bool doc = inWorld && (game.NoteOpen || game.InventoryOpen); document.gameObject.SetActive(doc);
@@ -202,6 +203,11 @@ namespace SimplyLocalize.HorrorLab
             }
             interactionPanel.gameObject.SetActive(visible);
         }
-        public void Dispose() { foreach (var binding in labels) binding.profile.Dispose(); foreach (var profile in dynamicProfiles.Values) profile.Dispose(); }
+        public void Dispose()
+        {
+            if (canvas != null) canvas.gameObject.SetActive(false);
+            foreach (var binding in labels) binding.profile.Dispose();
+            foreach (var profile in dynamicProfiles.Values) profile.Dispose();
+        }
     }
 }

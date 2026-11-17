@@ -231,7 +231,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dd19745c52408c840a8c7900dd896872, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  textConfig: {fileID: 11400000, guid: 62a750ad14bcfaa42a50d7d67d7ca183, type: 2}
+  localization: {fileID: 11400000, guid: 396283c3f0c32c24889d32f69e2e4216, type: 2}
+  voiceChannelId: f95cf5e5a5bf40f1a0472057c84d6f17
+  visualChannelId: 241f6c2bcd34402797ed9ee3200e2207
   font: {fileID: 11400000, guid: fbb0047ada5cdda4bac47a75675efe31, type: 2}
   worldDefinition: {fileID: 11400000, guid: 6adefe060fe58d143b6a147740d02ee6, type: 2}
   menuCamera: {fileID: 92073640}
