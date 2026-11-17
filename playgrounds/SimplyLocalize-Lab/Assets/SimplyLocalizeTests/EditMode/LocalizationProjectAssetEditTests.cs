@@ -94,6 +94,29 @@ namespace SimplyLocalize.Tests
             using var edit = new LocalizationProjectAssetEdit(config); edit.Edit(table);
             Assert.That(edit.Commit().HasChanges, Is.False); Assert.That(File.ReadAllBytes(tablePath), Is.EqualTo(before)); Assert.That(File.GetLastWriteTimeUtc(tablePath), Is.EqualTo(time));
         }
+        [Test] public void ResetDiscardsStagedAssetsAndRestoresReferencesWithoutAcceptingExternalChanges()
+        {
+            table.Set("image", texture); EditorUtility.SetDirty(table); AssetDatabase.SaveAssetIfDirty(table);
+            using var edit = new LocalizationProjectAssetEdit(config);
+            var draft = edit.Edit(table); draft.Set("image", appearance);
+            string path = root + "/Discarded.asset"; var created = edit.Create<LocalizationAppearance>(path);
+            edit.Draft.AutoDetectLanguage = !config.AutoDetectLanguage;
+            Assert.That(edit.HasChanges, Is.True); edit.ResetChanges();
+            Assert.That(edit.HasChanges, Is.False); Assert.That(draft.Get("image") == texture, Is.True);
+            Assert.That(created == null, Is.True); Assert.That(File.Exists(path), Is.False);
+            File.AppendAllText(tablePath, "\n# External edit after opening draft\n"); var bytes = File.ReadAllBytes(tablePath);
+            edit.ResetChanges(); draft.Set("image", appearance);
+            Assert.Throws<InvalidOperationException>(() => edit.Commit()); Assert.That(File.ReadAllBytes(tablePath), Is.EqualTo(bytes));
+        }
+        [Test] public void ResetAfterFailedSaveDoesNotPublishRevertedAssetValues()
+        {
+            using var edit = new LocalizationProjectAssetEdit(config); edit.SetAsset(entry, "en", texture);
+            edit.Edit(appearance).fontSizeMultiplier = 1.5f;
+            var attributes = File.GetAttributes(appearancePath); File.SetAttributes(appearancePath, attributes | FileAttributes.ReadOnly);
+            try { Assert.Catch<Exception>(() => edit.Commit()); } finally { File.SetAttributes(appearancePath, attributes); }
+            edit.ResetChanges(); edit.Edit(appearance).fontSizeMultiplier = 1.25f; edit.Commit();
+            Assert.That(table.Get("image"), Is.Null); Assert.That(appearance.fontSizeMultiplier, Is.EqualTo(1.25f));
+        }
         [Test] public void DuplicateResourcesAddressAndForeignFileAfterStagingArePreserved()
         {
             using var edit = new LocalizationProjectAssetEdit(config);

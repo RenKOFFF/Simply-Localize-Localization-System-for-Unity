@@ -139,17 +139,11 @@ namespace SimplyLocalize.Editor.Windows
             save = new Button(() => SaveChanges()) { text = "Save entry", name = "saveText" }; LanguagePickerStyle.Primary(save); actions.Add(save);
             actions.Add(new Button(() => Reload(true)) { text = "Discard", name = "discardText" }); details.Add(actions); UpdateSave();
             var management = new Foldout { text = "Move or remove entry", name = "manageText" };
-            var targets = config.Sets.Where(s => s.Id != setId).ToArray();
-            if (targets.Length > 0)
-            {
-                var target = new DropdownField("Target set", targets.Select(s => s.Id).ToList(), targets[0].Id) { name = "moveTextTarget" };
-                target.formatListItemCallback = target.formatSelectedValueCallback = id => targets.Single(s => s.Id == id).Name; management.Add(target);
-                management.Add(new Button(() => MoveEntry(target.value)) { text = "Move entry", name = "moveText" });
-            }
+            management.Add(new ProjectEntryMovePicker(config, setId, LocalizationSourceKind.TextTable, "Text", (target, addresses) => MoveEntry(target, addresses)));
             management.Add(new Button(() =>
             {
                 if (EditorUtility.DisplayDialog("Remove localization entry", "Remove this key and its translations from the selected set? Shared source keys still used by another registered entry are kept.", "Remove", "Cancel")) RemoveEntry();
-            }) { text = "Remove entry", name = "deleteText" }); details.Add(management);
+            }) { text = "Remove entry", name = "deleteText" }); management.SetEnabled(edit != null); details.Add(management);
         }
         public bool SaveChanges()
         {
@@ -179,7 +173,7 @@ namespace SimplyLocalize.Editor.Windows
             }
             catch (Exception failure) { ShowError(failure.Message); return false; }
         }
-        public bool MoveEntry(string targetSetId) => ApplyEntryOperation("Move localization text", transaction => transaction.MoveTextEntry(selected, targetSetId), targetSetId);
+        public bool MoveEntry(string targetSetId, IReadOnlyDictionary<string, string> destinationAddresses = null) => ApplyEntryOperation("Move localization text", transaction => transaction.MoveTextEntry(selected, targetSetId, destinationAddresses), targetSetId);
         public bool RemoveEntry() => ApplyEntryOperation("Remove localization text", transaction => transaction.RemoveTextEntry(selected));
         private bool ApplyEntryOperation(string label, Action<LocalizationProjectEdit> operation, string targetSetId = null)
         {

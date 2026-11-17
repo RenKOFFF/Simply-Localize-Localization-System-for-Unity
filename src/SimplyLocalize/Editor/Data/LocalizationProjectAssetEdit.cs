@@ -26,6 +26,10 @@ namespace SimplyLocalize.Editor.Data
         private readonly Dictionary<string, AssetDraft> assets = new(StringComparer.OrdinalIgnoreCase);
         private bool disposed, committed;
         public LocalizationProjectConfig Draft { get; }
+        public bool HasChanges
+        {
+            get { EnsureOpen(); return Json(Draft) != configJson || assets.Values.Any(a => a.Bytes == null || State(a.Draft) != a.State); }
+        }
         public LocalizationProjectAssetEdit(LocalizationProjectConfig config)
         {
             if (config == null) throw new ArgumentNullException(nameof(config)); config.ValidateOrThrow();
@@ -54,6 +58,16 @@ namespace SimplyLocalize.Editor.Data
             ValidateNewAddress(path);
             var value = ScriptableObject.CreateInstance<T>(); value.hideFlags = HideFlags.HideAndDontSave; value.name = Path.GetFileNameWithoutExtension(path);
             assets.Add(path, new AssetDraft { Draft = value, Path = path }); return value;
+        }
+        /// <summary>Resets staged values without advancing disk/config baselines. Newly staged assets are discarded.</summary>
+        public void ResetChanges()
+        {
+            EnsureOpen(); EditorJsonUtility.FromJsonOverwrite(configJson, Draft);
+            foreach (var pair in assets.ToArray())
+                if (pair.Value.Bytes == null) { Object.DestroyImmediate(pair.Value.Draft); assets.Remove(pair.Key); }
+                else EditorJsonUtility.FromJsonOverwrite(pair.Value.Json, pair.Value.Draft);
+            entryRoutes.Clear();
+            foreach (string key in sourcePaths.Where(p => !assets.ContainsKey(p.Value.path)).Select(p => p.Key).ToArray()) sourcePaths.Remove(key);
         }
         public LocalizationProjectChange Commit()
         {

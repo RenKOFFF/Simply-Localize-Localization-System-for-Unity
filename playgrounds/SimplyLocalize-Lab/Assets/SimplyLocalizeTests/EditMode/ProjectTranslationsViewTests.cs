@@ -119,6 +119,25 @@ namespace SimplyLocalize.Tests
             Assert.Throws<InvalidOperationException>(() => view.SelectEntry(other)); Assert.That(view.AddEntry("new"), Is.False);
             Assert.That(view.SelectedEntryId, Is.EqualTo(entry)); Assert.That(Field<TextField>("translation_en").value, Is.EqualTo("Pending"));
         }
+        [Test] public void MovePickerLetsUserChooseBetweenMultipleDestinationSources()
+        {
+            var destination = config.AddSet("Dialogue"); string setId = destination.Id;
+            config.MainChannel.IncludeSet(setId); SaveConfig();
+            string prefix = Path.GetFileName(root);
+            using (var create = new LocalizationProjectEdit(config, setId))
+            {
+                create.CreateTextSource(setId, "en", root + "/Resources/" + prefix + "First.json");
+                create.CreateTextSource(setId, "en", root + "/Resources/" + prefix + "Second.json");
+                create.CreateTextSource(setId, "ru", root + "/Resources/" + prefix + "Ru.json");
+                create.Commit();
+            }
+            Open(); view.SelectEntry(entry);
+            Field<DropdownField>("moveTextDestination_en").value = prefix + "Second";
+            var button = Field<Button>("moveText"); using var submit = NavigationSubmitEvent.GetPooled(); submit.target = button; button.SendEvent(submit);
+            Assert.That(config.Sets.Single(s => s.Id == setId).Entries.Single().Id, Is.EqualTo(entry));
+            Assert.That(File.ReadAllText(root + "/Resources/" + prefix + "Second.json"), Does.Contain("Hello"));
+            Assert.That(File.ReadAllText(root + "/Resources/" + prefix + "First.json"), Does.Not.Contain("hello"));
+        }
         [Test] public void CorrectedRetryDoesNotCommitAValueRevertedAfterTheFailedAttempt()
         {
             string extra = Path.GetFileName(root) + "Extra";

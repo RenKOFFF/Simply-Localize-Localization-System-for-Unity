@@ -94,5 +94,24 @@ namespace SimplyLocalize.Tests
             Assert.That(config.MainChannel.Languages, Does.Contain("pl")); Assert.That(File.Exists(SourcePath("pl")), Is.False);
             Assert.That(config.Sets[0].Sources.Any(s => s.Language == "pl"), Is.False);
         }
+        [Test] public void CreatingAssetTableKeepsTextSourcesAndUndoRedoPreserveNewTableGuid()
+        {
+            var config = Create(); string set = config.Sets[0].Id; byte[] text = File.ReadAllBytes(SourcePath("en"));
+            using var record = LocalizationProjectUndo.Record(LocalizationProjectAuthoring.CreateAssetTable(config, set, "en"), "Create asset table");
+            var sources = config.Sets[0].Sources.Single(s => s.Language == "en").Sources;
+            Assert.That(sources.Count, Is.EqualTo(2)); var source = sources.Single(s => s.Kind == LocalizationSourceKind.AssetTable);
+            string path = new ResourcesEditorTextReader().ResolveSourceAssetPath(source), guid = AssetDatabase.AssetPathToGUID(path);
+            Assert.That(path, Does.EndWith("/SimplyLocalize/Assets/en/CommonAssets.asset")); Assert.That(File.ReadAllBytes(SourcePath("en")), Is.EqualTo(text));
+            Undo.PerformUndo(); Assert.That(File.Exists(path), Is.False); Assert.That(config.Sets[0].Sources.Single(s => s.Language == "en").Sources.Count, Is.EqualTo(1));
+            Undo.PerformRedo(); Assert.That(AssetDatabase.AssetPathToGUID(path), Is.EqualTo(guid));
+        }
+        [Test] public void NewAppearanceUsesAnotherFileInsteadOfOverwritingDisconnectedData()
+        {
+            var config = Create(); LocalizationProjectAuthoring.CreateAppearance(config, "en");
+            string path = new ResourcesEditorTextReader().ResolveSourceAssetPath(config.Languages[0].Appearance); byte[] bytes = File.ReadAllBytes(path);
+            LocalizationProjectAuthoring.CreateAppearance(config, "en");
+            string next = new ResourcesEditorTextReader().ResolveSourceAssetPath(config.Languages[0].Appearance);
+            Assert.That(next, Is.Not.EqualTo(path)); Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes)); Assert.That(File.Exists(next), Is.True);
+        }
     }
 }

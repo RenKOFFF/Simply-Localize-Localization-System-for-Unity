@@ -143,6 +143,38 @@ namespace SimplyLocalize.Editor
                 if (!AssetDatabase.IsValidFolder(path) && path != allowedPath && string.Equals(ResourcesEditorTextReader.ResourceAddress(path), LocalizationProjectConfig.StartupResourcePath, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("Startup address is already occupied: " + path + ". Select or explicitly relocate the project config; no data was overwritten.");
         }
+        /// <summary>Creates an address-backed appearance without adding heavy references to the project config.
+        /// An optional copy preserves existing appearance values while giving this language its own asset.</summary>
+        public static LocalizationProjectChange CreateAppearance(LocalizationProjectConfig config, string language, string assetPath = null, LocalizationAppearance copyFrom = null)
+        {
+            if (config == null) throw new ArgumentNullException(nameof(config)); language = LocalizationLanguageCode.Normalize(language);
+            using var edit = new LocalizationProjectAssetEdit(config);
+            var definition = edit.Draft.Languages.SingleOrDefault(l => l.Code == language) ?? throw new ArgumentException("Unknown project language.", nameof(language));
+            assetPath ??= AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Appearance/" + language + ".asset");
+            string address = ResourcesEditorTextReader.ResourceAddress(assetPath);
+            if (!LocalizationResourceAddress.IsValid(address)) throw new ArgumentException("Choose an appearance path inside a Resources folder.", nameof(assetPath));
+            var appearance = edit.Create<LocalizationAppearance>(assetPath);
+            if (copyFrom != null)
+            { EditorUtility.CopySerialized(copyFrom, appearance); appearance.hideFlags = HideFlags.HideAndDontSave; appearance.name = Path.GetFileNameWithoutExtension(assetPath); }
+            definition.Appearance = new LocalizationSourceReference("resources", address, LocalizationSourceKind.Appearance);
+            return edit.Commit();
+        }
+        /// <summary>Creates and connects an empty native table for a set/language. Existing files and bindings are preserved.</summary>
+        public static LocalizationProjectChange CreateAssetTable(LocalizationProjectConfig config, string setId, string language, string assetPath = null)
+        {
+            if (config == null) throw new ArgumentNullException(nameof(config)); language = LocalizationLanguageCode.Normalize(language);
+            using var edit = new LocalizationProjectAssetEdit(config);
+            if (!edit.Draft.Languages.Any(l => l.Code == language)) throw new ArgumentException("Unknown project language.", nameof(language));
+            var set = edit.Draft.Sets.SingleOrDefault(s => s.Id == setId) ?? throw new ArgumentException("Unknown content set.", nameof(setId));
+            string filename = new string(set.Name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c).ToArray()).Trim('.', ' ') + "Assets";
+            assetPath ??= AvailableAssetPath(ResourceRoot(AssetDatabase.GetAssetPath(config)) + "/SimplyLocalize/Assets/" + language + "/" + filename + ".asset");
+            string address = ResourcesEditorTextReader.ResourceAddress(assetPath);
+            if (!LocalizationResourceAddress.IsValid(address)) throw new ArgumentException("Choose an asset table path inside a Resources folder.", nameof(assetPath));
+            edit.Create<LocalizationAssetTable>(assetPath);
+            var sources = set.Sources.FirstOrDefault(s => s.Language == language)?.Sources ?? Array.Empty<LocalizationSourceReference>();
+            set.SetSources(language, sources.Concat(new[] { new LocalizationSourceReference("resources", address, LocalizationSourceKind.AssetTable) }).ToArray());
+            return edit.Commit();
+        }
         /// <summary>Relocates this project config, retaining its GUID, pending settings and source addresses.
         /// This explicit asset move does not migrate old config types or move translation data.</summary>
         public static void UseForAutomaticStartup(LocalizationProjectConfig config)
@@ -209,6 +241,20 @@ namespace SimplyLocalize.Editor
         {
             string parent = Path.GetDirectoryName(configPath).Replace('\\', '/');
             return parent.EndsWith("/Resources", StringComparison.Ordinal) ? parent : parent + "/Resources";
+        }
+        private static string AvailableAssetPath(string preferred)
+        {
+            // GenerateUniqueAssetPath can return empty when the parent has not been imported yet.
+            // Keep preparation read-only; the transaction creates folders only after validation.
+            var addresses = new HashSet<string>(AssetDatabase.GetAllAssetPaths().Where(p => !AssetDatabase.IsValidFolder(p))
+                .Select(ResourcesEditorTextReader.ResourceAddress).Where(a => a != null), StringComparer.OrdinalIgnoreCase);
+            for (int suffix = 0; suffix < 10000; suffix++)
+            {
+                string candidate = suffix == 0 ? preferred : Path.ChangeExtension(preferred, null) + "-" + suffix + ".asset";
+                if (!File.Exists(candidate) && !Directory.Exists(candidate) && !File.Exists(candidate + ".meta")
+                    && !addresses.Contains(ResourcesEditorTextReader.ResourceAddress(candidate))) return candidate;
+            }
+            throw new IOException("Choose another asset path; no free automatic name is available near " + preferred);
         }
         private static void Vacant(string path)
         { if (File.Exists(path) || Directory.Exists(path) || File.Exists(path + ".meta")) throw new IOException("Destination already exists: " + path); }
