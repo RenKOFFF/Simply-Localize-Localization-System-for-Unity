@@ -77,6 +77,39 @@ namespace SimplyLocalize.Tests
             Assert.That(File.Exists(Root + "/Resources/SimplyLocalize/Translations/pl/Common.json"), Is.False);
             Assert.That(File.ReadAllText(conflict), Is.EqualTo("Foreign"));
         }
+        [Test] public void StartupMovePreservesGuidPendingSettingsIdentitiesAndSourceBytes()
+        {
+            var config = LocalizationProjectAuthoring.Create(new[] { "en", "ru" }, "en", "en", Root + "/Manual.asset", false);
+            string guid = AssetDatabase.AssetPathToGUID(Root + "/Manual.asset"), main = config.MainChannelId;
+            string text = Root + "/Resources/SimplyLocalize/Translations/en/Common.json"; byte[] bytes = File.ReadAllBytes(text);
+            config.MainChannel.DefaultLanguage = "ru"; config.AutoDetectLanguage = true; EditorUtility.SetDirty(config);
+            LocalizationProjectAuthoring.UseForAutomaticStartup(config);
+            Assert.That(AssetDatabase.GetAssetPath(config), Is.EqualTo(LocalizationProjectAuthoring.ConfigAssetPath));
+            Assert.That(AssetDatabase.AssetPathToGUID(LocalizationProjectAuthoring.ConfigAssetPath), Is.EqualTo(guid));
+            Assert.That(config.MainChannelId, Is.EqualTo(main)); Assert.That(config.MainChannel.DefaultLanguage, Is.EqualTo("ru"));
+            Assert.That(config.AutoDetectLanguage && config.AutoInitialize, Is.True); Assert.That(EditorUtility.IsDirty(config), Is.False);
+            Assert.That(File.ReadAllBytes(text), Is.EqualTo(bytes)); Assert.That(File.Exists(Root + "/Manual.asset"), Is.False);
+        }
+        [Test] public void StartupMoveRefusesConflictingAddressWithoutChangingEitherFile()
+        {
+            var config = LocalizationProjectAuthoring.Create(new[] { "en" }, "en", null, Root + "/Manual.asset", false);
+            string other = Root + "/Resources/SimplyLocalizeSettings.txt"; File.WriteAllText(other, "Keep");
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport); byte[] bytes = File.ReadAllBytes(Root + "/Manual.asset");
+            Assert.Throws<InvalidOperationException>(() => LocalizationProjectAuthoring.UseForAutomaticStartup(config));
+            Assert.That(AssetDatabase.GetAssetPath(config), Is.EqualTo(Root + "/Manual.asset")); Assert.That(config.AutoInitialize, Is.False);
+            Assert.That(File.ReadAllBytes(Root + "/Manual.asset"), Is.EqualTo(bytes)); Assert.That(File.ReadAllText(other), Is.EqualTo("Keep"));
+        }
+        [Test] public void StartupMoveRefusesReadOnlyConfigBeforeNativeMoveAndKeepsPendingEdits()
+        {
+            string path = Root + "/Manual.asset";
+            var config = LocalizationProjectAuthoring.Create(new[] { "en" }, "en", null, path, false);
+            config.AutoDetectLanguage = true; EditorUtility.SetDirty(config); var attributes = File.GetAttributes(path);
+            File.SetAttributes(path, attributes | FileAttributes.ReadOnly);
+            try { Assert.Throws<IOException>(() => LocalizationProjectAuthoring.UseForAutomaticStartup(config)); }
+            finally { File.SetAttributes(path, attributes); }
+            Assert.That(AssetDatabase.GetAssetPath(config), Is.EqualTo(path)); Assert.That(config.AutoDetectLanguage, Is.True);
+            Assert.That(EditorUtility.IsDirty(config), Is.True); Assert.That(File.Exists(LocalizationProjectAuthoring.ConfigAssetPath), Is.False);
+        }
         private sealed class SetupHost : EditorWindow { }
     }
 }

@@ -164,15 +164,25 @@ namespace SimplyLocalize.Editor.Data
         public string ResolveAssetPath(LocalizationSourceReference source)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source.Kind != LocalizationSourceKind.TextTable) throw new ArgumentException("Expected a text table source.", nameof(source));
+            return ResolveSourceAssetPath(source);
+        }
+        /// <summary>Resolves an exact Resources source without loading its assets or their dependencies.</summary>
+        public string ResolveSourceAssetPath(LocalizationSourceReference source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
             if (source.ProviderId != LocalizationSourceReference.ResourcesProvider)
-                throw new NotSupportedException("Register an Editor text reader for provider '" + source.ProviderId + "'.");
-            if (source.Kind != LocalizationSourceKind.TextTable || !LocalizationResourceAddress.IsValid(source.Address))
-                throw new ArgumentException("Expected an exact Resources text table address.", nameof(source));
+                throw new NotSupportedException("Register an Editor " + (source.Kind == LocalizationSourceKind.TextTable ? "text" : "source") + " reader for provider '" + source.ProviderId + "'.");
+            if (!LocalizationResourceAddress.IsValid(source.Address)) throw new ArgumentException("Expected an exact Resources address.", nameof(source));
             if (!paths.TryGetValue(source.Address, out var matches)) throw new FileNotFoundException("Missing Resources source: " + source.Address);
             if (matches.Length != 1) throw new InvalidOperationException("Ambiguous Resources address '" + source.Address + "': " + string.Join(", ", matches));
             string path = matches[0];
-            if (AssetDatabase.GetMainAssetTypeAtPath(path) != typeof(UnityEngine.TextAsset))
-                throw new InvalidOperationException("Expected TextAsset at " + path);
+            Type expected = source.Kind == LocalizationSourceKind.TextTable ? typeof(UnityEngine.TextAsset)
+                : source.Kind == LocalizationSourceKind.AssetTable ? typeof(LocalizationAssetTable)
+                : source.Kind == LocalizationSourceKind.Appearance ? typeof(LocalizationAppearance)
+                : throw new ArgumentException("Unknown source kind.", nameof(source));
+            var actual = AssetDatabase.GetMainAssetTypeAtPath(path);
+            if (actual == null || !expected.IsAssignableFrom(actual)) throw new InvalidOperationException("Expected " + expected.Name + " at " + path);
             return path;
         }
         public static string ResourceAddress(string assetPath)

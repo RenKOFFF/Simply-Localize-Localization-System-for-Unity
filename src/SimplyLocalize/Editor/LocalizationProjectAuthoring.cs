@@ -143,6 +143,63 @@ namespace SimplyLocalize.Editor
                 if (!AssetDatabase.IsValidFolder(path) && path != allowedPath && string.Equals(ResourcesEditorTextReader.ResourceAddress(path), LocalizationProjectConfig.StartupResourcePath, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("Startup address is already occupied: " + path + ". Select or explicitly relocate the project config; no data was overwritten.");
         }
+        /// <summary>Relocates this project config, retaining its GUID, pending settings and source addresses.
+        /// This explicit asset move does not migrate old config types or move translation data.</summary>
+        public static void UseForAutomaticStartup(LocalizationProjectConfig config)
+        {
+            if (config == null) throw new ArgumentNullException(nameof(config));
+            string source = AssetDatabase.GetAssetPath(config);
+            LocalizationProjectChange.ValidateWritable(source); LocalizationProjectChange.ValidateWritable(ConfigAssetPath);
+            config.ValidateOrThrow(); ValidateStartupAddress(source);
+            if (source != ConfigAssetPath) Vacant(ConfigAssetPath);
+            string before = EditorJsonUtility.ToJson(config); bool dirty = EditorUtility.IsDirty(config), moved = false;
+            // Native Unity saving/moving can stall on a locked file; probe before calling it.
+            foreach (string path in new[] { source, source + ".meta" })
+            {
+                if ((File.GetAttributes(path) & FileAttributes.ReadOnly) != 0) throw new IOException("File is read-only: " + path);
+                using var probe = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
+            }
+            try
+            {
+                if (source != ConfigAssetPath)
+                {
+                    EnsureFolders(Path.GetDirectoryName(ConfigAssetPath).Replace('\\', '/'));
+                    string failure = AssetDatabase.MoveAsset(source, ConfigAssetPath);
+                    if (!string.IsNullOrEmpty(failure)) throw new IOException(failure);
+                    moved = true; EditorJsonUtility.FromJsonOverwrite(before, config);
+                }
+                using var transaction = new EditorFileTransaction(); transaction.TrackExternal(ConfigAssetPath);
+                transaction.Execute(() =>
+                {
+                    transaction.TouchExternal(ConfigAssetPath);
+                    config.AutoInitialize = true; config.name = Path.GetFileNameWithoutExtension(ConfigAssetPath);
+                    EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config);
+                    if (EditorUtility.IsDirty(config)) throw new IOException("Could not save startup config.");
+                });
+            }
+            catch (Exception failure)
+            {
+                if (moved)
+                {
+                    string rollback = AssetDatabase.MoveAsset(ConfigAssetPath, source);
+                    if (!string.IsNullOrEmpty(rollback)) throw new AggregateException(failure, new IOException("Could not restore config path: " + rollback));
+                }
+                EditorJsonUtility.FromJsonOverwrite(before, config);
+                if (dirty) EditorUtility.SetDirty(config); else EditorUtility.ClearDirty(config);
+                throw;
+            }
+        }
+        private static void EnsureFolders(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path)) return;
+            string parent = Path.GetDirectoryName(path).Replace('\\', '/'); EnsureFolders(parent);
+            if (Directory.Exists(path)) AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            else
+            {
+                if (File.Exists(path + ".meta")) throw new IOException("An orphan folder .meta occupies " + path);
+                if (string.IsNullOrEmpty(AssetDatabase.CreateFolder(parent, Path.GetFileName(path)))) throw new IOException("Could not create folder: " + path);
+            }
+        }
         private static void ApplyCatalogName(LocalizationLanguageDefinition language)
         {
             var catalog = LanguageCatalog.Find(language.Code); if (catalog == null) return;
