@@ -1,9 +1,8 @@
 using System.Collections.Generic;
-using System.IO;
+using System;
 using System.Linq;
 using SimplyLocalize.Editor.Data;
 using SimplyLocalize.Editor.Inspectors;
-using SimplyLocalize.Editor.Utilities;
 using UnityEditor;
 using UnityEngine;
 
@@ -12,6 +11,8 @@ namespace SimplyLocalize.SpineIntegration.Editor
     [CustomEditor(typeof(LocalizedSpineTexture))]
     public sealed class LocalizedSpineTextureEditor : LocalizedAssetEditor
     {
+        protected override void DrawComponentProperties() { }
+
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
@@ -26,7 +27,9 @@ namespace SimplyLocalize.SpineIntegration.Editor
             DrawAtlasPageSelector(atlasPageProperty, materials);
             serializedObject.ApplyModifiedProperties();
 
-            DrawValidation(component, materials);
+            try { DrawValidation(component, materials); }
+            catch (Exception failure) when (!(failure is ExitGUIException))
+            { EditorGUILayout.HelpBox(failure.Message, MessageType.Error); }
         }
 
         private static List<Material> CollectAtlasPageMaterials(LocalizedSpineTexture component)
@@ -160,28 +163,14 @@ namespace SimplyLocalize.SpineIntegration.Editor
             LocalizedSpineTexture component,
             Texture sourceTexture)
         {
-            if (string.IsNullOrEmpty(component.Key))
-                return;
-
-            var config = EditorDataCache.Config;
-            var basePath = EditorDataCache.Data?.BasePath;
-            if (config?.languages == null || string.IsNullOrEmpty(basePath))
-                return;
-
+            var context = LocalizationEditorBindings.ContextFor(component, out var entry);
+            if (context == null || entry == null) return;
             var reportedTextures = new HashSet<Texture2D>();
-            foreach (var profile in config.languages)
+            foreach (string language in context.Channel.Languages)
             {
-                if (profile == null)
-                    continue;
-
-                var result = FallbackResolver.ResolveAsset(
-                    config,
-                    component.Key,
-                    profile.Code,
-                    code => FindTableAtPath(Path.Combine(basePath, code)));
+                if (!context.Assets.TryResolve(entry.Id, language, out var result, typeof(Texture2D))) continue;
                 var localizedTexture = result.Asset as Texture2D;
-                if (localizedTexture == null || !reportedTextures.Add(localizedTexture))
-                    continue;
+                if (localizedTexture == null || !reportedTextures.Add(localizedTexture)) continue;
 
                 if (localizedTexture.width != sourceTexture.width ||
                     localizedTexture.height != sourceTexture.height)
@@ -248,20 +237,5 @@ namespace SimplyLocalize.SpineIntegration.Editor
             return false;
         }
 
-        private static LocalizationAssetTable FindTableAtPath(string languageDirectory)
-        {
-            if (!Directory.Exists(languageDirectory))
-                return null;
-
-            foreach (var file in Directory.GetFiles(languageDirectory, "*.asset"))
-            {
-                var relativePath = "Assets" + file.Substring(Application.dataPath.Length);
-                var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(relativePath);
-                if (table != null)
-                    return table;
-            }
-
-            return null;
-        }
     }
 }

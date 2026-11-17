@@ -32,7 +32,7 @@ namespace SimplyLocalize.Editor.Inspectors
                 catch (Exception failure) { EditorGUILayout.HelpBox(failure.Message, MessageType.Error); }
             }
             if (!string.IsNullOrEmpty(error)) EditorGUILayout.HelpBox(error, MessageType.Error);
-            DrawPropertiesExcluding(serializedObject, "m_Script", "_entry", "_key", "_channelId", "_setId", "_defaultNamedParams");
+            DrawComponentProperties();
             var parameters = serializedObject.FindProperty("_defaultNamedParams");
             if (parameters != null)
             {
@@ -78,6 +78,10 @@ namespace SimplyLocalize.Editor.Inspectors
             }
             serializedObject.ApplyModifiedProperties();
         }
+        /// <summary>Override to draw integration-specific settings without duplicating the common binding UI.</summary>
+        protected virtual void DrawComponentProperties() =>
+            DrawPropertiesExcluding(serializedObject, "m_Script", "_entry", "_key", "_channelId", "_setId", "_defaultNamedParams");
+
         private void DrawBinding(LocalizedComponentBase component, LocalizationProjectConfig config, EditorProjectContext bound, LocalizationEntryDefinition entry)
         {
             _ = EditorProjectSelection.EntryIndex;

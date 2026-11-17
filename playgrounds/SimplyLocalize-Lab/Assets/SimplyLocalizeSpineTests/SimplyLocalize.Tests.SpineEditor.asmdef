@@ -1,0 +1,32 @@
+{
+  "name": "SimplyLocalize.Tests.SpineEditor",
+  "references": [
+    "SimplyLocalize",
+    "SimplyLocalize.Editor",
+    "SimplyLocalize.SpineIntegration",
+    "SimplyLocalize.SpineIntegration.Editor",
+    "spine-csharp",
+    "spine-unity"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "SIMPLY_LOCALIZE_SPINE"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.esotericsoftware.spine.spine-unity",
+      "expression": "",
+      "define": "SIMPLY_LOCALIZE_SPINE"
+    }
+  ]
+}

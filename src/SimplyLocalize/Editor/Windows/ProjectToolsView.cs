@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 namespace SimplyLocalize.Editor.Windows
 {
     /// <summary>CSV preview/apply on saved project data. Hosts must resolve pending edits on other pages before entering.</summary>
-    public sealed class ProjectToolsView : VisualElement, IDisposable
+    public sealed class ProjectToolsView : ScrollView, IDisposable
     {
         private readonly LocalizationProjectConfig config;
         private readonly string channelId, setId;
@@ -68,7 +68,7 @@ namespace SimplyLocalize.Editor.Windows
             changes = new ListView { name = "csvChanges", fixedItemHeight = 28, virtualizationMethod = CollectionVirtualizationMethod.FixedHeight,
                 makeItem = () => new Label { enableRichText = false }, bindItem = (element, index) =>
                 { var change = plan.Changes[index]; ((Label)element).text = change.Kind + " · " + (change.Key ?? "") + " · " + (change.Language ?? ""); } };
-            changes.style.flexGrow = 1; changes.style.minHeight = 100;
+            changes.style.height = 200; changes.style.minHeight = 100;
             changes.selectionChanged += selection => { if (selection.FirstOrDefault() is ProjectCsvChange change) detail.SetValueWithoutNotify(Describe(change)); }; Add(changes); Add(detail);
             var bottom = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             apply = new Button(() => ApplyPreview()) { text = "Apply and save", name = "csvApply" }; LanguagePickerStyle.Primary(apply); apply.SetEnabled(false); bottom.Add(apply);
@@ -76,6 +76,8 @@ namespace SimplyLocalize.Editor.Windows
             var recovered = new Foldout { name = "csvRecovered", text = "Recovered CSV input" }; recovered.style.display = DisplayStyle.None;
             recovered.Add(new TextField { name = "csvRecoveredInput", multiline = true, isReadOnly = true }); Add(recovered);
             var rebuild = new Button(() => PreviewCsv(pendingCsv)) { name = "csvRebuild", text = "Rebuild import preview" }; rebuild.style.display = DisplayStyle.None; Add(rebuild);
+            // Keep controls readable when the host is short; scroll the page instead of collapsing buttons.
+            foreach (var child in contentContainer.Children()) child.style.flexShrink = 0;
             RegisterCallback<DetachFromPanelEvent>(_ => Dispose());
         }
         public bool PreviewFile(string path)

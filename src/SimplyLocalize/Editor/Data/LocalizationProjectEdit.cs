@@ -301,12 +301,9 @@ namespace SimplyLocalize.Editor.Data
                 Before = File.ReadAllBytes(ReadPath);
                 string json = EditorTextEncoding.Decode(Before, path, out encoding, out bom);
                 newline = json.Contains("\r\n") ? "\r\n" : "\n";
-                // Match runtime validation, then retain unknown JSON fields and untouched value types.
+                // Validate depth/structure first, then match runtime scalar conversion and grammar.
+                Root = EditorTranslationJson.Read(json, path);
                 SimplyLocalize.Data.LocalizationFileParser.Parse(json);
-                using var input = new JsonTextReader(new StringReader(json)) { DateParseHandling = DateParseHandling.None, FloatParseHandling = FloatParseHandling.Decimal, MaxDepth = 64 };
-                Root = JObject.Load(input, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
-                if (input.Read()) throw new FormatException("Trailing JSON content at " + path);
-                if (!(Root["translations"] is JObject)) throw new FormatException("Expected a translations object at " + path);
                 Original = (JObject)Root.DeepClone();
             }
             internal byte[] Encode()

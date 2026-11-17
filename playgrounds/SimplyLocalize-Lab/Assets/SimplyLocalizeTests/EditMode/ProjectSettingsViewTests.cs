@@ -39,6 +39,50 @@ namespace SimplyLocalize.Tests
         { var button = Field<Button>(name); Assert.That(button, Is.Not.Null); using var submit = NavigationSubmitEvent.GetPooled(); submit.target = button; button.SendEvent(submit); }
         private void Save() { EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config); }
 
+        [Test] public void LegacyDataTypesRemainReadableButAreNotOfferedForNewProjects()
+        {
+            Assert.That(typeof(LocalizationConfig).GetCustomAttributes(typeof(CreateAssetMenuAttribute), false), Is.Empty);
+            Assert.That(typeof(LanguageProfile).GetCustomAttributes(typeof(CreateAssetMenuAttribute), false), Is.Empty);
+            Assert.That(typeof(LocalizationProjectConfig).GetCustomAttributes(typeof(CreateAssetMenuAttribute), false), Has.Length.EqualTo(1));
+            var legacy = ScriptableObject.CreateInstance<LocalizationConfig>();
+            try
+            {
+                legacy.resourcesBasePath = "UserContent"; legacy.loadTextData = false;
+                string path = root + "/Legacy.asset"; AssetDatabase.CreateAsset(legacy, path); AssetDatabase.SaveAssetIfDirty(legacy);
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                var restored = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(path);
+                Assert.That(restored.resourcesBasePath, Is.EqualTo("UserContent")); Assert.That(restored.loadTextData, Is.False);
+            }
+            finally { if (!EditorUtility.IsPersistent(legacy)) UnityEngine.Object.DestroyImmediate(legacy); }
+        }
+
+        [Test] public void GameViewPreferencesPersistWithoutEditingProjectDataOrUndoHistory()
+        {
+            string enabledKey = GameViewLanguageDropdown.EnabledPrefKey, positionKey = GameViewLanguageDropdown.PositionPrefKey;
+            bool hadEnabled = EditorPrefs.HasKey(enabledKey), enabled = EditorPrefs.GetBool(enabledKey, true);
+            bool hadPosition = EditorPrefs.HasKey(positionKey); int position = EditorPrefs.GetInt(positionKey, 2);
+            var before = Directory.GetFiles(root, "*", SearchOption.AllDirectories).ToDictionary(p => p, File.ReadAllBytes);
+            int records = Resources.FindObjectsOfTypeAll<LocalizationProjectUndo>().Length;
+            try
+            {
+                EditorPrefs.SetBool(enabledKey, false); EditorPrefs.SetInt(positionKey, (int)GameViewLanguageDropdown.Position.Right); Open();
+                Assert.That(Field<EnumField>("gameViewLanguagePosition").enabledSelf, Is.False);
+                Field<Toggle>("showGameViewLanguage").value = true;
+                Assert.That(Field<EnumField>("gameViewLanguagePosition").enabledSelf, Is.True);
+                Field<EnumField>("gameViewLanguagePosition").value = GameViewLanguageDropdown.Position.Left; Open();
+                Assert.That(Field<Toggle>("showGameViewLanguage").value, Is.True);
+                Assert.That(Field<EnumField>("gameViewLanguagePosition").value, Is.EqualTo(GameViewLanguageDropdown.Position.Left));
+                Assert.That(Resources.FindObjectsOfTypeAll<LocalizationProjectUndo>().Length, Is.EqualTo(records));
+                Assert.That(EditorUtility.IsDirty(config), Is.False);
+                foreach (var file in before) Assert.That(File.ReadAllBytes(file.Key), Is.EqualTo(file.Value));
+            }
+            finally
+            {
+                if (hadEnabled) EditorPrefs.SetBool(enabledKey, enabled); else EditorPrefs.DeleteKey(enabledKey);
+                if (hadPosition) EditorPrefs.SetInt(positionKey, position); else EditorPrefs.DeleteKey(positionKey);
+            }
+        }
+
         [Test] public void NewChannelIsIndependentAndChangingItsModeOrNameKeepsIdentity()
         {
             Open(); Field<TextField>("newChannelName").value = "Voice"; Click("addChannel");

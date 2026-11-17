@@ -5,7 +5,6 @@ namespace SimplyLocalize
 {
     /// <summary>Legacy authoring identity. Presentation fields now belong to LocalizationAppearance.
     /// Retained during the editor/data transition; channel runtimes do not use this type.</summary>
-    [CreateAssetMenu(fileName = "LanguageProfile", menuName = "SimplyLocalize/Language Profile")]
     public class LanguageProfile : LocalizationAppearance
     {
         [Header("Language Identity")]

@@ -9,14 +9,12 @@ namespace SimplyLocalize.Editor
     {
         public override void OnInspectorGUI()
         {
-            var config = (LocalizationConfig)target;
             if (GUILayout.Button("Open in Simply Localize"))
                 LocalizationEditorWindow.Open();
             EditorGUILayout.HelpBox("This is a legacy config. The channel architecture uses LocalizationProjectConfig. Rebuild the project configuration explicitly in Simply Localize; this asset is not used by the new runtime.", MessageType.Warning);
             using (new EditorGUI.DisabledScope(true))
                 EditorGUILayout.TextField("Startup address", LocalizationConfig.StartupResourcePath);
-            DrawDefaultInspector();
-            foreach (var issue in config.GetValidationErrors()) EditorGUILayout.HelpBox(issue, MessageType.Error);
+            using (new EditorGUI.DisabledScope(true)) DrawDefaultInspector();
         }
     }
 }

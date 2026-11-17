@@ -5,14 +5,9 @@ using UnityEngine;
 namespace SimplyLocalize
 {
     /// <summary>
-    /// Central configuration for the localization system.
-    /// All settings are drag-and-drop references — no manual string entry.
-    ///
-    /// Create via: Create → SimplyLocalize → Localization Config.
+    /// Legacy serialized data retained until the separate project-data cleanup stage.
+    /// New projects use LocalizationProjectConfig; the channel runtime does not read this type.
     /// </summary>
-    [CreateAssetMenu(
-        fileName = "LocalizationConfig",
-        menuName = "SimplyLocalize/Localization Config")]
     public class LocalizationConfig : ScriptableObject
     {
         /// <summary>Reserved Resources address used by automatic and parameterless initialization.</summary>

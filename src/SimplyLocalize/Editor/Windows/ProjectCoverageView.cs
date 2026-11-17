@@ -7,14 +7,14 @@ using UnityEngine.UIElements;
 
 namespace SimplyLocalize.Editor.Windows
 {
-    public sealed class ProjectCoverageView : VisualElement, IDisposable
+    public sealed class ProjectCoverageView : ScrollView, IDisposable
     {
         private readonly LocalizationProjectConfig config;
         private readonly string channelId, setId;
         private readonly ILocalizationEditorTextReader textReader;
         private readonly ILocalizationEditorAssetReader assetReader;
         private readonly LocalizationPluralRules pluralRules;
-        private readonly ScrollView rows;
+        private readonly VisualElement rows;
         private readonly ListView warnings;
         private readonly HelpBox status;
         public CoverageReport Report { get; private set; }
@@ -25,11 +25,12 @@ namespace SimplyLocalize.Editor.Windows
             name = "projectCoverage"; style.flexGrow = 1; style.paddingLeft = style.paddingRight = 16; style.paddingTop = 12;
             Add(new Button(Reload) { text = "Check saved data", name = "refreshCoverage" });
             status = new HelpBox("", HelpBoxMessageType.Info) { name = "coverageStatus" }; Add(status);
-            rows = new ScrollView { style = { flexGrow = 1, minHeight = 100 } }; Add(rows);
+            rows = new VisualElement { name = "coverageRows" }; Add(rows);
             warnings = new ListView { name = "coverageWarnings", virtualizationMethod = CollectionVirtualizationMethod.DynamicHeight, fixedItemHeight = 36,
                 makeItem = () => new Label { style = { whiteSpace = WhiteSpace.Normal, paddingTop = 6, paddingBottom = 6 } },
                 bindItem = (element, index) => ((Label)element).text = Report.Warnings[index].Level + " · " + Report.Warnings[index].Message };
             warnings.style.height = 220; Add(warnings);
+            foreach (var child in contentContainer.Children()) child.style.flexShrink = 0;
             RegisterCallback<AttachToPanelEvent>(_ => LocalizationProjectUndo.Changed += Reload);
             RegisterCallback<DetachFromPanelEvent>(_ => Dispose()); Reload();
         }

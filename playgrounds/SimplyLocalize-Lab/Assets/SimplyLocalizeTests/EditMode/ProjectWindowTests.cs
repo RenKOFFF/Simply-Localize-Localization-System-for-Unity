@@ -1,9 +1,11 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
+using UnityEngine.TestTools;
 using SimplyLocalize.Editor;
 using SimplyLocalize.Editor.Data;
 using SimplyLocalize.Editor.Windows;
@@ -68,6 +70,35 @@ namespace SimplyLocalize.Tests
             var button = Field<Button>(name); Assert.That(button, Is.Not.Null, name);
             using var submit = NavigationSubmitEvent.GetPooled(); submit.target = button; button.SendEvent(submit);
         }
+        [UnityTest] public IEnumerator ShortAndNormalWindowsKeepToolsControlsReadableAndReachable()
+        {
+            foreach (var size in new[] { new Vector2(700, 400), new Vector2(1100, 780) })
+            foreach (int tab in new[] { 4, 5, 6 })
+            {
+                window.position = new Rect(40, 40, size.x, size.y); Assert.That(window.ShowTab(tab), Is.True);
+                for (int frame = 0; frame < 4; frame++) yield return null;
+                var page = tab == 4 ? (ScrollView)View<ProjectCoverageView>() : tab == 5 ? View<ProjectAutoLocalizeView>() : View<ProjectToolsView>();
+                Assert.That(page.contentViewport.worldBound.height, Is.GreaterThan(100));
+                if (tab == 4)
+                {
+                    var status = Field<HelpBox>("coverageStatus");
+                    Assert.That(status.worldBound.height, Is.GreaterThanOrEqualTo(24));
+                    Assert.That(Field<VisualElement>("coverageRows").worldBound.yMin, Is.GreaterThanOrEqualTo(status.worldBound.yMax - 1));
+                }
+                var buttons = tab == 4 ? new[] { "refreshCoverage" } : tab == 5 ? new[] { "autoScan", "autoPreview", "autoApply", "autoCancel" }
+                    : new[] { "csvExport", "csvImport", "csvApply", "csvCancel" };
+                foreach (string name in buttons)
+                {
+                    var button = Field<Button>(name); Assert.That(button, Is.Not.Null, name);
+                    Assert.That(button.worldBound.height, Is.GreaterThanOrEqualTo(16), name + " at " + size);
+                    page.ScrollTo(button); for (int frame = 0; frame < 3; frame++) yield return null;
+                    Assert.That(button.worldBound.yMin, Is.GreaterThanOrEqualTo(page.contentViewport.worldBound.yMin - 1), name);
+                    Assert.That(button.worldBound.yMax, Is.LessThanOrEqualTo(page.contentViewport.worldBound.yMax + 1), name);
+                }
+            }
+            Assert.That(window.HasPendingChanges, Is.False);
+        }
+
         [TestCase("tab")][TestCase("context")][TestCase("config")][TestCase("refresh")]
         public void CancelNavigationPreservesInputAndContext(string action)
         {

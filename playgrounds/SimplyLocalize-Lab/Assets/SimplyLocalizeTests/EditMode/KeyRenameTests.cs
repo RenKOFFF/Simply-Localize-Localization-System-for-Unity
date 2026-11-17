@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using SimplyLocalize.Components;
+using SimplyLocalize.Editor;
 using SimplyLocalize.Editor.Data;
-using SimplyLocalize.Editor.Utilities;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -19,365 +18,267 @@ namespace SimplyLocalize.Tests
     public class KeyRenameTests
     {
         private const string Old = "stage7.old", New = "stage7.new";
-        private string _root, _base;
-        private LocalizationConfig _config;
-        private EditorLocalizationData _data;
-        private Scene _active;
-        private bool _temporaryRunnerScene;
-        private readonly List<Scene> _scenes = new();
-        private string[] Roots => new[] { _root };
-        private string Disk(string path) => Path.GetFullPath(path);
-
-        [SetUp] public void SetUp()
+        private string root, entryId;
+        private LocalizationProjectConfig config;
+        private ProjectNotesTestScope notesCleanup;
+        private Scene active;
+        private bool temporaryRunnerScene;
+        private readonly List<Scene> scenes = new();
+        private LocalizationEntryReference Reference => new(config.MainChannelId, entryId);
+        private string TextPath(string language) => root + "/Resources/SimplyLocalize/Translations/" + language + "/Common.json";
+        [SetUp] public void Setup()
         {
-            _active = SceneManager.GetActiveScene();
-            string id = "Rename_" + Guid.NewGuid().ToString("N");
-            _root = "Assets/__" + id;
-            _base = _root + "/Resources/" + id;
-            _config = ScriptableObject.CreateInstance<LocalizationConfig>();
-            _config.resourcesBasePath = id;
-            foreach (string code in new[] { "en", "ru" })
-            {
-                var profile = ScriptableObject.CreateInstance<LanguageProfile>();
-                profile.languageCode = code;
-                _config.languages.Add(profile);
-                Directory.CreateDirectory(Disk(_base + "/" + code + "/text"));
-                File.WriteAllText(Disk(_base + "/" + code + "/text/test.json"), new JObject
-                { ["custom"] = "preserve", ["translations"] = new JObject { [Old] = code + " value", ["other"] = "other value" } }.ToString());
-            }
-            _config.defaultLanguage = _config.languages[0];
-            File.WriteAllText(Disk(_base + "/_meta.json"), new JObject { [Old] = new JObject { ["description"] = "description", ["custom"] = 42 } }.ToString());
-            AssetDatabase.Refresh();
-            _temporaryRunnerScene = _active.path.Length == 0;
-            if (_temporaryRunnerScene)
-            {
-                // Unity Test Runner supplies an untitled scene (sometimes with its default camera/light).
-                EditorSceneManager.SaveScene(_active, _root + "/Runner.unity");
-            }
-            _data = new EditorLocalizationData(); _data.Load(_config);
+            active = SceneManager.GetActiveScene(); root = "Assets/SimplyLocalizeRename_" + Guid.NewGuid().ToString("N");
+            Directory.CreateDirectory(root); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            temporaryRunnerScene = active.path.Length == 0;
+            // Unity forbids additive scene creation beside an untitled Test Runner scene.
+            if (temporaryRunnerScene) EditorSceneManager.SaveScene(active, root + "/Runner.unity");
+            config = LocalizationProjectAuthoring.Create(new[] { "en", "ru" }, "en", "en", root + "/Project.asset", false);
+            notesCleanup = new ProjectNotesTestScope(config); entryId = config.Sets[0].AddEntry(Old).Id;
+            config.Sets[0].AddEntry("other"); Save();
+            foreach (string language in new[] { "en", "ru" }) File.WriteAllText(TextPath(language), new JObject
+            { ["custom"] = "preserve", ["translations"] = new JObject { [Old] = language + " value", ["other"] = "other value" } }.ToString());
+            using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); edit.SetDescription(entryId, "description"); edit.Commit();
         }
-
-        [TearDown] public void TearDown()
+        [TearDown] public void Cleanup()
         {
-            foreach (var scene in _scenes)
-                if (scene.IsValid()) EditorSceneManager.CloseScene(scene, true);
-            _scenes.Clear();
-            if (_active.IsValid() && _active.isLoaded) SceneManager.SetActiveScene(_active);
-            if (_temporaryRunnerScene) EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            foreach (var profile in _config.languages) Object.DestroyImmediate(profile);
-            Object.DestroyImmediate(_config);
-            if (Directory.Exists(Disk(_root)))
-            {
-                foreach (string file in Directory.GetFiles(Disk(_root), "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
-                AssetDatabase.DeleteAsset(_root);
-            }
+            StageUtility.GoToMainStage();
+            foreach (var scene in scenes) if (scene.IsValid()) EditorSceneManager.CloseScene(scene, true);
+            scenes.Clear(); if (active.IsValid() && active.isLoaded) SceneManager.SetActiveScene(active);
+            if (temporaryRunnerScene) EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            notesCleanup?.Dispose();
+            foreach (string file in Directory.GetFiles(root, "*", SearchOption.AllDirectories)) File.SetAttributes(file, FileAttributes.Normal);
+            AssetDatabase.DeleteAsset(root);
         }
-
-        private RenameReferenceAsset Asset(string name = "Reference", string key = Old)
+        private void Save() { EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config); }
+        private LocalizationProjectChange Rename(string key = New)
+        { using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); edit.RenameTextEntry(entryId, key); return edit.Commit(); }
+        private void Resolves(LocalizationEntryReference reference, string key = New)
+        {
+            Assert.That(config.CreateEntryIndex().Resolve(reference, out var found), Is.EqualTo(LocalizationReferenceStatus.Found));
+            Assert.That(found.Key, Is.EqualTo(key));
+        }
+        private RenameReferenceAsset Asset(string name = "Reference")
         {
             var asset = ScriptableObject.CreateInstance<RenameReferenceAsset>();
-            asset.key = key; asset.preview = key; asset.literal = key;
-            asset.keys.Add(key); asset.nested.Add(new RenameNestedReference { key = key, literal = key });
-            asset.managed = new RenameNestedReference { key = key, literal = key };
-            AssetDatabase.CreateAsset(asset, _root + "/" + name + ".asset");
-            return asset;
+            asset.reference = Reference; asset.references.Add(Reference); asset.key = Old; asset.literal = Old;
+            asset.nested.Add(new RenameNestedReference { reference = Reference, key = Old, literal = Old });
+            asset.managed = new RenameNestedReference { reference = Reference, key = Old, literal = Old };
+            AssetDatabase.CreateAsset(asset, root + "/" + name + ".asset"); return asset;
         }
-        private Scene Scene(string name = null)
+        private Scene NewScene()
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
-            _scenes.Add(scene); SceneManager.SetActiveScene(scene);
-            return scene;
+            scenes.Add(scene); SceneManager.SetActiveScene(scene); return scene;
         }
-        private GameObject ObjectWithKeys(string key = Old)
+        private GameObject Consumer()
         {
             var go = new GameObject("References"); go.SetActive(false);
-            SetKey(go.AddComponent<LocalizedText>(), key);
-            SetKey(go.AddComponent<LocalizedAudioClip>(), key);
-            var custom = go.AddComponent<RenameReferenceComponent>(); custom.key = key; custom.nested.key = key; custom.literal = key;
+            var text = go.AddComponent<LocalizedText>(); text.Entry = Reference; text.Key = Old;
+            var custom = go.AddComponent<RenameReferenceComponent>(); custom.reference = Reference; custom.key = Old; custom.literal = Old;
             return go;
         }
-        private static void SetKey(Object target, string key)
-        {
-            using var serialized = new SerializedObject(target);
-            serialized.FindProperty("_key").stringValue = key; serialized.ApplyModifiedPropertiesWithoutUndo();
-        }
-        private static string Key(Object target) { using var s = new SerializedObject(target); return s.FindProperty("_key").stringValue; }
-        private Dictionary<string, byte[]> Snapshot() => Directory.GetFiles(Disk(_root), "*", SearchOption.AllDirectories).ToDictionary(p => p, File.ReadAllBytes);
-        private void AssertUnchanged(Dictionary<string, byte[]> before)
-        {
-            Assert.That(Directory.GetFiles(Disk(_root), "*", SearchOption.AllDirectories), Is.EquivalentTo(before.Keys));
-            foreach (var pair in before) Assert.That(File.ReadAllBytes(pair.Key), Is.EqualTo(pair.Value), pair.Key);
-            Assert.That(_data.GetTranslation(Old, "en"), Is.EqualTo("en value"));
-            Assert.That(_data.GetFileForKey(New), Is.Null);
-        }
+        private Dictionary<string, byte[]> Snapshot() => Directory.GetFiles(root, "*", SearchOption.AllDirectories).ToDictionary(p => p, File.ReadAllBytes);
+        private static void Unchanged(Dictionary<string, byte[]> before) { foreach (var pair in before) Assert.That(File.ReadAllBytes(pair.Key), Is.EqualTo(pair.Value), pair.Key); }
 
-        [Test] public void TextRename_PreservesTranslationsMetadataGuidsAndUnmarkedStrings()
+        [Test] public void TextRenamePreservesTranslationsNotesGuidsAndSerializedReferences()
         {
-            var asset = Asset(); string path = AssetDatabase.GetAssetPath(asset), guid = AssetDatabase.AssetPathToGUID(path);
-            var sub = ScriptableObject.CreateInstance<RenameReferenceAsset>(); sub.key = Old;
+            var asset = Asset(); string path = AssetDatabase.GetAssetPath(asset);
+            var sub = ScriptableObject.CreateInstance<RenameReferenceAsset>(); sub.reference = Reference;
             AssetDatabase.AddObjectToAsset(sub, asset); AssetDatabase.SaveAssetIfDirty(asset);
-            Assert.That(LocalizationKeyRenamer.RenameText(_data, Old, New, true, Roots), Is.EqualTo(2));
-            Assert.That(asset.key, Is.EqualTo(New)); Assert.That(sub.key, Is.EqualTo(New));
-            Assert.That(asset.preview, Is.EqualTo(New)); Assert.That(asset.keys, Is.EqualTo(new[] { New }));
-            Assert.That(asset.nested[0].key, Is.EqualTo(New)); Assert.That(asset.managed.key, Is.EqualTo(New));
-            Assert.That(asset.literal, Is.EqualTo(Old)); Assert.That(asset.nested[0].literal, Is.EqualTo(Old));
-            Assert.That(AssetDatabase.AssetPathToGUID(path), Is.EqualTo(guid));
-            var reloaded = new EditorLocalizationData(); reloaded.Load(_config);
-            foreach (string code in new[] { "en", "ru" }) Assert.That(reloaded.GetTranslation(New, code), Is.EqualTo(code + " value"));
-            Assert.That(reloaded.GetFileForKey(Old), Is.Null);
-            Assert.That(reloaded.GetDescription(New), Is.EqualTo("description"));
-            Assert.That(reloaded.GetPreviousKeys(New), Does.Contain(Old));
-            Assert.That((int)JObject.Parse(File.ReadAllText(Disk(_base + "/_meta.json")))[New]["custom"], Is.EqualTo(42));
+            byte[] bytes = File.ReadAllBytes(path), notes = File.ReadAllBytes(LocalizationProjectNotes.GetAssetPath(config));
+            string guid = AssetDatabase.AssetPathToGUID(path); Rename();
+            foreach (var reference in new[] { asset.reference, sub.reference, asset.references[0], asset.nested[0].reference, asset.managed.reference }) Resolves(reference);
+            Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes)); Assert.That(AssetDatabase.AssetPathToGUID(path), Is.EqualTo(guid));
+            Assert.That(asset.key, Is.EqualTo(Old)); Assert.That(asset.literal, Is.EqualTo(Old)); Assert.That(asset.managed.literal, Is.EqualTo(Old));
+            Assert.That(File.ReadAllBytes(LocalizationProjectNotes.GetAssetPath(config)), Is.EqualTo(notes));
+            Assert.That(LocalizationProjectNotes.Load(config)[entryId], Is.EqualTo("description"));
+            foreach (string language in new[] { "en", "ru" })
+            {
+                var json = JObject.Parse(File.ReadAllText(TextPath(language)));
+                Assert.That((string)json["translations"][New], Is.EqualTo(language + " value")); Assert.That(json["translations"][Old], Is.Null);
+                Assert.That((string)json["custom"], Is.EqualTo("preserve"));
+            }
         }
-
-        [Test] public void TextAndAssetKeys_WithSameName_AreIndependent()
+        [Test] public void EqualTextAndAssetKeysInDifferentSetsAreIndependent()
         {
-            var scene = Scene(); var go = ObjectWithKeys();
-            EditorSceneManager.SaveScene(scene, _root + "/Open.unity");
-            var table = ScriptableObject.CreateInstance<LocalizationAssetTable>();
-            var resource = Asset("Resource", "unrelated"); table.Set(Old, resource); AssetDatabase.CreateAsset(table, _root + "/Table.asset");
-            LocalizationKeyRenamer.RenameText(_data, Old, New, true, Roots);
-            Assert.That(Key(go.GetComponent<LocalizedText>()), Is.EqualTo(New));
-            Assert.That(Key(go.GetComponent<LocalizedAudioClip>()), Is.EqualTo(Old));
-            Assert.That(go.GetComponent<RenameReferenceComponent>().key, Is.EqualTo(New));
-            Assert.That(table.HasKey(Old), Is.True);
-            LocalizationKeyRenamer.RenameAssets(new[] { table }, Old, "asset.new", true, Roots);
-            Assert.That(table.Get("asset.new"), Is.EqualTo(resource)); Assert.That(table.HasKey(Old), Is.False);
-            Assert.That(Key(go.GetComponent<LocalizedAudioClip>()), Is.EqualTo("asset.new"));
-            Assert.That(Key(go.GetComponent<LocalizedText>()), Is.EqualTo(New));
+            var assets = config.AddSet("Assets"); config.MainChannel.IncludeSet(assets.Id);
+            string assetId = assets.AddEntry(Old, LocalizationEntryKind.Asset).Id; Save();
+            LocalizationProjectAuthoring.CreateAssetTable(config, assets.Id, "en");
+            var resource = Asset("Resource");
+            using (var edit = new LocalizationProjectAssetEdit(config)) { edit.SetAsset(assetId, "en", resource); edit.Commit(); }
+            var assetReference = new LocalizationEntryReference(config.MainChannelId, assetId); Rename(); Resolves(Reference); Resolves(assetReference, Old);
+            using (var edit = new LocalizationProjectAssetEdit(config)) { edit.RenameAssetEntry(assetId, "asset.new"); edit.Commit(); }
+            Resolves(Reference); Resolves(assetReference, "asset.new");
+            Assert.That(EditorProjectAssetData.Load(config, setId: assets.Id).TryGetDirect(assetId, "en", out var cell), Is.True);
+            Assert.That(cell.Asset, Is.EqualTo(resource));
         }
-
-        [TestCase(false)] [TestCase(true)]
-        public void BatchMappings_AreSimultaneousIncludingCycles(bool cycle)
+        [TestCase(false)][TestCase(true)] public void ChainedAndCyclicRenamesPreserveEachEntryIdentity(bool cycle)
         {
-            var a = Asset("A", "A"); var b = Asset("B", "B");
-            Assert.That(KeyReferenceUpdater.UpdateReferences(new Dictionary<string, string> { ["A"] = "B", ["B"] = cycle ? "A" : "C" }, Roots), Is.EqualTo(2));
-            Assert.That(a.key, Is.EqualTo("B")); Assert.That(b.key, Is.EqualTo(cycle ? "A" : "C"));
+            string other = config.Sets[0].Entries.Single(e => e.Key == "other").Id;
+            var otherRef = new LocalizationEntryReference(config.MainChannelId, other);
+            using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id);
+            edit.RenameTextEntry(other, "temporary"); edit.RenameTextEntry(entryId, "other");
+            edit.RenameTextEntry(other, cycle ? Old : "third"); edit.Commit();
+            Resolves(Reference, "other"); Resolves(otherRef, cycle ? Old : "third");
         }
-
-        [Test] public void ClosedScene_HandlesEscapedUnicodeKeysAndRestoresSceneSetup()
+        [Test] public void ClosedSceneAndUnicodeKeyKeepBytesAndSceneSetup()
         {
-            const string unusual = "ключ/\"\n";
-            var scene = Scene(); ObjectWithKeys(unusual);
-            string path = _root + "/Closed.unity";
+            var scene = NewScene(); Consumer(); string path = root + "/Closed.unity";
             EditorSceneManager.SaveScene(scene, path); EditorSceneManager.CloseScene(scene, true);
-            SceneManager.SetActiveScene(_active); int count = SceneManager.sceneCount;
-            string guid = AssetDatabase.AssetPathToGUID(path);
-            KeyReferenceUpdater.UpdateReferences(new Dictionary<string, string> { [unusual] = New }, Roots);
-            Assert.That(SceneManager.sceneCount, Is.EqualTo(count)); Assert.That(SceneManager.GetActiveScene(), Is.EqualTo(_active));
-            scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive); _scenes.Add(scene);
-            Assert.That(Key(scene.GetRootGameObjects()[0].GetComponent<LocalizedText>()), Is.EqualTo(New));
-            Assert.That(AssetDatabase.AssetPathToGUID(path), Is.EqualTo(guid));
+            SceneManager.SetActiveScene(active); var setup = EditorSceneManager.GetSceneManagerSetup();
+            byte[] bytes = File.ReadAllBytes(path); string unusual = "ключ/\"日本語"; Rename(unusual);
+            Assert.That(EditorSceneManager.GetSceneManagerSetup().Select(s => (s.path, s.isLoaded, s.isActive)), Is.EqualTo(setup.Select(s => (s.path, s.isLoaded, s.isActive))));
+            Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes));
+            scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive); scenes.Add(scene);
+            Resolves(scene.GetRootGameObjects()[0].GetComponent<LocalizedText>().Entry, unusual);
         }
-
-        [Test] public void PrefabVariantsAndNestedInstances_PreserveInheritedValuesWithoutOverrides()
+        [Test] public void PrefabVariantsNestedInstancesAndOverridesAreNotRewritten()
         {
-            var scene = Scene(); var go = ObjectWithKeys();
-            string basePath = _root + "/Base.prefab", variantPath = _root + "/Variant.prefab", nestedPath = _root + "/Nested.prefab";
+            var scene = NewScene(); var go = Consumer();
+            string basePath = root + "/Base.prefab", variantPath = root + "/Variant.prefab", nestedPath = root + "/Nested.prefab";
             var prefab = PrefabUtility.SaveAsPrefabAsset(go, basePath); Object.DestroyImmediate(go);
             var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
-            var custom = instance.GetComponent<RenameReferenceComponent>(); custom.key = "override";
+            var custom = instance.GetComponent<RenameReferenceComponent>(); custom.literal = "User override";
             PrefabUtility.RecordPrefabInstancePropertyModifications(custom);
             PrefabUtility.SaveAsPrefabAsset(instance, variantPath); Object.DestroyImmediate(instance);
             var parent = new GameObject("Parent"); instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene); instance.transform.SetParent(parent.transform);
             PrefabUtility.SaveAsPrefabAsset(parent, nestedPath); Object.DestroyImmediate(parent);
             instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, scene);
-            EditorSceneManager.SaveScene(scene, _root + "/Instance.unity");
-            KeyReferenceUpdater.UpdateReferences(new Dictionary<string, string> { [Old] = New, ["override"] = "override.new" }, Roots);
+            string scenePath = root + "/Instance.unity"; EditorSceneManager.SaveScene(scene, scenePath);
+            var before = new[] { basePath, variantPath, nestedPath, scenePath }.ToDictionary(p => p, File.ReadAllBytes); Rename(); Unchanged(before);
+            Resolves(instance.GetComponent<LocalizedText>().Entry);
             foreach (string path in new[] { basePath, variantPath, nestedPath })
             {
                 var loaded = PrefabUtility.LoadPrefabContents(path);
                 try
                 {
-                    var text = loaded.GetComponentInChildren<LocalizedText>(true);
-                    Assert.That(Key(text), Is.EqualTo(New), path);
-                    if (path != basePath)
-                    { using var serialized = new SerializedObject(text); Assert.That(serialized.FindProperty("_key").prefabOverride, Is.False, path); }
-                    if (path == variantPath) Assert.That(loaded.GetComponent<RenameReferenceComponent>().key, Is.EqualTo("override.new"));
+                    var text = loaded.GetComponentInChildren<LocalizedText>(true); Resolves(text.Entry);
+                    if (path != basePath) { using var serialized = new SerializedObject(text); Assert.That(serialized.FindProperty("_entry").prefabOverride, Is.False); }
+                    if (path == variantPath) Assert.That(loaded.GetComponent<RenameReferenceComponent>().literal, Is.EqualTo("User override"));
                 }
                 finally { PrefabUtility.UnloadPrefabContents(loaded); }
             }
-            Assert.That(Key(instance.GetComponent<LocalizedText>()), Is.EqualTo(New));
-            using var s = new SerializedObject(instance.GetComponent<LocalizedText>());
-            Assert.That(s.FindProperty("_key").prefabOverride, Is.False);
         }
-
-        [TestCase("readonly")] [TestCase("locked")] [TestCase("dirty")]
-        public void UnwritableReference_StopsBeforeChangingAnyData(string reason)
+        [TestCase("readonly")][TestCase("locked")][TestCase("dirty")]
+        public void UnwritableReferenceDoesNotBlockRenameOrLosePendingUserEdit(string reason)
         {
-            var asset = Asset(); string path = Disk(AssetDatabase.GetAssetPath(asset));
+            var asset = Asset(); string path = AssetDatabase.GetAssetPath(asset); byte[] bytes = File.ReadAllBytes(path);
             if (reason == "readonly") File.SetAttributes(path, FileAttributes.ReadOnly);
             if (reason == "dirty") { asset.literal = "pending edit"; EditorUtility.SetDirty(asset); }
             using var locked = reason == "locked" ? new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read) : null;
+            Rename(); Resolves(asset.reference); Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes));
+            if (reason == "dirty") { Assert.That(asset.literal, Is.EqualTo("pending edit")); Assert.That(EditorUtility.IsDirty(asset), Is.True); EditorUtility.ClearDirty(asset); }
+        }
+        [Test] public void DirtySavedAndUntitledScenesAreNotSavedByRename()
+        {
+            var saved = NewScene(); var go = Consumer(); string path = root + "/Dirty.unity"; EditorSceneManager.SaveScene(saved, path);
+            byte[] bytes = File.ReadAllBytes(path); go.name = "User pending edit"; EditorSceneManager.MarkSceneDirty(saved);
+            var untitled = NewScene(); var other = Consumer(); Rename();
+            Resolves(go.GetComponent<LocalizedText>().Entry); Resolves(other.GetComponent<LocalizedText>().Entry);
+            Assert.That(saved.isDirty, Is.True); Assert.That(go.name, Is.EqualTo("User pending edit"));
+            Assert.That(untitled.path, Is.Empty); Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes));
+        }
+        [Test] public void ConflictingKeyAndExternalChangesPreserveDataAndReferences()
+        {
+            var asset = Asset(); var before = Snapshot(); Assert.Throws<ArgumentException>(() => Rename("other")); Unchanged(before); Resolves(asset.reference, Old);
+            using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); edit.RenameTextEntry(entryId, New);
+            File.AppendAllText(TextPath("ru"), " "); before = Snapshot();
+            Assert.Throws<InvalidOperationException>(() => edit.Commit()); Unchanged(before); Resolves(asset.reference, Old);
+        }
+        [Test] public void RenameUndoRedoChangesTheIndexWithoutRewritingConsumers()
+        {
+            var asset = Asset(); string path = AssetDatabase.GetAssetPath(asset); byte[] bytes = File.ReadAllBytes(path);
+            using var record = LocalizationProjectUndo.Record(Rename(), "Rename entry"); Resolves(asset.reference);
+            Undo.PerformUndo(); Resolves(asset.reference, Old); Undo.PerformRedo(); Resolves(asset.reference);
+            Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes));
+        }
+        [Test] public void CyclicManagedReferencesKeepIdentityWithoutTraversal()
+        {
+            var asset = Asset(); asset.managed.next = asset.managed; EditorUtility.SetDirty(asset); AssetDatabase.SaveAssetIfDirty(asset);
+            byte[] bytes = File.ReadAllBytes(AssetDatabase.GetAssetPath(asset)); Rename();
+            Resolves(asset.managed.reference); Assert.That(asset.managed.next, Is.SameAs(asset.managed));
+            Assert.That(asset.managed.key, Is.EqualTo(Old)); Assert.That(File.ReadAllBytes(AssetDatabase.GetAssetPath(asset)), Is.EqualTo(bytes));
+        }
+        [Test] public void UnloadedSceneRemainsUnloadedAndResolvesRenamedEntryWhenOpened()
+        {
+            var scene = NewScene(); Consumer(); string path = root + "/Unloaded.unity";
+            EditorSceneManager.SaveScene(scene, path); EditorSceneManager.CloseScene(scene, false); SceneManager.SetActiveScene(active);
+            var setup = EditorSceneManager.GetSceneManagerSetup(); Rename();
+            Assert.That(EditorSceneManager.GetSceneManagerSetup().Select(s => (s.path, s.isLoaded, s.isActive)), Is.EqualTo(setup.Select(s => (s.path, s.isLoaded, s.isActive))));
+            scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive); scenes.Add(scene);
+            Resolves(scene.GetRootGameObjects()[0].GetComponent<LocalizedText>().Entry);
+        }
+        [Test] public void LocalUpmReferenceRemainsReadableAndIsNeverWrittenDuringRename()
+        {
+            var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(LocalizationProjectConfig).Assembly);
+            Assert.That(package.source, Is.EqualTo(UnityEditor.PackageManager.PackageSource.Local));
+            string path = package.assetPath + "/__RenameTest_" + Guid.NewGuid().ToString("N") + ".asset";
+            var asset = ScriptableObject.CreateInstance<RenameReferenceAsset>(); asset.reference = Reference;
+            try
+            {
+                AssetDatabase.CreateAsset(asset, path); string disk = Path.Combine(package.resolvedPath, Path.GetFileName(path)); byte[] bytes = File.ReadAllBytes(disk);
+                Rename(); Resolves(asset.reference); Assert.That(File.ReadAllBytes(disk), Is.EqualTo(bytes));
+            }
+            finally { AssetDatabase.DeleteAsset(path); if (asset) Object.DestroyImmediate(asset); }
+        }
+        [TestCase(false)][TestCase(true)] public void AssetRenameRejectsReadOnlyOrConflictingTableWithoutChangingOtherSources(bool conflict)
+        {
+            var set = config.AddSet("Assets"); config.MainChannel.IncludeSet(set.Id);
+            string id = set.AddEntry(Old, LocalizationEntryKind.Asset).Id; Save();
+            foreach (string language in new[] { "en", "ru" }) LocalizationProjectAuthoring.CreateAssetTable(config, set.Id, language);
+            var resource = Asset("Resource");
+            using (var edit = new LocalizationProjectAssetEdit(config))
+            { foreach (string language in new[] { "en", "ru" }) edit.SetAsset(id, language, resource); edit.Commit(); }
+            var source = config.Sets.Single(s => s.Id == set.Id).Sources.Single(s => s.Language == "ru").Sources.Single();
+            string path = new ResourcesEditorTextReader().ResolveSourceAssetPath(source);
+            if (conflict)
+            {
+                var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(path);
+                table.Set(New, resource); EditorUtility.SetDirty(table); AssetDatabase.SaveAssetIfDirty(table);
+            }
+            else File.SetAttributes(path, FileAttributes.ReadOnly);
             var before = Snapshot();
-            Assert.That(() => LocalizationKeyRenamer.RenameText(_data, Old, New, true, Roots), Throws.Exception);
-            AssertUnchanged(before); Assert.That(asset.key, Is.EqualTo(Old));
-            if (reason == "dirty") Assert.That(asset.literal, Is.EqualTo("pending edit"));
+            Assert.Catch<Exception>(() =>
+            { using var edit = new LocalizationProjectAssetEdit(config); edit.RenameAssetEntry(id, New); edit.Commit(); });
+            Unchanged(before); Resolves(new LocalizationEntryReference(config.MainChannelId, id), Old);
         }
-
-        [Test] public void DirtySavedScene_IsNotSilentlySaved()
+        [Test] public void PendingPrefabStageIsNotSavedOrChangedByRename()
         {
-            var scene = Scene(); var go = ObjectWithKeys(); EditorSceneManager.SaveScene(scene, _root + "/Dirty.unity");
-            go.name = "User pending edit"; EditorSceneManager.MarkSceneDirty(scene);
-            var before = Snapshot();
-            Assert.That(() => LocalizationKeyRenamer.RenameText(_data, Old, New, true, Roots), Throws.InvalidOperationException.With.Message.Contains("Save pending scene"));
-            AssertUnchanged(before); Assert.That(go.name, Is.EqualTo("User pending edit")); Assert.That(scene.isDirty, Is.True);
-        }
-
-        [Test] public void ConflictAndStaleSource_DoNotChangeReferencesOrData()
-        {
-            var asset = Asset(); var before = Snapshot();
-            Assert.Throws<InvalidOperationException>(() => LocalizationKeyRenamer.RenameText(_data, Old, "other", true, Roots));
-            AssertUnchanged(before);
-            string path = Disk(_base + "/ru/text/test.json"); File.AppendAllText(path, " "); before = Snapshot();
-            Assert.Throws<InvalidOperationException>(() => LocalizationKeyRenamer.RenameText(_data, Old, New, true, Roots));
-            AssertUnchanged(before); Assert.That(asset.key, Is.EqualTo(Old));
-        }
-
-        [Test] public void FailureAfterReferenceSaves_RollsBackFilesMemoryAndGuid()
-        {
-            var asset = Asset(); var scene = Scene(); var go = ObjectWithKeys();
-            EditorSceneManager.SaveScene(scene, _root + "/Open.unity");
-            var prefabSource = ObjectWithKeys();
-            PrefabUtility.SaveAsPrefabAsset(prefabSource, _root + "/Rollback.prefab"); Object.DestroyImmediate(prefabSource);
-            var closed = Scene(); ObjectWithKeys(); EditorSceneManager.SaveScene(closed, _root + "/ClosedRollback.unity");
-            EditorSceneManager.CloseScene(closed, true); SceneManager.SetActiveScene(scene);
-            var before = Snapshot();
-            var method = typeof(LocalizationKeyRenamer).GetMethod("RenameTextCore", BindingFlags.Static | BindingFlags.NonPublic);
-            var error = Assert.Throws<TargetInvocationException>(() => method.Invoke(null, new object[]
-            { _data, Old, New, true, Roots, (Action)(() => throw new IOException("Injected save failure")) }));
-            Assert.That(error.InnerException, Is.TypeOf<IOException>());
-            AssertUnchanged(before); Assert.That(asset.key, Is.EqualTo(Old));
-            Assert.That(Key(go.GetComponent<LocalizedText>()), Is.EqualTo(Old));
-            Assert.That(go.GetComponent<RenameReferenceComponent>().key, Is.EqualTo(Old));
-        }
-
-        [Test] public void ReferenceOnlyRename_InUnsavedSceneSupportsUndo()
-        {
-            Scene(); var go = ObjectWithKeys(); Undo.IncrementCurrentGroup();
-            KeyReferenceUpdater.UpdateReferences(new Dictionary<string, string> { [Old] = New }, Roots);
-            Assert.That(Key(go.GetComponent<LocalizedText>()), Is.EqualTo(New));
-            Undo.PerformUndo(); Assert.That(Key(go.GetComponent<LocalizedText>()), Is.EqualTo(Old));
-        }
-
-        [Test] public void RenameWithoutReferences_LeavesAssetsAlone()
-        {
-            var asset = Asset(); LocalizationKeyRenamer.RenameText(_data, Old, New, false, Roots);
-            Assert.That(asset.key, Is.EqualTo(Old)); Assert.That(_data.GetTranslation(New, "en"), Is.EqualTo("en value"));
-        }
-
-        [Test] public void DestinationMetadataConflict_PreservesBothDescriptions()
-        {
-            _data.SetDescription(New, "orphan metadata"); _data.SaveMeta();
-            var before = Snapshot();
-            Assert.Throws<InvalidOperationException>(() => LocalizationKeyRenamer.RenameText(_data, Old, New, true, Roots));
-            AssertUnchanged(before); Assert.That(_data.GetDescription(Old), Is.EqualTo("description"));
-            Assert.That(_data.GetDescription(New), Is.EqualTo("orphan metadata"));
-        }
-
-        [Test] public void ReadOnlyAssetTable_StopsBeforeOtherTablesAndReferencesChange()
-        {
-            var a = ScriptableObject.CreateInstance<LocalizationAssetTable>(); a.Set(Old, null); AssetDatabase.CreateAsset(a, _root + "/A.asset");
-            var b = ScriptableObject.CreateInstance<LocalizationAssetTable>(); b.Set(Old, null); AssetDatabase.CreateAsset(b, _root + "/B.asset");
-            var scene = Scene(); var go = ObjectWithKeys(); EditorSceneManager.SaveScene(scene, _root + "/AssetReferences.unity");
-            File.SetAttributes(Disk(AssetDatabase.GetAssetPath(b)), FileAttributes.ReadOnly);
-            var before = Snapshot();
-            Assert.That(() => LocalizationKeyRenamer.RenameAssets(new[] { a, b }, Old, New, true, Roots), Throws.Exception);
-            AssertUnchanged(before); Assert.That(a.HasKey(Old), Is.True); Assert.That(b.HasKey(Old), Is.True);
-            Assert.That(Key(go.GetComponent<LocalizedAudioClip>()), Is.EqualTo(Old));
-        }
-
-        [Test] public void AssetRenameFailure_RestoresTablesReferencesAndObjectBindings()
-        {
-            var resource = Asset("Resource", "unrelated");
-            var table = ScriptableObject.CreateInstance<LocalizationAssetTable>(); table.Set(Old, resource);
-            AssetDatabase.CreateAsset(table, _root + "/Table.asset");
-            var scene = Scene(); var go = ObjectWithKeys(); EditorSceneManager.SaveScene(scene, _root + "/AssetReferences.unity");
-            var before = Snapshot();
-            var method = typeof(LocalizationKeyRenamer).GetMethod("RenameAssetsCore", BindingFlags.Static | BindingFlags.NonPublic);
-            var error = Assert.Throws<TargetInvocationException>(() => method.Invoke(null, new object[]
-            { new[] { table }, Old, New, true, Roots, (Action)(() => throw new IOException("Injected table save failure")) }));
-            Assert.That(error.InnerException, Is.TypeOf<IOException>());
-            AssertUnchanged(before); Assert.That(table.Get(Old), Is.EqualTo(resource)); Assert.That(table.HasKey(New), Is.False);
-            Assert.That(Key(go.GetComponent<LocalizedAudioClip>()), Is.EqualTo(Old));
-        }
-
-        [Test] public void CyclicManagedReferences_AreVisitedOnceAndPreserveTheirIdentity()
-        {
-            var asset = Asset(); asset.managed.next = asset.managed;
-            EditorUtility.SetDirty(asset); AssetDatabase.SaveAssetIfDirty(asset);
-            Assert.That(KeyReferenceUpdater.UpdateReferences(new Dictionary<string, string> { [Old] = New }, Roots), Is.EqualTo(1));
-            Assert.That(asset.managed.key, Is.EqualTo(New)); Assert.That(asset.managed.next, Is.SameAs(asset.managed));
-            Assert.That(asset.managed.literal, Is.EqualTo(Old));
-        }
-
-        [Test] public void UnloadedScene_RemainsInTheSceneSetupAfterRename()
-        {
-            var scene = Scene(); ObjectWithKeys(); string path = _root + "/Unloaded.unity";
-            EditorSceneManager.SaveScene(scene, path); EditorSceneManager.CloseScene(scene, false);
-            SceneManager.SetActiveScene(_active);
-            var setup = EditorSceneManager.GetSceneManagerSetup();
-            KeyReferenceUpdater.UpdateReferences(new Dictionary<string, string> { [Old] = New }, Roots);
-            var after = EditorSceneManager.GetSceneManagerSetup();
-            Assert.That(after.Select(s => (s.path, s.isLoaded, s.isActive)), Is.EqualTo(setup.Select(s => (s.path, s.isLoaded, s.isActive))));
-            scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive); _scenes.Add(scene);
-            Assert.That(Key(scene.GetRootGameObjects()[0].GetComponent<LocalizedText>()), Is.EqualTo(New));
-        }
-
-        [Test] public void PendingPrefabStageReference_IsDetectedBeforeWrites()
-        {
-            var scene = Scene(); var go = ObjectWithKeys("unrelated");
-            string path = _root + "/Editing.prefab"; PrefabUtility.SaveAsPrefabAsset(go, path); Object.DestroyImmediate(go);
-            EditorSceneManager.SaveScene(scene, _root + "/Empty.unity");
+            var scene = NewScene(); var go = Consumer(); string path = root + "/Editing.prefab";
+            PrefabUtility.SaveAsPrefabAsset(go, path); Object.DestroyImmediate(go); EditorSceneManager.SaveScene(scene, root + "/Empty.unity");
             try
             {
                 var stage = PrefabStageUtility.OpenPrefab(path);
-                SetKey(stage.prefabContentsRoot.GetComponent<LocalizedText>(), Old);
-                // Unsaved stage contents must be checked, even though the disk prefab does not contain Old.
-                var before = Snapshot();
-                Assert.That(() => LocalizationKeyRenamer.RenameText(_data, Old, New, true, Roots), Throws.InvalidOperationException);
-                AssertUnchanged(before);
+                stage.prefabContentsRoot.GetComponent<RenameReferenceComponent>().literal = "Pending stage edit";
+                EditorSceneManager.MarkSceneDirty(stage.scene); byte[] bytes = File.ReadAllBytes(path); Rename();
+                Resolves(stage.prefabContentsRoot.GetComponent<LocalizedText>().Entry);
+                Assert.That(stage.scene.isDirty, Is.True); Assert.That(File.ReadAllBytes(path), Is.EqualTo(bytes));
+                Assert.That(stage.prefabContentsRoot.GetComponent<RenameReferenceComponent>().literal, Is.EqualTo("Pending stage edit"));
             }
             finally
             {
                 var stage = PrefabStageUtility.GetCurrentPrefabStage();
                 if (stage != null)
-                {
-                    SetKey(stage.prefabContentsRoot.GetComponent<LocalizedText>(), "unrelated");
-                    // This fixture is ours; saving it avoids an interactive save prompt when leaving Prefab Mode.
-                    typeof(PrefabStage).GetMethod("SavePrefab", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(stage, null);
-                }
+                    typeof(PrefabStage).GetMethod("SavePrefab", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(stage, null);
                 StageUtility.GoToMainStage();
             }
         }
-
-        [Test] public void LocalUpmPackageReference_RejectsRenameWithoutEditingPackage()
+        [TestCase(false)][TestCase(true)] public void MoveKeepsReferenceAndReportsUnavailableTargetSet(bool includeTarget)
         {
-            var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(LocalizationConfig).Assembly);
-            Assert.That(package.source, Is.EqualTo(UnityEditor.PackageManager.PackageSource.Local));
-            string path = package.assetPath + "/__RenameTest_" + Guid.NewGuid().ToString("N") + ".asset";
-            var asset = ScriptableObject.CreateInstance<RenameReferenceAsset>(); asset.key = Old;
-            try
-            {
-                AssetDatabase.CreateAsset(asset, path);
-                var before = Snapshot();
-                string physical = Path.Combine(package.resolvedPath, Path.GetFileName(path));
-                byte[] packageBytes = File.ReadAllBytes(physical);
-                Assert.That(() => LocalizationKeyRenamer.RenameText(_data, Old, New, true, new[] { _root, package.assetPath }),
-                    Throws.InvalidOperationException.With.Message.Contains("belongs to a package"));
-                AssertUnchanged(before); Assert.That(File.ReadAllBytes(physical), Is.EqualTo(packageBytes));
-                Assert.That(asset.key, Is.EqualTo(Old));
-            }
-            finally { AssetDatabase.DeleteAsset(path); if (asset) Object.DestroyImmediate(asset); }
+            var asset = Asset(); var target = config.AddSet("Target"); if (includeTarget) config.MainChannel.IncludeSet(target.Id);
+            foreach (string language in new[] { "en", "ru" }) target.SetSources(language, config.Sets[0].Sources.Single(s => s.Language == language).Sources.ToArray());
+            Save();
+            using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id, target.Id); edit.MoveTextEntry(entryId, target.Id); edit.Commit();
+            var status = config.CreateEntryIndex().Resolve(asset.reference, out var location);
+            Assert.That(status, Is.EqualTo(includeTarget ? LocalizationReferenceStatus.Found : LocalizationReferenceStatus.SetNotAvailable));
+            if (includeTarget) Assert.That(location.SetId, Is.EqualTo(target.Id));
         }
-
-        [Test] public void AssetTableConflict_StopsBeforeAnyTableIsRenamed()
+        [Test] public void RemovedEntryIsNotReboundToANewEntryWithTheSameKey()
         {
-            var a = ScriptableObject.CreateInstance<LocalizationAssetTable>(); a.Set(Old, null); AssetDatabase.CreateAsset(a, _root + "/A.asset");
-            var b = ScriptableObject.CreateInstance<LocalizationAssetTable>(); b.Set(New, null); AssetDatabase.CreateAsset(b, _root + "/B.asset");
-            var before = Snapshot();
-            Assert.Throws<InvalidOperationException>(() => LocalizationKeyRenamer.RenameAssets(new[] { a, b }, Old, New, true, Roots));
-            AssertUnchanged(before); Assert.That(a.HasKey(Old), Is.True);
+            var asset = Asset();
+            using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); edit.RemoveTextEntry(entryId); string other = edit.Draft.Sets[0].AddEntry(Old).Id; edit.Commit();
+            Assert.That(other, Is.Not.EqualTo(entryId)); Assert.That(config.CreateEntryIndex().Resolve(asset.reference, out _), Is.EqualTo(LocalizationReferenceStatus.MissingEntry));
         }
     }
 }

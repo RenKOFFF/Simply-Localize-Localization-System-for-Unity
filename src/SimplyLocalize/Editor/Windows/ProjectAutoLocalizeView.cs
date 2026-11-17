@@ -11,7 +11,7 @@ namespace SimplyLocalize.Editor.Windows
 {
     /// <summary>Scan and review text bindings before saving. The host owns the selected channel/set
     /// and must resolve pending edits on other pages before opening this view.</summary>
-    public sealed class ProjectAutoLocalizeView : VisualElement, IDisposable
+    public sealed class ProjectAutoLocalizeView : ScrollView, IDisposable
     {
         private enum ScanScope { ActiveScene, SelectedObjects }
         private readonly LocalizationProjectConfig config;
@@ -90,7 +90,7 @@ namespace SimplyLocalize.Editor.Windows
             selection.Add(new Button(() => SelectAll(true)) { text = "Select all" }); selection.Add(new Button(() => SelectAll(false)) { text = "Select none" }); Add(selection);
             rows = new ListView { name = "autoResults", fixedItemHeight = 30, virtualizationMethod = CollectionVirtualizationMethod.FixedHeight,
                 makeItem = MakeRow, bindItem = BindRow, itemsSource = candidates };
-            rows.style.flexGrow = 1; rows.style.minHeight = 90;
+            rows.style.height = 200; rows.style.minHeight = 90;
             rows.selectionChanged += selected => { if (selected.FirstOrDefault() is AutoLocalizeCandidate candidate) ShowDetail(candidate); }; Add(rows);
             detail = new TextField("Selected text") { name = "autoDetail", multiline = true, isReadOnly = true }; detail.style.height = 85; Add(detail);
             previewSummary = new Label("") { name = "autoPreviewSummary", style = { whiteSpace = WhiteSpace.Normal, marginTop = 6 } }; Add(previewSummary);
@@ -98,6 +98,7 @@ namespace SimplyLocalize.Editor.Windows
             preview = new Button(() => PreviewChanges()) { text = "Preview changes", name = "autoPreview" }; actions.Add(preview);
             apply = new Button(() => ApplyPreview()) { text = "Apply and save", name = "autoApply" }; LanguagePickerStyle.Primary(apply); actions.Add(apply);
             actions.Add(new Button(CancelPreview) { text = "Cancel preview", name = "autoCancel" }); Add(actions);
+            foreach (var child in contentContainer.Children()) child.style.flexShrink = 0;
             UpdateSummary(); apply.SetEnabled(false); RegisterCallback<DetachFromPanelEvent>(_ => Dispose());
         }
         private VisualElement MakeRow()

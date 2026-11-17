@@ -6,6 +6,11 @@ A modern, flexible localization system for Unity. Manages translations, localize
 
 *Read in other languages: [Russian](README_RU.md).*
 
+This development branch is moving to one project config with channels. The updated
+Editor workflow is below; older runtime/profile examples elsewhere in this README
+are still being replaced. Use the current [C4 API notes](docs/channel-architecture/C4.md)
+and [C5 Editor notes](docs/channel-architecture/C5.md) for this branch.
+
 Development project: [playgrounds/SimplyLocalize-Lab](playgrounds/SimplyLocalize-Lab/README-LAB.md) (Unity 6000.0.62f1). It imports `src/SimplyLocalize` as a local UPM package. Keep new files and their Unity-generated `.meta` files together in version control. See the [numbered migration report](docs/project-structure/0001-local-package-migration/REPORT.md) for layout and verification evidence.
 
 ---
@@ -222,77 +227,57 @@ Multiple JSON files per language are **merged** at runtime — split your keys b
 
 ## Editor Window
 
+The window edits one project configuration. Select a channel and content set for content
+work; this Editor selection does not change the language of a running game.
+Setup starts with Main/Common. Add independent or FollowMain channels only when needed.
+
 ### Translations Tab
 
-![Translations tab](docs/images/translations-tab.gif)
-<!-- TODO: screenshot of Translations tab -->
+Choose an entry in the searchable, virtualized list, then edit its language values and
+description in the detail pane. Direct values and fallback results are shown separately.
+Save commits the draft; Cancel discards it. Moving between contexts with pending edits
+offers Save, Cancel or Discard. Reload from disk reads external JSON edits.
 
-- **Virtualized list** — handles thousands of keys without lag
-- **Nested groups** — keys like `UI/Popup/Title` automatically collapse into `UI → Popup → Title` tree
-- **Search** — filter by key or translation value with 150ms debounce
-- **Multi-select** — Ctrl+click for individual, Shift+click for ranges
-- **Inline editing** — all languages shown as columns, click any cell to edit
-- **TAB / Shift+TAB** — navigate between cells without mouse
-- **Undo/Redo** — Ctrl+Z / Ctrl+Y
-- **Missing translations highlighted** in red
-- **Context menu** on any key: copy, rename (with reference update), move to file, delete, add description
-- **Key descriptions** stored in `_meta.json` — visible below the key in the table
-
-Metadata keeps the existing `{ "key": { "description": "...", "previousKeys": ["old"] } }`
-format; no migration is needed. `description` accepts a string or null, and `previousKeys`
-accepts an array of strings or null. Null/numeric/object entries inside that array are invalid.
-Unicode and JSON escapes round-trip correctly, and unknown fields are retained when editing metadata.
-Malformed JSON, duplicate properties, invalid UTF-8, excessive nesting (over 64 levels), and read
-errors produce a warning naming `_meta.json`; JSON/schema errors include a location.
-After a load error, repair the file and reload before saving. `SaveMeta()` throws instead of
-overwriting unreadable metadata, overwriting a file changed since loading, or silently discarding
-edits when no localization folder is configured. Writes replace the file atomically; failures keep
-the previous file and pending edits. `SaveAll()` now saves translations and metadata as one
-rollback-capable operation. Scene/prefab reference updates remain outside this transaction.
+Renaming or moving an entry keeps its ID. Components bound by ID do not require scene
+or prefab rewrites; string lookups still depend on their channel/set/key.
+Notes are keyed by EntryId in `Assets/SimplyLocalize/Editor/Notes/<config GUID>.json`,
+outside runtime Resources. Conflicts and external changes stop a stale save.
 
 ### Assets Tab
 
-![Assets tab](docs/images/assets-tab.gif)
-<!-- TODO: screenshot of Assets tab -->
-
-- Manage localized assets (sprites, audio, materials, meshes, anything)
-- **Dynamic type filters** — filter dropdown auto-generated from the types actually present in your tables
-- **Tree view** — grouped by asset type first, then by key path
-- **Inline previews** — click ▶ next to any key to see full previews per language, with specialized rendering for sprites (with atlas UV support), textures, and audio clips (with Play button)
-- **Drag-and-drop** — drop any asset directly into a language cell
-- **Search & rename** — same workflow as the Translations tab
-- **Per-key auto-typed fields** — in "All" mode, each key's ObjectField constrains to the type you've already assigned (so you can't accidentally swap a Sprite for an AudioClip)
+Choose a registered asset entry, inspect direct/fallback values and previews, and assign
+assets per language. Create or connect exact source tables. When multiple tables are
+connected, choose the destination explicitly. Native assets and configuration changes
+commit together, with rollback and Unity Undo/Redo.
 
 ### Languages Tab
 
-![Languages tab](docs/images/languages-tab.gif)
-<!-- TODO: screenshot of Languages tab -->
+Search the language catalog by names or standard codes, or add a custom language.
+Choose a channel's available languages, default and fallback from the project catalog.
+The window shows built-in, custom or generic plural-rule status; a language name does not
+guarantee dedicated plural rules or font coverage. Sources are registered explicitly;
+removing a definition does not silently delete translation files.
 
-- List of all configured languages with content badges (shows which asset types each language has)
-- Default and fallback language selectors
-- Fallback chain display (`Fallback: ru → en (global)`)
-- Create new languages with folder + JSON auto-generation
-- Add existing LanguageProfile assets to the config
-- Remove language (two options: config only, or delete all data)
+### Appearance Tab
 
-### Profiles Tab
-
-Embedded inspector for any LanguageProfile asset — edit fonts, typography, spacing, layout/direction in place without hunting for the asset in the Project window.
+Language identity and presentation are separate. Create or connect a
+`LocalizationAppearance` source and edit fonts, typography, spacing, direction and layout
+in the window. The project config stores its address, not direct references to all fonts.
 
 ### Coverage Tab
 
-![Coverage tab](docs/images/coverage-tab.png)
-<!-- TODO: screenshot of Coverage tab -->
-
-- Per-language text and asset coverage: direct values and availability through fallback
-- Warnings for missing translations
-- Runtime token parsing for parameter mismatches and insufficient plural forms, including reference-language strings; escaped braces are literals. Form-count warnings are conditional because `FormSelector` uses the same syntax.
-
-Coverage reads all files and asset tables visible to the Resources provider, including files unique to another language, nested folders and multiple Resources roots. Current editor values overlay this read-only snapshot. This does not change discovery or save behavior in the other editor tabs. Empty datasets show no data, not 100%; failed reads mark the check incomplete. Asset availability means an object of any type exists; it does not prove compatibility with every component's requested type. Duplicate asset keys are reported; duplicate text keys are logged with their source names.
+Coverage reads the selected channel/set's registered sources. It distinguishes direct,
+empty, whitespace-only and fallback values, and checks parameters and plural forms.
+Unregistered keys are reported separately; failed or malformed sources make the check
+incomplete. Asset presence alone does not prove compatibility with every component type.
+The check does not change runtime state.
 
 ### Auto Localize Tab
 
-Scan a scene for all `TMP_Text` / `Text` components and bulk-add `LocalizedText` components with auto-generated keys.
+Scan selected scene objects for TMP/Text, review generated keys and bindings, then apply.
+Choose how prefab instances are handled: skip, instance overrides or prefab assets.
+The operation records stable entry IDs and joins scene changes with translation-file Undo.
+After an assembly reload, scan/CSV input is retained but a fresh preview is required.
 
 ### Tools Tab
 
@@ -331,10 +316,17 @@ control/backups for recovery.
 
 ### Settings Tab
 
-- Key conversion mode (how spaces in new keys are handled)
-- Logging toggles
+- Automatic startup or explicit bootstrap; optional device-language detection.
+- Channels, Independent/FollowMain mode, available content sets and startup sets.
+- Exact source registrations and visible, read-only stable IDs.
 - **Game View / Simulator language dropdown → Show in Play Mode** — displays a language selector during Play Mode. In Game View, the selector appears over the game preview; in Device Simulator, it is located under **Control Panel → Simply Localize**. Language selection is available after localization is initialized.
 - **Game View position** — position of the Game View dropdown: left, center, or right.
+
+### Diagnostics Tab
+
+Inspect runtime channels, active owners, shared sources, loading and release state.
+Releasing ownership is distinct from proven physical memory reclamation. A provider's
+snapshot cannot account for every external reference or replace Unity's memory profiler.
 
 ---
 

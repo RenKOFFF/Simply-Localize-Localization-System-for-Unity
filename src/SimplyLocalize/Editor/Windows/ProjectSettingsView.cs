@@ -42,6 +42,18 @@ namespace SimplyLocalize.Editor.Windows
             startup.Add(Toggle("Auto-initialize", "autoInitialize", config.AutoInitialize, value => Save(d => d.AutoInitialize = value, "Change localization startup")));
             startup.Add(Toggle("Auto-detect device language", "autoDetectLanguage", config.AutoDetectLanguage, value => Save(d => d.AutoDetectLanguage = value, "Change language detection")));
             Add(startup);
+            var editor = Card("Editor tools");
+            editor.Add(new Label("Local Editor preferences; these do not change the project config.") { style = { whiteSpace = WhiteSpace.Normal } });
+            var dropdown = new Toggle("Show language dropdown in Play Mode")
+            { name = "showGameViewLanguage", value = EditorPrefs.GetBool(GameViewLanguageDropdown.EnabledPrefKey, true) };
+            int savedPosition = EditorPrefs.GetInt(GameViewLanguageDropdown.PositionPrefKey, (int)GameViewLanguageDropdown.Position.Right);
+            var currentPosition = Enum.IsDefined(typeof(GameViewLanguageDropdown.Position), savedPosition)
+                ? (GameViewLanguageDropdown.Position)savedPosition : GameViewLanguageDropdown.Position.Right;
+            var position = new EnumField("Game View position", currentPosition) { name = "gameViewLanguagePosition" };
+            position.SetEnabled(dropdown.value);
+            dropdown.RegisterValueChangedCallback(e => { EditorPrefs.SetBool(GameViewLanguageDropdown.EnabledPrefKey, e.newValue); position.SetEnabled(e.newValue); });
+            position.RegisterValueChangedCallback(e => EditorPrefs.SetInt(GameViewLanguageDropdown.PositionPrefKey, (int)(GameViewLanguageDropdown.Position)e.newValue));
+            editor.Add(dropdown); editor.Add(position); Add(editor);
             Add(new HelpBox("Main/Common is enough for a small project. Add a channel for an independent language choice; add a content set to control which data is needed. A set is not a bundle.", HelpBoxMessageType.Info));
 
             var channels = Card("Channels");

@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 namespace SimplyLocalize.Tests
 {
-    [Serializable] public class RenameNestedReference { [LocalizationKey] public string key; public string literal; [SerializeReference] public RenameNestedReference next; }
+    [Serializable] public class RenameNestedReference { public LocalizationEntryReference reference; [LocalizationKey] public string key; public string literal; [SerializeReference] public RenameNestedReference next; }
     public class RenameReferenceAsset : ScriptableObject
     {
+        public LocalizationEntryReference reference;
+        public List<LocalizationEntryReference> references = new();
         [LocalizationKey] public string key;
         [LocalizationPreview] public string preview;
         public string literal;

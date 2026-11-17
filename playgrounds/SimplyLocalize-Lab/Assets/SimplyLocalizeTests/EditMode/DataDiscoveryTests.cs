@@ -1,17 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using SimplyLocalize.Data;
-using SimplyLocalize.Editor;
-using SimplyLocalize.Editor.Utilities;
-using SimplyLocalize.Editor.Windows;
-using UnityEngine.TestTools;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using SimplyLocalize.Editor.Data;
+using SimplyLocalize.Editor.Utilities;
+using SimplyLocalize.Editor.Windows;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -20,181 +15,148 @@ namespace SimplyLocalize.Tests
 {
     public class DataDiscoveryTests
     {
-        private string _root, _folder;
-        private LocalizationConfig _config;
-        private EditorLocalizationData _data;
+        private string root, addressRoot, folder;
+        private LocalizationProjectConfig config;
         [SetUp] public void Setup()
         {
-            string id = "Discovery_" + Guid.NewGuid().ToString("N");
-            _root = "Assets/__" + id; _folder = _root + "/Resources/" + id;
-            Directory.CreateDirectory(_folder);
-            _config = ScriptableObject.CreateInstance<LocalizationConfig>(); _config.resourcesBasePath = id;
-            foreach (string code in new[] { "en", "ru" })
-            { var profile = ScriptableObject.CreateInstance<LanguageProfile>(); profile.languageCode = code; _config.languages.Add(profile); }
-            _config.defaultLanguage = _config.languages[0]; _config.fallbackLanguage = _config.languages[0];
-            _data = new EditorLocalizationData();
+            addressRoot = "Discovery_" + Guid.NewGuid().ToString("N");
+            root = "Assets/__" + addressRoot; folder = root + "/Resources/" + addressRoot;
+            Directory.CreateDirectory(folder); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            config = LocalizationProjectConfig.Create(new[] { "en", "ru" });
+            AssetDatabase.CreateAsset(config, root + "/Project.asset");
         }
-        [TearDown] public void Cleanup()
-        {
-            EditorDataCache.SelectConfig(null); EditorDataCache.Invalidate();
-            foreach (var profile in _config.languages ?? new List<LanguageProfile>()) if (profile) Object.DestroyImmediate(profile);
-            Object.DestroyImmediate(_config);
-            AssetDatabase.DeleteAsset(_root);
-            if (Directory.Exists(_root)) Directory.Delete(_root, true);
-            if (File.Exists(_root + ".meta")) File.Delete(_root + ".meta");
-        }
+        [TearDown] public void Cleanup() { EditorProjectSelection.Invalidate(); AssetDatabase.DeleteAsset(root); }
         private string Write(string code, string file, string key)
         {
-            string path = _folder + "/" + code + "/text/" + file + ".json";
+            string path = folder + "/" + code + "/text/" + file + ".json";
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, new JObject { ["custom"] = 42, ["translations"] = new JObject { [key] = code + " value" } }.ToString());
-            return path;
+            var set = config.Sets[0];
+            if (!set.Entries.Any(e => e.Key == key)) set.AddEntry(key);
+            var source = new LocalizationSourceReference("resources", addressRoot + "/" + code + "/text/" + file, LocalizationSourceKind.TextTable);
+            var existing = set.Sources.FirstOrDefault(s => s.Language == code)?.Sources ?? Array.Empty<LocalizationSourceReference>();
+            if (!existing.Any(s => s.Address == source.Address)) set.SetSources(code, existing.Concat(new[] { source }).ToArray());
+            Save(); return path;
         }
-        [Test] public void FilesExclusiveToOtherLanguages_AreLoadedAndSavedAtTheirOriginalPaths()
+        private void Save() { EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config); }
+        private string Id(string key) => config.Sets[0].Entries.Single(e => e.Key == key).Id;
+        private EditorProjectTextData Load() { AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport); return EditorProjectTextData.Load(config); }
+        private static string Value(EditorProjectTextData data, string id, string language) => data.TryGetDirect(id, language, out var cell) ? cell.Value : null;
+        private void Set(string key, string language, string value)
+        { using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); edit.SetTranslation(Id(key), language, value); edit.Commit(); }
+
+        [Test] public void FilesExclusiveToOtherLanguagesAreSavedAtTheirOriginalPaths()
         {
             Write("en", "main", "common"); string path = Write("ru", "extra", "only.ru");
-            _data.Load(_config);
-            Assert.That(_data.SourceFiles, Is.EquivalentTo(new[] { "main", "extra" }));
-            Assert.That(_data.GetTranslation("only.ru", "ru"), Is.EqualTo("ru value"));
-            _data.SetTranslation("only.ru", "ru", "edited"); _data.SaveAll();
-            Assert.That((string)JObject.Parse(File.ReadAllText(path))["translations"]["only.ru"], Is.EqualTo("edited"));
-            Assert.That((int)JObject.Parse(File.ReadAllText(path))["custom"], Is.EqualTo(42));
+            Assert.That(Value(Load(), Id("only.ru"), "ru"), Is.EqualTo("ru value"));
+            Set("only.ru", "ru", "edited");
+            var json = JObject.Parse(File.ReadAllText(path));
+            Assert.That((string)json["translations"]["only.ru"], Is.EqualTo("edited")); Assert.That((int)json["custom"], Is.EqualTo(42));
+            Assert.That(File.Exists(folder + "/en/text/extra.json"), Is.False);
         }
-        [Test] public void NestedFilesWithSameLeafName_RemainSeparate()
+        [Test] public void NestedFilesWithSameLeafNameRemainSeparate()
         {
             string a = Write("en", "chapter1/main", "one"), b = Write("ru", "chapter2/main", "two");
-            _data.Load(_config);
-            Assert.That(_data.SourceFiles, Is.EquivalentTo(new[] { "chapter1/main", "chapter2/main" }));
-            Assert.That(_data.GetFileForKey("two"), Is.EqualTo("chapter2/main"));
-            _data.SaveAll();
-            Assert.That((string)JObject.Parse(File.ReadAllText(a))["translations"]["one"], Is.EqualTo("en value"));
-            Assert.That((string)JObject.Parse(File.ReadAllText(b))["translations"]["two"], Is.EqualTo("ru value"));
-            Assert.That(File.Exists(_folder + "/en/text/main.json"), Is.False);
+            Load(); byte[] original = File.ReadAllBytes(a); Set("two", "ru", "edited");
+            Assert.That(File.ReadAllBytes(a), Is.EqualTo(original));
+            Assert.That((string)JObject.Parse(File.ReadAllText(b))["translations"]["two"], Is.EqualTo("edited"));
+            Assert.That(File.Exists(folder + "/ru/text/main.json"), Is.False);
         }
-        [Test] public void EmptyLanguageSlotsAndMissingDefaultFolder_DoNotHideOtherLanguages()
+        [Test] public void DefaultLanguageWithoutSourcesDoesNotHideOtherLanguages()
         {
-            Write("ru", "extra", "only.ru"); _config.languages.Insert(0, null); _config.defaultLanguage = null;
-            Assert.DoesNotThrow(() => _data.Load(_config));
-            Assert.That(_data.GetTranslation("only.ru", "ru"), Is.EqualTo("ru value"));
+            Write("ru", "extra", "only.ru"); var data = Load();
+            Assert.That(Value(data, Id("only.ru"), "en"), Is.Null);
+            Assert.That(Value(data, Id("only.ru"), "ru"), Is.EqualTo("ru value"));
         }
-
-        private void ExpectDiscoveryFailure(string message)
+        [Test] public void SameExactResourcesAddressInTwoRootsBlocksEditing()
         {
-            LogAssert.Expect(LogType.Warning, new Regex("Cannot load localization data:.*" + Regex.Escape(message), RegexOptions.Singleline));
-            _data.Load(_config);
-            Assert.That(_data.LoadError, Does.Contain(message)); Assert.That(_data.KeyCount, Is.Zero);
-            Assert.Throws<InvalidOperationException>(() => _data.SaveAll());
-            Assert.Throws<InvalidOperationException>(() => _data.SaveMeta());
+            string path = Write("en", "main", "first");
+            string other = root + "/Second/Resources/" + addressRoot + "/en/text/main.json";
+            Directory.CreateDirectory(Path.GetDirectoryName(other)); File.Copy(path, other); byte[] before = File.ReadAllBytes(path);
+            Assert.Throws<InvalidOperationException>(() => Load());
+            Assert.Throws<InvalidOperationException>(() => { using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); });
+            Assert.That(File.ReadAllBytes(path), Is.EqualTo(before)); Assert.That(File.ReadAllBytes(other), Is.EqualTo(before));
         }
-
-        [Test] public void SameResourcesAddressInTwoRoots_BlocksEditingWithoutChoosingOne()
+        [Test] public void OtherAddressesAndEditorOnlyDuplicatesDoNotCreateAmbiguity()
         {
-            string original = Write("en", "main", "first");
-            string second = _root + "/Second/Resources/" + _config.resourcesBasePath + "/ru/text";
-            Directory.CreateDirectory(second); File.WriteAllText(second + "/other.json", new JObject { ["translations"] = new JObject { ["second"] = "value" } }.ToString());
-            byte[] before = File.ReadAllBytes(original);
-            ExpectDiscoveryFailure("Several localization folders");
-            Assert.That(_data.BasePath, Is.Null); Assert.That(File.ReadAllBytes(original), Is.EqualTo(before));
-            Assert.That(File.Exists(_folder + "/_meta.json"), Is.False);
+            string path = Write("en", "main", "real");
+            string hidden = root + "/Editor/Resources/" + addressRoot + "/en/text/main.json";
+            Directory.CreateDirectory(Path.GetDirectoryName(hidden)); File.Copy(path, hidden);
+            string other = root + "/Second/Resources/OtherDataset/main.json";
+            Directory.CreateDirectory(Path.GetDirectoryName(other)); File.WriteAllText(other, "{broken");
+            Assert.That(Value(Load(), Id("real"), "en"), Is.EqualTo("en value"));
         }
-
-        [Test] public void ResourcesWithOtherAddressesAndEditorOnlyData_DoNotCreateAmbiguity()
+        [Test] public void NewConflictingAddressAfterLoadBlocksSaveWithoutLosingDraft()
         {
-            Write("en", "main", "real");
-            Directory.CreateDirectory(_root + "/Second/Resources/OtherDataset");
-            Directory.CreateDirectory(_root + "/Editor/Resources/" + _config.resourcesBasePath);
-            _data.Load(_config);
-            Assert.That(_data.LoadError, Is.Null); Assert.That(_data.AllKeys, Is.EqualTo(new[] { "real" }));
-        }
-
-        [Test] public void NewConflictingRootAfterLoad_IsRejectedBeforeSave()
-        {
-            string path = Write("en", "main", "key"); _data.Load(_config); byte[] before = File.ReadAllBytes(path);
-            Directory.CreateDirectory(_root + "/Second/Resources/" + _config.resourcesBasePath);
-            _data.SetTranslation("key", "en", "pending");
-            Assert.Throws<InvalidOperationException>(() => _data.SaveAll());
+            string path = Write("en", "main", "key"); Load();
+            using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); edit.SetTranslation(Id("key"), "en", "pending"); byte[] before = File.ReadAllBytes(path);
+            string other = root + "/Second/Resources/" + addressRoot + "/en/text/main.json";
+            Directory.CreateDirectory(Path.GetDirectoryName(other)); File.Copy(path, other); AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            Assert.Throws<InvalidOperationException>(() => edit.Commit());
             Assert.That(File.ReadAllBytes(path), Is.EqualTo(before));
-            Assert.That(_data.GetTranslation("key", "en"), Is.EqualTo("pending"));
+            Assert.That(AssetDatabase.DeleteAsset(other), Is.True); edit.Commit();
+            Assert.That(Value(Load(), Id("key"), "en"), Is.EqualTo("pending"));
         }
-
-        [TestCase(false)] [TestCase(true)]
-        public void KeyOwnedByDifferentFiles_IsNotSilentlyMovedOnSave(bool sameLanguage)
+        [TestCase(false)][TestCase(true)] public void SameKeyInDifferentLanguageSourcesHasExplicitOwnership(bool sameLanguage)
         {
             string a = Write("en", "a", "same"), b = Write(sameLanguage ? "en" : "ru", "b", "same");
-            byte[] beforeA = File.ReadAllBytes(a), beforeB = File.ReadAllBytes(b);
-            ExpectDiscoveryFailure("belongs to both");
-            Assert.That(File.ReadAllBytes(a), Is.EqualTo(beforeA)); Assert.That(File.ReadAllBytes(b), Is.EqualTo(beforeB));
+            byte[] before = File.ReadAllBytes(a);
+            if (sameLanguage)
+            { Assert.Throws<InvalidOperationException>(() => Load()); Assert.That(File.ReadAllBytes(a), Is.EqualTo(before)); }
+            else
+            { Load(); Set("same", "ru", "edited"); Assert.That(File.ReadAllBytes(a), Is.EqualTo(before)); Assert.That((string)JObject.Parse(File.ReadAllText(b))["translations"]["same"], Is.EqualTo("edited")); }
         }
-
         [TestCase("{bad")]
         [TestCase("{\"translations\":{\"same\":\"one\",\"same\":\"two\"}}")]
         [TestCase("{\"translations\":[]} ")]
         [TestCase("{\"translations\":{}} trailing")]
-        public void MalformedOrAmbiguousJson_PublishesNoPartialDatasetAndBlocksSave(string json)
+        [TestCase("{\"translations\":null}")][TestCase("{}")]
+        [TestCase("{\"translations\":{},\"translations\":{}}")]
+        public void MalformedSourceCannotPublishPartialDataOrPassCoverage(string json)
         {
             Write("en", "a", "valid"); string path = Write("ru", "broken", "bad"); File.WriteAllText(path, json);
-            ExpectDiscoveryFailure("Invalid translation file");
+            Assert.Catch<Exception>(() => Load()); Assert.Catch<Exception>(() => { using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); });
+            Assert.That(ProjectCoverageAnalyzer.Analyze(config).IsComplete, Is.False);
             Assert.That(File.ReadAllText(path), Is.EqualTo(json));
-            Write("ru", "broken", "repaired"); _data.Reload(_config);
-            Assert.That(_data.LoadError, Is.Null); Assert.That(_data.KeyCount, Is.EqualTo(2)); _data.SaveAll();
+            Write("ru", "broken", "bad"); Assert.That(Value(Load(), Id("bad"), "ru"), Is.EqualTo("ru value"));
         }
-
-        [Test] public void NestedFiles_RoundTripThroughCsvCloneAndRename()
+        [Test] public void ExcessiveJsonDepthIsRejectedBeforeRecursiveRuntimeParsing()
         {
-            string path = Write("en", "chapter/main", "old"); AssetDatabase.Refresh();
-            var project = LocalizationProjectAuthoring.Create(new[] { "en" }, "en", "en", _root + "/Project.asset", false);
-            string entry = project.Sets[0].AddEntry("old").Id;
-            string address = path.Substring(path.IndexOf("/Resources/", StringComparison.Ordinal) + 11);
-            project.Sets[0].SetSources("en", new LocalizationSourceReference("resources", address.Substring(0, address.Length - 5), LocalizationSourceKind.TextTable));
-            EditorUtility.SetDirty(project); AssetDatabase.SaveAssetIfDirty(project);
-            string csv = ProjectCsv.Export(project, includeSources: true);
-            using (var plan = ProjectCsv.Preview(project, csv)) Assert.That(plan.Apply().HasChanges, Is.False);
-            using (var edit = new LocalizationProjectEdit(project, project.Sets[0].Id)) { edit.RenameTextEntry(entry, "new"); edit.Commit(); }
+            string path = Write("en", "main", "key");
+            File.WriteAllText(path, "{\"translations\":{},\"custom\":" + new string('[', 70) + "0" + new string(']', 70) + "}");
+            Assert.Catch<Exception>(() => Load());
+            Assert.Catch<Exception>(() => { using var edit = new LocalizationProjectEdit(config, config.Sets[0].Id); });
+            Assert.That(ProjectCoverageAnalyzer.Analyze(config).IsComplete, Is.False);
+        }
+        [Test] public void NestedFilesRoundTripThroughCsvCloneAndRename()
+        {
+            string path = Write("en", "chapter/main", "old"); Load(); string entry = Id("old");
+            string csv = ProjectCsv.Export(config, includeSources: true);
+            using (var plan = ProjectCsv.Preview(config, csv)) Assert.That(plan.Apply().HasChanges, Is.False);
+            using (var edit = new LocalizationProjectEdit(config, config.Sets[0].Id)) { edit.RenameTextEntry(entry, "new"); edit.Commit(); }
             var json = JObject.Parse(File.ReadAllText(path));
             Assert.That((string)json["translations"]["new"], Is.EqualTo("en value")); Assert.That(json["translations"]["old"], Is.Null);
         }
-
-        [Test] public void ExistingUppercaseExtension_IsSavedWithoutCreatingAnotherFile()
+        [Test] public void ExistingUppercaseExtensionIsSavedWithoutCreatingAnotherFile()
         {
-            string path = Write("en", "main", "key"); string upper = Path.ChangeExtension(path, ".JSON"); File.Move(path, upper);
-            _data.Load(_config); _data.SetTranslation("key", "en", "edited"); _data.SaveAll();
+            string path = Write("en", "main", "key"), upper = Path.ChangeExtension(path, ".JSON");
+            File.Move(path, upper); Load(); string guid = AssetDatabase.AssetPathToGUID(upper);
+            Set("key", "en", "edited");
             Assert.That((string)JObject.Parse(File.ReadAllText(upper))["translations"]["key"], Is.EqualTo("edited"));
-            Assert.That(Directory.GetFiles(Path.GetDirectoryName(upper)), Has.Length.EqualTo(1));
+            Assert.That(Directory.GetFiles(Path.GetDirectoryName(upper)).Where(p => !p.EndsWith(".meta")).ToArray(), Has.Length.EqualTo(1));
+            Assert.That(AssetDatabase.AssetPathToGUID(upper), Is.EqualTo(guid));
         }
-
-        [Test] public void ConfigSelection_IsDeterministicAndRequiresChoiceForAmbiguity()
+        [Test] public void WindowSelectionIsSharedWithInspectorWithoutChangingStartup()
         {
-            var other = ScriptableObject.CreateInstance<LocalizationConfig>();
-            try
-            {
-                var type = typeof(EditorDataCache).Assembly.GetType("SimplyLocalize.Editor.Data.EditorConfigSelection");
-                var method = type.GetMethod("Choose", BindingFlags.Static | BindingFlags.NonPublic);
-                object[] args = { new[] { _config, other }, null, null };
-                Assert.That(method.Invoke(null, args), Is.Null); Assert.That((string)args[2], Does.Contain("Several"));
-                args[1] = _config; Assert.That(method.Invoke(null, args), Is.SameAs(_config)); Assert.That(args[2], Is.Null);
-                args = new object[] { new LocalizationConfig[] { null, other }, null, null };
-                Assert.That(method.Invoke(null, args), Is.SameAs(other));
-            }
-            finally { Object.DestroyImmediate(other); }
-        }
-
-        [Test] public void WindowSelection_IsSharedWithInspectorCacheWithoutChangingStartup()
-        {
-            string source = Write("en", "main", "selected.only"); AssetDatabase.Refresh();
-            var project = LocalizationProjectConfig.Create(new[] { "en" }); project.Sets[0].AddEntry("selected.only");
-            project.Sets[0].SetSources("en", new LocalizationSourceReference("resources", ResourcesEditorTextReader.ResourceAddress(source), LocalizationSourceKind.TextTable));
-            AssetDatabase.CreateAsset(project, _root + "/Project.asset");
+            Write("en", "main", "selected.only"); Load();
             var keys = new[] { "SimplyLocalize.ProjectEditor.Config", "SimplyLocalize.ProjectEditor.Channel", "SimplyLocalize.ProjectEditor.Set" };
             var previous = keys.Select(k => SessionState.GetString(k, "")).ToArray();
             var window = ScriptableObject.CreateInstance<LocalizationEditorWindow>();
             try
             {
-                Assert.That(window.TrySelectConfig(project), Is.True);
-                Assert.That(EditorProjectSelection.Config, Is.SameAs(project));
-                Assert.That(EditorProjectSelection.Current.Entries(LocalizationEntryKind.Text).Select(e => e.Key), Is.EqualTo(new[] { "selected.only" }));
-                Assert.That(EditorProjectSelection.Current.Text.TryGetDirect(project.Sets[0].Entries[0].Id, "en", out var cell), Is.True);
-                Assert.That(cell.Value, Is.EqualTo("en value"));
-                Assert.That(project.AutoInitialize, Is.False);
+                Assert.That(window.TrySelectConfig(config), Is.True); Assert.That(EditorProjectSelection.Config, Is.SameAs(config));
+                Assert.That(Value(EditorProjectSelection.Current.Text, Id("selected.only"), "en"), Is.EqualTo("en value"));
+                Assert.That(config.AutoInitialize, Is.False);
             }
             finally
             {
@@ -203,94 +165,13 @@ namespace SimplyLocalize.Tests
                 EditorProjectSelection.Invalidate();
             }
         }
-
-        [Test] public void Coverage_DistinguishesPresenceEmptyFallbackAndWhitespaceWithoutChangingRuntime()
+        [Test] public void CoverageReadsExternalDeletionWithoutResurrectingOldImportedValue()
         {
-            var provider = new Provider();
-            provider.Text["en"] = new Dictionary<string, string> { ["fallback"] = "Hello", ["empty"] = "", ["only.en"] = "English" };
-            provider.Text["ru"] = new Dictionary<string, string> { ["fallback"] = "", ["empty"] = "", ["space"] = " \n" };
-            var report = CoverageAnalyzer.Analyze(_config, null, provider);
-            var ru = report.TextCoverage.Single(c => c.LanguageCode == "ru");
-            Assert.That(ru.TotalCount, Is.EqualTo(4)); Assert.That(ru.PresentCount, Is.EqualTo(3));
-            Assert.That(ru.TranslatedCount, Is.EqualTo(1)); Assert.That(ru.AvailableCount, Is.EqualTo(3));
-            Assert.That(ru.EmptyKeys, Is.EquivalentTo(new[] { "empty", "fallback" })); Assert.That(ru.WhitespaceKeys, Is.EqualTo(new[] { "space" }));
-            Assert.That(ru.UnavailableKeys, Is.EqualTo(new[] { "empty" }));
-            Assert.That(report.Warnings.Any(w => w.Message.Contains("Whitespace-only")), Is.True);
-            var project = LocalizationProjectConfig.Create(new[] { "en", "ru" });
-            try
-            {
-                foreach (string key in new[] { "fallback", "empty", "only.en", "space" }) project.Sets[0].AddEntry(key);
-                foreach (string code in new[] { "en", "ru" })
-                    project.Sets[0].SetSources(code, new LocalizationSourceReference("test", "text", LocalizationSourceKind.TextTable));
-                project.MainChannel.FallbackLanguage = "en";
-                var registry = new LocalizationSourceRegistry(false); registry.Register("test", provider);
-                using var runtime = new LocalizationRuntime(project, registry);
-                Assert.That(runtime.InitializeAsync("ru").IsCompletedSuccessfully, Is.True);
-                var snapshot = runtime.GetChannel();
-                var unchangedReport = CoverageAnalyzer.Analyze(_config, null, provider);
-                Assert.That(unchangedReport.TextCoverage.Single(c => c.LanguageCode == "ru").PresentCount, Is.EqualTo(3));
-                Assert.That(runtime.GetChannel(), Is.SameAs(snapshot));
-                Assert.That(runtime.Get("empty"), Is.EqualTo("empty"));
-                Assert.That(runtime.Get("fallback"), Is.EqualTo("Hello")); Assert.That(runtime.Get("space"), Is.EqualTo(" \n"));
-            }
-            finally { Object.DestroyImmediate(project); }
-        }
-
-        [Test] public void Coverage_WithFailedDiscovery_CannotReportAnUnqualifiedSuccessfulCheck()
-        {
-            Write("en", "a", "same"); Write("ru", "b", "same"); ExpectDiscoveryFailure("belongs to both");
-            var report = CoverageAnalyzer.Analyze(_config, _data, new Provider());
-            Assert.That(report.IsComplete, Is.False); Assert.That(report.Warnings.Any(w => w.Message.Contains("Editor discovery failed")), Is.True);
-        }
-
-        [Test] public void Coverage_FullDiskSnapshotDoesNotResurrectADeletedKeyFromAnOldImport()
-        {
-            Write("en", "main", "current"); _data.Load(_config);
-            var provider = new Provider(); provider.Text["en"] = new Dictionary<string, string> { ["removed"] = "stale" };
-            var report = CoverageAnalyzer.Analyze(_config, _data, provider);
-            var en = report.TextCoverage.Single(c => c.LanguageCode == "en");
-            Assert.That(en.TotalCount, Is.EqualTo(1)); Assert.That(en.TranslatedCount, Is.EqualTo(1));
-            Assert.That(report.Warnings.Any(w => w.Key == "removed"), Is.False);
-        }
-
-        [Test] public void Coverage_RejectsOverlayFromAnotherConfiguration()
-        {
-            Write("en", "main", "wrong.context"); _data.Load(_config);
-            _config.resourcesBasePath += "/other";
-            var report = CoverageAnalyzer.Analyze(_config, _data, new Provider());
-            Assert.That(report.IsComplete, Is.False); Assert.That(report.TextCoverage.All(c => c.TotalCount == 0), Is.True);
-            Assert.That(report.Warnings.Any(w => w.Message.Contains("another Resources path")), Is.True);
-        }
-
-        [Test] public void LocalPackageData_IsDetectedWithoutWritingIntoThePackage()
-        {
-            var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(LocalizationConfig).Assembly);
-            Assert.That(package.source, Is.EqualTo(UnityEditor.PackageManager.PackageSource.Local));
-            string name = "__Discovery_" + Guid.NewGuid().ToString("N");
-            string folder = Path.Combine(package.resolvedPath, name, "Resources", _config.resourcesBasePath, "en", "text");
-            Directory.Delete(_folder); // Empty fixture folder; leave the package as the only matching data root.
-            try
-            {
-                Directory.CreateDirectory(folder);
-                string path = Path.Combine(folder, "main.json");
-                File.WriteAllText(path, new JObject { ["translations"] = new JObject { ["key"] = "value" } }.ToString());
-                AssetDatabase.Refresh(); byte[] before = File.ReadAllBytes(path);
-                ExpectDiscoveryFailure("in a package");
-                Assert.That(File.ReadAllBytes(path), Is.EqualTo(before));
-            }
-            finally { Assert.That(AssetDatabase.DeleteAsset(package.assetPath + "/" + name), Is.True); }
-        }
-
-        private sealed class Provider : IEditorLocalizationDataSource, ILocalizationSourceProvider
-        {
-            internal readonly Dictionary<string, Dictionary<string, string>> Text = new();
-            public Dictionary<string, string> LoadTextData(string languageCode) => Text.TryGetValue(languageCode, out var entries) ? entries : new();
-            public List<LocalizationAssetTable> LoadAssetTables(string languageCode) => new();
-            public T LoadAsset<T>(string languageCode, string path) where T : Object => null;
-            public bool HasTextData(string languageCode) => Text.ContainsKey(languageCode);
-            public LocalizationProviderCapabilities GetCapabilities(LocalizationSourceKind kind) => new(LocalizationLoadUnit.Table, false, false);
-            public System.Threading.Tasks.Task<LocalizationSourceLease> LoadAsync(LocalizationSourceRequest request, System.Threading.CancellationToken token)
-                => System.Threading.Tasks.Task.FromResult(new LocalizationSourceLease(LocalizationSourceData.FromText(LoadTextData(request.Language)), () => System.Threading.Tasks.Task.CompletedTask));
+            string path = Write("en", "main", "current"); var before = Load();
+            File.WriteAllText(path, "{\"translations\":{}}");
+            var report = ProjectCoverageAnalyzer.Analyze(config);
+            Assert.That(report.TextCoverage.Single(c => c.LanguageCode == "en").TranslatedCount, Is.Zero);
+            Assert.That(Value(before, Id("current"), "en"), Is.EqualTo("en value"));
         }
     }
 }
