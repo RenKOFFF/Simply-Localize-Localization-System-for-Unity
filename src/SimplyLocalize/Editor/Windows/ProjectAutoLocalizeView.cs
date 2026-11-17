@@ -32,6 +32,24 @@ namespace SimplyLocalize.Editor.Windows
         public IReadOnlyList<AutoLocalizeCandidate> Candidates => candidates.AsReadOnly();
         public AutoLocalizePlan Preview => plan;
         public bool HasPendingChanges => candidates.Count > 0;
+        public event Action DraftChanged;
+        internal ProjectAutoState CaptureState() => new() { Config = config, Channel = channelId, Set = setId, Initialized = true, SelectedObjects = (ScanScope)scope.value == ScanScope.SelectedObjects,
+            Prefabs = (AutoLocalizePrefabMode)prefabs.value, Pattern = (AutoLocalizeKeyPattern)pattern.value, Custom = custom.value, Prefix = prefix.value,
+            Minimum = minimum.value, SkipNumeric = skipNumeric.value, SkipLocalized = skipLocalized.value, Destination = destination.value,
+            Candidates = candidates.Select(c => c.Capture()).ToList() };
+        internal void RestoreState(ProjectAutoState state)
+        {
+            if (state?.Initialized != true) return;
+            if (state.Config != config || state.Channel != channelId || state.Set != setId)
+                throw new InvalidOperationException("Restore the original config, channel and content set before rebuilding this scan preview.");
+            ClearScan(); scope.SetValueWithoutNotify(state.SelectedObjects ? ScanScope.SelectedObjects : ScanScope.ActiveScene);
+            prefabs.SetValueWithoutNotify(state.Prefabs); pattern.SetValueWithoutNotify(state.Pattern); custom.SetValueWithoutNotify(state.Custom); prefix.SetValueWithoutNotify(state.Prefix);
+            custom.style.display = state.Pattern == AutoLocalizeKeyPattern.Custom ? DisplayStyle.Flex : DisplayStyle.None;
+            minimum.SetValueWithoutNotify(state.Minimum); skipNumeric.SetValueWithoutNotify(state.SkipNumeric); skipLocalized.SetValueWithoutNotify(state.SkipLocalized);
+            if (destination.choices.Contains(state.Destination)) destination.SetValueWithoutNotify(state.Destination);
+            candidates = state.Candidates.Select(c => new AutoLocalizeCandidate(c)).ToList(); rows.itemsSource = candidates; rows.Rebuild(); UpdateSummary();
+            if (candidates.Count > 0) ShowError("Scan choices restored. Build and review a new preview before applying; changed objects will require a new scan.");
+        }
 
         public ProjectAutoLocalizeView(LocalizationProjectConfig config, string channelId = null, string setId = null, Action changed = null)
         {
@@ -149,7 +167,7 @@ namespace SimplyLocalize.Editor.Windows
         private void SelectAll(bool selected)
         { if (plan != null) return; foreach (var candidate in candidates) candidate.Selected = selected; rows.RefreshItems(); UpdateSummary(); }
         private void UpdateSummary()
-        { summary.text = "Found: " + candidates.Count + " · Selected: " + candidates.Count(c => c.Selected); preview.SetEnabled(plan == null && candidates.Any(c => c.Selected)); }
+        { summary.text = "Found: " + candidates.Count + " · Selected: " + candidates.Count(c => c.Selected); preview.SetEnabled(plan == null && candidates.Any(c => c.Selected)); DraftChanged?.Invoke(); }
         private void ShowDetail(AutoLocalizeCandidate candidate)
         {
             var binding = plan?.Bindings.FirstOrDefault(b => b.Target == candidate.Target);

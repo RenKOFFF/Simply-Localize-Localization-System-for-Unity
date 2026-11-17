@@ -11,8 +11,8 @@ namespace SimplyLocalize.Editor
         {
             var config = (LocalizationConfig)target;
             if (GUILayout.Button("Open in Simply Localize"))
-                LocalizationEditorWindow.OpenConfig(config);
-            EditorGUILayout.HelpBox("Manage languages, translations and automatic startup in the Simply Localize window. The fields below are an alternative for direct editing.", MessageType.Info);
+                LocalizationEditorWindow.Open();
+            EditorGUILayout.HelpBox("This is a legacy config. The channel architecture uses LocalizationProjectConfig. Rebuild the project configuration explicitly in Simply Localize; this asset is not used by the new runtime.", MessageType.Warning);
             using (new EditorGUI.DisabledScope(true))
                 EditorGUILayout.TextField("Startup address", LocalizationConfig.StartupResourcePath);
             DrawDefaultInspector();

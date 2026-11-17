@@ -197,7 +197,7 @@ namespace SimplyLocalize.Editor.Windows.Tabs
             info.Add(flagsRow);
             card.Add(info);
 
-            var selectBtn = new Button(() => _window.EditProfile(profile));
+            var selectBtn = new Button(() => UnityEditor.Selection.activeObject = profile);
             selectBtn.name = "editProfile_" + profile.Code;
             selectBtn.text = "Edit profile";
             selectBtn.style.fontSize = 11;

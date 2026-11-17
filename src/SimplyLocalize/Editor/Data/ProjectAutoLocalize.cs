@@ -27,6 +27,12 @@ namespace SimplyLocalize.Editor.Data
     }
     public sealed class AutoLocalizeCandidate
     {
+        [Serializable] internal sealed class State
+        {
+            public GameObject Target;
+            public string Text, Path, PrefabPath, Key, Binding, Hierarchy;
+            public bool Selected, IsPrefab;
+        }
         public GameObject Target { get; }
         public string Text { get; }
         public string Path { get; }
@@ -34,6 +40,9 @@ namespace SimplyLocalize.Editor.Data
         public string Key { get; set; }
         public bool Selected { get; set; } = true;
         internal readonly string Binding, Hierarchy;
+        internal State Capture() => new() { Target = Target, Text = Text, Path = Path, PrefabPath = PrefabPath, Key = Key, Selected = Selected, Binding = Binding, Hierarchy = Hierarchy, IsPrefab = PrefabPath != null };
+        internal AutoLocalizeCandidate(State state)
+        { Target = state.Target; Text = state.Text; Path = state.Path; PrefabPath = state.IsPrefab ? state.PrefabPath : null; Key = state.Key; Selected = state.Selected; Binding = state.Binding; Hierarchy = state.Hierarchy; }
         internal AutoLocalizeCandidate(GameObject target, string key)
         {
             Target = target; Text = ProjectAutoLocalize.Text(target); Key = key;

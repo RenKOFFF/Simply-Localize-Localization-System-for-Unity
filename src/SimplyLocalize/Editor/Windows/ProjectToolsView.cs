@@ -22,8 +22,28 @@ namespace SimplyLocalize.Editor.Windows
         private readonly ListView changes;
         private readonly TextField detail;
         private readonly Button apply;
+        private string pendingCsv;
+        private bool recoveredPreview;
+        public event Action DraftChanged;
         public ProjectCsvImportPlan Preview => plan;
-        public bool HasPendingChanges => plan != null && !plan.IsApplied && plan.Changes.Count > 0;
+        public bool HasPendingChanges => recoveredPreview || plan != null && !plan.IsApplied && plan.Changes.Count > 0;
+        internal ProjectToolsState CaptureState() => new() { Config = config, Channel = channelId, Set = setId, Initialized = true, Pending = HasPendingChanges, Csv = pendingCsv, ClearEmpty = clearEmpty.value, IncludeSources = includeSources.value };
+        internal void RestoreState(ProjectToolsState state)
+        {
+            if (state?.Initialized != true) return;
+            if (state.Config != config || state.Channel != channelId || state.Set != setId)
+                throw new InvalidOperationException("Restore the original config, channel and content set before rebuilding this import.");
+            ClearPreview(); clearEmpty.SetValueWithoutNotify(state.ClearEmpty); includeSources.SetValueWithoutNotify(state.IncludeSources);
+            if (state.Pending)
+            {
+                pendingCsv = state.Csv; recoveredPreview = true;
+                summary.text = "Import input restored. Rebuild and review the preview before applying.";
+                this.Q<Button>("csvRebuild").style.display = DisplayStyle.Flex;
+                this.Q<TextField>("csvRecoveredInput").SetValueWithoutNotify(pendingCsv);
+                this.Q<Foldout>("csvRecovered").style.display = DisplayStyle.Flex;
+            }
+            DraftChanged?.Invoke();
+        }
         public ProjectToolsView(LocalizationProjectConfig config, string channelId = null, string setId = null, Action changed = null)
         {
             this.config = config != null ? config : throw new ArgumentNullException(nameof(config));
@@ -54,10 +74,14 @@ namespace SimplyLocalize.Editor.Windows
             var bottom = new VisualElement { style = { flexDirection = FlexDirection.Row } };
             apply = new Button(() => ApplyPreview()) { text = "Apply and save", name = "csvApply" }; LanguagePickerStyle.Primary(apply); apply.SetEnabled(false); bottom.Add(apply);
             bottom.Add(new Button(ClearPreview) { text = "Cancel preview", name = "csvCancel" }); Add(bottom);
+            var recovered = new Foldout { name = "csvRecovered", text = "Recovered CSV input" }; recovered.style.display = DisplayStyle.None;
+            recovered.Add(new TextField { name = "csvRecoveredInput", multiline = true, isReadOnly = true }); Add(recovered);
+            var rebuild = new Button(() => PreviewCsv(pendingCsv)) { name = "csvRebuild", text = "Rebuild import preview" }; rebuild.style.display = DisplayStyle.None; Add(rebuild);
             RegisterCallback<DetachFromPanelEvent>(_ => Dispose());
         }
         public bool PreviewCsv(string csv)
         {
+            var recovery = recoveredPreview ? CaptureState() : null;
             ClearPreview();
             try
             {
@@ -65,9 +89,14 @@ namespace SimplyLocalize.Editor.Windows
                 summary.text = "Rows: " + plan.RowCount + " · Changes: " + plan.Changes.Count + " · Empty cells skipped: " + plan.SkippedEmptyCells
                     + (plan.NewLanguages.Count > 0 ? "\nNew languages: " + string.Join(", ", plan.NewLanguages) : "");
                 shared.text = string.Join("\n", plan.Warnings); shared.style.display = plan.Warnings.Count == 0 ? DisplayStyle.None : DisplayStyle.Flex;
-                changes.itemsSource = plan.Changes.ToList(); changes.Rebuild(); apply.SetEnabled(plan.Changes.Count > 0); ShowError(null); return true;
+                pendingCsv = csv; changes.itemsSource = plan.Changes.ToList(); changes.Rebuild(); apply.SetEnabled(plan.Changes.Count > 0); ShowError(null); DraftChanged?.Invoke(); return true;
             }
-            catch (Exception failure) { ShowError(failure.Message); return false; }
+            catch (Exception failure)
+            {
+                // A failed rebuild must not erase the only surviving copy of import input.
+                if (recovery != null) RestoreState(recovery);
+                ShowError(failure.Message); return false;
+            }
         }
         public bool ApplyPreview()
         {
@@ -97,6 +126,10 @@ namespace SimplyLocalize.Editor.Windows
         {
             plan?.Dispose(); plan = null; changes.itemsSource = new List<ProjectCsvChange>(); changes.Rebuild(); detail.SetValueWithoutNotify("");
             summary.text = "No import preview."; shared.style.display = DisplayStyle.None; apply.SetEnabled(false); ShowError(null);
+            pendingCsv = null; recoveredPreview = false;
+            var recovered = this.Q<Foldout>("csvRecovered"); if (recovered != null) recovered.style.display = DisplayStyle.None;
+            var rebuild = this.Q<Button>("csvRebuild"); if (rebuild != null) rebuild.style.display = DisplayStyle.None;
+            DraftChanged?.Invoke();
         }
         private string Describe(ProjectCsvChange change)
         {

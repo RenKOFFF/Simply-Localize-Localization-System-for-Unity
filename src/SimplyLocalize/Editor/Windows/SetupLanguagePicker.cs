@@ -16,6 +16,14 @@ namespace SimplyLocalize.Editor.Windows
         internal IReadOnlyList<LanguageDefinition> Selected => _selected;
         internal string DefaultCode => _default.value;
         internal string FallbackCode => string.IsNullOrEmpty(_fallback.value) ? null : _fallback.value;
+        internal SetupSelectionState Capture() => new() { Initialized = true, Codes = _selected.Select(l => l.Code).ToArray(), Names = _selected.Select(l => l.NativeName).ToArray(), Default = DefaultCode, Fallback = FallbackCode };
+        internal void Restore(SetupSelectionState state)
+        {
+            if (state?.Initialized != true) return;
+            _selected.Clear();
+            for (int i = 0; i < state.Codes.Length; i++) _selected.Add(LanguageCatalog.Find(state.Codes[i]) ?? LanguageCatalog.Custom(state.Codes[i], state.Names[i]));
+            RefreshSelection(); _default.SetValueWithoutNotify(state.Default); _fallback.SetValueWithoutNotify(state.Fallback ?? ""); Changed?.Invoke();
+        }
 
         internal SetupLanguagePicker(UnityEditor.EditorWindow window)
         {

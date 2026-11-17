@@ -1,365 +1,294 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using SimplyLocalize.Editor.Data;
 using SimplyLocalize.Editor.Windows.Tabs;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace SimplyLocalize.Editor.Windows
 {
-    public class LocalizationEditorWindow : EditorWindow
+    /// <summary>Main authoring surface. Editor selection is independent from the running game's language.</summary>
+    public partial class LocalizationEditorWindow : EditorWindow
     {
-        [SerializeField] private LocalizationConfig _config;
-        private EditorLocalizationData _data;
-
-        private VisualElement _tabContent;
-        private VisualElement _tabBar;
+        [SerializeField] private LocalizationProjectConfig _config;
+        [SerializeField] private string channelId, setId, appearanceLanguage, selectedText, selectedAsset;
         [SerializeField] private int _activeTabIndex;
-
-        private IEditorTab[] _tabs;
-        private string[] _tabNames;
+        [SerializeField] private bool selectionInitialized;
+        [SerializeField] private ProjectViewDraft entryDraft;
+        private VisualElement _tabContent, _tabBar, scopeBar;
+        private HelpBox windowMessage;
+        private ProjectTranslationsView textView;
+        private ProjectAssetsView assetView;
+        private ProjectAppearanceView appearanceView;
+        private ProjectAutoLocalizeView autoView;
+        private ProjectToolsView toolsView;
+        private IDisposable disposableView;
+        private bool reloading, building;
+        private readonly List<(string name, Type type)> customTabs = new();
+        private static readonly string[] Builtins = { "Translations", "Assets", "Languages", "Appearance", "Coverage", "Auto Localize", "Tools", "Settings", "Diagnostics" };
+        // Instance dialog boundary: tests can exercise navigation without modal automation.
+        internal Func<string, int> ConfirmNavigation = message => EditorUtility.DisplayDialogComplex("Unsaved localization changes", message, "Save", "Cancel", "Discard");
+        public LocalizationProjectConfig ProjectConfig => _config;
+        public EditorProjectContext Context => _config == null ? null : new EditorProjectContext(_config, channelId, setId);
+        public int ActiveTabIndex => _activeTabIndex;
+        public bool HasPendingChanges => entryDraft?.IsPending == true || textView?.HasPendingChanges == true || assetView?.HasPendingChanges == true
+            || appearanceView?.HasPendingChanges == true || autoView?.HasPendingChanges == true || toolsView?.HasPendingChanges == true || AuxiliaryPending;
 
         [MenuItem("Window/Simply Localize/Localization Editor", priority = 100)]
-        public static void Open()
+        public static void Open() => GetWindow<LocalizationEditorWindow>().Show();
+        public static void OpenConfig(LocalizationProjectConfig config) { var window = GetWindow<LocalizationEditorWindow>(); window.TrySelectConfig(config); window.Show(); }
+        private void AssignConfig(LocalizationProjectConfig config) => TrySelectConfig(config);
+        public bool TrySelectConfig(LocalizationProjectConfig config)
         {
-            var window = GetWindow<LocalizationEditorWindow>();
-            window.titleContent = new GUIContent("Simply Localize");
-            window.minSize = new Vector2(700, 400);
+            if (_config == config && selectionInitialized) return true;
+            if (!CanNavigate()) return false;
+            if (config != null) config.ValidateOrThrow();
+            CaptureAuxiliaryState(); ClearAuxiliaryDrafts();
+            _config = config; selectionInitialized = true; channelId = config?.MainChannelId; setId = config?.MainChannel.DefaultSetId;
+            selectedText = selectedAsset = appearanceLanguage = null;
+            EditorProjectSelection.Select(config, channelId, setId); BuildUI(); return true;
         }
-
-        public static void OpenConfig(LocalizationConfig config)
+        public bool TrySelectContext(string channel, string set = null)
         {
-            Open();
-            var window = GetWindow<LocalizationEditorWindow>();
-            window.AssignConfig(config);
+            if (_config == null) return false;
+            var context = new EditorProjectContext(_config, channel, set);
+            if (channelId == context.ChannelId && setId == context.SetId) return true;
+            if (!CanNavigate()) return false;
+            ClearAuxiliaryDrafts();
+            channelId = context.ChannelId; setId = context.SetId; selectedText = selectedAsset = null;
+            EditorProjectSelection.Select(_config, channelId, setId); BuildUI(); return true;
         }
-
-        private void AssignConfig(LocalizationConfig config)
+        public bool ShowTab(int index)
         {
-            _data?.FlushPendingAssetRefresh();
-            _config = config;
-            EditorDataCache.SelectConfig(config);
-            _data = new EditorLocalizationData();
-            if (_config != null) _data.Load(_config);
-            BuildUI();
+            if (index < 0 || index >= Builtins.Length + customTabs.Count) throw new ArgumentOutOfRangeException(nameof(index));
+            if (_activeTabIndex == index && _tabContent?.childCount > 0) return true;
+            if (!CanNavigate()) return false;
+            CaptureSelection(); CaptureAuxiliaryState(); _activeTabIndex = index; BuildUI(); return true;
         }
-
+        private void SetActiveTab(int index) => ShowTab(index);
         private void OnEnable()
         {
-            FindConfig();
-            if (_config != null) EditorDataCache.SelectConfig(_config);
-            _data = new EditorLocalizationData();
-
-            if (_config != null)
-                _data.Load(_config);
-
+            reloading = false; titleContent = new GUIContent("Simply Localize"); minSize = new Vector2(700, 400);
+            saveChangesMessage = "Simply Localize has unsaved changes. Save them, discard them, or cancel closing this window. Recovered import/scan results must be reviewed before applying.";
+            if (!selectionInitialized)
+            {
+                _config = EditorProjectSelection.Config; selectionInitialized = true;
+                if (_config != null) { var context = EditorProjectSelection.Current; channelId = context.ChannelId; setId = context.SetId; }
+            }
+            AssemblyReloadEvents.beforeAssemblyReload += BeforeReload;
             BuildUI();
-
-            // Flush pending AssetDatabase.Refresh before entering Play Mode
-            // (edits are deferred for performance — see EditorLocalizationData.MarkPendingAssetRefresh)
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
-
+        private void BeforeReload() { CaptureWindowState(); reloading = true; DisposeView(); }
         private void OnDisable()
         {
-            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            AssemblyReloadEvents.beforeAssemblyReload -= BeforeReload;
+            if (!reloading) CaptureWindowState();
+            DisposeView();
         }
-
-        private void OnDestroy()
+        private void OnDestroy() { DisposeView(); entryDraft?.Dispose(); entryDraft = null; }
+        private void OnFocus() { if (!building) UpdateUnsaved(); } // Refocus must not discard input or rebuild a popup's owner.
+        private void CaptureSelection()
         {
-            // Window is closing — make sure any pending edits are picked up by AssetDatabase
-            _data?.FlushPendingAssetRefresh();
+            if (textView != null) selectedText = textView.SelectedEntryId;
+            if (assetView != null) selectedAsset = assetView.SelectedEntryId;
+            if (appearanceView != null) appearanceLanguage = appearanceView.SelectedLanguage;
         }
-
-        private void OnPlayModeStateChanged(PlayModeStateChange change)
+        private void CaptureWindowState()
         {
-            if (change == PlayModeStateChange.ExitingEditMode)
-                _data?.FlushPendingAssetRefresh();
+            CaptureSelection(); CaptureAuxiliaryState();
+            var snapshot = textView?.CaptureDraft() ?? assetView?.CaptureDraft() ?? appearanceView?.CaptureDraft();
+            if (snapshot != null) { entryDraft?.Dispose(); entryDraft = snapshot; }
         }
-
-        private void OnFocus()
+        private void DisposeView()
         {
-            if (_config != null && _data != null)
-            {
-                EditorDataCache.SelectConfig(_config);
-                // Only reload from disk if there are no pending in-memory edits waiting to flush.
-                // Reloading would clobber unsaved-to-AssetDatabase changes with stale cached data.
-                if (!_data.HasPendingAssetRefresh)
-                {
-                    _data.Reload(_config);
-                    RefreshActiveTab();
-                }
-            }
+            disposableView?.Dispose(); disposableView = null;
+            textView = null; assetView = null; appearanceView = null; autoView = null; toolsView = null;
         }
-
-        // ──────────────────────────────────────────────
-        //  UI
-        // ──────────────────────────────────────────────
-
-        private void BuildUI()
+        private bool CanNavigate()
         {
-            rootVisualElement.Clear();
-            rootVisualElement.style.flexDirection = FlexDirection.Column;
-            rootVisualElement.style.flexGrow = 1;
-
-            // Header
-            var header = new VisualElement();
-            header.style.flexDirection = FlexDirection.Row;
-            header.style.justifyContent = Justify.SpaceBetween;
-            header.style.alignItems = Align.Center;
-            header.style.paddingTop = 6;
-            header.style.paddingBottom = 6;
-            header.style.paddingLeft = 12;
-            header.style.paddingRight = 12;
-            header.style.borderBottomWidth = 1;
-            header.style.borderBottomColor = new Color(0, 0, 0, 0.15f);
-
-            var title = new Label("Simply Localize");
-            title.style.fontSize = 14;
-            title.style.unityFontStyleAndWeight = FontStyle.Bold;
-            header.Add(title);
-
-            var configField = new UnityEditor.UIElements.ObjectField("Config");
-            configField.name = "configField";
-            configField.objectType = typeof(LocalizationConfig);
-            configField.allowSceneObjects = false;
-            configField.value = _config;
-            configField.style.width = 350;
-            configField.labelElement.style.minWidth = 50;
-            configField.labelElement.style.width = 50;
-            configField.RegisterValueChangedCallback(evt =>
-            {
-                AssignConfig(evt.newValue as LocalizationConfig);
-            });
-            header.Add(configField);
-
-            rootVisualElement.Add(header);
-
-            // Tab bar
-            _tabBar = new VisualElement();
-            _tabBar.style.flexDirection = FlexDirection.Row;
-            _tabBar.style.flexWrap = Wrap.Wrap;
-            _tabBar.style.borderBottomWidth = 1;
-            _tabBar.style.borderBottomColor = new Color(0, 0, 0, 0.15f);
-            _tabBar.style.paddingLeft = 8;
-            rootVisualElement.Add(_tabBar);
-
-            // Tab content
-            _tabContent = new VisualElement();
-            _tabContent.style.flexGrow = 1;
-            rootVisualElement.Add(_tabContent);
-
-            RebuildTabs();
-            SetActiveTab(_activeTabIndex);
+            UpdateUnsaved(); if (!HasPendingChanges) return true;
+            int answer = ConfirmNavigation(saveChangesMessage);
+            if (answer == 1) return false;
+            if (answer == 0) return SavePendingChanges();
+            DiscardChanges(); return true;
         }
-
-        private void RebuildTabs()
+        public bool SavePendingChanges()
         {
-            var tabList = new System.Collections.Generic.List<IEditorTab>
-            {
-                new TranslationsTab(_data, _config, this),
-                new AssetsTab(_data, _config, this),
-                new LanguagesTab(_data, _config, this),
-                new ProfilesTab(_config),
-                new CoverageTab(_data, _config),
-                new AutoLocalizeTab(_data, _config, this),
-                new ToolsTab(_data, _config),
-                new SettingsTab(_config, this),
-                new DiagnosticsTab(),
-            };
-
-            var nameList = new System.Collections.Generic.List<string>
-            {
-                "Translations", "Assets", "Languages", "Profiles",
-                "Coverage", "Auto Localize", "Tools", "Settings", "Diagnostics"
-            };
-
-            // Discover custom tabs registered via [LocalizationEditorTab]
-            var customTabTypes = UnityEditor.TypeCache.GetTypesWithAttribute<LocalizationEditorTabAttribute>();
-
-            var customEntries = new System.Collections.Generic.List<(int order, string name, IEditorTab tab)>();
-
-            foreach (var type in customTabTypes)
-            {
-                if (!typeof(IEditorTab).IsAssignableFrom(type)) continue;
-
-                var attr = (LocalizationEditorTabAttribute)
-                    System.Attribute.GetCustomAttribute(type, typeof(LocalizationEditorTabAttribute));
-
-                if (attr == null) continue;
-
-                try
-                {
-                    var tab = (IEditorTab)System.Activator.CreateInstance(type);
-                    customEntries.Add((attr.Order, attr.TabName, tab));
-                }
-                catch (System.Exception e)
-                {
-                    UnityEngine.Debug.LogWarning(
-                        $"[SimplyLocalize] Failed to create custom tab '{attr.TabName}': {e.Message}");
-                }
-            }
-
-            // Sort custom tabs by order and append
-            customEntries.Sort((a, b) => a.order.CompareTo(b.order));
-
-            foreach (var (_, name, tab) in customEntries)
-            {
-                tabList.Add(tab);
-                nameList.Add(name);
-            }
-
-            _tabs = tabList.ToArray();
-            _tabNames = nameList.ToArray();
-
-            RebuildTabBar();
+            bool result = textView != null ? textView.SaveChanges() : assetView != null ? assetView.SaveChanges() : appearanceView != null ? appearanceView.SaveChanges()
+                : toolsView != null ? toolsView.ApplyPreview() : autoView != null ? autoView.ApplyPreview() : entryDraft?.IsPending != true;
+            if (result) { entryDraft?.Dispose(); entryDraft = null; }
+            UpdateUnsaved(); return result && !HasPendingChanges;
         }
-
-        private void RebuildTabBar()
+        public override void SaveChanges() { if (SavePendingChanges()) base.SaveChanges(); }
+        public override void DiscardChanges()
         {
-            _tabBar.Clear();
-
-            for (int i = 0; i < _tabNames.Length; i++)
-            {
-                int index = i;
-                var btn = new Button(() => SetActiveTab(index));
-                btn.name = "tab" + _tabNames[i].Replace(" ", "");
-                btn.SetEnabled(_config != null || _tabs[i] is DiagnosticsTab);
-                btn.text = _tabNames[i];
-                btn.style.borderBottomWidth = 2;
-                btn.style.borderLeftWidth = 0;
-                btn.style.borderRightWidth = 0;
-                btn.style.borderTopWidth = 0;
-                btn.style.borderBottomColor = i == _activeTabIndex
-                    ? new Color(0.2f, 0.5f, 0.9f) : Color.clear;
-                btn.style.backgroundColor = Color.clear;
-                btn.style.paddingTop = 8;
-                btn.style.paddingBottom = 8;
-                btn.style.paddingLeft = 14;
-                btn.style.paddingRight = 14;
-                btn.style.marginLeft = 0;
-                btn.style.marginRight = 0;
-                btn.style.fontSize = 12;
-
-                if (i == _activeTabIndex)
-                    btn.style.color = new Color(0.2f, 0.5f, 0.9f);
-
-                _tabBar.Add(btn);
-            }
+            bool recoveryVisible = rootVisualElement.Q("draftRecovery") != null || rootVisualElement.Q("auxiliaryRecovery") != null;
+            entryDraft?.Dispose(); entryDraft = null; ClearAuxiliaryDrafts();
+            if (textView != null) textView.Reload(true);
+            if (assetView != null) assetView.Reload(true);
+            if (appearanceView != null) appearanceView.Reload(true);
+            toolsView?.ClearPreview(); autoView?.ClearScan(); UpdateUnsaved(); base.DiscardChanges();
+            if (recoveryVisible && !building) BuildUI();
         }
-
-        private void SetActiveTab(int index)
+        private void UpdateUnsaved() { hasUnsavedChanges = HasPendingChanges; }
+        private void Changed()
         {
-            _activeTabIndex = index;
-            RebuildTabBar();
-
-            _tabContent.Clear();
-
-            if (_config == null && !(index >= 0 && index < _tabs.Length && _tabs[index] is DiagnosticsTab))
-            {
-                BuildSetup(_tabContent);
-                return;
-            }
-
-            if (_data?.LoadError != null)
-            {
-                _tabContent.Add(new HelpBox(_data.LoadError + "\nEditing translations is blocked until this is resolved.", HelpBoxMessageType.Error));
-                _tabContent.Add(new Button(FullRefresh) { text = "Reload data" });
-                if (index != 2 && index != 3 && index != 4 && index != 7 && !(_tabs[index] is DiagnosticsTab)) return;
-            }
-            if (index >= 0 && index < _tabs.Length)
-                _tabs[index].Build(_tabContent);
+            EditorProjectSelection.Invalidate(); CaptureSelection(); UpdateUnsaved();
+            if (!building) { NormalizeContext(); BuildScope(); }
         }
-
-        private void RefreshActiveTab()
-        {
-            SetActiveTab(_activeTabIndex);
-        }
-
-        private void BuildSetup(VisualElement container)
-        {
-            var setup = new ScrollView { name = "projectSetup" };
-            setup.style.paddingTop = 24;
-            setup.style.paddingLeft = 24;
-            setup.style.paddingRight = 24;
-            setup.contentContainer.style.maxWidth = 720;
-            setup.contentContainer.style.width = Length.Percent(100);
-            setup.contentContainer.style.alignSelf = Align.Center;
-            var title = new Label("Set up localization");
-            title.style.fontSize = 20;
-            title.style.unityFontStyleAndWeight = FontStyle.Bold;
-            title.style.marginBottom = 12;
-            setup.Add(title);
-            if (!string.IsNullOrEmpty(EditorDataCache.SelectionMessage))
-                setup.Add(new HelpBox(EditorDataCache.SelectionMessage, HelpBoxMessageType.Warning));
-            setup.Add(new Label("Choose your languages. The config and translation files will be created automatically.") { style = { whiteSpace = WhiteSpace.Normal } });
-            var languages = new SetupLanguagePicker(this);
-            setup.Add(languages);
-            var path = new Label(LocalizationProjectSetup.ConfigAssetPath);
-            path.style.fontSize = 10;
-            path.style.whiteSpace = WhiteSpace.Normal;
-            path.style.marginTop = 16;
-            setup.Add(path);
-
-            var message = new HelpBox("", HelpBoxMessageType.Error) { name = "setupMessage" };
-            message.style.display = DisplayStyle.None;
-            var create = new Button(() =>
-            {
-                try
-                {
-                    var result = LocalizationProjectSetup.ConfigureSelection(languages.Selected, languages.DefaultCode, languages.FallbackCode);
-                    _activeTabIndex = 2;
-                    AssignConfig(result.Config);
-                }
-                catch (System.Exception error)
-                {
-                    message.text = error.Message;
-                    message.style.display = DisplayStyle.Flex;
-                }
-            }) { name = "createConfig", text = "Create localization" };
-            languages.Changed += () => create.SetEnabled(languages.Selected.Count > 0);
-            create.SetEnabled(languages.Selected.Count > 0);
-            LanguagePickerStyle.Primary(create);
-            create.style.marginTop = 16;
-            create.style.height = 30;
-            setup.Add(create);
-            setup.Add(message);
-            var existing = new Label("Existing config? Select it in the Config field above.") { style = { whiteSpace = WhiteSpace.Normal } };
-            existing.style.marginTop = 20;
-            setup.Add(existing);
-            container.Add(setup);
-        }
-
-        // ──────────────────────────────────────────────
-        //  Public for tabs
-        // ──────────────────────────────────────────────
-
         public void FullRefresh()
         {
-            if (_config != null)
-                _data.Reload(_config);
-
-            RebuildTabs();
-            SetActiveTab(_activeTabIndex);
+            if (!CanNavigate()) return;
+            CaptureSelection(); CaptureAuxiliaryState(); EditorProjectSelection.Invalidate(); BuildUI();
         }
-
-        public void RefreshCurrentTab() => RefreshActiveTab();
-
-        internal void EditProfile(LanguageProfile profile)
+        public void RefreshCurrentTab() => FullRefresh();
+        private void EditAppearance(string language)
         {
-            SetActiveTab(3);
-            var selector = _tabContent.Q<PopupField<string>>("profileSelector");
-            if (selector != null) selector.index = _config.languages.IndexOf(profile);
+            if (!CanNavigate()) return;
+            CaptureSelection(); appearanceLanguage = language; _activeTabIndex = 3; BuildUI();
         }
-
-        // ──────────────────────────────────────────────
-        //  Helpers
-        // ──────────────────────────────────────────────
-
-        private void FindConfig()
+        private void NormalizeContext()
         {
-            if (_config != null) return;
-
-            _config = EditorDataCache.Config;
+            if (_config == null) return;
+            // Keep a recovered draft tied to its original route. Falling back here would
+            // prevent Retry from working when the original channel/set is restored.
+            if (entryDraft?.IsPending == true || AuxiliaryPending) return;
+            var channel = _config.Channels.FirstOrDefault(c => c.Id == channelId) ?? _config.MainChannel;
+            if (channel == null) { channelId = setId = null; return; }
+            channelId = channel.Id;
+            if (!channel.SetIds.Contains(setId)) setId = channel.DefaultSetId;
+        }
+        private void BuildUI()
+        {
+            building = true;
+            try
+            {
+                DisposeView(); rootVisualElement.Clear(); windowMessage = null; _tabContent = null; rootVisualElement.style.flexGrow = 1;
+                NormalizeContext(); DiscoverCustomTabs();
+                var header = new VisualElement { style = { flexDirection = FlexDirection.Row, alignItems = Align.Center, paddingLeft = 12, paddingRight = 12, paddingTop = 8, paddingBottom = 8 } };
+                header.Add(new Label("Simply Localize") { style = { unityFontStyleAndWeight = FontStyle.Bold, fontSize = 14, flexGrow = 1 } });
+                var config = new ObjectField("Config") { name = "configField", objectType = typeof(LocalizationProjectConfig), allowSceneObjects = false, value = _config };
+                config.style.width = 350; config.labelElement.style.minWidth = 50; config.labelElement.style.width = 50;
+                config.RegisterValueChangedCallback(e =>
+                {
+                    try { if (!TrySelectConfig(e.newValue as LocalizationProjectConfig)) config.SetValueWithoutNotify(_config); }
+                    catch (Exception error) { config.SetValueWithoutNotify(_config); ShowError(error.Message); }
+                });
+                header.Add(config); rootVisualElement.Add(header);
+                scopeBar = new VisualElement { name = "projectScope", style = { flexDirection = FlexDirection.Row, paddingLeft = 12, paddingRight = 12, flexWrap = Wrap.Wrap } }; rootVisualElement.Add(scopeBar); BuildScope();
+                _tabBar = new VisualElement { style = { flexDirection = FlexDirection.Row, flexWrap = Wrap.Wrap, paddingLeft = 8 } }; rootVisualElement.Add(_tabBar);
+                _activeTabIndex = Mathf.Clamp(_activeTabIndex, 0, Builtins.Length + customTabs.Count - 1);
+                var names = Builtins.Concat(customTabs.Select(t => t.name)).ToArray();
+                for (int i = 0; i < names.Length; i++)
+                {
+                    int index = i; var button = new Button(() => ShowTab(index)) { name = "tab" + names[i].Replace(" ", ""), text = names[i] };
+                    button.SetEnabled(_config != null || i == 8); button.style.backgroundColor = Color.clear; button.style.borderBottomWidth = 2;
+                    button.style.borderTopWidth = button.style.borderLeftWidth = button.style.borderRightWidth = 0;
+                    button.style.borderBottomColor = i == _activeTabIndex ? new Color(0.2f, 0.5f, 0.9f) : Color.clear;
+                    button.style.paddingTop = button.style.paddingBottom = 8; button.style.paddingLeft = button.style.paddingRight = 14; _tabBar.Add(button);
+                }
+                windowMessage = new HelpBox("", HelpBoxMessageType.Error) { name = "windowMessage" }; windowMessage.style.display = DisplayStyle.None; rootVisualElement.Add(windowMessage);
+                _tabContent = new VisualElement { name = "tabContent", style = { flexGrow = 1, minHeight = 0 } }; rootVisualElement.Add(_tabContent);
+                BuildActiveView(); RestoreAuxiliaryState(); UpdateUnsaved();
+            }
+            catch (Exception error)
+            {
+                ShowError(error.Message);
+                if (entryDraft?.IsPending == true || AuxiliaryPending)
+                {
+                    if (_tabContent == null) { _tabContent = new VisualElement { name = "tabContent" }; rootVisualElement.Add(_tabContent); }
+                    DisposeView(); _tabContent.Clear(); ShowRecovery(error.Message);
+                }
+            }
+            finally { building = false; UpdateUnsaved(); }
+        }
+        private void BuildScope()
+        {
+            if (scopeBar == null) return; scopeBar.Clear(); if (_config == null) return;
+            var channelOptions = _config.Channels.Select(c => c.Id).ToList();
+            if (!string.IsNullOrEmpty(channelId) && !channelOptions.Contains(channelId)) channelOptions.Add(channelId);
+            var channel = new DropdownField("Channel", channelOptions, channelId) { name = "channelSelector" };
+            channel.formatListItemCallback = channel.formatSelectedValueCallback = id => _config.Channels.FirstOrDefault(c => c.Id == id)?.Name ?? "Unavailable channel";
+            channel.style.flexGrow = 1; channel.style.minWidth = 240;
+            channel.RegisterValueChangedCallback(e => { try { if (!TrySelectContext(e.newValue)) channel.SetValueWithoutNotify(channelId); } catch (Exception error) { channel.SetValueWithoutNotify(channelId); ShowError(error.Message); } }); scopeBar.Add(channel);
+            var definition = _config.Channels.FirstOrDefault(c => c.Id == channelId); if (definition == null) return;
+            var setOptions = definition.SetIds.ToList();
+            // Display a lost draft route without silently selecting a valid replacement.
+            if (!setOptions.Contains(setId ?? "")) setOptions.Add(setId ?? "");
+            var set = new DropdownField("Content set", setOptions, setId ?? "") { name = "setSelector" };
+            set.formatListItemCallback = set.formatSelectedValueCallback = id => string.IsNullOrEmpty(id) ? "(none)"
+                : definition.SetIds.Contains(id) ? _config.Sets.FirstOrDefault(s => s.Id == id)?.Name ?? "Unavailable set" : "Unavailable set";
+            set.style.flexGrow = 1; set.style.minWidth = 240; set.SetEnabled(definition.SetIds.Count > 0);
+            set.RegisterValueChangedCallback(e => { try { if (!TrySelectContext(channelId, e.newValue)) set.SetValueWithoutNotify(setId); } catch (Exception error) { set.SetValueWithoutNotify(setId); ShowError(error.Message); } }); scopeBar.Add(set);
+        }
+        private void BuildActiveView()
+        {
+            if (_activeTabIndex == 8) { new DiagnosticsTab().Build(_tabContent); return; }
+            if (_config == null)
+            {
+                if (entryDraft?.IsPending == true || AuxiliaryPending) ShowRecovery("The project config is unavailable.");
+                else _tabContent.Add(new ProjectSetupView(this, config => { _activeTabIndex = 2; TrySelectConfig(config); }));
+                return;
+            }
+            _config.ValidateOrThrow();
+            bool needsSet = _activeTabIndex == 0 || _activeTabIndex == 1 || _activeTabIndex == 4 || _activeTabIndex == 5 || _activeTabIndex == 6;
+            if (needsSet && string.IsNullOrEmpty(setId))
+            {
+                if (entryDraft?.IsPending == true || AuxiliaryPending) ShowRecovery("The original content set is unavailable.");
+                else _tabContent.Add(new HelpBox("Connect a content set to this channel in Settings.", HelpBoxMessageType.Info));
+                return;
+            }
+            if (needsSet) _ = new EditorProjectContext(_config, channelId, setId);
+            VisualElement view = null;
+            switch (_activeTabIndex)
+            {
+                case 0: textView = new ProjectTranslationsView(_config, channelId, setId, Changed, LocalizationEditorReaders.Text); textView.DraftChanged += UpdateUnsaved; view = textView;
+                    if (entryDraft?.IsPending != true && selectedText != null) textView.SelectEntry(selectedText); break;
+                case 1: assetView = new ProjectAssetsView(_config, channelId, setId, Changed, LocalizationEditorReaders.Assets); assetView.DraftChanged += UpdateUnsaved; view = assetView;
+                    if (entryDraft?.IsPending != true && selectedAsset != null) assetView.SelectEntry(selectedAsset); break;
+                case 2: view = new ProjectLanguagesView(_config, this, channelId, Changed, EditAppearance); break;
+                case 3: appearanceView = new ProjectAppearanceView(_config, appearanceLanguage, Changed, LocalizationEditorReaders.ReadAppearance); appearanceView.DraftChanged += UpdateUnsaved; view = appearanceView; break;
+                case 4: view = new ProjectCoverageView(_config, channelId, setId, LocalizationEditorReaders.Text, LocalizationEditorReaders.Assets); break;
+                case 5: autoView = new ProjectAutoLocalizeView(_config, channelId, setId, Changed); view = autoView; break;
+                case 6: toolsView = new ProjectToolsView(_config, channelId, setId, Changed); view = toolsView; break;
+                case 7: view = new ProjectSettingsView(_config, Changed, id => { if (TrySelectContext(id)) ShowTab(2); }); break;
+                default:
+                    var tab = (IEditorTab)Activator.CreateInstance(customTabs[_activeTabIndex - Builtins.Length].type);
+                    disposableView = tab as IDisposable;
+                    if (tab is IContextualLocalizationTab contextual) contextual.SetContext(Context);
+                    tab.Build(_tabContent); return;
+            }
+            disposableView = view as IDisposable; _tabContent.Add(view);
+            if (entryDraft?.IsPending == true)
+            {
+                try
+                {
+                    if (textView != null) textView.RestoreDraft(entryDraft); else if (assetView != null) assetView.RestoreDraft(entryDraft); else if (appearanceView != null) appearanceView.RestoreDraft(entryDraft); else return;
+                    entryDraft.Dispose(); entryDraft = null;
+                }
+                catch (Exception error)
+                {
+                    DisposeView(); _tabContent.Clear(); _tabContent.Add(new ProjectDraftRecoveryView(entryDraft, error.Message, BuildUI, DiscardChanges));
+                }
+            }
+        }
+        private void DiscoverCustomTabs()
+        {
+            customTabs.Clear();
+            foreach (var type in TypeCache.GetTypesWithAttribute<LocalizationEditorTabAttribute>().Where(t => !t.IsAbstract && typeof(IEditorTab).IsAssignableFrom(t))
+                .OrderBy(t => ((LocalizationEditorTabAttribute)Attribute.GetCustomAttribute(t, typeof(LocalizationEditorTabAttribute))).Order).ThenBy(t => t.FullName, StringComparer.Ordinal))
+            {
+                var attribute = (LocalizationEditorTabAttribute)Attribute.GetCustomAttribute(type, typeof(LocalizationEditorTabAttribute));
+                customTabs.Add((attribute.TabName, type));
+            }
+        }
+        private void ShowError(string text)
+        {
+            if (windowMessage == null) { windowMessage = new HelpBox("", HelpBoxMessageType.Error) { name = "windowMessage" }; rootVisualElement.Add(windowMessage); }
+            windowMessage.text = text; windowMessage.style.display = string.IsNullOrEmpty(text) ? DisplayStyle.None : DisplayStyle.Flex;
         }
     }
 }

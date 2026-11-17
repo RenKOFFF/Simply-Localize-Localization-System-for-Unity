@@ -175,17 +175,28 @@ namespace SimplyLocalize.Tests
 
         [Test] public void WindowSelection_IsSharedWithInspectorCacheWithoutChangingStartup()
         {
-            Write("en", "main", "selected.only");
+            string source = Write("en", "main", "selected.only"); AssetDatabase.Refresh();
+            var project = LocalizationProjectConfig.Create(new[] { "en" }); project.Sets[0].AddEntry("selected.only");
+            project.Sets[0].SetSources("en", new LocalizationSourceReference("resources", ResourcesEditorTextReader.ResourceAddress(source), LocalizationSourceKind.TextTable));
+            AssetDatabase.CreateAsset(project, _root + "/Project.asset");
+            var keys = new[] { "SimplyLocalize.ProjectEditor.Config", "SimplyLocalize.ProjectEditor.Channel", "SimplyLocalize.ProjectEditor.Set" };
+            var previous = keys.Select(k => SessionState.GetString(k, "")).ToArray();
             var window = ScriptableObject.CreateInstance<LocalizationEditorWindow>();
-            var previous = EditorDataCache.Config;
             try
             {
-                typeof(LocalizationEditorWindow).GetMethod("AssignConfig", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(window, new object[] { _config });
-                Assert.That(EditorDataCache.Config, Is.SameAs(_config));
-                Assert.That(EditorDataCache.AllKeys, Is.EqualTo(new[] { "selected.only" }));
-                Assert.That(_config.autoInitialize, Is.False);
+                Assert.That(window.TrySelectConfig(project), Is.True);
+                Assert.That(EditorProjectSelection.Config, Is.SameAs(project));
+                Assert.That(EditorProjectSelection.Current.Entries(LocalizationEntryKind.Text).Select(e => e.Key), Is.EqualTo(new[] { "selected.only" }));
+                Assert.That(EditorProjectSelection.Current.Text.TryGetDirect(project.Sets[0].Entries[0].Id, "en", out var cell), Is.True);
+                Assert.That(cell.Value, Is.EqualTo("en value"));
+                Assert.That(project.AutoInitialize, Is.False);
             }
-            finally { Object.DestroyImmediate(window); EditorDataCache.SelectConfig(previous); }
+            finally
+            {
+                Object.DestroyImmediate(window);
+                for (int i = 0; i < keys.Length; i++) SessionState.SetString(keys[i], previous[i]);
+                EditorProjectSelection.Invalidate();
+            }
         }
 
         [Test] public void Coverage_DistinguishesPresenceEmptyFallbackAndWhitespaceWithoutChangingRuntime()

@@ -1,5 +1,7 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
+using SimplyLocalize.Editor.Data;
 using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
@@ -18,6 +20,9 @@ namespace SimplyLocalize.Tests
         private LocalizationEditorWindow _window;
         private UnityEngine.Object _selection;
         private string _other;
+        private HashSet<int> priorUndo;
+        private string[] priorSelection;
+        private static readonly string[] SelectionKeys = { "SimplyLocalize.ProjectEditor.Config", "SimplyLocalize.ProjectEditor.Channel", "SimplyLocalize.ProjectEditor.Set" };
 
         [SetUp] public void Setup()
         {
@@ -28,6 +33,10 @@ namespace SimplyLocalize.Tests
             Directory.CreateDirectory(_other);
             AssetDatabase.Refresh();
             _selection = Selection.activeObject;
+            priorUndo = Resources.FindObjectsOfTypeAll<LocalizationProjectUndo>().Select(x => x.GetInstanceID()).ToHashSet();
+            priorSelection = SelectionKeys.Select(k => SessionState.GetString(k, "")).ToArray();
+            foreach (string key in SelectionKeys) SessionState.EraseString(key);
+            EditorProjectSelection.Invalidate();
         }
 
         [TearDown] public void Cleanup()
@@ -36,19 +45,22 @@ namespace SimplyLocalize.Tests
             try
             {
                 ClosePicker();
-                if (_window != null) _window.Close();
+                if (_window != null) { _window.DiscardChanges(); _window.Close(); }
             }
             finally
             {
+                foreach (var record in Resources.FindObjectsOfTypeAll<LocalizationProjectUndo>().Where(r => !priorUndo.Contains(r.GetInstanceID()))) record.Dispose();
                 AssetDatabase.DeleteAsset(Root);
                 AssetDatabase.DeleteAsset(_other);
                 _other = null;
                 Selection.activeObject = _selection;
+                for (int i = 0; i < SelectionKeys.Length; i++) SessionState.SetString(SelectionKeys[i], priorSelection[i]);
+                EditorProjectSelection.Invalidate();
             }
         }
 
-        private LocalizationConfig Config() => LocalizationProjectSetup.Configure(new[] { "en", "ru" }, "en", "en", true).Config;
-        private void Open(LocalizationConfig config)
+        private LocalizationProjectConfig Config() => LocalizationProjectAuthoring.Configure(new[] { "en", "ru" }, "en", "en").Config;
+        private void Open(LocalizationProjectConfig config)
         {
             _window = ScriptableObject.CreateInstance<LocalizationEditorWindow>();
             _window.ShowUtility();
@@ -82,7 +94,7 @@ namespace SimplyLocalize.Tests
         [Test] public void SetupFromWindow_SelectsLanguagesWithoutChangingSelectionOrExistingText()
         {
             var config = Config();
-            string text = Root + "/Resources/SimplyLocalize/Translations/en/text/main.json";
+            string text = Root + "/Resources/SimplyLocalize/Translations/en/Common.json";
             File.WriteAllText(text, "{\"translations\":{\"play\":\"Play externally edited\"}}");
             byte[] original = File.ReadAllBytes(text);
             Open(config);
@@ -92,7 +104,7 @@ namespace SimplyLocalize.Tests
             Click("addSelectedLanguage");
             Click("createConfig");
             Assert.That(_window.rootVisualElement.Q<Button>("openLanguagePicker"), Is.Not.Null);
-            Assert.That(config.GetLanguageCodes(), Is.EqualTo(new[] { "en", "ru", "pl" }));
+            Assert.That(config.Languages.Select(l => l.Code).ToArray(), Is.EqualTo(new[] { "en", "ru", "pl" }));
             Assert.That(Selection.activeObject, Is.SameAs(selected));
             Assert.That(File.ReadAllBytes(text), Is.EqualTo(original));
         }
@@ -116,15 +128,15 @@ namespace SimplyLocalize.Tests
             Field<TextField>("languageSearch").value = "de"; Click("addSelectedLanguage");
             Assert.That(Field<Button>("addSelectedLanguage").enabledSelf, Is.False);
             ClosePicker();
-            Assert.That(config.languages.Count, Is.EqualTo(4));
-            Field<PopupField<LanguageProfile>>("defaultLanguage").value = config.GetProfile("ru");
-            Field<PopupField<LanguageProfile>>("fallbackLanguage").value = config.GetProfile("pl");
-            Assert.That(config.DefaultLanguageCode, Is.EqualTo("ru"));
-            Assert.That(config.FallbackLanguageCode, Is.EqualTo("pl"));
+            Assert.That(config.Languages.Count, Is.EqualTo(4));
+            Field<DropdownField>("defaultLanguage").value = "ru";
+            Field<DropdownField>("fallbackLanguage").value = "pl";
+            Assert.That(config.MainChannel.DefaultLanguage, Is.EqualTo("ru"));
+            Assert.That(config.MainChannel.FallbackLanguage, Is.EqualTo("pl"));
             Assert.That(EditorUtility.IsDirty(config), Is.False);
-            AssetDatabase.ImportAsset(LocalizationProjectSetup.ConfigAssetPath, ImportAssetOptions.ForceUpdate);
-            Assert.That(config.DefaultLanguageCode, Is.EqualTo("ru"));
-            Assert.That(config.FallbackLanguageCode, Is.EqualTo("pl"));
+            AssetDatabase.ImportAsset(LocalizationProjectAuthoring.ConfigAssetPath, ImportAssetOptions.ForceUpdate);
+            Assert.That(config.MainChannel.DefaultLanguage, Is.EqualTo("ru"));
+            Assert.That(config.MainChannel.FallbackLanguage, Is.EqualTo("pl"));
         }
 
         [Test] public void InvalidLanguage_ShowsInlineErrorAndPreservesConfig()
@@ -134,36 +146,36 @@ namespace SimplyLocalize.Tests
             Field<TextField>("customLanguageCode").value = "../de";
             Field<TextField>("customLanguageName").value = "Bad";
             Click("addCustomLanguage");
-            Assert.That(config.GetLanguageCodes(), Is.EqualTo(new[] { "en", "ru" }));
+            Assert.That(config.Languages.Select(l => l.Code).ToArray(), Is.EqualTo(new[] { "en", "ru" }));
             Assert.That(Field<HelpBox>("languagePickerMessage").messageType, Is.EqualTo(HelpBoxMessageType.Error));
         }
 
         [Test] public void ReadOnlyConfig_DefaultChangeShowsErrorAndKeepsPreviousValue()
         {
             var config = Config(); Open(config); Click("tabLanguages");
-            string path = LocalizationProjectSetup.ConfigAssetPath;
+            string path = LocalizationProjectAuthoring.ConfigAssetPath;
             var attributes = File.GetAttributes(path);
             File.SetAttributes(path, attributes | FileAttributes.ReadOnly);
             try
             {
-                Field<PopupField<LanguageProfile>>("defaultLanguage").value = config.GetProfile("ru");
-                Assert.That(config.DefaultLanguageCode, Is.EqualTo("en"));
+                Field<DropdownField>("defaultLanguage").value = "ru";
+                Assert.That(config.MainChannel.DefaultLanguage, Is.EqualTo("en"));
                 Assert.That(Field<HelpBox>("languageMessage").messageType, Is.EqualTo(HelpBoxMessageType.Error));
                 Assert.That(EditorUtility.IsDirty(config), Is.False);
             }
             finally { File.SetAttributes(path, attributes); }
         }
 
-        [Test] public void EditProfile_OpensCorrectProfileInsideSameWindow()
+        [Test] public void EditAppearance_OpensCorrectLanguageInsideSameWindow()
         {
             var config = Config(); Open(config); Click("tabLanguages");
             var selected = Selection.activeObject;
-            Click("editProfile_ru");
-            Assert.That(Field<PopupField<string>>("profileSelector").index, Is.EqualTo(1));
+            Click("editAppearance_ru");
+            Assert.That(Field<DropdownField>("appearanceLanguage").value, Is.EqualTo("ru"));
             Assert.That(Selection.activeObject, Is.SameAs(selected));
         }
 
-        [Test] public void Refocus_PreservesLanguageDraftAndSelectedProfile()
+        [Test] public void Refocus_PreservesLanguageDraftAndSelectedAppearance()
         {
             var config = Config(); Open(config); Click("tabLanguages");
             Field<TextField>("languageSearch").value = "pl";
@@ -171,44 +183,44 @@ namespace SimplyLocalize.Tests
             focus.Invoke(_window, null);
             Assert.That(Field<TextField>("languageSearch").value, Is.EqualTo("pl"));
             ClosePicker();
-            Click("editProfile_ru");
+            Click("editAppearance_ru");
             focus.Invoke(_window, null);
-            Assert.That(Field<PopupField<string>>("profileSelector").index, Is.EqualTo(1));
+            Assert.That(Field<DropdownField>("appearanceLanguage").value, Is.EqualTo("ru"));
         }
 
         [Test] public void Settings_MigratesManualConfigAndPreservesPendingChangesAndGuid()
         {
-            var config = ScriptableObject.CreateInstance<LocalizationConfig>();
+            var config = LocalizationProjectConfig.Create(new[] { "en" });
             string oldPath = _other + "/GameLocalization.asset";
             AssetDatabase.CreateAsset(config, oldPath);
-            LocalizationProjectSetup.AddLanguages(config, "en");
-            config.defaultLanguage = config.languages[0];
-            config.enableLogging = true;
+
+
+            config.AutoDetectLanguage = true;
             string guid = AssetDatabase.AssetPathToGUID(oldPath);
             Open(config); Click("tabSettings"); Click("useForAutomaticStartup");
-            Assert.That(AssetDatabase.GetAssetPath(config), Is.EqualTo(LocalizationProjectSetup.ConfigAssetPath));
-            Assert.That(AssetDatabase.AssetPathToGUID(LocalizationProjectSetup.ConfigAssetPath), Is.EqualTo(guid));
+            Assert.That(AssetDatabase.GetAssetPath(config), Is.EqualTo(LocalizationProjectAuthoring.ConfigAssetPath));
+            Assert.That(AssetDatabase.AssetPathToGUID(LocalizationProjectAuthoring.ConfigAssetPath), Is.EqualTo(guid));
             Assert.That(config.name, Is.EqualTo("SimplyLocalizeSettings"));
-            Assert.That(config.DefaultLanguageCode, Is.EqualTo("en"));
-            Assert.That(config.enableLogging, Is.True);
-            Assert.That(config.autoInitialize, Is.True);
-            Assert.That(Field<HelpBox>("startupMessage").messageType, Is.EqualTo(HelpBoxMessageType.Info));
+            Assert.That(config.MainChannel.DefaultLanguage, Is.EqualTo("en"));
+            Assert.That(config.AutoDetectLanguage, Is.True);
+            Assert.That(config.AutoInitialize, Is.True);
+            Assert.That(Field<Toggle>("autoInitialize").value, Is.True);
             Assert.That(Field<Button>("useForAutomaticStartup"), Is.Null);
-            AssetDatabase.ImportAsset(LocalizationProjectSetup.ConfigAssetPath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(LocalizationProjectAuthoring.ConfigAssetPath, ImportAssetOptions.ForceUpdate);
             Assert.That(config.name, Is.EqualTo("SimplyLocalizeSettings"));
         }
 
         [Test] public void MigrationConflict_ShowsErrorWithoutOverwritingEitherConfig()
         {
             var startup = Config();
-            var old = ScriptableObject.CreateInstance<LocalizationConfig>();
+            var old = LocalizationProjectConfig.Create(new[] { "en" });
             string path = _other + "/Old.asset";
             AssetDatabase.CreateAsset(old, path);
             Open(old); Click("tabSettings"); Click("useForAutomaticStartup");
             Assert.That(AssetDatabase.GetAssetPath(old), Is.EqualTo(path));
-            Assert.That(old.autoInitialize, Is.False);
-            Assert.That(AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath), Is.SameAs(startup));
-            Assert.That(Field<HelpBox>("startupMessage").messageType, Is.EqualTo(HelpBoxMessageType.Error));
+            Assert.That(old.AutoInitialize, Is.False);
+            Assert.That(AssetDatabase.LoadAssetAtPath<LocalizationProjectConfig>(LocalizationProjectAuthoring.ConfigAssetPath), Is.SameAs(startup));
+            Assert.That(Field<HelpBox>("settingsMessage").messageType, Is.EqualTo(HelpBoxMessageType.Error));
         }
 
 
@@ -300,20 +312,20 @@ namespace SimplyLocalize.Tests
             Assert.That(Directory.Exists(Root), Is.False);
         }
 
-        [Test] public void SetupSelection_CreatesProfileMetadataAndPreservesExistingProfiles()
+        [Test] public void SetupSelection_CreatesLanguageMetadataAndPreservesExistingLanguages()
         {
-            var config = Config(); config.GetProfile("en").displayName = "My English";
-            EditorUtility.SetDirty(config.GetProfile("en")); AssetDatabase.SaveAssetIfDirty(config.GetProfile("en"));
+            var config = Config(); config.Languages.FirstOrDefault(l => l.Code == "en").DisplayName = "My English";
+            EditorUtility.SetDirty(config); AssetDatabase.SaveAssetIfDirty(config);
             Open(config); Field<ObjectField>("configField").value = null;
             Field<TextField>("languageSearch").value = "ro"; Click("addSelectedLanguage");
             Click("openCustomLanguage");
             Field<TextField>("customLanguageCode").value = "x-elvish";
             Field<TextField>("customLanguageName").value = "Elvish";
             Click("addCustomLanguage"); Click("createConfig");
-            Assert.That(config.GetProfile("ro").displayName, Is.Not.EqualTo("ro"));
-            Assert.That(config.GetProfile("ro").systemLanguage, Is.EqualTo(SystemLanguage.Romanian));
-            Assert.That(config.GetProfile("x-elvish").displayName, Is.EqualTo("Elvish"));
-            Assert.That(config.GetProfile("en").displayName, Is.EqualTo("My English"));
+            Assert.That(config.Languages.FirstOrDefault(l => l.Code == "ro").DisplayName, Is.Not.EqualTo("ro"));
+            Assert.That(config.Languages.FirstOrDefault(l => l.Code == "ro").SystemLanguage, Is.EqualTo(SystemLanguage.Romanian));
+            Assert.That(config.Languages.FirstOrDefault(l => l.Code == "x-elvish").DisplayName, Is.EqualTo("Elvish"));
+            Assert.That(config.Languages.FirstOrDefault(l => l.Code == "en").DisplayName, Is.EqualTo("My English"));
         }
 
         [Test] public void SetupSelection_NoneFallbackClearsExistingFallback()
@@ -321,7 +333,7 @@ namespace SimplyLocalize.Tests
             var config = Config(); Open(config); Field<ObjectField>("configField").value = null;
             Field<DropdownField>("setupFallback").value = "";
             Click("createConfig");
-            Assert.That(config.fallbackLanguage, Is.Null);
+            Assert.That(config.MainChannel.FallbackLanguage, Is.Null.Or.Empty);
             Assert.That(EditorUtility.IsDirty(config), Is.False);
         }
 
@@ -340,25 +352,25 @@ namespace SimplyLocalize.Tests
             Click("openLanguagePicker");
             Assert.That(Picker().GetType(), Is.SameAs(type));
             Field<TextField>("languageSearch").value = "ro"; Click("addSelectedLanguage");
-            Assert.That(config.GetProfile("ro").displayName, Is.Not.EqualTo("ro"));
-            Assert.That(config.GetProfile("ro").systemLanguage, Is.EqualTo(SystemLanguage.Romanian));
+            Assert.That(config.Languages.FirstOrDefault(l => l.Code == "ro").DisplayName, Is.Not.EqualTo("ro"));
+            Assert.That(config.Languages.FirstOrDefault(l => l.Code == "ro").SystemLanguage, Is.EqualTo(SystemLanguage.Romanian));
         }
 
         [Test] public void LanguagesPopup_CustomLanguagePreservesDefaultsAndExistingTranslations()
         {
             var config = Config(); Open(config); Click("tabLanguages");
-            var english = config.GetProfile("en");
-            string text = Root + "/Resources/SimplyLocalize/Translations/en/text/main.json";
+            var english = config.Languages.FirstOrDefault(l => l.Code == "en");
+            string text = Root + "/Resources/SimplyLocalize/Translations/en/Common.json";
             File.WriteAllText(text, "{\"translations\":{\"play\":\"Keep me\"}}");
             byte[] before = File.ReadAllBytes(text);
             Click("openCustomLanguage");
             Field<TextField>("customLanguageCode").value = "x-ELVISH";
             Field<TextField>("customLanguageName").value = "Elvish";
             Click("addCustomLanguage"); Click("addCustomLanguage");
-            Assert.That(config.languages.Count, Is.EqualTo(3));
-            Assert.That(config.GetProfile("x-elvish").displayName, Is.EqualTo("Elvish"));
-            Assert.That(config.defaultLanguage, Is.SameAs(english));
-            Assert.That(config.fallbackLanguage, Is.SameAs(english));
+            Assert.That(config.Languages.Count, Is.EqualTo(3));
+            Assert.That(config.Languages.FirstOrDefault(l => l.Code == "x-elvish").DisplayName, Is.EqualTo("Elvish"));
+            Assert.That(config.MainChannel.DefaultLanguage, Is.EqualTo(english.Code));
+            Assert.That(config.MainChannel.FallbackLanguage, Is.EqualTo(english.Code));
             Assert.That(File.ReadAllBytes(text), Is.EqualTo(before));
         }
 
@@ -366,24 +378,24 @@ namespace SimplyLocalize.Tests
         {
             var config = Config(); Open(config); Click("tabLanguages");
             Field<TextField>("languageSearch").value = "ro";
-            string path = LocalizationProjectSetup.ConfigAssetPath;
+            string path = LocalizationProjectAuthoring.ConfigAssetPath;
             var attrs = File.GetAttributes(path); File.SetAttributes(path, attrs | FileAttributes.ReadOnly);
             try
             {
                 Click("addSelectedLanguage");
                 Assert.That(Field<HelpBox>("languagePickerMessage").messageType, Is.EqualTo(HelpBoxMessageType.Error));
-                Assert.That(config.GetProfile("ro"), Is.Null);
+                Assert.That(config.Languages.FirstOrDefault(l => l.Code == "ro"), Is.Null);
                 Assert.That(File.Exists(Root + "/Languages/ro.asset"), Is.False);
             }
             finally { File.SetAttributes(path, attrs); }
             Click("addSelectedLanguage");
-            Assert.That(config.GetProfile("ro"), Is.Not.Null);
+            Assert.That(config.Languages.FirstOrDefault(l => l.Code == "ro"), Is.Not.Null);
         }
 
         [Test] public void OpeningWindow_PrefersStartupConfigOverOtherConfigs()
         {
             var config = Config();
-            var other = ScriptableObject.CreateInstance<LocalizationConfig>();
+            var other = LocalizationProjectConfig.Create(new[] { "en" });
             AssetDatabase.CreateAsset(other, _other + "/Other.asset");
             _window = ScriptableObject.CreateInstance<LocalizationEditorWindow>();
             _window.ShowUtility();
