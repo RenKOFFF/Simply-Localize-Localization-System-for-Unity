@@ -43,6 +43,11 @@ namespace SimplyLocalize.Editor.Windows
             startup.Add(Toggle("Auto-initialize", "autoInitialize", config.AutoInitialize, value => Save(d => d.AutoInitialize = value, "Change localization startup")));
             startup.Add(Toggle("Auto-detect device language", "autoDetectLanguage", config.AutoDetectLanguage, value => Save(d => d.AutoDetectLanguage = value, "Change language detection")));
             Add(startup);
+#if !SIMPLY_LOCALIZE_ADDRESSABLES
+            var delivery = Card("Addressables");
+            AddressablesPackageInstaller.AddControls(delivery);
+            Add(delivery);
+#endif
             var editor = Card("Editor tools");
             editor.Add(new Label("Local Editor preferences; these do not change the project config.") { style = { whiteSpace = WhiteSpace.Normal } });
             var dropdown = new Toggle("Show language dropdown in Play Mode")

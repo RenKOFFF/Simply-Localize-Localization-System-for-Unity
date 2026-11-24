@@ -446,7 +446,7 @@ Implement `ILocalizationSourceProvider` in the game, register it by ID in `Local
 
 ### Chapter voice with Addressables (development branch)
 
-Install **Addressables** through Unity Package Manager, then open **Simply Localize**.
+In Simply Localize, click **Settings → Addressables → Install Addressables**. Unity selects and installs the package for the project. The table controls appear after compilation. If Addressables is already installed, go straight to chapter setup.
 
 1. In **Settings**, create an independent Voice channel with `en` and a Chapter 1 set. Include the set in Voice and turn off **Load at startup**. Keep subtitles in Main.
 2. In **Content sets → Chapter 1 → Connect a source**, select `en` and **Create Addressables table**. Save outside Resources. To reuse a table, select **Existing table → Connect with Addressables**.

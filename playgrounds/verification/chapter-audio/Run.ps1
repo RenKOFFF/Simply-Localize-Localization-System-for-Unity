@@ -46,12 +46,15 @@ foreach ($variant in 'WithAddressables', 'ResourcesOnly') {
         [IO.Directory]::CreateDirectory((Join-Path $project $folder)) | Out-Null
     }
     $dependencies = @{ 'com.renkoff.simply-localize' = "file:$package"; 'com.unity.ugui' = '2.0.0' }
-    if ($variant -eq 'WithAddressables') {
-        $dependencies['com.unity.addressables'] = '2.7.6'
-        [IO.File]::WriteAllText("$project/Assets/csc.rsp", '-define:TEST_ADDRESSABLES', $utf8)
-    }
     [IO.File]::WriteAllText("$project/Packages/manifest.json", (@{dependencies=$dependencies} | ConvertTo-Json), $utf8)
     [IO.File]::WriteAllLines("$project/ProjectSettings/ProjectVersion.txt", [string[]]@('m_EditorVersion: 6000.0.62f1'), $utf8)
+    if ($variant -eq 'WithAddressables') {
+        Copy-Item -LiteralPath "$PSScriptRoot/Editor/ChapterAudioInstall.cs" -Destination "$project/Assets/Editor"
+        $installLog = "$project/install.log"
+        Invoke-Hidden $UnityEditor @('-batchmode','-force-d3d11','-projectPath',$project,'-executeMethod','ChapterAudioInstall.Run','-logFile',$installLog) 300 $installLog
+        if (!(Select-String -LiteralPath $installLog -SimpleMatch 'PASS: installed Addressables' -Quiet)) { throw "Installer did not complete. See $installLog" }
+        [IO.File]::WriteAllText("$project/Assets/csc.rsp", '-define:TEST_ADDRESSABLES', $utf8)
+    }
     Copy-Item -LiteralPath "$PSScriptRoot/ChapterAudioProbe.cs" -Destination "$project/Assets"
     Copy-Item -LiteralPath "$PSScriptRoot/Editor/ChapterAudioBuild.cs" -Destination "$project/Assets/Editor"
     Write-Wave "$project/Assets/Narration.wav"

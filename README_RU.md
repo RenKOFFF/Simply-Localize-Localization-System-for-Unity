@@ -446,7 +446,7 @@ public class GlossaryTab : IEditorTab
 
 ### Озвучка главы через Addressables (ветка разработки)
 
-Установите **Addressables** через Unity Package Manager. В окне **Simply Localize**:
+Для озвучки главы нажмите **Settings → Addressables → Install Addressables** в окне Simply Localize. Unity сама подберёт и установит пакет для проекта. После перекомпиляции в окне появятся настройки таблиц. Если Addressables уже подключён, сразу переходите к настройке главы.
 
 1. В **Settings** создайте независимый канал Voice с языком `en` и набор Chapter 1. Подключите набор к Voice, снимите **Load at startup**. Субтитры оставьте в Main.
 2. В **Content sets → Chapter 1 → Connect a source** выберите `en` и **Create Addressables table**. Сохраните таблицу вне Resources. Для готовой таблицы используйте **Existing table → Connect with Addressables**.
