@@ -1,0 +1,73 @@
+{
+  "checkedUtc": "2026-11-16T12:16:31.1530255Z",
+  "originalFiles": 817,
+  "originalMetaFiles": 414,
+  "changedMetaFiles": 0,
+  "missingFiles": 0,
+  "changedFiles": [
+    {
+      "original": "Assets/HorrorLab/API-GAPS.md",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/API-GAPS.md"
+    },
+    {
+      "original": "Assets/HorrorLab/CHANGELOG.md",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/CHANGELOG.md"
+    },
+    {
+      "original": "Assets/HorrorLab/README.md",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/README.md"
+    },
+    {
+      "original": "Assets/HorrorLab/VALIDATION.md",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/VALIDATION.md"
+    },
+    {
+      "original": "Assets/HorrorLab/VERSION.json",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/VERSION.json"
+    },
+    {
+      "original": "Assets/HorrorLab/Editor/HorrorBuildIdentity.cs",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Editor/HorrorBuildIdentity.cs"
+    },
+    {
+      "original": "Assets/HorrorLab/Resources/NightShift/BuildIdentity.json",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/BuildIdentity.json"
+    },
+    {
+      "original": "Assets/HorrorLab/Verification/build-identity.json",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification/build-identity.json"
+    },
+    {
+      "original": "Assets/HorrorLab/Verification/build.txt",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification/build.txt"
+    },
+    {
+      "original": "Assets/HorrorLab/Verification/player.json",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification/player.json"
+    },
+    {
+      "original": "Assets/LocalizationLab/README.md",
+      "destination": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/README.md"
+    },
+    {
+      "original": "Assets/SimplyLocalize/README_RU.md",
+      "destination": "README_RU.md"
+    },
+    {
+      "original": "Assets/SimplyLocalize/README.md",
+      "destination": "README.md"
+    },
+    {
+      "original": "Assets/SimplyLocalize/docs/playground-journal/night-shift/README.md",
+      "destination": "docs/playground-journal/night-shift/README.md"
+    },
+    {
+      "original": "Packages/manifest.json",
+      "destination": "playgrounds/SimplyLocalize-Lab/Packages/manifest.json"
+    },
+    {
+      "original": "Packages/packages-lock.json",
+      "destination": "playgrounds/SimplyLocalize-Lab/Packages/packages-lock.json"
+    }
+  ]
+}

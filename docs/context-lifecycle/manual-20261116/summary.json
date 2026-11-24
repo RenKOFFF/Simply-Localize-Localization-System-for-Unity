@@ -1,0 +1,87 @@
+{
+  "commit": "acb8433",
+  "unity": "6000.0.62f1",
+  "results": [
+    {
+      "mode": "first",
+      "checks": 6,
+      "failed": [],
+      "failure": null,
+      "logs": []
+    },
+    {
+      "mode": "fallback",
+      "checks": 5,
+      "failed": [],
+      "failure": null,
+      "logs": []
+    },
+    {
+      "mode": "cycles",
+      "checks": 60,
+      "failed": [],
+      "failure": null,
+      "logs": []
+    },
+    {
+      "mode": "cancel",
+      "checks": 4,
+      "failed": [],
+      "failure": null,
+      "logs": []
+    },
+    {
+      "mode": "owners",
+      "checks": 4,
+      "failed": [],
+      "failure": null,
+      "logs": []
+    },
+    {
+      "mode": "session1",
+      "checks": 3,
+      "failed": [],
+      "failure": null,
+      "logs": []
+    },
+    {
+      "mode": "session3",
+      "checks": 3,
+      "failed": [],
+      "failure": null,
+      "logs": []
+    }
+  ],
+  "visualOverlay": [
+    {
+      "mode": "Off",
+      "focus": true,
+      "sign": "Sign Warning",
+      "menu": false,
+      "visible": false,
+      "text": "TŁUMACZENIE\nKWARANTANNA  /  NIE OTWIERAJ DRZWI",
+      "source": "en"
+    },
+    {
+      "mode": "Auto",
+      "focus": true,
+      "sign": "Sign Warning",
+      "menu": false,
+      "visible": true,
+      "text": "TŁUMACZENIE\nKWARANTANNA  /  NIE OTWIERAJ DRZWI",
+      "source": "en"
+    },
+    {
+      "mode": "Always",
+      "focus": true,
+      "sign": "Sign Warning",
+      "menu": false,
+      "visible": true,
+      "text": "TŁUMACZENIE\nKWARANTANNA  /  NIE OTWIERAJ DRZWI",
+      "source": "en"
+    }
+  ],
+  "consoleDelta": [],
+  "editorSettingsIdentical": true,
+  "projectSettingsIdentical": true
+}

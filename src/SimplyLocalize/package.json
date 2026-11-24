@@ -1,13 +1,15 @@
 {
   "name": "com.renkoff.simply-localize",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "displayName": "Simply Localize",
-  "description": "A powerful localization system for Unity with pluralization, language profiles, and modular asset loading.",
+  "description": "Localize text and Unity assets with independent language channels, on-demand content sets, plural rules, and per-language typography.",
   "unity": "2021.3",
   "license": "MIT",
   "dependencies": {
     "com.unity.textmeshpro": "3.0.9",
-    "com.unity.nuget.newtonsoft-json": "3.2.1"
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.uielements": "1.0.0"
   },
   "keywords": [
     "localization",

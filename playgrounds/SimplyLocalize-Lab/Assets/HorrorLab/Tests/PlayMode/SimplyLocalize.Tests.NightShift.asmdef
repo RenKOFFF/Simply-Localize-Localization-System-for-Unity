@@ -1,0 +1,7 @@
+{
+    "name": "SimplyLocalize.Tests.NightShift",
+    "rootNamespace": "SimplyLocalize.Tests",
+    "references": ["SimplyLocalize", "UnityEngine.UI", "Unity.TextMeshPro"],
+    "optionalUnityReferences": ["TestAssemblies"],
+    "autoReferenced": false
+}

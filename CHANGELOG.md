@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.1.0]
+
+**Upgrading from 2.0.2 requires manual setup and changes to game scripts.** Back up the project and record profile settings before replacing the package. [Upgrade steps](README.md#upgrading-from-202)
+
+- One project configuration defines the languages. Channels can select independent languages for subtitles and voice. Content sets control startup and on-demand loading and can share sources across owners.
+- Setup, Languages, Appearance, Translations and Assets work on the same configuration. The editor supports stable entry IDs, explicit JSON and asset sources, CSV preview, coverage and live resource diagnostics.
+- Replace the old config and reconnect existing JSON and asset tables. Reassign explicit bootstrap references. Select language codes on existing local typography overrides and language events.
+- Wait for startup, language changes and reloads through the async API. Custom loaders implement `ILocalizationSourceProvider`. The Resources provider ships with the package.
+- Format values using the resolved translation language by default. Plural rules cover regional variants and fractional counts, and templates support explicit form selectors.
+
 ## [2.0.2] — 2026-10-10
 
 - Fixed the Play Mode language dropdown creating and focusing a Game View when only Device Simulator was open.

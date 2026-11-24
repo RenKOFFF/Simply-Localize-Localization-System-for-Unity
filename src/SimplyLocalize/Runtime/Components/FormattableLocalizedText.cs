@@ -1,22 +1,17 @@
 using System;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace SimplyLocalize.Components
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("SimplyLocalize/Formattable Localized Text")]
-    public class FormattableLocalizedText : LocalizedComponentBase
+    public class FormattableLocalizedText : LocalizedText
     {
+        public const int MaxParameterIndex = 65535;
+
         [Header("Parameters")]
         [SerializeField] private List<NamedParam> _defaultNamedParams = new();
-
-        private TMP_Text _tmpText;
-        private Text _legacyText;
-        private LocalizedProfileOverride _profileOverride;
-        private readonly ProfileApplier _profileApplier = new();
 
         private object[] _indexedArgs;
         private Dictionary<string, object> _namedArgs;
@@ -29,6 +24,7 @@ namespace SimplyLocalize.Components
 
         public void SetArg(int index, object value)
         {
+            if (index < 0 || index > MaxParameterIndex) throw new ArgumentOutOfRangeException(nameof(index));
             if (_indexedArgs == null || index >= _indexedArgs.Length)
             {
                 var n = new object[index + 1];
@@ -62,60 +58,12 @@ namespace SimplyLocalize.Components
 
         protected override void OnEnable()
         {
-            CacheComponents();
-            CacheOriginals();
             if (_namedArgs == null) BuildNamedArgsFromDefaults();
             base.OnEnable();
-            Localization.OnProfileChanged += HandleProfileChanged;
         }
 
-        protected override void OnDisable()
-        {
-            base.OnDisable();
-            Localization.OnProfileChanged -= HandleProfileChanged;
-        }
-
-        public override void Refresh()
-        {
-            if (string.IsNullOrEmpty(_key)) return;
-            CacheComponents();
-            CacheOriginals();
-
-            bool hasIdx = _indexedArgs is { Length: > 0 };
-            bool hasNamed = _namedArgs is { Count: > 0 };
-
-            string text = (hasIdx || hasNamed)
-                ? Localization.Get(_key, _indexedArgs, _namedArgs)
-                : Localization.Get(_key);
-
-            if (_tmpText != null)
-            {
-                _tmpText.text = text;
-                ApplyProfile(Localization.CurrentProfile);
-            }
-            else if (_legacyText != null)
-            {
-                _legacyText.text = text;
-                _profileApplier.Apply(_legacyText, Localization.CurrentProfile);
-            }
-        }
-
-        private void HandleProfileChanged(LanguageProfile profile) => ApplyProfile(profile);
-
-        private void ApplyProfile(LanguageProfile profile)
-        {
-            if (_tmpText != null)
-            {
-                if (_profileOverride != null)
-                    _profileOverride.ApplyMerged(_tmpText, profile, _profileApplier);
-                else
-                    _profileApplier.Apply(_tmpText, profile);
-            }
-            else if (_legacyText != null)
-            {
-                _profileApplier.Apply(_legacyText, profile);
-            }
-        }
+        protected override string FormatValue(LocalizationTextValue value) =>
+            BoundRuntime.Formatter.Format(value, _indexedArgs, _namedArgs);
 
         private void BuildNamedArgsFromDefaults()
         {
@@ -128,7 +76,7 @@ namespace SimplyLocalize.Components
             for (int i = 0; i < _defaultNamedParams.Count; i++)
             {
                 var p = _defaultNamedParams[i];
-                if (!string.IsNullOrEmpty(p.name) && int.TryParse(p.name, out int idx) && idx > maxIndex)
+                if (!string.IsNullOrEmpty(p.name) && int.TryParse(p.name, out int idx) && idx <= MaxParameterIndex && idx > maxIndex)
                     maxIndex = idx;
             }
 
@@ -144,7 +92,7 @@ namespace SimplyLocalize.Components
                 if (int.TryParse(p.name, out int idx))
                 {
                     // Indexed param → goes into _indexedArgs
-                    if (_indexedArgs != null && idx < _indexedArgs.Length && _indexedArgs[idx] == null)
+                    if (_indexedArgs != null && idx >= 0 && idx < _indexedArgs.Length && _indexedArgs[idx] == null)
                         _indexedArgs[idx] = p.ParsedValue;
                 }
                 else
@@ -154,22 +102,6 @@ namespace SimplyLocalize.Components
                         _namedArgs[p.name] = p.ParsedValue;
                 }
             }
-        }
-
-        private void CacheComponents()
-        {
-            if (_tmpText == null && _legacyText == null)
-            {
-                _tmpText = GetComponent<TMP_Text>();
-                if (_tmpText == null) _legacyText = GetComponent<Text>();
-                _profileOverride = GetComponent<LocalizedProfileOverride>();
-            }
-        }
-
-        private void CacheOriginals()
-        {
-            if (_tmpText != null) _profileApplier.CacheOriginals(_tmpText);
-            else if (_legacyText != null) _profileApplier.CacheOriginals(_legacyText);
         }
 
         [Serializable]

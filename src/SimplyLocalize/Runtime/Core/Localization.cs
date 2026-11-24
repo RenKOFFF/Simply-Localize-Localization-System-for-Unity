@@ -1,385 +1,241 @@
 using System;
 using System.Collections.Generic;
-using SimplyLocalize.Data;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using SimplyLocalize.TextProcessing;
 using UnityEngine;
 
 namespace SimplyLocalize
 {
-    /// <summary>
-    /// Public static API for the localization system.
-    /// This is the main entry point for getting translations, switching languages,
-    /// and subscribing to language change events.
-    ///
-    /// Initialize once at startup with a LocalizationConfig asset, then use anywhere.
-    ///
-    /// Usage:
-    ///   Localization.Initialize(config);
-    ///   Localization.SetLanguage("ru");
-    ///   string text = Localization.Get("UI/MainMenu/Play");
-    ///   string plural = Localization.Get("Game/Loot/Coins", 5);
-    /// </summary>
+    /// <summary>Convenience facade over one channel runtime. Initialization and mutation are asynchronous; reads never load content.</summary>
     public static class Localization
     {
-        private static LocalizationManager _manager;
-
-        // ──────────────────────────────────────────────
-        //  Initialization
-        // ──────────────────────────────────────────────
-
-        /// <summary>
-        /// Initializes the localization system with the given config.
-        /// Automatically sets the default language.
-        /// </summary>
-        public static void Initialize(LocalizationConfig config)
-        {
-            if (config == null)
-            {
-                Debug.LogError("[SimplyLocalize] Cannot initialize: config is null");
-                return;
-            }
-
-            Shutdown();
-
-            _manager = new LocalizationManager(config);
-            _manager.OnLanguageChanged += lang => OnLanguageChanged?.Invoke(lang);
-            _manager.OnProfileChanged += profile => OnProfileChanged?.Invoke(profile);
-
-            if (config.defaultLanguage != null)
-                _manager.SetLanguage(config.defaultLanguage);
-
-            LocalizationLogger.Log("Localization initialized");
-        }
-
-        /// <summary>
-        /// Initializes with config and immediately sets a specific language by code.
-        /// If the language code is not found, falls back to default or throws error
-        /// based on throwOnMissing parameter.
-        /// </summary>
-        /// <param name="config">The localization config asset.</param>
-        /// <param name="languageCode">Language code to set (e.g. "ru", "en").</param>
-        /// <param name="throwOnMissing">If true, throws exception when language not found.
-        /// If false, falls back to default language.</param>
-        public static void Initialize(LocalizationConfig config, string languageCode,
-            bool throwOnMissing = false)
-        {
-            if (config == null)
-            {
-                Debug.LogError("[SimplyLocalize] Cannot initialize: config is null");
-                return;
-            }
-
-            Shutdown();
-
-            _manager = new LocalizationManager(config);
-            _manager.OnLanguageChanged += lang => OnLanguageChanged?.Invoke(lang);
-            _manager.OnProfileChanged += profile => OnProfileChanged?.Invoke(profile);
-
-            var profile = config.GetProfile(languageCode);
-
-            if (profile != null)
-            {
-                _manager.SetLanguage(profile);
-            }
-            else if (throwOnMissing)
-            {
-                throw new ArgumentException(
-                    $"[SimplyLocalize] Language '{languageCode}' not found in config. " +
-                    $"Available: {string.Join(", ", config.languages.ConvertAll(p => p?.Code ?? "null"))}");
-            }
-            else
-            {
-                LocalizationLogger.LogWarning(
-                    $"Language '{languageCode}' not found, using default");
-
-                if (config.defaultLanguage != null)
-                    _manager.SetLanguage(config.defaultLanguage);
-            }
-
-            LocalizationLogger.Log($"Localization initialized with '{_manager.CurrentLanguage}'");
-        }
-
-        /// <summary>
-        /// Initializes by finding config in Resources automatically.
-        /// Sets the default language from config.
-        /// Convenience method — no need to pass config reference.
-        /// </summary>
-        public static void Initialize()
-        {
-            if (IsInitialized) return;
-
-            var configs = Resources.LoadAll<LocalizationConfig>("");
-
-            if (configs == null || configs.Length == 0)
-            {
-                Debug.LogError("[SimplyLocalize] No LocalizationConfig found in Resources. " +
-                    "Create one and place it in a Resources folder.");
-                return;
-            }
-
-            Initialize(configs[0]);
-        }
-
-        /// <summary>
-        /// Shuts down the localization system and releases all cached data.
-        /// </summary>
-        public static void Shutdown()
-        {
-            if (_manager == null)
-                return;
-
-            _manager.ClearCaches();
-            _manager = null;
-        }
-
-        /// <summary>
-        /// Whether the system has been initialized.
-        /// </summary>
-        public static bool IsInitialized => _manager != null;
-
-        /// <summary>
-        /// The underlying LocalizationManager instance, or null if not initialized.
-        /// Exposed for advanced scenarios; most code should use the static methods on this class.
-        ///
-        /// If you use a DI container, prefer registering and injecting LocalizationManager directly
-        /// instead of relying on this static facade.
-        /// </summary>
-        public static LocalizationManager Manager => _manager;
-
-        // ──────────────────────────────────────────────
-        //  Language
-        // ──────────────────────────────────────────────
-
-        /// <summary>
-        /// The currently active language code (e.g. "en", "ru").
-        /// </summary>
-        public static string CurrentLanguage => _manager?.CurrentLanguage;
-
-        /// <summary>
-        /// The display profile for the current language.
-        /// Contains font, size, spacing, and direction settings.
-        /// </summary>
-        public static LanguageProfile CurrentProfile => _manager?.CurrentProfile;
-
-        /// <summary>
-        /// The active configuration asset.
-        /// </summary>
-        public static LocalizationConfig Config => _manager?.Config;
-
-        /// <summary>
-        /// Switches to the specified language by code.
-        /// Loads translation data if not already cached, then fires OnLanguageChanged.
-        /// </summary>
-        public static void SetLanguage(string languageCode)
-        {
-            EnsureInitialized();
-            _manager.SetLanguage(languageCode);
-        }
-
-        /// <summary>
-        /// Switches to the specified language by profile reference.
-        /// Preferred over the string overload — no typos, full IntelliSense.
-        /// </summary>
-        public static void SetLanguage(LanguageProfile profile)
-        {
-            EnsureInitialized();
-            _manager.SetLanguage(profile);
-        }
-
-        /// <summary>
-        /// Attempts to set the language matching the device's system language.
-        /// Falls back to the config's default language if no match is found.
-        /// Returns the profile that was set, or null if nothing matched.
-        /// </summary>
-        public static LanguageProfile SetLanguageAuto()
-        {
-            EnsureInitialized();
-
-            var systemLang = Application.systemLanguage;
-            var profile = _manager.Config.GetProfileBySystemLanguage(systemLang);
-
-            if (profile != null)
-            {
-                _manager.SetLanguage(profile);
-                return profile;
-            }
-
-            // Fall back to default
-            if (_manager.Config.defaultLanguage != null)
-            {
-                _manager.SetLanguage(_manager.Config.defaultLanguage);
-                return _manager.Config.defaultLanguage;
-            }
-
-            LocalizationLogger.LogWarning(
-                $"No language profile matches SystemLanguage.{systemLang}, and no default is set");
-            return null;
-        }
-
-        /// <summary>
-        /// Returns all language profiles defined in the config.
-        /// </summary>
-        public static IReadOnlyList<LanguageProfile> AvailableLanguages =>
-            _manager?.Config?.languages;
-
-        // ──────────────────────────────────────────────
-        //  Text
-        // ──────────────────────────────────────────────
-
-        /// <summary>
-        /// Gets the translated string for the given key.
-        /// Fallback chain: current language → fallback language → key.
-        /// </summary>
-        public static string Get(string key)
-        {
-            if (_manager == null) return key ?? string.Empty;
-            return _manager.Get(key);
-        }
-
-        /// <summary>
-        /// Gets the translated string with indexed parameter substitution and pluralization.
-        ///
-        /// Example:
-        ///   JSON: "You found {0} {0|coin|coins}"
-        ///   Code: Localization.Get("loot_coins", 5) → "You found 5 coins"
-        /// </summary>
-        public static string Get(string key, params object[] args)
-        {
-            if (_manager == null) return key ?? string.Empty;
-            return _manager.Get(key, args);
-        }
-
-        /// <summary>
-        /// Gets the translated string with named parameter substitution and pluralization.
-        ///
-        /// Example:
-        ///   JSON: "{playerName} found {count} {count|coin|coins}"
-        ///   Code: Localization.Get("loot", new Dictionary&lt;string, object&gt; {
-        ///       { "playerName", "Alex" }, { "count", 5 }
-        ///   });
-        ///   Result: "Alex found 5 coins"
-        /// </summary>
-        public static string Get(string key, Dictionary<string, object> namedArgs)
-        {
-            if (_manager == null) return key ?? string.Empty;
-            return _manager.Get(key, namedArgs);
-        }
-
-        /// <summary>
-        /// Gets the translated string with both indexed and named parameters.
-        ///
-        /// Example:
-        ///   JSON: "{playerName} has {0} {0|life|lives} left"
-        ///   Code: Localization.Get("lives", new object[] { 3 },
-        ///       new Dictionary&lt;string, object&gt; { { "playerName", "Alex" } });
-        ///   Result: "Alex has 3 lives left"
-        /// </summary>
-        public static string Get(string key, object[] args, Dictionary<string, object> namedArgs)
-        {
-            if (_manager == null) return key ?? string.Empty;
-            return _manager.Get(key, args, namedArgs);
-        }
-
-        // ──────────────────────────────────────────────
-        //  Assets
-        // ──────────────────────────────────────────────
-
-        /// <summary>
-        /// Gets a localized asset of any type from asset tables.
-        /// Follows the fallback chain: current → per-language → global.
-        ///
-        /// Usage:
-        ///   var sprite = Localization.GetAsset&lt;Sprite&gt;("ui/flag");
-        ///   var clip = Localization.GetAsset&lt;AudioClip&gt;("voice/intro");
-        ///   var material = Localization.GetAsset&lt;Material&gt;("fx/hit");
-        /// </summary>
-        public static T GetAsset<T>(string key) where T : UnityEngine.Object
-        {
-            return _manager?.GetAsset<T>(key);
-        }
-
-        // ──────────────────────────────────────────────
-        //  Queries
-        // ──────────────────────────────────────────────
-
-        /// <summary>
-        /// Checks whether a translation exists for the key in the current or fallback language.
-        /// </summary>
-        public static bool HasKey(string key)
-        {
-            return _manager != null && _manager.HasKey(key);
-        }
-
-        /// <summary>
-        /// Checks whether a specific language has a translation for the given key.
-        /// Loads the language data if not already cached.
-        /// </summary>
-        public static bool HasTranslation(string key, string languageCode)
-        {
-            return _manager != null && _manager.HasTranslation(key, languageCode);
-        }
-
-        /// <summary>
-        /// Returns all translation keys loaded for the current language.
-        /// </summary>
-        public static IEnumerable<string> GetAllKeys()
-        {
-            return _manager?.GetAllKeys() ?? Array.Empty<string>();
-        }
-
-        // ──────────────────────────────────────────────
-        //  Data Provider
-        // ──────────────────────────────────────────────
-
-        /// <summary>
-        /// Replaces the data provider at runtime (e.g. to switch to Addressables).
-        /// Clears all cached translation data.
-        /// </summary>
-        public static void SetDataProvider(ILocalizationDataProvider provider)
-        {
-            EnsureInitialized();
-            _manager.SetDataProvider(provider);
-        }
-
-        /// <summary>
-        /// Clears all cached data and reloads the current language.
-        /// </summary>
-        public static void Reload()
-        {
-            if (_manager == null)
-                return;
-
-            string lang = _manager.CurrentLanguage;
-            _manager.ClearCaches();
-
-            if (!string.IsNullOrEmpty(lang))
-                _manager.SetLanguage(lang);
-        }
-
-        // ──────────────────────────────────────────────
-        //  Events
-        // ──────────────────────────────────────────────
-
-        /// <summary>
-        /// Fired when the active language changes. Passes the new language code.
-        /// All localized components subscribe to this automatically.
-        /// </summary>
+        private static LocalizationRuntime runtime;
+        private static SemaphoreSlim initializationGate = new(1, 1);
+        private static HashSet<Task> pending = new();
+        private static CancellationTokenSource initializationCancellation;
+        private static Task<LocalizationRuntime> initializing;
+        private static long version;
+        private static int thread = Environment.CurrentManagedThreadId;
+        public static LocalizationRuntime Runtime => runtime;
+        public static LocalizationProjectConfig Config { get; private set; }
+        public static bool IsInitialized => runtime != null && runtime.IsInitialized && !runtime.IsReleased;
+        public static bool IsInitializing => initializing != null;
+        public static string CurrentLanguage => IsInitialized ? runtime.GetChannel().RequestedLanguage : null;
+        public static LocalizationAppearance CurrentAppearance => IsInitialized ? runtime.GetChannel().GetAppearance() : null;
+        public static IReadOnlyList<string> AvailableLanguages => IsInitialized ? runtime.GetAvailableLanguages() : Array.Empty<string>();
+        public static event Action<LocalizationRuntime> OnRuntimeChanged;
         public static event Action<string> OnLanguageChanged;
+        public static event Action<Exception> OnError;
+        // Framework subscriptions survive a no-domain/no-scene reload. Public user callbacks are reset.
+        internal static event Action<LocalizationRuntime> BindingChanged;
 
-        /// <summary>
-        /// Fired when the language profile changes (font, sizing, direction, etc.).
-        /// Components use this to apply visual settings.
-        /// </summary>
-        public static event Action<LanguageProfile> OnProfileChanged;
-
-        // ──────────────────────────────────────────────
-        //  Internal
-        // ──────────────────────────────────────────────
-
-        private static void EnsureInitialized()
+        public static Task<LocalizationRuntime> InitializeAsync(LocalizationProjectConfig config, string languageCode = null,
+            LocalizationSourceRegistry providers = null, LocalizationRuntimeOptions options = null,
+            ILocalizationTextFormatter formatter = null, CancellationToken cancellationToken = default)
         {
-            if (_manager == null)
-                throw new InvalidOperationException(
-                    "[SimplyLocalize] Not initialized. Call Localization.Initialize(config) first.");
+            EnsureThread();
+            if (config == null) throw new ArgumentNullException(nameof(config));
+            config.ValidateOrThrow();
+            string selected = InitialLanguage(config, languageCode);
+            return StartInitialization(() => Task.FromResult(config), selected, providers, options, formatter, cancellationToken);
+        }
+        public static Task<LocalizationRuntime> InitializeAsync(CancellationToken cancellationToken = default)
+        {
+            EnsureThread();
+            if (IsInitialized) return Task.FromResult(runtime);
+            if (initializing != null) return initializing;
+            return StartInitialization(() => FindResourceConfigAsync(false), null, null, null, null, cancellationToken);
+        }
+        internal static async Task<LocalizationRuntime> InitializeForBootstrapAsync(LocalizationProjectConfig config, string language, CancellationToken token)
+        {
+            if (IsInitialized) return null;
+            var inFlight = initializing;
+            if (inFlight != null)
+            {
+                LocalizationRuntime result;
+                try { result = await inFlight; }
+                catch { token.ThrowIfCancellationRequested(); return null; }
+                token.ThrowIfCancellationRequested();
+                // A successful existing initialization belongs to its original caller.
+                // A completed automatic scan without a config must not suppress a scene bootstrap.
+                if (result != null || IsInitialized || IsInitializing) return null;
+            }
+            return await InitializeAsync(config, language, cancellationToken: token);
+        }
+        internal static Task<LocalizationRuntime> InitializeAutomaticallyAsync()
+        {
+            EnsureThread();
+            if (IsInitialized || IsInitializing) return Task.FromResult<LocalizationRuntime>(null);
+            return StartInitialization(() => FindResourceConfigAsync(true), null, null, null, null, default);
+        }
+        private static Task<LocalizationRuntime> StartInitialization(Func<Task<LocalizationProjectConfig>> findConfig, string language,
+            LocalizationSourceRegistry providers, LocalizationRuntimeOptions options, ILocalizationTextFormatter formatter, CancellationToken token)
+        {
+            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
+            var previous = initializationCancellation; initializationCancellation = cancellation;
+            long request = ++version;
+            var gate = initializationGate; var operations = pending;
+            var completion = new TaskCompletionSource<LocalizationRuntime>();
+            initializing = completion.Task; operations.Add(completion.Task);
+            Cancel(previous);
+            Run(); return completion.Task;
+            async void Run()
+            {
+                bool entered = false; LocalizationRuntime candidate = null, result = null; Exception failure = null;
+                try
+                {
+                    await gate.WaitAsync(cancellation.Token); entered = true;
+                    var config = await findConfig(); Check();
+                    if (config != null)
+                    {
+                        string selected = InitialLanguage(config, language);
+                        candidate = new LocalizationRuntime(config, providers, options, formatter);
+                        await candidate.InitializeAsync(selected, cancellation.Token); Check();
+                        var old = runtime; Unsubscribe(old);
+                        runtime = result = candidate; Config = config; candidate = null;
+                        runtime.Changed += ForwardChange; runtime.Releasing += RuntimeReleasing; runtime.ObserverError += Report;
+                        PublishRuntime(runtime);
+                        if (ReferenceEquals(runtime, result)) PublishLanguage(result.GetChannel().RequestedLanguage);
+                        if (old != null) try { await old.ReleaseAsync(); } catch (Exception error) { Report(error); }
+                    }
+                }
+                catch (Exception error) { failure = error; }
+                finally
+                {
+                    if (candidate != null)
+                        try { await candidate.ReleaseAsync(); }
+                        catch (Exception cleanup) { failure = failure == null ? cleanup : new AggregateException(failure, cleanup); }
+                    if (entered) gate.Release();
+                    operations.Remove(completion.Task);
+                    if (ReferenceEquals(initializing, completion.Task)) initializing = null;
+                    if (ReferenceEquals(initializationCancellation, cancellation)) initializationCancellation = null;
+                    cancellation.Dispose();
+                }
+                if (failure is OperationCanceledException) completion.TrySetCanceled();
+                else if (failure != null) completion.TrySetException(failure);
+                else completion.TrySetResult(result);
+            }
+            void Check()
+            {
+                cancellation.Token.ThrowIfCancellationRequested();
+                if (request != version) throw new OperationCanceledException("A newer localization initialization superseded this request.");
+            }
+        }
+        private static string InitialLanguage(LocalizationProjectConfig config, string requested)
+        {
+            config.ValidateOrThrow();
+            string code = requested;
+            if (code == null && config.AutoDetectLanguage)
+                code = config.Languages.FirstOrDefault(l => l.SystemLanguage != SystemLanguage.Unknown
+                    && l.SystemLanguage == Application.systemLanguage && config.MainChannel.Languages.Contains(l.Code))?.Code;
+            code = LocalizationLanguageCode.Normalize(code ?? config.MainChannel.DefaultLanguage);
+            if (!config.MainChannel.Languages.Contains(code)) throw new ArgumentException("Language is not available to Main: " + code, nameof(requested));
+            return code;
+        }
+        internal static async Task<LocalizationProjectConfig> FindResourceConfigAsync(bool automaticOnly)
+        {
+            var operation = Resources.LoadAsync<LocalizationProjectConfig>(LocalizationProjectConfig.StartupResourcePath);
+            await Await(operation);
+            var config = operation.asset as LocalizationProjectConfig;
+            if (automaticOnly) return config != null && config.AutoInitialize ? config : null;
+            if (config != null) return config;
+            throw new InvalidOperationException("No Project Configuration at Resources/SimplyLocalizeSettings.asset. Create it in Simply Localize setup or pass it to InitializeAsync. Old LocalizationConfig assets must be replaced explicitly.");
+        }
+        private static async Task Await(ResourceRequest request)
+        {
+            if (request.isDone) return;
+            var completion = new TaskCompletionSource<bool>();
+            Action<AsyncOperation> finished = _ => completion.TrySetResult(true);
+            request.completed += finished;
+            try { await completion.Task; } finally { request.completed -= finished; }
+        }
+        public static Task SetLanguageAsync(string language, CancellationToken token = default)
+        { EnsureReady(); return runtime.SwitchLanguageAsync(language, token); }
+        public static Task ReloadAsync(CancellationToken token = default)
+        { EnsureReady(); return runtime.ReloadAsync(cancellationToken: token); }
+        public static Task ReplaceProvidersAsync(LocalizationSourceRegistry providers, CancellationToken token = default)
+        { EnsureReady(); return runtime.ReplaceProvidersAsync(providers, token); }
+        public static string Get(string key) => IsInitialized ? runtime.Get(key) : key ?? "";
+        public static string Get(string key, params object[] args) => IsInitialized ? runtime.Get(key, args) : key ?? "";
+        public static string Get(string key, Dictionary<string, object> namedArgs) => IsInitialized ? runtime.Get(key, namedArgs) : key ?? "";
+        public static string Get(string key, object[] args, Dictionary<string, object> namedArgs) => IsInitialized ? runtime.Format(key, args, namedArgs) : key ?? "";
+        public static T GetAsset<T>(string key) where T : UnityEngine.Object => IsInitialized ? runtime.GetAsset<T>(key) : null;
+        public static bool HasKey(string key) => IsInitialized && runtime.GetChannel().TryGetText(key, out _);
+
+        public static Task ShutdownAsync()
+        {
+            EnsureThread(); ++version; Cancel(initializationCancellation);
+            var old = runtime; Unsubscribe(old); runtime = null; Config = null;
+            PublishRuntime(null);
+            return Drain(old, pending.ToArray());
+        }
+        internal static Task ShutdownIfOwnedAsync(LocalizationRuntime owner) =>
+            owner != null && ReferenceEquals(runtime, owner) ? ShutdownAsync() : Task.CompletedTask;
+        private static async Task Drain(LocalizationRuntime old, Task[] operations)
+        {
+            try { await Task.WhenAll(operations); } catch { /* Initialization callers retain their own failures. */ }
+            if (old != null) await old.ReleaseAsync();
+        }
+        private static void ForwardChange(LocalizationRuntime sender, IReadOnlyList<string> channels)
+        { if (ReferenceEquals(runtime, sender) && channels.Contains(sender.MainChannelId)) PublishLanguage(sender.GetChannel().RequestedLanguage); }
+        private static void RuntimeReleasing(LocalizationRuntime sender)
+        {
+            if (!ReferenceEquals(runtime, sender)) return;
+            Unsubscribe(sender); runtime = null; Config = null; PublishRuntime(null);
+        }
+        private static void Unsubscribe(LocalizationRuntime target)
+        { if (target != null) { target.Changed -= ForwardChange; target.Releasing -= RuntimeReleasing; target.ObserverError -= Report; } }
+        private static void PublishRuntime(LocalizationRuntime value)
+        {
+            foreach (Action<LocalizationRuntime> subscriber in BindingChanged?.GetInvocationList() ?? Array.Empty<Delegate>())
+            {
+                if (!ReferenceEquals(runtime, value)) return;
+                try { subscriber(value); } catch (Exception error) { Report(error); }
+            }
+            foreach (Action<LocalizationRuntime> subscriber in OnRuntimeChanged?.GetInvocationList() ?? Array.Empty<Delegate>())
+            {
+                if (!ReferenceEquals(runtime, value)) return;
+                try { subscriber(value); } catch (Exception error) { Report(error); }
+            }
+        }
+        private static void PublishLanguage(string language)
+        {
+            var sender = runtime;
+            foreach (Action<string> subscriber in OnLanguageChanged?.GetInvocationList() ?? Array.Empty<Delegate>())
+            {
+                if (!ReferenceEquals(runtime, sender) || CurrentLanguage != language) return;
+                try { subscriber(language); } catch (Exception error) { Report(error); }
+            }
+        }
+        private static void Cancel(CancellationTokenSource source)
+        { if (source != null) try { source.Cancel(); } catch (Exception error) { Report(error); } }
+        internal static void Report(Exception error)
+        {
+            if (OnError == null) { Debug.LogException(error); return; }
+            foreach (Action<Exception> subscriber in OnError.GetInvocationList())
+                try { subscriber(error); } catch (Exception nested) { Debug.LogException(nested); }
+        }
+        internal static async void Observe(Task operation)
+        { try { await operation; } catch (OperationCanceledException) { } catch (Exception error) { Report(error); } }
+        private static void EnsureThread()
+        { if (thread != Environment.CurrentManagedThreadId) throw new InvalidOperationException("Use localization on the Unity thread."); }
+        private static void EnsureReady()
+        { EnsureThread(); if (!IsInitialized) throw new InvalidOperationException("Await Localization.InitializeAsync before changing localization."); }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetRuntimeState()
+        {
+            thread = Environment.CurrentManagedThreadId; ++version;
+            var old = runtime; Unsubscribe(old); runtime = null; Config = null;
+            OnRuntimeChanged = null; OnLanguageChanged = null; OnError = null;
+            Cancel(initializationCancellation); initializationCancellation = null; initializing = null;
+            pending = new(); initializationGate = new(1, 1);
+            PublishRuntime(null);
+            if (old != null) Observe(old.ReleaseAsync());
+            LocalizationLogger.Enabled = LocalizationLogger.EnabledInBuild = false;
+            Pluralization.PluralRuleProvider.ResetRuntimeState();
         }
     }
 }

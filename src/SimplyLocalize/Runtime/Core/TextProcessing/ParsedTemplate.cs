@@ -41,6 +41,9 @@ namespace SimplyLocalize.TextProcessing
         /// <summary>For NamedParam tokens: the parameter name ("playerName", "count", "gender"...).</summary>
         public string Name;
 
+        /// <summary>Original token spelling, used to preserve unresolved parameters exactly.</summary>
+        public string RawText;
+
         /// <summary>
         /// For IndexedParam and NamedParam with plural forms: the available forms.
         /// Null if no forms specified (simple substitution).
@@ -48,9 +51,8 @@ namespace SimplyLocalize.TextProcessing
         /// When forms are present, the parameter's numeric value determines which form is used
         /// via the current language's plural rule.
         ///
-        /// If the parameter is non-numeric (e.g. a string), the forms are selected by
-        /// the parameter's integer value directly (0 = first form, 1 = second, etc.).
-        /// This covers gender, status switches, and any other selector pattern.
+        /// Pass a FormSelector value for explicit selection by zero-based index.
+        /// Ordinary numeric values (including numeric strings) retain plural semantics.
         /// </summary>
         public string[] Forms;
 

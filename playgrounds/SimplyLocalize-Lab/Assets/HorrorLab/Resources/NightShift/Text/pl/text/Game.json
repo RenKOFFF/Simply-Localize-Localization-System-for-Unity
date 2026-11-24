@@ -1,0 +1,12 @@
+{
+  "translations": {
+    "Game/ObjectiveKey": "CEL\nZnajdź klucz do archiwum",
+    "Game/ObjectiveDoor": "CEL\nOtwórz archiwum",
+    "Game/ObjectiveDone": "ARCHIWUM OTWARTE\nPoligon ukończony",
+    "Game/KeyFound": "Klucz do archiwum dodany do ekwipunku",
+    "Game/DoorLocked": "Zamknięte. Znajdź klucz do archiwum.",
+    "Game/Complete": "Archiwum otwarte. Udało się.",
+    "Game/InventoryKey": "KLUCZ DO ARCHIWUM\nMosiężny klucz z wyblakłą etykietą.",
+    "Game/InventoryEmpty": "Ekwipunek jest pusty."
+  }
+}

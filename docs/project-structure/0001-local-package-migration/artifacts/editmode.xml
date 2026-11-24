@@ -1,0 +1,1110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="270" result="Passed" total="270" passed="270" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-11-16 12:08:39Z" end-time="2026-11-16 12:08:46Z" duration="6,7580038">
+  <test-suite type="TestSuite" id="1000" name="SimplyLocalize-Lab" fullname="SimplyLocalize-Lab" runstate="Runnable" testcasecount="270" result="Passed" start-time="2026-11-16 12:08:39Z" end-time="2026-11-16 12:08:46Z" duration="6.758004" total="270" passed="270" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1306" name="SimplyLocalize.Tests.EditMode.dll" fullname="D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Library/ScriptAssemblies/SimplyLocalize.Tests.EditMode.dll" runstate="Runnable" testcasecount="270" result="Passed" start-time="2026-11-16 12:08:39Z" end-time="2026-11-16 12:08:46Z" duration="6.658091" total="270" passed="270" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="36092" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1307" name="SimplyLocalize" fullname="SimplyLocalize" runstate="Runnable" testcasecount="270" result="Passed" start-time="2026-11-16 12:08:39Z" end-time="2026-11-16 12:08:46Z" duration="6.657466" total="270" passed="270" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1308" name="Tests" fullname="SimplyLocalize.Tests" runstate="Runnable" testcasecount="270" result="Passed" start-time="2026-11-16 12:08:39Z" end-time="2026-11-16 12:08:46Z" duration="6.653669" total="270" passed="270" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="CsvPersistenceTests" fullname="SimplyLocalize.Tests.CsvPersistenceTests" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" testcasecount="52" result="Passed" start-time="2026-11-16 12:08:33Z" end-time="2026-11-16 12:08:36Z" duration="3.479504" total="52" passed="52" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1053" name="ChangedConfigPath_RejectsPreviewWithoutSavingToOldFolder" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ChangedConfigPath_RejectsPreviewWithoutSavingToOldFolder" methodname="ChangedConfigPath_RejectsPreviewWithoutSavingToOldFolder" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="472697625" result="Passed" start-time="2026-11-16 12:08:33Z" end-time="2026-11-16 12:08:33Z" duration="0.073376" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1058" name="ConfigSerializerFailure_AfterProfileCreation_RollsBackWholeImport" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ConfigSerializerFailure_AfterProfileCreation_RollsBackWholeImport" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:33Z" end-time="2026-11-16 12:08:34Z" duration="1.205039" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1056" name="ConfigSerializerFailure_AfterProfileCreation_RollsBackWholeImport(False)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ConfigSerializerFailure_AfterProfileCreation_RollsBackWholeImport(False)" methodname="ConfigSerializerFailure_AfterProfileCreation_RollsBackWholeImport" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1954240669" result="Passed" start-time="2026-11-16 12:08:33Z" end-time="2026-11-16 12:08:33Z" duration="0.542202" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1057" name="ConfigSerializerFailure_AfterProfileCreation_RollsBackWholeImport(True)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ConfigSerializerFailure_AfterProfileCreation_RollsBackWholeImport(True)" methodname="ConfigSerializerFailure_AfterProfileCreation_RollsBackWholeImport" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="2112941386" result="Passed" start-time="2026-11-16 12:08:33Z" end-time="2026-11-16 12:08:34Z" duration="0.659797" asserts="0">
+                <properties />
+                <output><![CDATA[Main Object Name 'PendingConfig' does not match filename 'Config'
+Main Object Name 'PendingConfig' does not match filename 'Config'
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-case id="1002" name="DefaultImport_SkipsEmptyTranslationsAndDescriptions" fullname="SimplyLocalize.Tests.CsvPersistenceTests.DefaultImport_SkipsEmptyTranslationsAndDescriptions" methodname="DefaultImport_SkipsEmptyTranslationsAndDescriptions" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="231270305" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.030180" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1047" name="EmptyImport_DoesNotSavePendingEditsOrAddProfiles" fullname="SimplyLocalize.Tests.CsvPersistenceTests.EmptyImport_DoesNotSavePendingEditsOrAddProfiles" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.068182" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1045" name="EmptyImport_DoesNotSavePendingEditsOrAddProfiles(&quot;&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.EmptyImport_DoesNotSavePendingEditsOrAddProfiles(&quot;&quot;)" methodname="EmptyImport_DoesNotSavePendingEditsOrAddProfiles" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="453825975" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.029802" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1046" name="EmptyImport_DoesNotSavePendingEditsOrAddProfiles(&quot;Key,File,fr&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.EmptyImport_DoesNotSavePendingEditsOrAddProfiles(&quot;Key,File,fr&quot;)" methodname="EmptyImport_DoesNotSavePendingEditsOrAddProfiles" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1186292745" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.030887" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1039" name="ExistingButUnloadedLanguageFile_IsNotOverwritten" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ExistingButUnloadedLanguageFile_IsNotOverwritten" methodname="ExistingButUnloadedLanguageFile_IsNotOverwritten" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="2033611977" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.061178" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1003" name="ExplicitClear_ChangesOnlyPresentColumnsAndPreservesHistory" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ExplicitClear_ChangesOnlyPresentColumnsAndPreservesHistory" methodname="ExplicitClear_ChangesOnlyPresentColumnsAndPreservesHistory" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="884645166" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.052672" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1004" name="ExportImport_RoundTripsWhitespaceQuotesNewlinesAndUnicode" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ExportImport_RoundTripsWhitespaceQuotesNewlinesAndUnicode" methodname="ExportImport_RoundTripsWhitespaceQuotesNewlinesAndUnicode" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1585042310" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.029845" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1052" name="ExternalFileAppearingBeforeUnityWrite_IsNotDeletedByRollback" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ExternalFileAppearingBeforeUnityWrite_IsNotDeletedByRollback" methodname="ExternalFileAppearingBeforeUnityWrite_IsNotDeletedByRollback" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1195520532" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.053471" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1038" name="ExternalTranslationEdit_IsNeverOverwritten" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ExternalTranslationEdit_IsNeverOverwritten" methodname="ExternalTranslationEdit_IsNeverOverwritten" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="332864935" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.020287" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1054" name="ExtraJsonFields_PreserveDecimalPrecisionAndDateStrings" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ExtraJsonFields_PreserveDecimalPrecisionAndDateStrings" methodname="ExtraJsonFields_PreserveDecimalPrecisionAndDateStrings" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1451186" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:34Z" duration="0.039488" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1044" name="FailedImport_DoesNotCreateProfilesOrChangeConfig" fullname="SimplyLocalize.Tests.CsvPersistenceTests.FailedImport_DoesNotCreateProfilesOrChangeConfig" methodname="FailedImport_DoesNotCreateProfilesOrChangeConfig" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="696887740" result="Passed" start-time="2026-11-16 12:08:34Z" end-time="2026-11-16 12:08:35Z" duration="0.322753" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1051" name="FailureAfterExternalWrites_RestoresConfigProfileAndTranslations" fullname="SimplyLocalize.Tests.CsvPersistenceTests.FailureAfterExternalWrites_RestoresConfigProfileAndTranslations" methodname="FailureAfterExternalWrites_RestoresConfigProfileAndTranslations" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="409112695" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.291060" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1024" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.215397" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1009" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Other,File,en\nkey,menu,new&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Other,File,en\nkey,menu,new&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="347963525" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.015239" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1010" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,Description\nkey,menu,new&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,Description\nkey,menu,new&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1695129818" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.014017" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1011" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en,en\nkey,menu,new,new&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en,en\nkey,menu,new,new&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="48462407" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.014815" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1012" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en,EN\nkey,menu,new,new&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en,EN\nkey,menu,new,new&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1978664802" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.013315" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1013" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,EN\nkey,menu,new&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,EN\nkey,menu,new&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="464337925" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.012632" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1014" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,\nkey,menu,new&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,\nkey,menu,new&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="2006876876" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.017159" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1015" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nkey,menu,duplicate&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nkey,menu,duplicate&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1068321465" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.015093" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1016" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1040175521" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.013275" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1017" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu,x,extra&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu,x,extra&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="266884752" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.012951" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1018" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\n,menu,x&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\n,menu,x&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="700610643" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.012666" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1019" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu,\&quot;unterminated&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu,\&quot;unterminated&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="50540656" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.016371" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1020" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu,\&quot;x\&quot;junk&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu,\&quot;x\&quot;junk&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="993333384" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.013841" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1021" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu,x\&quot;y&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,menu,new\nnext,menu,x\&quot;y&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="732048117" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.013857" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1022" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,other,new&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nkey,other,new&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1312609640" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.013025" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1023" name="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nnext,MENU,new&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything(&quot;Key,File,en\nnext,MENU,new&quot;)" methodname="InvalidCsv_DoesNotApplyEarlierRowsOrWriteAnything" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1111938066" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.014185" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1048" name="InvalidUtf8_RejectsImportWithoutReplacingCharacters" fullname="SimplyLocalize.Tests.CsvPersistenceTests.InvalidUtf8_RejectsImportWithoutReplacingCharacters" methodname="InvalidUtf8_RejectsImportWithoutReplacingCharacters" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="432893859" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.025010" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1040" name="LateWriteFailure_RollsBackEarlierFilesAndMetadata_AndCanRetry" fullname="SimplyLocalize.Tests.CsvPersistenceTests.LateWriteFailure_RollsBackEarlierFilesAndMetadata_AndCanRetry" methodname="LateWriteFailure_RollsBackEarlierFilesAndMetadata_AndCanRetry" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1580937868" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.037851" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1008" name="LegacyHeader_BomAndRecordSeparatorsRemainSupported" fullname="SimplyLocalize.Tests.CsvPersistenceTests.LegacyHeader_BomAndRecordSeparatorsRemainSupported" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.037071" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1005" name="LegacyHeader_BomAndRecordSeparatorsRemainSupported(&quot;\n&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.LegacyHeader_BomAndRecordSeparatorsRemainSupported(&quot;\n&quot;)" methodname="LegacyHeader_BomAndRecordSeparatorsRemainSupported" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1024100012" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.011106" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1006" name="LegacyHeader_BomAndRecordSeparatorsRemainSupported(&quot;\r\n&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.LegacyHeader_BomAndRecordSeparatorsRemainSupported(&quot;\r\n&quot;)" methodname="LegacyHeader_BomAndRecordSeparatorsRemainSupported" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1589230967" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.011538" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1007" name="LegacyHeader_BomAndRecordSeparatorsRemainSupported(&quot;\r&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.LegacyHeader_BomAndRecordSeparatorsRemainSupported(&quot;\r&quot;)" methodname="LegacyHeader_BomAndRecordSeparatorsRemainSupported" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1114096987" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:35Z" duration="0.013536" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1055" name="LockedConfig_RejectsImportBeforeNativeSerialization" fullname="SimplyLocalize.Tests.CsvPersistenceTests.LockedConfig_RejectsImportBeforeNativeSerialization" methodname="LockedConfig_RejectsImportBeforeNativeSerialization" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="269833252" result="Passed" start-time="2026-11-16 12:08:35Z" end-time="2026-11-16 12:08:36Z" duration="0.322269" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1037" name="MetadataError_PreventsAnyTranslationWrite_AndImportDoesNotChangeMemory" fullname="SimplyLocalize.Tests.CsvPersistenceTests.MetadataError_PreventsAnyTranslationWrite_AndImportDoesNotChangeMemory" methodname="MetadataError_PreventsAnyTranslationWrite_AndImportDoesNotChangeMemory" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1915334771" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.020313" asserts="0">
+              <properties />
+              <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__CsvTests_39935275cc16457f835f7f9b11d1f14e\Resources\CsvTests_39935275cc16457f835f7f9b11d1f14e\_meta.json': Invalid metadata JSON: Error reading JObject from JsonReader. Path '', line 1, position 1.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+            </test-case>
+            <test-case id="1043" name="NewProfiles_AreCreatedOnlyOnSuccessfulApplyAndSurviveReload" fullname="SimplyLocalize.Tests.CsvPersistenceTests.NewProfiles_AreCreatedOnlyOnSuccessfulApplyAndSurviveReload" methodname="NewProfiles_AreCreatedOnlyOnSuccessfulApplyAndSurviveReload" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1909345541" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.310405" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1034" name="PreviewAndCancel_AreReadOnly_AndStalePreviewCannotApply" fullname="SimplyLocalize.Tests.CsvPersistenceTests.PreviewAndCancel_AreReadOnly_AndStalePreviewCannotApply" methodname="PreviewAndCancel_AreReadOnly_AndStalePreviewCannotApply" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1087475816" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.015178" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1050" name="ReadOnlyDestination_RejectsEntireBatchBeforeAnyWrite" fullname="SimplyLocalize.Tests.CsvPersistenceTests.ReadOnlyDestination_RejectsEntireBatchBeforeAnyWrite" methodname="ReadOnlyDestination_RejectsEntireBatchBeforeAnyWrite" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1680530071" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.015209" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1035" name="RepeatedImport_IsIdempotent_AndUsesGlobalForNewKeysWithEmptyFile" fullname="SimplyLocalize.Tests.CsvPersistenceTests.RepeatedImport_IsIdempotent_AndUsesGlobalForNewKeysWithEmptyFile" methodname="RepeatedImport_IsIdempotent_AndUsesGlobalForNewKeysWithEmptyFile" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="2017656779" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.030957" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1036" name="SaveAll_PreservesAdditionalJsonFieldsAndRoundTripsNewLanguage" fullname="SimplyLocalize.Tests.CsvPersistenceTests.SaveAll_PreservesAdditionalJsonFieldsAndRoundTripsNewLanguage" methodname="SaveAll_PreservesAdditionalJsonFieldsAndRoundTripsNewLanguage" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1575038451" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.026440" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1042" name="SaveFile_RejectsTraversalAndMissingBasePath" fullname="SimplyLocalize.Tests.CsvPersistenceTests.SaveFile_RejectsTraversalAndMissingBasePath" methodname="SaveFile_RejectsTraversalAndMissingBasePath" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="907509328" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.012808" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1049" name="SaveFileAllLanguages_RollsBackEarlierLanguageWhenLaterWriteFails" fullname="SimplyLocalize.Tests.CsvPersistenceTests.SaveFileAllLanguages_RollsBackEarlierLanguageWhenLaterWriteFails" methodname="SaveFileAllLanguages_RollsBackEarlierLanguageWhenLaterWriteFails" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="710386465" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.020725" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1041" name="SingleFileFailure_DoesNotTruncateAndKeepsPendingEdit" fullname="SimplyLocalize.Tests.CsvPersistenceTests.SingleFileFailure_DoesNotTruncateAndKeepsPendingEdit" methodname="SingleFileFailure_DoesNotTruncateAndKeepsPendingEdit" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="253465092" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.025074" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1033" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.098452" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1025" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;../escape&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;../escape&quot;)" methodname="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="823049368" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.011919" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1026" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;a/b&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;a/b&quot;)" methodname="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="441480217" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.010614" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1027" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;a\\b&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;a\\b&quot;)" methodname="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="587258240" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.012001" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1028" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;C:escape&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;C:escape&quot;)" methodname="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="272743794" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.014081" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1029" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;CON&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;CON&quot;)" methodname="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1230120613" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.012248" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1030" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;aux.json&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;aux.json&quot;)" methodname="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="1553409603" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.012356" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1031" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;LPT1&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;LPT1&quot;)" methodname="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="884016417" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.011027" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1032" name="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;menu.&quot;)" fullname="SimplyLocalize.Tests.CsvPersistenceTests.UnsafeFileAndLanguageNames_AreRejectedBeforeMutation(&quot;menu.&quot;)" methodname="UnsafeFileAndLanguageNames_AreRejectedBeforeMutation" classname="SimplyLocalize.Tests.CsvPersistenceTests" runstate="Runnable" seed="700548625" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.012480" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1059" name="FormattingTests" fullname="SimplyLocalize.Tests.FormattingTests" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" testcasecount="100" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.041238" total="100" passed="100" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1131" name="CardinalRules_RespectLanguageAndBoundaries" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" testcasecount="47" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.010978" total="47" passed="47" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1084" name="CardinalRules_RespectLanguageAndBoundaries(&quot;en&quot;,-1,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;en&quot;,-1,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1902520623" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.002895" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1085" name="CardinalRules_RespectLanguageAndBoundaries(&quot;es&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;es&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="292774327" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000199" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1086" name="CardinalRules_RespectLanguageAndBoundaries(&quot;it&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;it&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="2003250502" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000077" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1087" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ca&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ca&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="660569899" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000070" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1088" name="CardinalRules_RespectLanguageAndBoundaries(&quot;gl&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;gl&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1860055920" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000070" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1089" name="CardinalRules_RespectLanguageAndBoundaries(&quot;fr&quot;,0,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;fr&quot;,0,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="2080288855" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000182" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1090" name="CardinalRules_RespectLanguageAndBoundaries(&quot;fr&quot;,1000000,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;fr&quot;,1000000,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1713258291" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000441" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1091" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pt-BR&quot;,0,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pt-BR&quot;,0,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="74244237" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000223" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1092" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pt-PT&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pt-PT&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1883350830" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000084" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1093" name="CardinalRules_RespectLanguageAndBoundaries(&quot;PT_pt&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;PT_pt&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1563045776" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1094" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pt-Latn-PT&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pt-Latn-PT&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1827443452" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000099" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1095" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pl&quot;,21,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pl&quot;,21,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="787908564" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000281" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1096" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pl&quot;,22,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pl&quot;,22,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="157847991" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000089" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1097" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pl&quot;,12,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pl&quot;,12,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1786089449" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000074" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1098" name="CardinalRules_RespectLanguageAndBoundaries(&quot;cs&quot;,21,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;cs&quot;,21,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="945344988" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000100" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1099" name="CardinalRules_RespectLanguageAndBoundaries(&quot;sk&quot;,22,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;sk&quot;,22,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="458712593" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000078" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1100" name="CardinalRules_RespectLanguageAndBoundaries(&quot;sl&quot;,2,3)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;sl&quot;,2,3)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="615276029" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000100" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1101" name="CardinalRules_RespectLanguageAndBoundaries(&quot;sl&quot;,3,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;sl&quot;,3,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1313311725" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000072" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1102" name="CardinalRules_RespectLanguageAndBoundaries(&quot;sl&quot;,101,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;sl&quot;,101,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1777111388" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000066" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1103" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ro&quot;,0,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ro&quot;,0,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="140963298" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000069" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1104" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ro&quot;,20,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ro&quot;,20,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="832793895" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000067" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1105" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ro&quot;,101,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ro&quot;,101,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="325790369" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000065" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1106" name="CardinalRules_RespectLanguageAndBoundaries(&quot;sr&quot;,21,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;sr&quot;,21,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="67091134" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000167" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1107" name="CardinalRules_RespectLanguageAndBoundaries(&quot;bs&quot;,11,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;bs&quot;,11,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="2118328868" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000075" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1108" name="CardinalRules_RespectLanguageAndBoundaries(&quot;hr&quot;,22,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;hr&quot;,22,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="732375670" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000070" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1109" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ru&quot;,21,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ru&quot;,21,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="677415722" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000155" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1110" name="CardinalRules_RespectLanguageAndBoundaries(&quot;uk&quot;,11,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;uk&quot;,11,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="48927128" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000076" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1111" name="CardinalRules_RespectLanguageAndBoundaries(&quot;be&quot;,22,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;be&quot;,22,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="733941396" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000069" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1112" name="CardinalRules_RespectLanguageAndBoundaries(&quot;is&quot;,21,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;is&quot;,21,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="351395501" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000067" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1113" name="CardinalRules_RespectLanguageAndBoundaries(&quot;is&quot;,11,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;is&quot;,11,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="83420366" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000070" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1114" name="CardinalRules_RespectLanguageAndBoundaries(&quot;fi&quot;,2,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;fi&quot;,2,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="370688463" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1115" name="CardinalRules_RespectLanguageAndBoundaries(&quot;et&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;et&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="412671746" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000067" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1116" name="CardinalRules_RespectLanguageAndBoundaries(&quot;tr&quot;,2,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;tr&quot;,2,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="944524684" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1117" name="CardinalRules_RespectLanguageAndBoundaries(&quot;hu&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;hu&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="630755709" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000092" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1118" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ka&quot;,2,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ka&quot;,2,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1262585178" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000077" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1119" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ja&quot;,42,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ja&quot;,42,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1882522963" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000103" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1120" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,0,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,0,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="515651414" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000128" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1121" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,2,2)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,2,2)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1543908472" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000076" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1122" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,103,3)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,103,3)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="2044747177" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1123" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,100,5)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,100,5)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1679107748" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000070" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1124" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pt-AO&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pt-AO&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="927017481" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000065" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1125" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pt-CH&quot;,0,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pt-CH&quot;,0,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1244132698" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000065" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1126" name="CardinalRules_RespectLanguageAndBoundaries(&quot;oc&quot;,1000000,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;oc&quot;,1000000,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="283072001" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000106" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1127" name="CardinalRules_RespectLanguageAndBoundaries(&quot;pt-BR-x-pt&quot;,0,0)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;pt-BR-x-pt&quot;,0,0)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1295811204" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000071" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1128" name="CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,int.MinValue,4)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;ar&quot;,int.MinValue,4)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1286360158" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000066" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1129" name="CardinalRules_RespectLanguageAndBoundaries(&quot;fr&quot;,int.MinValue,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;fr&quot;,int.MinValue,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="572856592" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000066" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1130" name="CardinalRules_RespectLanguageAndBoundaries(&quot;unknown&quot;,2,1)" fullname="SimplyLocalize.Tests.FormattingTests.CardinalRules_RespectLanguageAndBoundaries(&quot;unknown&quot;,2,1)" methodname="CardinalRules_RespectLanguageAndBoundaries" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1894742740" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000066" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1163" name="CustomInt32RuleStillWorks_WithoutOverflow" fullname="SimplyLocalize.Tests.FormattingTests.CustomInt32RuleStillWorks_WithoutOverflow" methodname="CustomInt32RuleStillWorks_WithoutOverflow" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="729472712" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.003093" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1164" name="CustomRules_NormalizeCodesAndInvalidateRegionalLookups" fullname="SimplyLocalize.Tests.FormattingTests.CustomRules_NormalizeCodesAndInvalidateRegionalLookups" methodname="CustomRules_NormalizeCodesAndInvalidateRegionalLookups" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1421896721" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000339" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1165" name="CustomRules_RejectInvalidRegistration" fullname="SimplyLocalize.Tests.FormattingTests.CustomRules_RejectInvalidRegistration" methodname="CustomRules_RejectInvalidRegistration" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1487796776" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000408" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1157" name="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens" fullname="SimplyLocalize.Tests.FormattingTests.ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001565" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1153" name="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens(&quot;en&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens(&quot;en&quot;)" methodname="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1148256743" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000774" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1154" name="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens(&quot;ru&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens(&quot;ru&quot;)" methodname="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1602313914" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000066" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1155" name="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens(&quot;ar&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens(&quot;ar&quot;)" methodname="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="330875476" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000058" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1156" name="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens(&quot;ja&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens(&quot;ja&quot;)" methodname="ExplicitSelector_DoesNotUsePluralRule_AndWorksWithExistingTokens" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="244080609" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000047" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1159" name="Formatter_BuiltInNumericTypesAndNonFiniteValuesAreSafe" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_BuiltInNumericTypesAndNonFiniteValuesAreSafe" methodname="Formatter_BuiltInNumericTypesAndNonFiniteValuesAreSafe" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="287165910" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.002650" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1083" name="Formatter_ExceptionDoesNotPoisonNextCall" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_ExceptionDoesNotPoisonNextCall" methodname="Formatter_ExceptionDoesNotPoisonNextCall" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="484600063" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000268" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1151" name="Formatter_LargeIntegersDoNotWrapToInt32" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_LargeIntegersDoNotWrapToInt32" methodname="Formatter_LargeIntegersDoNotWrapToInt32" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1086687828" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000222" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1152" name="Formatter_NumericStringsAreCultureIndependent_AndLegacyDefaultsRemain" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_NumericStringsAreCultureIndependent_AndLegacyDefaultsRemain" methodname="Formatter_NumericStringsAreCultureIndependent_AndLegacyDefaultsRemain" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="630963103" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001530" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1150" name="Formatter_PreservesFractionalOperands" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" testcasecount="18" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.003060" total="18" passed="18" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1132" name="Formatter_PreservesFractionalOperands(&quot;en&quot;,&quot;1.0&quot;,&quot;other&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;en&quot;,&quot;1.0&quot;,&quot;other&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="334278848" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000541" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1133" name="Formatter_PreservesFractionalOperands(&quot;en&quot;,&quot;1.5&quot;,&quot;other&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;en&quot;,&quot;1.5&quot;,&quot;other&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1364957900" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000079" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1134" name="Formatter_PreservesFractionalOperands(&quot;ru&quot;,&quot;1.5&quot;,&quot;decimal&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;ru&quot;,&quot;1.5&quot;,&quot;decimal&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1355850002" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000069" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1135" name="Formatter_PreservesFractionalOperands(&quot;ru&quot;,&quot;1.0&quot;,&quot;decimal&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;ru&quot;,&quot;1.0&quot;,&quot;decimal&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="730883884" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000066" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1136" name="Formatter_PreservesFractionalOperands(&quot;pl&quot;,&quot;2.5&quot;,&quot;decimal&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;pl&quot;,&quot;2.5&quot;,&quot;decimal&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1134257677" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1137" name="Formatter_PreservesFractionalOperands(&quot;cs&quot;,&quot;2.5&quot;,&quot;decimal&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;cs&quot;,&quot;2.5&quot;,&quot;decimal&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="701742593" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000064" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1138" name="Formatter_PreservesFractionalOperands(&quot;sr&quot;,&quot;1.1&quot;,&quot;one&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;sr&quot;,&quot;1.1&quot;,&quot;one&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="44403274" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000064" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1139" name="Formatter_PreservesFractionalOperands(&quot;sr&quot;,&quot;1.2&quot;,&quot;other&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;sr&quot;,&quot;1.2&quot;,&quot;other&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="988842153" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000075" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1140" name="Formatter_PreservesFractionalOperands(&quot;sl&quot;,&quot;1.5&quot;,&quot;other&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;sl&quot;,&quot;1.5&quot;,&quot;other&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1785278739" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000064" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1141" name="Formatter_PreservesFractionalOperands(&quot;fr&quot;,&quot;1.5&quot;,&quot;one&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;fr&quot;,&quot;1.5&quot;,&quot;one&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1444517180" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000065" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1142" name="Formatter_PreservesFractionalOperands(&quot;da&quot;,&quot;0.5&quot;,&quot;one&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;da&quot;,&quot;0.5&quot;,&quot;one&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1487789775" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000069" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1143" name="Formatter_PreservesFractionalOperands(&quot;is&quot;,&quot;2.1&quot;,&quot;one&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;is&quot;,&quot;2.1&quot;,&quot;one&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="594752097" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000064" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1144" name="Formatter_PreservesFractionalOperands(&quot;be&quot;,&quot;1.0&quot;,&quot;one&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;be&quot;,&quot;1.0&quot;,&quot;one&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1443473626" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1145" name="Formatter_PreservesFractionalOperands(&quot;be&quot;,&quot;1.5&quot;,&quot;decimal&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;be&quot;,&quot;1.5&quot;,&quot;decimal&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="391428794" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1146" name="Formatter_PreservesFractionalOperands(&quot;sr&quot;,&quot;1.10&quot;,&quot;third&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;sr&quot;,&quot;1.10&quot;,&quot;third&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1282444282" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000068" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1147" name="Formatter_PreservesFractionalOperands(&quot;es&quot;,&quot;1.0&quot;,&quot;one&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;es&quot;,&quot;1.0&quot;,&quot;one&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1212042363" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000064" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1148" name="Formatter_PreservesFractionalOperands(&quot;pt-PT&quot;,&quot;1.0&quot;,&quot;other&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;pt-PT&quot;,&quot;1.0&quot;,&quot;other&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="604469212" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000066" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1149" name="Formatter_PreservesFractionalOperands(&quot;fi&quot;,&quot;1.0&quot;,&quot;other&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_PreservesFractionalOperands(&quot;fi&quot;,&quot;1.0&quot;,&quot;other&quot;)" methodname="Formatter_PreservesFractionalOperands" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="826883605" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000064" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1075" name="Formatter_ReentrantParameterDoesNotCorruptOuterBuffer" fullname="SimplyLocalize.Tests.FormattingTests.Formatter_ReentrantParameterDoesNotCorruptOuterBuffer" methodname="Formatter_ReentrantParameterDoesNotCorruptOuterBuffer" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1080680226" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000151" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1064" name="Manager_AllOverloadsDecodeEscapedBraces" fullname="SimplyLocalize.Tests.FormattingTests.Manager_AllOverloadsDecodeEscapedBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.006652" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1060" name="Manager_AllOverloadsDecodeEscapedBraces(&quot;{{value}}&quot;,&quot;{value}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Manager_AllOverloadsDecodeEscapedBraces(&quot;{{value}}&quot;,&quot;{value}&quot;)" methodname="Manager_AllOverloadsDecodeEscapedBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1758299008" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.005705" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1061" name="Manager_AllOverloadsDecodeEscapedBraces(&quot;a {{ b }} c&quot;,&quot;a { b } c&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Manager_AllOverloadsDecodeEscapedBraces(&quot;a {{ b }} c&quot;,&quot;a { b } c&quot;)" methodname="Manager_AllOverloadsDecodeEscapedBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="14991804" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000205" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1062" name="Manager_AllOverloadsDecodeEscapedBraces(&quot;{{{{}}}}&quot;,&quot;{{}}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Manager_AllOverloadsDecodeEscapedBraces(&quot;{{{{}}}}&quot;,&quot;{{}}&quot;)" methodname="Manager_AllOverloadsDecodeEscapedBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1041857787" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000101" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1063" name="Manager_AllOverloadsDecodeEscapedBraces(&quot;plain text&quot;,&quot;plain text&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Manager_AllOverloadsDecodeEscapedBraces(&quot;plain text&quot;,&quot;plain text&quot;)" methodname="Manager_AllOverloadsDecodeEscapedBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1203358549" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000095" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1161" name="ParsedTemplateCanBeReusedAcrossLanguagesAndThreads" fullname="SimplyLocalize.Tests.FormattingTests.ParsedTemplateCanBeReusedAcrossLanguagesAndThreads" methodname="ParsedTemplateCanBeReusedAcrossLanguagesAndThreads" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1615714243" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.004439" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1162" name="Parser_DeepMalformedInputIsLiteral_WithoutRecursion" fullname="SimplyLocalize.Tests.FormattingTests.Parser_DeepMalformedInputIsLiteral_WithoutRecursion" methodname="Parser_DeepMalformedInputIsLiteral_WithoutRecursion" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1521283962" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000385" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1074" name="Parser_EscapesAndMalformedTokensAreDeterministic" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001463" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1065" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{{{0}}}&quot;,&quot;{Ada}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{{{0}}}&quot;,&quot;{Ada}&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1443176627" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000156" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1066" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{0|{{one}}|many}&quot;,&quot;{one}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{0|{{one}}|many}&quot;,&quot;{one}&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="204849719" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000059" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1067" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;x { } y&quot;,&quot;x { } y&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;x { } y&quot;,&quot;x { } y&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="815523130" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000051" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1068" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;x {missing } y&quot;,&quot;x {missing } y&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;x {missing } y&quot;,&quot;x {missing } y&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="536245433" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000050" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1069" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{0|bad {1}|good}&quot;,&quot;{0|bad {1}|good}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{0|bad {1}|good}&quot;,&quot;{0|bad {1}|good}&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1605510255" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000044" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1070" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{0|bad {1}|good} {0}&quot;,&quot;{0|bad {1}|good} Ada&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{0|bad {1}|good} {0}&quot;,&quot;{0|bad {1}|good} Ada&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="615701744" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000044" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1071" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;x {unclosed&quot;,&quot;x {unclosed&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;x {unclosed&quot;,&quot;x {unclosed&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="959306370" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000052" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1072" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;x } y&quot;,&quot;x } y&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;x } y&quot;,&quot;x } y&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="644882825" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000040" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1073" name="Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{|one|other}&quot;,&quot;{|one|other}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_EscapesAndMalformedTokensAreDeterministic(&quot;{|one|other}&quot;,&quot;{|one|other}&quot;)" methodname="Parser_EscapesAndMalformedTokensAreDeterministic" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="197723904" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000045" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-suite type="ParameterizedMethod" id="1082" name="Parser_FormEscapesPreserveLegacyOuterBraces" fullname="SimplyLocalize.Tests.FormattingTests.Parser_FormEscapesPreserveLegacyOuterBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001008" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1076" name="Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|{{|many}&quot;,&quot;{&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|{{|many}&quot;,&quot;{&quot;)" methodname="Parser_FormEscapesPreserveLegacyOuterBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1554208064" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000125" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1077" name="Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|}}|many}&quot;,&quot;}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|}}|many}&quot;,&quot;}&quot;)" methodname="Parser_FormEscapesPreserveLegacyOuterBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1948653257" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000052" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1078" name="Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|{{one}}|many}&quot;,&quot;{one}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|{{one}}|many}&quot;,&quot;{one}&quot;)" methodname="Parser_FormEscapesPreserveLegacyOuterBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="492995185" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000043" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1079" name="Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|one|many}}}&quot;,&quot;one}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|one|many}}}&quot;,&quot;one}&quot;)" methodname="Parser_FormEscapesPreserveLegacyOuterBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1525660222" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000059" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1080" name="Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|one|many}}&quot;,&quot;one}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{0|one|many}}&quot;,&quot;one}&quot;)" methodname="Parser_FormEscapesPreserveLegacyOuterBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="1867511937" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000067" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1081" name="Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{{{0|one|many}}}&quot;,&quot;{one}&quot;)" fullname="SimplyLocalize.Tests.FormattingTests.Parser_FormEscapesPreserveLegacyOuterBraces(&quot;{{{0|one|many}}}&quot;,&quot;{one}&quot;)" methodname="Parser_FormEscapesPreserveLegacyOuterBraces" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="264074947" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000046" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1158" name="PlainNumericSelectorLikeArgumentsRemainPluralForCompatibility" fullname="SimplyLocalize.Tests.FormattingTests.PlainNumericSelectorLikeArgumentsRemainPluralForCompatibility" methodname="PlainNumericSelectorLikeArgumentsRemainPluralForCompatibility" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="342268528" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000172" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1160" name="ShortLegacyFormsAndManuallyConstructedTokensRemainValid" fullname="SimplyLocalize.Tests.FormattingTests.ShortLegacyFormsAndManuallyConstructedTokensRemainValid" methodname="ShortLegacyFormsAndManuallyConstructedTokensRemainValid" classname="SimplyLocalize.Tests.FormattingTests" runstate="Runnable" seed="2145947981" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000362" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1166" name="LifecycleDiagnosticsTests" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.018040" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1179" name="Configuration_MissingDefaultReferenceAndUnsafeFallbackAreDiagnosed" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Configuration_MissingDefaultReferenceAndUnsafeFallbackAreDiagnosed" methodname="Configuration_MissingDefaultReferenceAndUnsafeFallbackAreDiagnosed" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="202436507" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.002465" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1180" name="Configuration_NullLanguageListCanBeQueriedDuringSetup" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Configuration_NullLanguageListCanBeQueriedDuringSetup" methodname="Configuration_NullLanguageListCanBeQueriedDuringSetup" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="661112397" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.002431" asserts="0">
+              <properties />
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+]]></output>
+            </test-case>
+            <test-case id="1178" name="Configuration_NullSlotsAndExternalFallbackRemainCompatible" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Configuration_NullSlotsAndExternalFallbackRemainCompatible" methodname="Configuration_NullSlotsAndExternalFallbackRemainCompatible" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="1361351124" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.002849" asserts="0">
+              <properties />
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' contains empty language slots; they will be ignored.
+]]></output>
+            </test-case>
+            <test-case id="1181" name="Coverage_DistinguishesDirectAndFallbackIncludingWhitespaceAndCycles" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Coverage_DistinguishesDirectAndFallbackIncludingWhitespaceAndCycles" methodname="Coverage_DistinguishesDirectAndFallbackIncludingWhitespaceAndCycles" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="698384804" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.002110" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1177" name="Coverage_EmptyDatasetIsNotComplete" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Coverage_EmptyDatasetIsNotComplete" methodname="Coverage_EmptyDatasetIsNotComplete" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="99913170" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000989" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1176" name="Coverage_EscapedBracesAndLiteralMalformedTokensAreNotParameters" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Coverage_EscapedBracesAndLiteralMalformedTokensAreNotParameters" methodname="Coverage_EscapedBracesAndLiteralMalformedTokensAreNotParameters" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="1932087703" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001420" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1182" name="Coverage_ReportsInsufficientFormsInReferenceLanguageToo" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Coverage_ReportsInsufficientFormsInReferenceLanguageToo" methodname="Coverage_ReportsInsufficientFormsInReferenceLanguageToo" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="525900802" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000723" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1170" name="DuplicateCodes_AreRejectedBeforeReplacingCurrentManager" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.DuplicateCodes_AreRejectedBeforeReplacingCurrentManager" methodname="DuplicateCodes_AreRejectedBeforeReplacingCurrentManager" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="525173347" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000649" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1169" name="InitializeUnknownLanguage_LeavesCurrentManagerIntactOnThrow" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.InitializeUnknownLanguage_LeavesCurrentManagerIntactOnThrow" methodname="InitializeUnknownLanguage_LeavesCurrentManagerIntactOnThrow" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="1548469536" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000383" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1175" name="InvalidResourcePath_IsRejectedWithUsefulArgumentError" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.InvalidResourcePath_IsRejectedWithUsefulArgumentError" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001558" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1171" name="InvalidResourcePath_IsRejectedWithUsefulArgumentError(null)" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.InvalidResourcePath_IsRejectedWithUsefulArgumentError(null)" methodname="InvalidResourcePath_IsRejectedWithUsefulArgumentError" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="1421965064" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000345" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1172" name="InvalidResourcePath_IsRejectedWithUsefulArgumentError(&quot;../Outside&quot;)" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.InvalidResourcePath_IsRejectedWithUsefulArgumentError(&quot;../Outside&quot;)" methodname="InvalidResourcePath_IsRejectedWithUsefulArgumentError" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="237952676" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000183" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1173" name="InvalidResourcePath_IsRejectedWithUsefulArgumentError(&quot;C:/Absolute&quot;)" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.InvalidResourcePath_IsRejectedWithUsefulArgumentError(&quot;C:/Absolute&quot;)" methodname="InvalidResourcePath_IsRejectedWithUsefulArgumentError" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="1186568327" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000164" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1174" name="InvalidResourcePath_IsRejectedWithUsefulArgumentError(&quot;Bad\\Path&quot;)" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.InvalidResourcePath_IsRejectedWithUsefulArgumentError(&quot;Bad\\Path&quot;)" methodname="InvalidResourcePath_IsRejectedWithUsefulArgumentError" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="383800629" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000163" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1167" name="Reinitialize_DetachesOldManagerButKeepsFacadeSubscribers" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Reinitialize_DetachesOldManagerButKeepsFacadeSubscribers" methodname="Reinitialize_DetachesOldManagerButKeepsFacadeSubscribers" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="612548470" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000642" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1168" name="Shutdown_DetachesForwardingFromRetainedManager" fullname="SimplyLocalize.Tests.LifecycleDiagnosticsTests.Shutdown_DetachesForwardingFromRetainedManager" methodname="Shutdown_DetachesForwardingFromRetainedManager" classname="SimplyLocalize.Tests.LifecycleDiagnosticsTests" runstate="Runnable" seed="2139249893" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000290" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1183" name="LocalizationLoadingTests" fullname="SimplyLocalize.Tests.LocalizationLoadingTests" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" testcasecount="39" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.030120" total="39" passed="39" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1227" name="ClearCaches_AllowsLazyReloadOfCurrentLanguageAndQueries" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.ClearCaches_AllowsLazyReloadOfCurrentLanguageAndQueries" methodname="ClearCaches_AllowsLazyReloadOfCurrentLanguageAndQueries" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1843427890" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001367" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1226" name="EmptyProviderIsValid_AndAllowsFallbackToKey" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.EmptyProviderIsValid_AndAllowsFallbackToKey" methodname="EmptyProviderIsValid_AndAllowsFallbackToKey" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1673341529" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001685" asserts="0">
+              <properties />
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> Translation not found for key 'greeting' in 'ru' or any fallback
+]]></output>
+            </test-case>
+            <test-case id="1199" name="FallbackCycleTerminatesAndLoadsEachLanguageOnce" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.FallbackCycleTerminatesAndLoadsEachLanguageOnce" methodname="FallbackCycleTerminatesAndLoadsEachLanguageOnce" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1461485140" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000808" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1200" name="FallbackMatchingGlobalIsNotLoadedTwice" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.FallbackMatchingGlobalIsNotLoadedTwice" methodname="FallbackMatchingGlobalIsNotLoadedTwice" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1501113341" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000332" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1204" name="Get_DirectPluralAndExistingJsonFormatRemainSupported" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_DirectPluralAndExistingJsonFormatRemainSupported" methodname="Get_DirectPluralAndExistingJsonFormatRemainSupported" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1884487176" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000442" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1194" name="Get_EmptyChainReturnsKey_WithoutChangingKeyQueries" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_EmptyChainReturnsKey_WithoutChangingKeyQueries" methodname="Get_EmptyChainReturnsKey_WithoutChangingKeyQueries" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="265857534" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000980" asserts="0">
+              <properties />
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> Translation not found for key 'empty' in 'ru' or any fallback
+]]></output>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1192" name="Get_EmptyOrNullEntryUsesFallback_ButQueriesKeepEntrySemantics" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_EmptyOrNullEntryUsesFallback_ButQueriesKeepEntrySemantics" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001121" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1190" name="Get_EmptyOrNullEntryUsesFallback_ButQueriesKeepEntrySemantics(&quot;&quot;)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_EmptyOrNullEntryUsesFallback_ButQueriesKeepEntrySemantics(&quot;&quot;)" methodname="Get_EmptyOrNullEntryUsesFallback_ButQueriesKeepEntrySemantics" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="186821240" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000524" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1191" name="Get_EmptyOrNullEntryUsesFallback_ButQueriesKeepEntrySemantics(null)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_EmptyOrNullEntryUsesFallback_ButQueriesKeepEntrySemantics(null)" methodname="Get_EmptyOrNullEntryUsesFallback_ButQueriesKeepEntrySemantics" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1227583844" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000181" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-suite type="ParameterizedMethod" id="1203" name="Get_FormatsFallbackUsingItsSourceLanguage" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_FormatsFallbackUsingItsSourceLanguage" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001308" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1201" name="Get_FormatsFallbackUsingItsSourceLanguage(False)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_FormatsFallbackUsingItsSourceLanguage(False)" methodname="Get_FormatsFallbackUsingItsSourceLanguage" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1747062151" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000622" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1202" name="Get_FormatsFallbackUsingItsSourceLanguage(True)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_FormatsFallbackUsingItsSourceLanguage(True)" methodname="Get_FormatsFallbackUsingItsSourceLanguage" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="624332307" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000292" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-suite type="ParameterizedMethod" id="1198" name="Get_MatchesEditorFallbackResolution" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_MatchesEditorFallbackResolution" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001759" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1195" name="Get_MatchesEditorFallbackResolution(&quot;direct&quot;)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_MatchesEditorFallbackResolution(&quot;direct&quot;)" methodname="Get_MatchesEditorFallbackResolution" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="282018336" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000931" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1196" name="Get_MatchesEditorFallbackResolution(&quot;intermediate&quot;)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_MatchesEditorFallbackResolution(&quot;intermediate&quot;)" methodname="Get_MatchesEditorFallbackResolution" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1961291046" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000208" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1197" name="Get_MatchesEditorFallbackResolution(&quot;global&quot;)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_MatchesEditorFallbackResolution(&quot;global&quot;)" methodname="Get_MatchesEditorFallbackResolution" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="90163797" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000179" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1193" name="Get_WhitespaceIsExplicitContent" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Get_WhitespaceIsExplicitContent" methodname="Get_WhitespaceIsExplicitContent" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="845616474" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000278" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1224" name="GetAsset_NullTableDoesNotPreventFallback" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.GetAsset_NullTableDoesNotPreventFallback" methodname="GetAsset_NullTableDoesNotPreventFallback" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="244394644" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001197" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1228" name="GetAsset_SearchesMultipleTablesThenFallback_AndSkipsWrongType" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.GetAsset_SearchesMultipleTablesThenFallback_AndSkipsWrongType" methodname="GetAsset_SearchesMultipleTablesThenFallback_AndSkipsWrongType" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1223748272" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000719" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1221" name="ProviderCollectionsAreSnapshotted_WithTheirKeyComparer" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.ProviderCollectionsAreSnapshotted_WithTheirKeyComparer" methodname="ProviderCollectionsAreSnapshotted_WithTheirKeyComparer" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="53321180" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000848" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1210" name="Reload_CachedAssetLoadFailurePreservesTextAndAssets" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_CachedAssetLoadFailurePreservesTextAndAssets" methodname="Reload_CachedAssetLoadFailurePreservesTextAndAssets" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1843707788" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000662" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1220" name="Reload_NullProviderResultDoesNotReplaceSuccessfulState" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_NullProviderResultDoesNotReplaceSuccessfulState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001036" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1218" name="Reload_NullProviderResultDoesNotReplaceSuccessfulState(False)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_NullProviderResultDoesNotReplaceSuccessfulState(False)" methodname="Reload_NullProviderResultDoesNotReplaceSuccessfulState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1408491138" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000447" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1219" name="Reload_NullProviderResultDoesNotReplaceSuccessfulState(True)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_NullProviderResultDoesNotReplaceSuccessfulState(True)" methodname="Reload_NullProviderResultDoesNotReplaceSuccessfulState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="524387032" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000198" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1206" name="Reload_RefreshesIntermediateAndGlobalFallbacks" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_RefreshesIntermediateAndGlobalFallbacks" methodname="Reload_RefreshesIntermediateAndGlobalFallbacks" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1078523037" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000345" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1205" name="Reload_ReplacesTextAndCachedAssetsBeforeNotifying" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_ReplacesTextAndCachedAssetsBeforeNotifying" methodname="Reload_ReplacesTextAndCachedAssetsBeforeNotifying" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="479241558" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001073" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1209" name="Reload_TextLoadFailurePreservesLastSuccessfulState" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_TextLoadFailurePreservesLastSuccessfulState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001157" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1207" name="Reload_TextLoadFailurePreservesLastSuccessfulState(&quot;ru&quot;)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_TextLoadFailurePreservesLastSuccessfulState(&quot;ru&quot;)" methodname="Reload_TextLoadFailurePreservesLastSuccessfulState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1881409374" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000572" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1208" name="Reload_TextLoadFailurePreservesLastSuccessfulState(&quot;en&quot;)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_TextLoadFailurePreservesLastSuccessfulState(&quot;en&quot;)" methodname="Reload_TextLoadFailurePreservesLastSuccessfulState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1163354342" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000218" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1229" name="Reload_WhenUninitializedIsSafe" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.Reload_WhenUninitializedIsSafe" methodname="Reload_WhenUninitializedIsSafe" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1448240366" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000357" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1225" name="SetDataProvider_BeforeLanguageIsSelectedDoesNotLoadOrNotify" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetDataProvider_BeforeLanguageIsSelectedDoesNotLoadOrNotify" methodname="SetDataProvider_BeforeLanguageIsSelectedDoesNotLoadOrNotify" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1971261269" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000585" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1215" name="SetDataProvider_FailurePreservesOldProviderAndCaches" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetDataProvider_FailurePreservesOldProviderAndCaches" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001462" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1213" name="SetDataProvider_FailurePreservesOldProviderAndCaches(False)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetDataProvider_FailurePreservesOldProviderAndCaches(False)" methodname="SetDataProvider_FailurePreservesOldProviderAndCaches" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1509930827" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000796" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1214" name="SetDataProvider_FailurePreservesOldProviderAndCaches(True)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetDataProvider_FailurePreservesOldProviderAndCaches(True)" methodname="SetDataProvider_FailurePreservesOldProviderAndCaches" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="890624412" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000272" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1216" name="SetDataProvider_NullDoesNotChangeState" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetDataProvider_NullDoesNotChangeState" methodname="SetDataProvider_NullDoesNotChangeState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1427173730" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000354" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1212" name="SetDataProvider_ReplacesTextAndAssetsBeforeNotifying_AndDoesNotDisposeProvider" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetDataProvider_ReplacesTextAndAssetsBeforeNotifying_AndDoesNotDisposeProvider" methodname="SetDataProvider_ReplacesTextAndAssetsBeforeNotifying_AndDoesNotDisposeProvider" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="338166719" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000759" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1222" name="SetDataProvider_SameInstanceReloads_AndDropsInactiveLanguageCaches" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetDataProvider_SameInstanceReloads_AndDropsInactiveLanguageCaches" methodname="SetDataProvider_SameInstanceReloads_AndDropsInactiveLanguageCaches" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="549223985" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000347" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1217" name="SetLanguage_AssetFailurePreservesSelectedLanguageAndAllowsRetry" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetLanguage_AssetFailurePreservesSelectedLanguageAndAllowsRetry" methodname="SetLanguage_AssetFailurePreservesSelectedLanguageAndAllowsRetry" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="597250376" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000749" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1211" name="SetLanguage_FailedFallbackLoadDoesNotCachePartialNewLanguage" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetLanguage_FailedFallbackLoadDoesNotCachePartialNewLanguage" methodname="SetLanguage_FailedFallbackLoadDoesNotCachePartialNewLanguage" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1939533209" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000532" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1189" name="SetLanguage_InvalidCodePreservesState" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetLanguage_InvalidCodePreservesState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.002817" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1186" name="SetLanguage_InvalidCodePreservesState(null)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetLanguage_InvalidCodePreservesState(null)" methodname="SetLanguage_InvalidCodePreservesState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1689977398" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001011" asserts="0">
+                <properties />
+                <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> Cannot set language: code is null or empty
+]]></output>
+              </test-case>
+              <test-case id="1187" name="SetLanguage_InvalidCodePreservesState(&quot;&quot;)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetLanguage_InvalidCodePreservesState(&quot;&quot;)" methodname="SetLanguage_InvalidCodePreservesState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1012534863" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000640" asserts="0">
+                <properties />
+                <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> Cannot set language: code is null or empty
+]]></output>
+              </test-case>
+              <test-case id="1188" name="SetLanguage_InvalidCodePreservesState(&quot;unknown&quot;)" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetLanguage_InvalidCodePreservesState(&quot;unknown&quot;)" methodname="SetLanguage_InvalidCodePreservesState" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1451448622" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000663" asserts="0">
+                <properties />
+                <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> Language 'unknown' is not defined in LocalizationConfig ''. Available: en, ru, uk
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-case id="1184" name="SetLanguage_PreloadsCurrentAndFallbackBeforeNotifying" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetLanguage_PreloadsCurrentAndFallbackBeforeNotifying" methodname="SetLanguage_PreloadsCurrentAndFallbackBeforeNotifying" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1496266221" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.001292" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1185" name="SetLanguage_SameLanguageDoesNotLoadOrNotifyAgain" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.SetLanguage_SameLanguageDoesNotLoadOrNotifyAgain" methodname="SetLanguage_SameLanguageDoesNotLoadOrNotifyAgain" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="2121918702" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000385" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1223" name="TextOnlyReloadAndProviderChangeDoNotLoadAssets" fullname="SimplyLocalize.Tests.LocalizationLoadingTests.TextOnlyReloadAndProviderChangeDoNotLoadAssets" methodname="TextOnlyReloadAndProviderChangeDoNotLoadAssets" classname="SimplyLocalize.Tests.LocalizationLoadingTests" runstate="Runnable" seed="1409245500" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.000286" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1230" name="MetadataPersistenceTests" fullname="SimplyLocalize.Tests.MetadataPersistenceTests" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" testcasecount="31" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:37Z" duration="0.372670" total="31" passed="31" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1231" name="EscapedMetadata_RoundTripsWithoutLosingCharacters" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.EscapedMetadata_RoundTripsWithoutLosingCharacters" methodname="EscapedMetadata_RoundTripsWithoutLosingCharacters" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="80113530" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.023947" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1252" name="ExcessiveNesting_IsDiagnosedWithoutPublishingOrOverwriting" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.ExcessiveNesting_IsDiagnosedWithoutPublishingOrOverwriting" methodname="ExcessiveNesting_IsDiagnosedWithoutPublishingOrOverwriting" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="857497378" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.011535" asserts="0">
+              <properties>
+                <property name="Timeout" value="3000" />
+              </properties>
+              <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_94c48dcc8c114aeeb198c9324a0c86b1\Resources\MetadataTests_94c48dcc8c114aeeb198c9324a0c86b1\_meta.json': Invalid metadata JSON: The reader's MaxDepth of 64 has been exceeded. Path 'key.extra[0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0][0]', line 1, position 79.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1256" name="ExternalChangeOrDeletion_RequiresReload" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.ExternalChangeOrDeletion_RequiresReload" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.018703" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1254" name="ExternalChangeOrDeletion_RequiresReload(False)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.ExternalChangeOrDeletion_RequiresReload(False)" methodname="ExternalChangeOrDeletion_RequiresReload" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="105735509" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.013476" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1255" name="ExternalChangeOrDeletion_RequiresReload(True)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.ExternalChangeOrDeletion_RequiresReload(True)" methodname="ExternalChangeOrDeletion_RequiresReload" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1240977407" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.004593" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1257" name="FileCreatedAfterLoad_IsNotOverwritten" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.FileCreatedAfterLoad_IsNotOverwritten" methodname="FileCreatedAfterLoad_IsNotOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="458793437" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.004748" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1249" name="InvalidFile_IsDiagnosedAndNeverOverwritten" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.094499" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1238" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="948596968" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.006227" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_43b2282fe0874146af5460c7591d7611\Resources\MetadataTests_43b2282fe0874146af5460c7591d7611\_meta.json': Invalid metadata JSON: Error reading JToken from JsonReader. Path '', line 0, position 0.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1239" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1425478019" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.005895" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_e319fb1d2a3549e3bd9bea3185f19aa1\Resources\MetadataTests_e319fb1d2a3549e3bd9bea3185f19aa1\_meta.json': Invalid metadata JSON: Error reading JObject from JsonReader. Path '', line 1, position 1.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1240" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;[]&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;[]&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="156630004" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.007251" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_511c877abe884820a09834cd3dc42e83\Resources\MetadataTests_511c877abe884820a09834cd3dc42e83\_meta.json': Expected a metadata object at '', line 1, position 1.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1241" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;null&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;null&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="746512230" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.006413" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_2d0c57b602014388a915de7e40dd15eb\Resources\MetadataTests_2d0c57b602014388a915de7e40dd15eb\_meta.json': Expected a metadata object at '', line 1, position 4.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1242" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;description\&quot;:42}}&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;description\&quot;:42}}&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="663954915" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.011808" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_519b4f56b0c84b3096ca9aa3079152cd\Resources\MetadataTests_519b4f56b0c84b3096ca9aa3079152cd\_meta.json': Expected a string or null at 'key.description', line 1, position 24.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1243" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;previousKeys\&quot;:\&quot;old\&quot;}}&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;previousKeys\&quot;:\&quot;old\&quot;}}&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1071697891" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.009653" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_941d1f356cbd413eaf630e7e263c6002\Resources\MetadataTests_941d1f356cbd413eaf630e7e263c6002\_meta.json': Expected an array of strings or null at 'key.previousKeys', line 1, position 28.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1244" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:null}&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:null}&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="69473032" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.008961" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_dbb37cbb30044d32bf2001f23cd209c6\Resources\MetadataTests_dbb37cbb30044d32bf2001f23cd209c6\_meta.json': Expected an object for the key at 'key', line 1, position 11.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1245" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;description\&quot;:\&quot;unterminated}}&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;description\&quot;:\&quot;unterminated}}&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1908843411" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.009178" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_17b2a9d4dae34a71a22ab45bb6af3be5\Resources\MetadataTests_17b2a9d4dae34a71a22ab45bb6af3be5\_meta.json': Invalid metadata JSON: Unterminated string. Expected delimiter: ". Path 'key.description', line 1, position 37.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1246" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;description\&quot;:\&quot;ok\&quot;}} trailing&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;description\&quot;:\&quot;ok\&quot;}} trailing&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="104191089" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.008933" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_8f5999ddba9f4560a67996def687a2fb\Resources\MetadataTests_8f5999ddba9f4560a67996def687a2fb\_meta.json': Invalid metadata JSON: Error parsing boolean value. Path '', line 1, position 31.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1247" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{},\&quot;key\&quot;:{}}&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{},\&quot;key\&quot;:{}}&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1771347474" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.009059" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_cb643c06b39d4b77a60333f3bdd9dfbc\Resources\MetadataTests_cb643c06b39d4b77a60333f3bdd9dfbc\_meta.json': Invalid metadata JSON: Property with the name 'key' already exists in the current JSON object. Path 'key', line 1, position 16.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1248" name="InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;description\&quot;:\&quot;a\&quot;,\&quot;description\&quot;:\&quot;b\&quot;}}&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidFile_IsDiagnosedAndNeverOverwritten(&quot;{\&quot;key\&quot;:{\&quot;description\&quot;:\&quot;a\&quot;,\&quot;description\&quot;:\&quot;b\&quot;}}&quot;)" methodname="InvalidFile_IsDiagnosedAndNeverOverwritten" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1239005436" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.009374" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_c613552213bf4f21af90090861bbe754\Resources\MetadataTests_c613552213bf4f21af90090861bbe754\_meta.json': Invalid metadata JSON: Property with the name 'description' already exists in the current JSON object. Path 'key.description', line 1, position 40.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-case id="1251" name="InvalidUtf8_IsNotSilentlyReplacedAndSaved" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.InvalidUtf8_IsNotSilentlyReplacedAndSaved" methodname="InvalidUtf8_IsNotSilentlyReplacedAndSaved" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1413413979" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.010552" asserts="0">
+              <properties />
+              <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_8cad75808c7a4d55a30839b9e0354277\Resources\MetadataTests_8cad75808c7a4d55a30839b9e0354277\_meta.json': Unable to translate bytes [FF] at index 23 from specified code page to Unicode.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+            </test-case>
+            <test-case id="1260" name="LegacyNullFields_AndMissingFileRemainSupported" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.LegacyNullFields_AndMissingFileRemainSupported" methodname="LegacyNullFields_AndMissingFileRemainSupported" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1721596234" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.019783" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1262" name="MissingBasePath_FailsExplicitly" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.MissingBasePath_FailsExplicitly" methodname="MissingBasePath_FailsExplicitly" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1959411654" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.002616" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1237" name="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.050530" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="Timeout" value="3000" />
+              </properties>
+              <test-case id="1232" name="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;null&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;null&quot;)" methodname="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1628999204" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.010202" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_fa7dd9488ea441abbd70b84d26b072d5\Resources\MetadataTests_fa7dd9488ea441abbd70b84d26b072d5\_meta.json': Expected a string in previousKeys at 'key.previousKeys[1]', line 1, position 62.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1233" name="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;42&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;42&quot;)" methodname="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1991959668" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.010171" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_62098e5a974f432c8642272ab1d37b78\Resources\MetadataTests_62098e5a974f432c8642272ab1d37b78\_meta.json': Expected a string in previousKeys at 'key.previousKeys[1]', line 1, position 60.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1234" name="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;true&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;true&quot;)" methodname="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1040974458" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.009905" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_8337d13278704a20a36eebbde299b8f0\Resources\MetadataTests_8337d13278704a20a36eebbde299b8f0\_meta.json': Expected a string in previousKeys at 'key.previousKeys[1]', line 1, position 62.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1235" name="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;{}&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;{}&quot;)" methodname="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1992628525" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.009431" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_67060d65983045438ae4a874e80ab748\Resources\MetadataTests_67060d65983045438ae4a874e80ab748\_meta.json': Expected a string in previousKeys at 'key.previousKeys[1]', line 1, position 59.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+              <test-case id="1236" name="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;[]&quot;)" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata(&quot;[]&quot;)" methodname="NonStringHistory_IsRejectedWithoutHangingOrPublishingPartialMetadata" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="647409040" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.009382" asserts="0">
+                <properties />
+                <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_fa635481296c402ba64261f32305e2b7\Resources\MetadataTests_fa635481296c402ba64261f32305e2b7\_meta.json': Expected a string in previousKeys at 'key.previousKeys[1]', line 1, position 59.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-case id="1261" name="PublicMutableHistory_WithNullEntryDoesNotCorruptFile" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.PublicMutableHistory_WithNullEntryDoesNotCorruptFile" methodname="PublicMutableHistory_WithNullEntryDoesNotCorruptFile" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1000975654" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:36Z" duration="0.009164" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1253" name="ReadFailure_BlocksSavingEvenAfterFileBecomesReadable" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.ReadFailure_BlocksSavingEvenAfterFileBecomesReadable" methodname="ReadFailure_BlocksSavingEvenAfterFileBecomesReadable" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="316587494" result="Passed" start-time="2026-11-16 12:08:36Z" end-time="2026-11-16 12:08:37Z" duration="0.014567" asserts="0">
+              <properties />
+              <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_6995b4cf230c4658a30e0350a721cc08\Resources\MetadataTests_6995b4cf230c4658a30e0350a721cc08\_meta.json': Sharing violation on path D:\Unity\Projects\SimplyLocalize\playgrounds\SimplyLocalize-Lab\Assets\__MetadataTests_6995b4cf230c4658a30e0350a721cc08\Resources\MetadataTests_6995b4cf230c4658a30e0350a721cc08\_meta.json. Metadata saving is blocked; repair the file and reload.
+]]></output>
+            </test-case>
+            <test-case id="1250" name="RepairRequiresReload_ThenSavingWorks" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.RepairRequiresReload_ThenSavingWorks" methodname="RepairRequiresReload_ThenSavingWorks" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="894168645" result="Passed" start-time="2026-11-16 12:08:37Z" end-time="2026-11-16 12:08:37Z" duration="0.023295" asserts="0">
+              <properties />
+              <output><![CDATA[[SimplyLocalize Editor] Failed to load meta 'D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\__MetadataTests_dacd5384ea3e4bf6852fadbd9127d000\Resources\MetadataTests_dacd5384ea3e4bf6852fadbd9127d000\_meta.json': Invalid metadata JSON: Error reading JObject from JsonReader. Path '', line 1, position 1.. Metadata saving is blocked; repair the file and reload.
+]]></output>
+            </test-case>
+            <test-case id="1264" name="RepeatedSaveAndReload_PreservesHistoryAndDoesNotLeaveTemporaryFiles" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.RepeatedSaveAndReload_PreservesHistoryAndDoesNotLeaveTemporaryFiles" methodname="RepeatedSaveAndReload_PreservesHistoryAndDoesNotLeaveTemporaryFiles" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1559938569" result="Passed" start-time="2026-11-16 12:08:37Z" end-time="2026-11-16 12:08:37Z" duration="0.017180" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1263" name="ReplacementFailure_PreservesOriginalAndPendingEdits_ThenCanRetry" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.ReplacementFailure_PreservesOriginalAndPendingEdits_ThenCanRetry" methodname="ReplacementFailure_PreservesOriginalAndPendingEdits_ThenCanRetry" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1837910360" result="Passed" start-time="2026-11-16 12:08:37Z" end-time="2026-11-16 12:08:37Z" duration="0.024874" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1258" name="UnknownFields_SurviveEditsAndMetadataRename" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.UnknownFields_SurviveEditsAndMetadataRename" methodname="UnknownFields_SurviveEditsAndMetadataRename" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="743574171" result="Passed" start-time="2026-11-16 12:08:37Z" end-time="2026-11-16 12:08:37Z" duration="0.025207" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1259" name="UnknownOnlyMetadata_IsNotDeletedAsEmpty" fullname="SimplyLocalize.Tests.MetadataPersistenceTests.UnknownOnlyMetadata_IsNotDeletedAsEmpty" methodname="UnknownOnlyMetadata_IsNotDeletedAsEmpty" classname="SimplyLocalize.Tests.MetadataPersistenceTests" runstate="Runnable" seed="1367479978" result="Passed" start-time="2026-11-16 12:08:37Z" end-time="2026-11-16 12:08:37Z" duration="0.018426" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1265" name="PlaySessionResetTests" fullname="SimplyLocalize.Tests.PlaySessionResetTests" classname="SimplyLocalize.Tests.PlaySessionResetTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:40Z" end-time="2026-11-16 12:08:41Z" duration="1.731938" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1267" name="PlaySessionWithDomainReload_StartsWithBuiltInRules" fullname="SimplyLocalize.Tests.PlaySessionResetTests.PlaySessionWithDomainReload_StartsWithBuiltInRules" methodname="PlaySessionWithDomainReload_StartsWithBuiltInRules" classname="SimplyLocalize.Tests.PlaySessionResetTests" runstate="Runnable" seed="1124914216" result="Passed" start-time="2026-11-16 12:08:37Z" end-time="2026-11-16 12:08:40Z" duration="3.211285" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1266" name="RepeatedPlaySessionsWithoutDomainReload_ResetStateRulesAndSubscriptions" fullname="SimplyLocalize.Tests.PlaySessionResetTests.RepeatedPlaySessionsWithoutDomainReload_ResetStateRulesAndSubscriptions" methodname="RepeatedPlaySessionsWithoutDomainReload_ResetStateRulesAndSubscriptions" classname="SimplyLocalize.Tests.PlaySessionResetTests" runstate="Runnable" seed="823269033" result="Passed" start-time="2026-11-16 12:08:40Z" end-time="2026-11-16 12:08:41Z" duration="1.415461" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+<color=#FF7F00>[SimplyLocalize]</color> LocalizationConfig '' has no languages; select a configured language before requesting translations.
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1268" name="ProfileApplierTests" fullname="SimplyLocalize.Tests.ProfileApplierTests" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" testcasecount="19" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.089737" total="19" passed="19" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1289" name="CacheOriginals_KeepsTMPAndLegacyBaselinesSeparate" fullname="SimplyLocalize.Tests.ProfileApplierTests.CacheOriginals_KeepsTMPAndLegacyBaselinesSeparate" methodname="CacheOriginals_KeepsTMPAndLegacyBaselinesSeparate" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="193473560" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.057808" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1286" name="FallbackFonts_AreIsolatedBetweenProfiles_AndSharedSourcesSurviveReset" fullname="SimplyLocalize.Tests.ProfileApplierTests.FallbackFonts_AreIsolatedBetweenProfiles_AndSharedSourcesSurviveReset" methodname="FallbackFonts_AreIsolatedBetweenProfiles_AndSharedSourcesSurviveReset" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="614075197" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.015532" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1287" name="FallbackOnlyProfile_UsesOriginalFontAndPreservesItsMaterialPreset" fullname="SimplyLocalize.Tests.ProfileApplierTests.FallbackOnlyProfile_UsesOriginalFontAndPreservesItsMaterialPreset" methodname="FallbackOnlyProfile_UsesOriginalFontAndPreservesItsMaterialPreset" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1168810345" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.002429" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1271" name="Legacy_BestFitBoundsScaleAndRestore" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_BestFitBoundsScaleAndRestore" methodname="Legacy_BestFitBoundsScaleAndRestore" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="300238898" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000443" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1285" name="Legacy_MapsNineAlignmentPositions" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.006579" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1276" name="Legacy_MapsNineAlignmentPositions(TopLeft,UpperLeft)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(TopLeft,UpperLeft)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1107986136" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.001176" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1277" name="Legacy_MapsNineAlignmentPositions(Top,UpperCenter)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(Top,UpperCenter)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1443368246" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000444" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1278" name="Legacy_MapsNineAlignmentPositions(TopRight,UpperRight)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(TopRight,UpperRight)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1578415164" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000246" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1279" name="Legacy_MapsNineAlignmentPositions(Left,MiddleLeft)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(Left,MiddleLeft)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="310439100" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000236" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1280" name="Legacy_MapsNineAlignmentPositions(Center,MiddleCenter)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(Center,MiddleCenter)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1972604155" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000243" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1281" name="Legacy_MapsNineAlignmentPositions(Right,MiddleRight)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(Right,MiddleRight)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="861272924" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000232" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1282" name="Legacy_MapsNineAlignmentPositions(BottomLeft,LowerLeft)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(BottomLeft,LowerLeft)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1521342267" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000235" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1283" name="Legacy_MapsNineAlignmentPositions(Bottom,LowerCenter)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(Bottom,LowerCenter)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="598802710" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000301" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1284" name="Legacy_MapsNineAlignmentPositions(BottomRight,LowerRight)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsNineAlignmentPositions(BottomRight,LowerRight)" methodname="Legacy_MapsNineAlignmentPositions" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="477522154" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000262" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="ParameterizedMethod" id="1275" name="Legacy_MapsSupportedStyleFlags" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsSupportedStyleFlags" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.001549" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1272" name="Legacy_MapsSupportedStyleFlags(Bold, Italic,BoldAndItalic)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsSupportedStyleFlags(Bold, Italic,BoldAndItalic)" methodname="Legacy_MapsSupportedStyleFlags" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="204653176" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000449" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1273" name="Legacy_MapsSupportedStyleFlags(Bold, Underline,Bold)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsSupportedStyleFlags(Bold, Underline,Bold)" methodname="Legacy_MapsSupportedStyleFlags" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1606906852" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000213" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1274" name="Legacy_MapsSupportedStyleFlags(Italic, Strikethrough,Italic)" fullname="SimplyLocalize.Tests.ProfileApplierTests.Legacy_MapsSupportedStyleFlags(Italic, Strikethrough,Italic)" methodname="Legacy_MapsSupportedStyleFlags" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1075496657" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000267" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1288" name="SharedFontVariant_IsReusedAndReleasedOnlyAfterLastUser" fullname="SimplyLocalize.Tests.ProfileApplierTests.SharedFontVariant_IsReusedAndReleasedOnlyAfterLastUser" methodname="SharedFontVariant_IsReusedAndReleasedOnlyAfterLastUser" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1885921374" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.002157" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1270" name="TMP_AutoSizeBoundsScaleAndRestoreWithoutDisablingAutoSize" fullname="SimplyLocalize.Tests.ProfileApplierTests.TMP_AutoSizeBoundsScaleAndRestoreWithoutDisablingAutoSize" methodname="TMP_AutoSizeBoundsScaleAndRestoreWithoutDisablingAutoSize" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="433858140" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000496" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1269" name="TMP_RepeatedProfileApplicationsAndResetAreIdempotent" fullname="SimplyLocalize.Tests.ProfileApplierTests.TMP_RepeatedProfileApplicationsAndResetAreIdempotent" methodname="TMP_RepeatedProfileApplicationsAndResetAreIdempotent" classname="SimplyLocalize.Tests.ProfileApplierTests" runstate="Runnable" seed="1663194454" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:41Z" duration="0.000882" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1290" name="ResourcesLoadingTests" fullname="SimplyLocalize.Tests.ResourcesLoadingTests" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:45Z" duration="3.771020" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1301" name="Coverage_FailedLoadCannotLookLikeACompleteCheck" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Coverage_FailedLoadCannotLookLikeACompleteCheck" methodname="Coverage_FailedLoadCannotLookLikeACompleteCheck" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="1421004959" result="Passed" start-time="2026-11-16 12:08:41Z" end-time="2026-11-16 12:08:42Z" duration="0.308187" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1300" name="Coverage_LoadsOtherLanguageFilesNestedFilesAndAllTablesWithoutChangingLiveState" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Coverage_LoadsOtherLanguageFilesNestedFilesAndAllTablesWithoutChangingLiveState" methodname="Coverage_LoadsOtherLanguageFilesNestedFilesAndAllTablesWithoutChangingLiveState" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="1668839850" result="Passed" start-time="2026-11-16 12:08:42Z" end-time="2026-11-16 12:08:42Z" duration="0.408640" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1299" name="Initialize_MalformedSourceNamesFileAndPreservesActiveManager" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Initialize_MalformedSourceNamesFileAndPreservesActiveManager" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-11-16 12:08:42Z" end-time="2026-11-16 12:08:44Z" duration="1.805921" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1295" name="Initialize_MalformedSourceNamesFileAndPreservesActiveManager(&quot;not JSON&quot;)" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Initialize_MalformedSourceNamesFileAndPreservesActiveManager(&quot;not JSON&quot;)" methodname="Initialize_MalformedSourceNamesFileAndPreservesActiveManager" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="403867848" result="Passed" start-time="2026-11-16 12:08:42Z" end-time="2026-11-16 12:08:42Z" duration="0.337093" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1296" name="Initialize_MalformedSourceNamesFileAndPreservesActiveManager(&quot;{\&quot;translations\&quot;:{\&quot;bad\&quot;:t&quot;)" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Initialize_MalformedSourceNamesFileAndPreservesActiveManager(&quot;{\&quot;translations\&quot;:{\&quot;bad\&quot;:t&quot;)" methodname="Initialize_MalformedSourceNamesFileAndPreservesActiveManager" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="809863821" result="Passed" start-time="2026-11-16 12:08:42Z" end-time="2026-11-16 12:08:43Z" duration="0.662244" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1297" name="Initialize_MalformedSourceNamesFileAndPreservesActiveManager(&quot;{\&quot;translations\&quot;:{\&quot;bad\&quot;:n&quot;)" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Initialize_MalformedSourceNamesFileAndPreservesActiveManager(&quot;{\&quot;translations\&quot;:{\&quot;bad\&quot;:n&quot;)" methodname="Initialize_MalformedSourceNamesFileAndPreservesActiveManager" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="1434327723" result="Passed" start-time="2026-11-16 12:08:43Z" end-time="2026-11-16 12:08:44Z" duration="0.572342" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1298" name="Initialize_MalformedSourceNamesFileAndPreservesActiveManager(&quot;{\&quot;translations\&quot;:{\&quot;bad\&quot;:999999999999999999999999999999999999}}&quot;)" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Initialize_MalformedSourceNamesFileAndPreservesActiveManager(&quot;{\&quot;translations\&quot;:{\&quot;bad\&quot;:999999999999999999999999999999999999}}&quot;)" methodname="Initialize_MalformedSourceNamesFileAndPreservesActiveManager" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="1769429236" result="Passed" start-time="2026-11-16 12:08:44Z" end-time="2026-11-16 12:08:44Z" duration="0.232879" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1302" name="ResourceConfigSelection_RejectsAmbiguity_AndIgnoresAutoDisabledCandidates" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.ResourceConfigSelection_RejectsAmbiguity_AndIgnoresAutoDisabledCandidates" methodname="ResourceConfigSelection_RejectsAmbiguity_AndIgnoresAutoDisabledCandidates" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="1085873642" result="Passed" start-time="2026-11-16 12:08:44Z" end-time="2026-11-16 12:08:44Z" duration="0.269415" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1294" name="Resources_FailedReloadKeepsState_AndCanRecover" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Resources_FailedReloadKeepsState_AndCanRecover" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-11-16 12:08:44Z" end-time="2026-11-16 12:08:45Z" duration="0.610707" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1292" name="Resources_FailedReloadKeepsState_AndCanRecover(&quot;ru&quot;)" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Resources_FailedReloadKeepsState_AndCanRecover(&quot;ru&quot;)" methodname="Resources_FailedReloadKeepsState_AndCanRecover" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="1342994697" result="Passed" start-time="2026-11-16 12:08:44Z" end-time="2026-11-16 12:08:44Z" duration="0.292019" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1293" name="Resources_FailedReloadKeepsState_AndCanRecover(&quot;en&quot;)" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Resources_FailedReloadKeepsState_AndCanRecover(&quot;en&quot;)" methodname="Resources_FailedReloadKeepsState_AndCanRecover" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="888866631" result="Passed" start-time="2026-11-16 12:08:44Z" end-time="2026-11-16 12:08:45Z" duration="0.309610" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1291" name="Resources_MergesExistingJsonFilesAndLoadsGlobalFallback" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Resources_MergesExistingJsonFilesAndLoadsGlobalFallback" methodname="Resources_MergesExistingJsonFilesAndLoadsGlobalFallback" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="23184209" result="Passed" start-time="2026-11-16 12:08:45Z" end-time="2026-11-16 12:08:45Z" duration="0.187658" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> Translation not found for key 'empty' in 'ru' or any fallback
+]]></output>
+            </test-case>
+            <test-case id="1303" name="Resources_MissingLanguageReturnsEmptyCollections" fullname="SimplyLocalize.Tests.ResourcesLoadingTests.Resources_MissingLanguageReturnsEmptyCollections" methodname="Resources_MissingLanguageReturnsEmptyCollections" classname="SimplyLocalize.Tests.ResourcesLoadingTests" runstate="Runnable" seed="1799277813" result="Passed" start-time="2026-11-16 12:08:45Z" end-time="2026-11-16 12:08:45Z" duration="0.178850" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[<color=#FF7F00>[SimplyLocalize]</color> No text files found at Resources/SimplyLocalizeRegression_7aae48cd79424da8b0ab706fe613aefb/missing/text/ for language 'missing'
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1304" name="RtlDiagnosticsTests" fullname="SimplyLocalize.Tests.RtlDiagnosticsTests" classname="SimplyLocalize.Tests.RtlDiagnosticsTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-11-16 12:08:45Z" end-time="2026-11-16 12:08:46Z" duration="1.031469" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1305" name="NativeTMP_RendersMixedArabicGlyphsAndRichText_AndRestoresLayout" fullname="SimplyLocalize.Tests.RtlDiagnosticsTests.NativeTMP_RendersMixedArabicGlyphsAndRichText_AndRestoresLayout" methodname="NativeTMP_RendersMixedArabicGlyphsAndRichText_AndRestoresLayout" classname="SimplyLocalize.Tests.RtlDiagnosticsTests" runstate="Runnable" seed="916658371" result="Passed" start-time="2026-11-16 12:08:45Z" end-time="2026-11-16 12:08:46Z" duration="1.027659" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/kompik/AppData/LocalLow/DefaultCompany/SimplyLocalize-Lab\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

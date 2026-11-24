@@ -4,21 +4,27 @@ Optional Spine support for localizing individual attachments and complete atlas 
 
 Runtime and editor code live in separate assemblies. Both assemblies are enabled through a
 Unity version define only when `com.esotericsoftware.spine.spine-unity` is installed, so the
-future package integration will not make Spine a mandatory Simply Localize dependency.
+Spine remains an optional dependency of the game project.
 
 ## Usage
 
 1. Add `Localized Spine Attachment` next to a `SkeletonAnimation`, `SkeletonRenderer`,
    or `SkeletonGraphic` component.
-2. Select or create a Simply Localize `Texture2D` asset key.
+2. Create an asset entry in Simply Localize > Assets and assign its channel, set and entry
+   in the component Inspector. The binding stores the entry ID and survives key renames.
 3. Select the Spine atlas region path to replace, for example `props/poster_scotch`.
-4. Expand language rows to compare direct assignments and fallback textures.
+4. Open Saved translations preview to compare the selected channel's fallback textures.
+   Edit direct assignments in Simply Localize > Assets.
 5. Under `Localization Template`, select a language and extract the source region.
 
 The generated PNG is imported as a standalone `Texture2D`. Its width and height must
 exactly match the original Spine region; a mismatch is shown as an error. Import-setting
 issues are shown as warnings. The generated texture can optionally be assigned to the
-selected language's `LocalizationAssetTable` immediately.
+selected language's registered Resources table immediately. Choose the destination when
+the set has several tables; extraction does not search language folders or pick an arbitrary
+table. Native assignment uses the project edit transaction and Unity Undo. If assignment
+fails after a successful extraction, the dialog reports the PNG retained for manual use.
+External providers supply their own authoring workflow.
 
 PMA conversion is selected automatically from the original Spine atlas page. If no
 localized texture is available for the active language, the original attachment remains.
@@ -31,6 +37,25 @@ page are localized together; an identically named region on another page is left
 
 `Advanced/Spine Target` is normally resolved automatically. `Monitor Skin Changes`
 reapplies the localized overlay when another runtime system replaces the active Spine skin.
+
+Use one `Localized Spine Attachment` owner per target skeleton. Independent attachment
+components targeting the same skeleton each maintain their own combined skin; their skin
+monitors can interpret each other's overlays as external changes. That combination is not
+currently supported. This restriction does not prevent separate atlas-page material overrides.
+
+The stage 4 lifecycle regression run was made in a Unity project without Spine Runtime.
+The C5 Inspector port has passed 20 Editor tests with Spine 4.2.121 on Unity 6000.0.62f1
+in an isolated local UPM project. These cover channel/entry identity after rename,
+fallback, actual PNG pixels (trim, rotation, PMA), importer restoration and rejected
+output paths. Automatic power-of-two rescaling is disabled for extracted PNGs;
+platform texture size limits still apply. Output must
+be under Assets; extraction never edits a package atlas importer. Copy a non-readable
+package atlas into Assets first. These checks do not prove skeleton rendering or resource cleanup.
+The extractor supports unrotated and 270-degree packed regions; other rotations are rejected.
+Skeleton rendering, skin changes, multi-page atlases and Spine resource cleanup therefore
+remain unverified in that run. Before shipping this optional integration, test these cases
+with the installed Spine version and production skeletons, including missing translations,
+component disable/enable, and destruction. No Spine dependency is installed automatically.
 
 ## Full atlas page replacement
 

@@ -1,0 +1,1 @@
+PASS: compact setup; same popup in Setup and Languages; pl/ro/x-elvish added through real controls; profile metadata retained.

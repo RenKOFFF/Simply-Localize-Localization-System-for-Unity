@@ -1,0 +1,11 @@
+{
+  "translations": {
+    "World/Radio": "Listen to radio",
+    "World/Note": "Read duty officer's note",
+    "World/Key": "Take the archive key",
+    "World/Door": "Open archive",
+    "World/SignArchive": "ARCHIVE  /  AUTHORIZED PERSONNEL ONLY",
+    "World/SignWarning": "QUARANTINE  /  KEEP THIS DOOR CLOSED",
+    "World/SignReception": "RECEPTION  /  WEST PRECINCT"
+  }
+}

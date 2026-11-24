@@ -1,15 +1,11 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace SimplyLocalize.Components
 {
     /// <summary>
     /// Localizes an AudioClip on an AudioSource component.
     ///
-    /// Supports two modes:
-    ///   1. Direct entries: drag clips per language in the Inspector
-    ///   2. Path-based: set a key, clips loaded from Resources/{lang}/audio/
-    ///
-    /// Optional: autoPlay plays the clip immediately after language switch.
+    /// Resolves a ready asset from the bound channel and retains its source until detached.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("SimplyLocalize/Localized Audio Clip")]
@@ -27,6 +23,7 @@ namespace SimplyLocalize.Components
 
             if (_source == null) return;
 
+            _source.Stop();
             _source.clip = asset;
 
             if (_autoPlay && asset != null)
@@ -39,12 +36,15 @@ namespace SimplyLocalize.Components
             return _source != null ? _source.clip : null;
         }
 
-        protected override Object LoadFromProvider(string languageCode)
+        protected override void RestoreAsset(AudioClip asset)
         {
-            return Localization.GetAsset<AudioClip>(_key);
+            CacheTarget();
+            if (_source == null) return;
+            _source.Stop();
+            _source.clip = asset;
         }
 
-        private void CacheTarget()
+private void CacheTarget()
         {
             if (_source == null) _source = GetComponent<AudioSource>();
         }

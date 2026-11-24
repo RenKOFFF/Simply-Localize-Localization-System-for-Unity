@@ -1,0 +1,97 @@
+using System;
+using System.IO;
+using System.Linq;
+using SimplyLocalize;
+using SimplyLocalize.Editor;
+using SimplyLocalize.Editor.Windows;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+public static class CompactPickerShots
+{
+    private static LocalizationEditorWindow window;
+    private static int step;
+    private static double next;
+    private static readonly string Output = Path.GetFullPath("../../CompactPicker/Screenshots");
+    private static EditorWindow Popup => Resources.FindObjectsOfTypeAll<EditorWindow>().FirstOrDefault(w => w.GetType().Name == "LanguagePickerPopup");
+
+    public static void Begin()
+    {
+        if (!Application.dataPath.Replace('\\', '/').EndsWith("/TestResults/WindowSetup/WindowDemo/Assets")) throw new Exception("Wrong fixture");
+        Directory.CreateDirectory(Output);
+        if (AssetDatabase.IsValidFolder("Assets/SimplyLocalize")) AssetDatabase.DeleteAsset("Assets/SimplyLocalize");
+        if (AssetDatabase.IsValidFolder("Assets/LegacySettings")) AssetDatabase.DeleteAsset("Assets/LegacySettings");
+        AssetDatabase.Refresh();
+        window = ScriptableObject.CreateInstance<LocalizationEditorWindow>();
+        window.titleContent = new GUIContent("Simply Localize");
+        window.ShowUtility(); window.position = new Rect(60, 40, 1060, 800); window.Focus();
+        next = EditorApplication.timeSinceStartup + 4; step = 0;
+        EditorApplication.update += Tick;
+    }
+
+    private static void Click(string name)
+    {
+        var button = Popup?.rootVisualElement.Q<Button>(name) ?? window.rootVisualElement.Q<Button>(name);
+        if (button == null || !button.enabledInHierarchy) throw new Exception("Missing enabled button: " + name);
+        using var evt = NavigationSubmitEvent.GetPooled(); evt.target = button; button.SendEvent(evt);
+    }
+
+    private static void Capture(string name)
+    {
+        var rect = window.position; float dpi = EditorGUIUtility.pixelsPerPoint;
+        var texture = new Texture2D(Mathf.RoundToInt(rect.width * dpi), Mathf.RoundToInt(rect.height * dpi), TextureFormat.RGB24, false);
+        texture.SetPixels(UnityEditorInternal.InternalEditorUtility.ReadScreenPixel(rect.position * dpi, texture.width, texture.height));
+        texture.Apply(); File.WriteAllBytes(Output + "/" + name + ".png", texture.EncodeToPNG());
+        UnityEngine.Object.DestroyImmediate(texture);
+    }
+
+    private static void Tick()
+    {
+        if (EditorApplication.timeSinceStartup < next) return;
+        next = EditorApplication.timeSinceStartup + 4;
+        try
+        {
+            switch (step++)
+            {
+                case 0:
+                    Capture("01-setup"); Click("openLanguagePicker");
+                    Popup.rootVisualElement.Q<TextField>("languageSearch").value = "Ан";
+                    break;
+                case 1:
+                    Capture("02-setup-search");
+                    Popup.rootVisualElement.Q<TextField>("languageSearch").value = "pl";
+                    Click("addSelectedLanguage"); Click("closeLanguagePicker");
+                    break;
+                case 2:
+                    Click("createConfig");
+                    break;
+                case 3:
+                    Capture("03-languages"); Click("openLanguagePicker");
+                    Popup.rootVisualElement.Q<TextField>("languageSearch").value = "ro";
+                    break;
+                case 4:
+                    Capture("04-languages-search"); Click("addSelectedLanguage");
+                    Click("openCustomLanguage");
+                    Popup.rootVisualElement.Q<TextField>("customLanguageCode").value = "x-ELVISH";
+                    Popup.rootVisualElement.Q<TextField>("customLanguageName").value = "Elvish";
+                    break;
+                case 5:
+                    Capture("05-custom-language"); Click("addCustomLanguage"); Click("closeLanguagePicker");
+                    break;
+                case 6:
+                    Capture("06-languages-ready");
+                    var config = AssetDatabase.LoadAssetAtPath<LocalizationConfig>(LocalizationProjectSetup.ConfigAssetPath);
+                    if (config.languages.Count != 5 || config.GetProfile("ro").systemLanguage != SystemLanguage.Romanian || config.GetProfile("x-elvish").displayName != "Elvish") throw new Exception("Language creation mismatch");
+                    File.WriteAllText(Output + "/result.txt", "PASS: compact setup; same popup in Setup and Languages; pl/ro/x-elvish added through real controls; profile metadata retained.");
+                    EditorApplication.update -= Tick; EditorApplication.Exit(0); break;
+            }
+            if (window != null) window.Repaint();
+        }
+        catch (Exception error)
+        {
+            File.WriteAllText(Output + "/result.txt", error.ToString());
+            EditorApplication.update -= Tick; Debug.LogException(error); EditorApplication.Exit(1);
+        }
+    }
+}

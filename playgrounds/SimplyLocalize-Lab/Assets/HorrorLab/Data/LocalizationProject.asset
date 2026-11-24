@@ -1,0 +1,372 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d703bbd9b6dd6b4892f0305cbd40686, type: 3}
+  m_Name: LocalizationProject
+  m_EditorClassIdentifier:
+  _autoInitialize: 0
+  _autoDetectLanguage: 0
+  _languages:
+  - _code: en
+    _displayName: English
+    _systemLanguage: 10
+    _appearance:
+      rid: 1734293055403721060
+  - _code: ru
+    _displayName: "\u0420\u0443\u0441\u0441\u043A\u0438\u0439"
+    _systemLanguage: 30
+    _appearance:
+      rid: 1734293055403721061
+  - _code: pl
+    _displayName: Polski
+    _systemLanguage: 27
+    _appearance:
+      rid: 1734293055403721062
+  _channels:
+  - _id: f97959b941404623afb36488c5ba3aff
+    _name: Main
+    _mode: 0
+    _languages:
+    - en
+    - ru
+    - pl
+    _defaultLanguage: en
+    _fallbackLanguage: en
+    _fallbacks: []
+    _setIds:
+    - 3247f8d74d764c0d8bac38193ccecd33
+    _defaultSetId: 3247f8d74d764c0d8bac38193ccecd33
+    _startupSetIds:
+    - 3247f8d74d764c0d8bac38193ccecd33
+  - _id: f95cf5e5a5bf40f1a0472057c84d6f17
+    _name: Voice
+    _mode: 0
+    _languages:
+    - en
+    - ru
+    _defaultLanguage: en
+    _fallbackLanguage: en
+    _fallbacks: []
+    _setIds:
+    - 3bd3101f898946089cc7fd42a5ec0440
+    _defaultSetId: 3bd3101f898946089cc7fd42a5ec0440
+    _startupSetIds: []
+  - _id: 241f6c2bcd34402797ed9ee3200e2207
+    _name: Visuals
+    _mode: 0
+    _languages:
+    - en
+    - ru
+    - pl
+    _defaultLanguage: en
+    _fallbackLanguage: en
+    _fallbacks: []
+    _setIds:
+    - 32a20457b90a4d1bbe47c7df1a682214
+    _defaultSetId: 32a20457b90a4d1bbe47c7df1a682214
+    _startupSetIds: []
+  _sets:
+  - _id: 3247f8d74d764c0d8bac38193ccecd33
+    _name: Common
+    _entries:
+    - _id: 1882f154d17f427bbc451354e8664439
+      _key: Dialogue/Speaker
+      _kind: 0
+    - _id: 05bedbe592164ec59757fd4893ed2667
+      _key: Dialogue/01
+      _kind: 0
+    - _id: 8bfb3e8068f94bb38a6596534e727faf
+      _key: Dialogue/02
+      _kind: 0
+    - _id: 6ccfd243527841dda2bad6ef8d990b18
+      _key: Dialogue/03
+      _kind: 0
+    - _id: 2b7251b333864ea1a0cdc955aacbe5a8
+      _key: Document/Body
+      _kind: 0
+    - _id: ed69b96baade4669bcd2fa19c1161426
+      _key: Game/ObjectiveKey
+      _kind: 0
+    - _id: f3903a1524d8488389148a6b6bcbd0da
+      _key: Game/ObjectiveDoor
+      _kind: 0
+    - _id: d861c3823ba64b7fa5ca64236f3ca7bd
+      _key: Game/ObjectiveDone
+      _kind: 0
+    - _id: 56f0bf71221b45b0b0380ee465a13f0f
+      _key: Game/KeyFound
+      _kind: 0
+    - _id: c2682114c2b341b69fb4d5d943438bf0
+      _key: Game/DoorLocked
+      _kind: 0
+    - _id: 8330f02f08e4400ead4bf4777b469704
+      _key: Game/Complete
+      _kind: 0
+    - _id: 160542e5234549f8b2f39ad38308c81e
+      _key: Game/InventoryKey
+      _kind: 0
+    - _id: f00ac6177b774ca7842a470a71a34955
+      _key: Game/InventoryEmpty
+      _kind: 0
+    - _id: c0ba4dd29d554472a37a7d2fa569206b
+      _key: UI/Title
+      _kind: 0
+    - _id: d4eaa21ffb3846e382877251061f929a
+      _key: UI/Chapter
+      _kind: 0
+    - _id: 8e6b527dd1c946389de67bb94105d2a4
+      _key: UI/Settings
+      _kind: 0
+    - _id: 658a169676974203b57768fa59ebefd3
+      _key: UI/TextLanguage
+      _kind: 0
+    - _id: 972e0e9f3ea741afb87651950c2a4bf4
+      _key: UI/VoiceLanguage
+      _kind: 0
+    - _id: 40d5943a929b4675810206e02d5c65a7
+      _key: UI/Subtitles
+      _kind: 0
+    - _id: dc6198e100664d30b3e0f84a5ad796cf
+      _key: UI/On
+      _kind: 0
+    - _id: 79a4832183c34e97b01c89ab7333c0f1
+      _key: UI/Off
+      _kind: 0
+    - _id: d3c1227cbcb740d886b1fcf55b57f73c
+      _key: UI/Replay
+      _kind: 0
+    - _id: 89da558636044b03b5897287dab93205
+      _key: UI/Resume
+      _kind: 0
+    - _id: 2bdf04663d61457385ecb4db941f9f26
+      _key: UI/Demo
+      _kind: 0
+    - _id: b1e2894205a64f9391bbff033b8a09e3
+      _key: UI/Controls
+      _kind: 0
+    - _id: 1362c1992f58473e98787f68798f3a9f
+      _key: UI/Translation
+      _kind: 0
+    - _id: 8132876df09647e39209875ba8fd9516
+      _key: UI/Close
+      _kind: 0
+    - _id: 40367e5a31714679985d7c4598f40337
+      _key: UI/Inventory
+      _kind: 0
+    - _id: 34755607c4ee48bbb96082b87d1f79af
+      _key: UI/VisualLanguage
+      _kind: 0
+    - _id: 8215182f6dae474cbf78f3f7c6806601
+      _key: UI/Signs
+      _kind: 0
+    - _id: 4a91c5477cdb430c8a22d0850c25f12f
+      _key: UI/Auto
+      _kind: 0
+    - _id: 8571ca4d367e4ee3b208d09b5385af84
+      _key: UI/Always
+      _kind: 0
+    - _id: 153a76c3ad72496da4a6c325e9e6266d
+      _key: UI/LoadingText
+      _kind: 0
+    - _id: 29b6dcea45574fc5ae33bdf173bd1e3c
+      _key: UI/LoadingTables
+      _kind: 0
+    - _id: c9bf6a7147bb4660a3a7497e14956f4d
+      _key: UI/LoadingAudio
+      _kind: 0
+    - _id: 22f1a2035d1843cea440d73d8c36e906
+      _key: UI/LoadingWorld
+      _kind: 0
+    - _id: 58b77025768f4e2fb70a87d38f8e1c57
+      _key: UI/UnloadingWorld
+      _kind: 0
+    - _id: ac4b4f23ba984403bcb0984174e26303
+      _key: UI/IntroTitle
+      _kind: 0
+    - _id: 3fe16a74692242828bbb664f9e9a0644
+      _key: UI/Intro
+      _kind: 0
+    - _id: 5b1c232e1a884e9dab46d90f9c2d58aa
+      _key: UI/HeavyLocked
+      _kind: 0
+    - _id: 97df9d47c7cf4e478a05ad2e98ee5098
+      _key: UI/HeavyMenuHint
+      _kind: 0
+    - _id: 868b43324b394ee6b6415dcd5b6e5ebe
+      _key: UI/Start
+      _kind: 0
+    - _id: fc7ff29f567f47cabfadb2e9fd66258f
+      _key: UI/LeaveWorld
+      _kind: 0
+    - _id: 4d2d6cfa47cf49d38aefda9fca18d8d1
+      _key: UI/Cancel
+      _kind: 0
+    - _id: ed666d6592be402b98989464d4abadd3
+      _key: UI/TextFailed
+      _kind: 0
+    - _id: 5cac16a2f32b4d1f8b5ddce5416aa52e
+      _key: UI/WorldFailed
+      _kind: 0
+    - _id: a0c82853b8a24567a21d0a952f0768f2
+      _key: UI/InteractPrompt
+      _kind: 0
+    - _id: 8edf1f86266844608373dd6b5640764e
+      _key: UI/InscriptionText
+      _kind: 0
+    - _id: b4c6be898fb94e59ac33a2fa91a1ec95
+      _key: UI/SubtitleLine
+      _kind: 0
+    - _id: 841410a640544b41bde96021d97d6006
+      _key: World/Radio
+      _kind: 0
+    - _id: bac581551b884cbc9b3cf406ab4f0602
+      _key: World/Note
+      _kind: 0
+    - _id: 993ad4babea940fdab1053aca721685f
+      _key: World/Key
+      _kind: 0
+    - _id: ba41994c068343a3bf0ad0a627a84207
+      _key: World/Door
+      _kind: 0
+    - _id: 57dd9e3362c140e0bd6ad04cc6b88ebe
+      _key: World/SignArchive
+      _kind: 0
+    - _id: 9fcca53475c64402b7453bb145ade56c
+      _key: World/SignWarning
+      _kind: 0
+    - _id: 362677de017f48b2bfbcf442a7f661c8
+      _key: World/SignReception
+      _kind: 0
+    _sources:
+    - _language: en
+      _sources:
+      - _providerId: resources
+        _address: NightShift/Text/en/text/Dialogue
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/en/text/Document
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/en/text/Game
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/en/text/UI
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/en/text/World
+        _kind: 0
+    - _language: ru
+      _sources:
+      - _providerId: resources
+        _address: NightShift/Text/ru/text/Dialogue
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/ru/text/Document
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/ru/text/Game
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/ru/text/UI
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/ru/text/World
+        _kind: 0
+    - _language: pl
+      _sources:
+      - _providerId: resources
+        _address: NightShift/Text/pl/text/Dialogue
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/pl/text/Document
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/pl/text/Game
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/pl/text/UI
+        _kind: 0
+      - _providerId: resources
+        _address: NightShift/Text/pl/text/World
+        _kind: 0
+  - _id: 3bd3101f898946089cc7fd42a5ec0440
+    _name: Precinct Voice
+    _entries:
+    - _id: 545b78fcd00842f588452102afa5b092
+      _key: Radio/01
+      _kind: 1
+    - _id: 91c1aa2fd4694a818dd09c03c8363b9a
+      _key: Radio/02
+      _kind: 1
+    - _id: decaefc7370d4affb54af14fb5a880e2
+      _key: Radio/03
+      _kind: 1
+    _sources:
+    - _language: en
+      _sources:
+      - _providerId: resources
+        _address: NightShift/Worlds/Precinct/Voice/en/Radio
+        _kind: 1
+    - _language: ru
+      _sources:
+      - _providerId: resources
+        _address: NightShift/Worlds/Precinct/Voice/ru/Radio
+        _kind: 1
+  - _id: 32a20457b90a4d1bbe47c7df1a682214
+    _name: Precinct Visuals
+    _entries:
+    - _id: d6989430462c4c4a84cc1766c309f3e7
+      _key: Signs/Archive
+      _kind: 1
+    - _id: 8ce07127542343f885364ba79b788920
+      _key: Signs/Warning
+      _kind: 1
+    - _id: 8f7d4b1dd2a84b6ba03af68d1926de4a
+      _key: Signs/Reception
+      _kind: 1
+    _sources:
+    - _language: en
+      _sources:
+      - _providerId: resources
+        _address: NightShift/Worlds/Precinct/Visuals/en/Signs
+        _kind: 1
+    - _language: ru
+      _sources:
+      - _providerId: resources
+        _address: NightShift/Worlds/Precinct/Visuals/ru/Signs
+        _kind: 1
+    - _language: pl
+      _sources:
+      - _providerId: resources
+        _address: NightShift/Worlds/Precinct/Visuals/pl/Signs
+        _kind: 1
+  _mainChannelId: f97959b941404623afb36488c5ba3aff
+  references:
+    version: 2
+    RefIds:
+    - rid: 1734293055403721060
+      type: {class: LocalizationSourceReference, ns: SimplyLocalize, asm: SimplyLocalize}
+      data:
+        _providerId: resources
+        _address: NightShift/Appearance/Common
+        _kind: 2
+    - rid: 1734293055403721061
+      type: {class: LocalizationSourceReference, ns: SimplyLocalize, asm: SimplyLocalize}
+      data:
+        _providerId: resources
+        _address: NightShift/Appearance/Common
+        _kind: 2
+    - rid: 1734293055403721062
+      type: {class: LocalizationSourceReference, ns: SimplyLocalize, asm: SimplyLocalize}
+      data:
+        _providerId: resources
+        _address: NightShift/Appearance/Common
+        _kind: 2

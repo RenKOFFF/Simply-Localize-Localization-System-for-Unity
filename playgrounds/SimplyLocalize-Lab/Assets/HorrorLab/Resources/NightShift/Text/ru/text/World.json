@@ -1,0 +1,11 @@
+{
+  "translations": {
+    "World/Radio": "Послушать радио",
+    "World/Note": "Прочесть записку дежурного",
+    "World/Key": "Взять ключ от архива",
+    "World/Door": "Открыть архив",
+    "World/SignArchive": "АРХИВ  /  ТОЛЬКО ДЛЯ ПЕРСОНАЛА",
+    "World/SignWarning": "КАРАНТИН  /  ДЕРЖИТЕ ДВЕРЬ ЗАКРЫТОЙ",
+    "World/SignReception": "ПРИЁМНАЯ  /  ЗАПАДНЫЙ УЧАСТОК"
+  }
+}

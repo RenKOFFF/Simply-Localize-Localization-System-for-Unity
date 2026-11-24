@@ -1,0 +1,29 @@
+[
+  {
+    "mode": "Off",
+    "focus": true,
+    "sign": "Sign Warning",
+    "menu": false,
+    "visible": false,
+    "text": "TŁUMACZENIE\nKWARANTANNA  /  NIE OTWIERAJ DRZWI",
+    "source": "en"
+  },
+  {
+    "mode": "Auto",
+    "focus": true,
+    "sign": "Sign Warning",
+    "menu": false,
+    "visible": true,
+    "text": "TŁUMACZENIE\nKWARANTANNA  /  NIE OTWIERAJ DRZWI",
+    "source": "en"
+  },
+  {
+    "mode": "Always",
+    "focus": true,
+    "sign": "Sign Warning",
+    "menu": false,
+    "visible": true,
+    "text": "TŁUMACZENIE\nKWARANTANNA  /  NIE OTWIERAJ DRZWI",
+    "source": "en"
+  }
+]

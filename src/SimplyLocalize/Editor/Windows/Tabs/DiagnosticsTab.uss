@@ -1,0 +1,7 @@
+#resourceDiagnostics .unity-collection-view__item {
+    border-left-width: 3px;
+    border-left-color: transparent;
+}
+#resourceDiagnostics .unity-collection-view__item--selected {
+    border-left-color: rgb(128, 128, 128);
+}

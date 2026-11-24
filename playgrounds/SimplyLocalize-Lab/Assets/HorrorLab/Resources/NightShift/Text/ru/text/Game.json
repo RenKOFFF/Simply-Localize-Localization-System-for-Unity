@@ -1,0 +1,12 @@
+{
+  "translations": {
+    "Game/ObjectiveKey": "ЦЕЛЬ\nНайдите ключ от архива",
+    "Game/ObjectiveDoor": "ЦЕЛЬ\nОткройте архив",
+    "Game/ObjectiveDone": "АРХИВ ОТКРЫТ\nПолигон пройден",
+    "Game/KeyFound": "Ключ от архива добавлен в инвентарь",
+    "Game/DoorLocked": "Заперто. Найдите ключ от архива.",
+    "Game/Complete": "Архив открыт. Вы добрались.",
+    "Game/InventoryKey": "КЛЮЧ ОТ АРХИВА\nЛатунный ключ с выцветшей бумажной биркой.",
+    "Game/InventoryEmpty": "Ваш инвентарь пуст."
+  }
+}

@@ -1,0 +1,1091 @@
+[
+  {
+    "id": "com.renkoff.simply-localize@2.0.2",
+    "name": "com.renkoff.simply-localize",
+    "version": "2.0.2",
+    "size": 252432,
+    "unpackedSize": 823901,
+    "shasum": "1cd57b4cb6ce60d7da533a52bcd42225eb9e5355",
+    "integrity": "sha512-GOKjs3Odct3nLZa7Cq/xxVhUKoEqF0nBBlQ/Q9bwcHHcyCuQdIW9XhgGVYM8KqfJWGuZV7rFdfaeg6fGH+BTsQ==",
+    "filename": "com.renkoff.simply-localize-2.0.2.tgz",
+    "files": [
+      {
+        "path": "Editor.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/AllAssetFilter.cs",
+        "size": 657,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/AllAssetFilter.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/AssetTypeFilterRegistry.cs",
+        "size": 6292,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/AssetTypeFilterRegistry.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/AudioClipAssetFilter.cs",
+        "size": 986,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/AudioClipAssetFilter.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/IAssetTypeFilter.cs",
+        "size": 2473,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/IAssetTypeFilter.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/SpriteAssetFilter.cs",
+        "size": 1047,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetFilters/SpriteAssetFilter.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/AssetPreviewRegistry.cs",
+        "size": 3170,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/AssetPreviewRegistry.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/AudioClipPreviewRenderer.cs",
+        "size": 4419,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/AudioClipPreviewRenderer.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/DefaultAssetPreviewRenderer.cs",
+        "size": 2233,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/DefaultAssetPreviewRenderer.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/IAssetPreviewRenderer.cs",
+        "size": 2116,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/IAssetPreviewRenderer.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/SpritePreviewRenderer.cs",
+        "size": 1714,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/SpritePreviewRenderer.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/TexturePreviewRenderer.cs",
+        "size": 576,
+        "mode": 420
+      },
+      {
+        "path": "Editor/AssetPreviews/TexturePreviewRenderer.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Attributes.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Attributes/LocalizationEditorTabAttribute.cs",
+        "size": 860,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Attributes/LocalizationEditorTabAttribute.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/CsvExporter.cs",
+        "size": 6013,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/CsvExporter.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/CsvImportPlan.cs",
+        "size": 7959,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/CsvImportPlan.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/CsvProfileImport.cs",
+        "size": 5425,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/CsvProfileImport.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorDataCache.cs",
+        "size": 2524,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorDataCache.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorDataPath.cs",
+        "size": 2108,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorDataPath.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorFileTransaction.cs",
+        "size": 8151,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorFileTransaction.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorJsonWriter.cs",
+        "size": 2702,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorJsonWriter.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorLocalizationData.cs",
+        "size": 28973,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorLocalizationData.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorMetadataJson.cs",
+        "size": 4828,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Data/EditorMetadataJson.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Drawers.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Drawers/LocalizationKeyDrawer.cs",
+        "size": 8884,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Drawers/LocalizationKeyDrawer.cs.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Drawers/LocalizationPreviewDrawer.cs",
+        "size": 5003,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Drawers/LocalizationPreviewDrawer.cs.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Editor/GameViewLanguageDropdown.cs",
+        "size": 7497,
+        "mode": 420
+      },
+      {
+        "path": "Editor/GameViewLanguageDropdown.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/KeySearchWindow.cs",
+        "size": 5056,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/KeySearchWindow.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LanguageProfileEditor.cs",
+        "size": 6578,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LanguageProfileEditor.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LocalizationConfigEditor.cs",
+        "size": 2515,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LocalizationConfigEditor.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LocalizedAssetEditor.cs",
+        "size": 16678,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LocalizedAssetEditor.cs.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LocalizedProfileOverrideEditor.cs",
+        "size": 10413,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LocalizedProfileOverrideEditor.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LocalizedTextEditor.cs",
+        "size": 20989,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Inspectors/LocalizedTextEditor.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/LocalizationProjectSetup.cs",
+        "size": 17266,
+        "mode": 420
+      },
+      {
+        "path": "Editor/LocalizationProjectSetup.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Editor/SimplyLocalize.Editor.asmdef",
+        "size": 467,
+        "mode": 420
+      },
+      {
+        "path": "Editor/SimplyLocalize.Editor.asmdef.meta",
+        "size": 173,
+        "mode": 420
+      },
+      {
+        "path": "Editor/SimplyLocalizeSimulatorPlugin.cs",
+        "size": 3121,
+        "mode": 420
+      },
+      {
+        "path": "Editor/SimplyLocalizeSimulatorPlugin.cs.meta",
+        "size": 62,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Sprites.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Sprites/language-translation-icon.png",
+        "size": 102559,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Sprites/language-translation-icon.png.meta",
+        "size": 3843,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities/CoverageAnalyzer.cs",
+        "size": 12378,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities/CoverageAnalyzer.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities/FallbackResolver.cs",
+        "size": 7335,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities/FallbackResolver.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities/KeyReferenceUpdater.cs",
+        "size": 6433,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities/KeyReferenceUpdater.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities/ParameterHighlighter.cs",
+        "size": 2510,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Utilities/ParameterHighlighter.cs.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/CsvImportPreviewWindow.cs",
+        "size": 4398,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/CsvImportPreviewWindow.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/LocalizationEditorWindow.cs",
+        "size": 11954,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/LocalizationEditorWindow.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/AssetsTab.cs",
+        "size": 50395,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/AssetsTab.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/AutoLocalizeTab.cs",
+        "size": 24398,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/AutoLocalizeTab.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/CoverageTab.cs",
+        "size": 7790,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/CoverageTab.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/IEditorTab.cs",
+        "size": 178,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/IEditorTab.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/KeyTreeBuilder.cs",
+        "size": 7011,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/KeyTreeBuilder.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/LanguagesTab.cs",
+        "size": 21081,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/LanguagesTab.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/ProfilesTab.cs",
+        "size": 2976,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/ProfilesTab.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/SettingsTab.cs",
+        "size": 7159,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/SettingsTab.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/ToolsTab.cs",
+        "size": 5299,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/ToolsTab.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/TranslationsTab.cs",
+        "size": 75450,
+        "mode": 420
+      },
+      {
+        "path": "Editor/Windows/Tabs/TranslationsTab.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Integrations.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/Editor.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/Editor/LocalizedSpineAttachmentEditor.cs",
+        "size": 46491,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/Editor/LocalizedSpineAttachmentEditor.cs.meta",
+        "size": 62,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/Editor/LocalizedSpineTextureEditor.cs",
+        "size": 10735,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/Editor/LocalizedSpineTextureEditor.cs.meta",
+        "size": 62,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/Editor/SimplyLocalize.SpineIntegration.Editor.asmdef",
+        "size": 729,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/Editor/SimplyLocalize.SpineIntegration.Editor.asmdef.meta",
+        "size": 173,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/LocalizedSpineAttachment.cs",
+        "size": 20529,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/LocalizedSpineAttachment.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/LocalizedSpineTexture.cs",
+        "size": 10429,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/LocalizedSpineTexture.cs.meta",
+        "size": 62,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/README.md",
+        "size": 4982,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/README.md.meta",
+        "size": 165,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/SimplyLocalize.SpineIntegration.asmdef",
+        "size": 627,
+        "mode": 420
+      },
+      {
+        "path": "Integrations/Spine/SimplyLocalize.SpineIntegration.asmdef.meta",
+        "size": 173,
+        "mode": 420
+      },
+      {
+        "path": "Runtime.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Attributes.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Attributes/LocalizationKeyAttribute.cs",
+        "size": 1404,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Attributes/LocalizationKeyAttribute.cs.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/FormattableLocalizedText.cs",
+        "size": 6929,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/FormattableLocalizedText.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedAsset.cs",
+        "size": 2773,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedAsset.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedAudioClip.cs",
+        "size": 1523,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedAudioClip.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedComponentBase.cs",
+        "size": 2006,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedComponentBase.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedEvent.cs",
+        "size": 2136,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedEvent.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedProfileOverride.cs",
+        "size": 10858,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedProfileOverride.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedSprite.cs",
+        "size": 1687,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedSprite.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedText.cs",
+        "size": 3107,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Components/LocalizedText.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data/ILocalizationDataProvider.cs",
+        "size": 1650,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data/ILocalizationDataProvider.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data/LocalizationAssetTable.cs",
+        "size": 4959,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data/LocalizationAssetTable.cs.meta",
+        "size": 88,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data/LocalizationFileParser.cs",
+        "size": 8516,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data/LocalizationFileParser.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data/ResourcesDataProvider.cs",
+        "size": 5488,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Data/ResourcesDataProvider.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Enums.cs",
+        "size": 418,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Enums.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LanguageProfile.cs",
+        "size": 4918,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LanguageProfile.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Localization.cs",
+        "size": 17796,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Localization.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationAutoInitializer.cs",
+        "size": 1163,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationAutoInitializer.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationBootstrap.cs",
+        "size": 2612,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationBootstrap.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationConfig.cs",
+        "size": 9349,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationConfig.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationLogger.cs",
+        "size": 8280,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationLogger.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationManager.cs",
+        "size": 17453,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/LocalizationManager.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/ArabicPluralRule.cs",
+        "size": 927,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/ArabicPluralRule.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/CardinalPluralRule.cs",
+        "size": 5534,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/CardinalPluralRule.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/EastAsianPluralRule.cs",
+        "size": 798,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/EastAsianPluralRule.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/GermanicPluralRule.cs",
+        "size": 748,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/GermanicPluralRule.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/IDecimalPluralRule.cs",
+        "size": 430,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/IDecimalPluralRule.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/IPluralRule.cs",
+        "size": 698,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/IPluralRule.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/PluralRuleProvider.cs",
+        "size": 6308,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/PluralRuleProvider.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/RomancePluralRule.cs",
+        "size": 804,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/RomancePluralRule.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/SlavicPluralRule.cs",
+        "size": 1055,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/Pluralization/SlavicPluralRule.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/ProfileApplier.cs",
+        "size": 10104,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/ProfileApplier.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/ProfileFontCache.cs",
+        "size": 2317,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/ProfileFontCache.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing.meta",
+        "size": 180,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing/FormSelector.cs",
+        "size": 698,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing/FormSelector.cs.meta",
+        "size": 59,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing/ParsedTemplate.cs",
+        "size": 2483,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing/ParsedTemplate.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing/TextFormatter.cs",
+        "size": 7153,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing/TextFormatter.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing/TokenParser.cs",
+        "size": 8435,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Core/TextProcessing/TokenParser.cs.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Plugins.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Plugins/WebGL.meta",
+        "size": 85,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Plugins/WebGL/SimplyLocalizeConsole.jslib",
+        "size": 1804,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/Plugins/WebGL/SimplyLocalizeConsole.jslib.meta",
+        "size": 60,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/SimplyLocalize.Runtime.asmdef",
+        "size": 409,
+        "mode": 420
+      },
+      {
+        "path": "Runtime/SimplyLocalize.Runtime.asmdef.meta",
+        "size": 173,
+        "mode": 420
+      },
+      {
+        "path": "package.json",
+        "size": 629,
+        "mode": 420
+      },
+      {
+        "path": "package.json.meta",
+        "size": 165,
+        "mode": 420
+      }
+    ],
+    "entryCount": 215,
+    "bundled": []
+  }
+]

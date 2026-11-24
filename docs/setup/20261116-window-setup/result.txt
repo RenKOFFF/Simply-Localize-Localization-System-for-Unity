@@ -1,0 +1,1 @@
+PASS: actual window buttons created en/ru, added pl, selected ru default, opened pl profile, and migrated config preserving GUID and name.

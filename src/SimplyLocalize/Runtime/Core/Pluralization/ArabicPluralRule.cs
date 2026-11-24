@@ -13,24 +13,15 @@ namespace SimplyLocalize.Pluralization
     ///    Form 4: many  (11-99, 111-199...)
     ///    Form 5: other (100-102, 200-202...)
     /// </summary>
-    public class ArabicPluralRule : IPluralRule
+    public class ArabicPluralRule : IDecimalPluralRule
     {
+        private static readonly CardinalPluralRule Rule = new(CardinalKind.Arabic);
         public int FormCount => 6;
 
         public int Evaluate(int count)
         {
-            int abs = count < 0 ? -count : count;
-
-            if (abs == 0) return 0;
-            if (abs == 1) return 1;
-            if (abs == 2) return 2;
-
-            int mod100 = abs % 100;
-
-            if (mod100 >= 3 && mod100 <= 10) return 3;
-            if (mod100 >= 11 && mod100 <= 99) return 4;
-
-            return 5;
+            return Rule.Evaluate(count);
         }
+        public int Evaluate(decimal count) => Rule.Evaluate(count);
     }
 }

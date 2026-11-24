@@ -7,7 +7,7 @@ namespace SimplyLocalize.Editor.AssetPreviews
     /// Implement this interface to add preview support for custom asset types.
     ///
     /// Discovery is automatic: any non-abstract class implementing this interface
-    /// is instantiated once by AssetPreviewRegistry and used by the AssetsTab.
+    /// is instantiated once by AssetPreviewRegistry and used by the asset authoring view.
     ///
     /// Built-in implementations live next to this file:
     ///   - SpritePreviewRenderer

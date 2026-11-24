@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f61166ba9f474142883cc5de477b162, type: 3}
+  m_Name: Precinct
+  m_EditorClassIdentifier: 
+  worldId: precinct
+  scenePath: Assets/HorrorLab/NightShift.unity
+  voiceSetId: 3bd3101f898946089cc7fd42a5ec0440
+  visualSetId: 32a20457b90a4d1bbe47c7df1a682214
+  dialogues:
+  - {fileID: 11400000, guid: bced31316dffffb4090d57667f745666, type: 2}
+  visualKeys:
+  - Signs/Archive
+  - Signs/Reception
+  - Signs/Warning

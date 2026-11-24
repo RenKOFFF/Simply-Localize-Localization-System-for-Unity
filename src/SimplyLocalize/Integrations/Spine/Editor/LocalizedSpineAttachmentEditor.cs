@@ -4,21 +4,17 @@ using System.IO;
 using System.Linq;
 using global::Spine;
 using global::Spine.Unity;
-using SimplyLocalize.Editor.AssetPreviews;
 using SimplyLocalize.Editor.Data;
 using SimplyLocalize.Editor.Inspectors;
-using SimplyLocalize.Editor.Utilities;
 using UnityEditor;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
 namespace SimplyLocalize.SpineIntegration.Editor
 {
     [CustomEditor(typeof(LocalizedSpineAttachment))]
-    public sealed class LocalizedSpineAttachmentEditor : UnityEditor.Editor
+    public sealed class LocalizedSpineAttachmentEditor : LocalizedAssetEditor
     {
-        private SerializedProperty _keyProperty;
         private SerializedProperty _targetProperty;
         private SerializedProperty _regionPathProperty;
         private SerializedProperty _atlasPageProperty;
@@ -32,8 +28,8 @@ namespace SimplyLocalize.SpineIntegration.Editor
         private int _languageIndex;
         private bool _assignExtractedTexture = true;
         private bool _showAdvanced;
-        private readonly HashSet<string> _expandedLanguages = new();
-        private string _newKeyInput = string.Empty;
+        private string _destinationAddress;
+        protected override void DrawComponentProperties() { }
 
         private void OnEnable()
         {
@@ -43,7 +39,6 @@ namespace SimplyLocalize.SpineIntegration.Editor
 
         private void BindProperties()
         {
-            _keyProperty = serializedObject.FindProperty("_key");
             _targetProperty = serializedObject.FindProperty("_target");
             _regionPathProperty = serializedObject.FindProperty("_regionPath");
             _atlasPageProperty = serializedObject.FindProperty("_atlasPage");
@@ -52,7 +47,7 @@ namespace SimplyLocalize.SpineIntegration.Editor
 
         public override void OnInspectorGUI()
         {
-            if (_keyProperty == null || _targetProperty == null ||
+            if (_targetProperty == null ||
                 _regionPathProperty == null || _atlasPageProperty == null ||
                 _monitorSkinChangesProperty == null)
             {
@@ -60,11 +55,8 @@ namespace SimplyLocalize.SpineIntegration.Editor
                 RebuildRegionCache(force: true);
             }
 
+            base.OnInspectorGUI();
             serializedObject.Update();
-
-            DrawKeySelector();
-            if (!string.IsNullOrWhiteSpace(_keyProperty.stringValue))
-                DrawAssetPreview();
 
             EditorGUILayout.Space(8);
             EditorGUILayout.LabelField("Spine Attachment", EditorStyles.boldLabel);
@@ -92,197 +84,14 @@ namespace SimplyLocalize.SpineIntegration.Editor
             RebuildRegionCache(force: false);
 
             EditorGUILayout.Space(8);
-            DrawValidationAndPreview();
-            EditorGUILayout.Space(8);
-            DrawExtractionTool();
-        }
-
-        private void DrawKeySelector()
-        {
-            var keys = GetTextureAssetKeys();
-            var currentKey = _keyProperty.stringValue;
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel("Key (Texture2D)");
-            var display = string.IsNullOrEmpty(currentKey)
-                ? "<None>"
-                : keys.Contains(currentKey)
-                    ? FormatKey(currentKey)
-                    : $"<Missing> ({currentKey})";
-
-            var previousColor = GUI.color;
-            if (!string.IsNullOrEmpty(currentKey) && !keys.Contains(currentKey))
-                GUI.color = new Color(1f, 0.35f, 0.35f);
-
-            if (GUILayout.Button(display, EditorStyles.popup))
+            try
             {
-                var searchWindow = ScriptableObject.CreateInstance<KeySearchWindow>();
-                searchWindow.Init(keys, selectedKey =>
-                {
-                    SetKey(selectedKey ?? string.Empty);
-                    EditorDataCache.Invalidate();
-                });
-                var mousePosition = GUIUtility.GUIToScreenPoint(UnityEngine.Event.current.mousePosition);
-                SearchWindow.Open(new SearchWindowContext(mousePosition), searchWindow);
+                DrawValidationAndPreview();
+                EditorGUILayout.Space(8);
+                DrawExtractionTool();
             }
-            GUI.color = previousColor;
-
-            if (!string.IsNullOrEmpty(currentKey) && !keys.Contains(currentKey) &&
-                GUILayout.Button("+", GUILayout.Width(22)))
-            {
-                AddKeyToAssetTables(currentKey);
-            }
-
-            EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel("Add new key");
-            var duplicate = !string.IsNullOrWhiteSpace(_newKeyInput) && keys.Contains(_newKeyInput);
-            previousColor = GUI.color;
-            if (duplicate)
-                GUI.color = new Color(1f, 0.35f, 0.35f);
-            _newKeyInput = EditorGUILayout.TextField(_newKeyInput);
-            GUI.color = previousColor;
-
-            using (new EditorGUI.DisabledScope(string.IsNullOrWhiteSpace(_newKeyInput) || duplicate))
-            {
-                if (GUILayout.Button("Add", GUILayout.Width(40)))
-                {
-                    AddKeyToAssetTables(_newKeyInput);
-                    SetKey(_newKeyInput);
-                    _newKeyInput = string.Empty;
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-
-            if (duplicate)
-                EditorGUILayout.HelpBox("This key already exists.", MessageType.Error);
-        }
-
-        private void SetKey(string key)
-        {
-            serializedObject.Update();
-            _keyProperty.stringValue = key;
-            serializedObject.ApplyModifiedProperties();
-        }
-
-        private void DrawAssetPreview()
-        {
-            var config = EditorDataCache.Config;
-            if (config?.languages == null)
-                return;
-
-            EditorGUILayout.Space(4);
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Translations", EditorStyles.boldLabel);
-
-            var anyExpanded = _expandedLanguages.Count > 0;
-            if (GUILayout.Button(anyExpanded ? "Collapse all" : "Expand all",
-                    EditorStyles.miniButton, GUILayout.Width(90)))
-            {
-                if (anyExpanded)
-                {
-                    _expandedLanguages.Clear();
-                }
-                else
-                {
-                    foreach (var profile in config.languages)
-                        if (profile != null)
-                            _expandedLanguages.Add(profile.Code);
-                }
-            }
-            EditorGUILayout.EndHorizontal();
-
-            foreach (var profile in config.languages)
-            {
-                if (profile == null)
-                    continue;
-
-                var table = FindAssetTable(profile.Code);
-                Object asset = table?.Get(_keyProperty.stringValue);
-                string fallbackLanguage = null;
-
-                if (asset == null)
-                {
-                    var fallback = FallbackResolver.ResolveAsset(
-                        config,
-                        _keyProperty.stringValue,
-                        profile.Code,
-                        code => FindAssetTable(code));
-                    asset = fallback.Asset;
-                    fallbackLanguage = fallback.FromLanguage;
-                }
-
-                DrawLanguageRow(profile, asset, fallbackLanguage);
-            }
-        }
-
-        private void DrawLanguageRow(LanguageProfile profile, Object asset, string fallbackLanguage)
-        {
-            var expanded = _expandedLanguages.Contains(profile.Code);
-            var isFallback = asset != null && !string.IsNullOrEmpty(fallbackLanguage);
-
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"{profile.displayName} ({profile.Code})",
-                GUILayout.Width(EditorGUIUtility.labelWidth));
-
-            if (asset != null)
-            {
-                var previousColor = GUI.color;
-                if (isFallback)
-                    GUI.color = new Color(1f, 1f, 1f, 0.55f);
-
-                var thumbnail = AssetPreview.GetMiniThumbnail(asset);
-                var rowRect = EditorGUILayout.GetControlRect(GUILayout.Height(20));
-                if (thumbnail != null)
-                    GUI.DrawTexture(new Rect(rowRect.x, rowRect.y, 20, 20), thumbnail, ScaleMode.ScaleToFit);
-
-                var nameRect = new Rect(rowRect.x + 24, rowRect.y, rowRect.width - 24, rowRect.height);
-                EditorGUI.LabelField(
-                    nameRect,
-                    isFallback ? $"{asset.name}  — from {fallbackLanguage}" : asset.name,
-                    EditorStyles.miniLabel);
-
-                EditorGUIUtility.AddCursorRect(rowRect, MouseCursor.Link);
-                if (UnityEngine.Event.current.type == EventType.MouseDown &&
-                    UnityEngine.Event.current.button == 0 &&
-                    rowRect.Contains(UnityEngine.Event.current.mousePosition))
-                {
-                    Selection.activeObject = asset;
-                    EditorGUIUtility.PingObject(asset);
-                    UnityEngine.Event.current.Use();
-                }
-                GUI.color = previousColor;
-
-                if (GUILayout.Button(expanded ? "▼" : "▶", EditorStyles.miniButton,
-                        GUILayout.Width(22), GUILayout.Height(18)))
-                {
-                    if (expanded)
-                        _expandedLanguages.Remove(profile.Code);
-                    else
-                        _expandedLanguages.Add(profile.Code);
-                }
-            }
-            else
-            {
-                var previousColor = GUI.color;
-                GUI.color = new Color(1f, 0.5f, 0.5f);
-                EditorGUILayout.LabelField("(not assigned)", EditorStyles.miniLabel);
-                GUI.color = previousColor;
-            }
-            EditorGUILayout.EndHorizontal();
-
-            if (!expanded || asset == null)
-                return;
-
-            var previewRect = GUILayoutUtility.GetRect(200f, 140f, GUILayout.ExpandWidth(false));
-            previewRect.x += EditorGUIUtility.labelWidth;
-
-            var previewColor = GUI.color;
-            if (isFallback)
-                GUI.color = new Color(1f, 1f, 1f, 0.55f);
-            AssetPreviewRegistry.GetRendererFor(asset).DrawPreview(previewRect, asset);
-            GUI.color = previewColor;
+            catch (Exception failure) when (!(failure is ExitGUIException))
+            { EditorGUILayout.HelpBox(failure.Message, MessageType.Error); }
         }
 
         private void DrawRegionSelector()
@@ -387,18 +196,11 @@ namespace SimplyLocalize.SpineIntegration.Editor
 
         private void DrawLocalizedTextureValidation(RegionDescriptor descriptor)
         {
-            var key = _keyProperty.stringValue;
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                DrawStatus("Localization key is empty.", MessageType.Error);
-                return;
-            }
-
-            var languageAssets = GetDirectLanguageAssets(key);
+            var languageAssets = GetDirectLanguageAssets();
             if (languageAssets.Count == 0)
             {
                 DrawStatus(
-                    "No localized Texture2D is assigned yet. Missing language assets intentionally use the original Spine attachment.",
+                    "No direct texture is assigned yet. Missing translations use channel fallback, then the original Spine attachment.",
                     MessageType.Warning);
                 return;
             }
@@ -485,98 +287,65 @@ namespace SimplyLocalize.SpineIntegration.Editor
         {
             EditorGUILayout.LabelField("Localization Template", EditorStyles.boldLabel);
 
-            var config = EditorDataCache.Config;
-            var languages = config?.languages?
-                .Where(profile => profile != null)
-                .ToArray() ?? Array.Empty<LanguageProfile>();
-
-            if (languages.Length == 0)
+            var context = LocalizationEditorBindings.ContextFor((LocalizedSpineAttachment)target, out var entry);
+            if (context == null || entry == null)
             {
-                DrawStatus("Simply Localize has no configured languages.", MessageType.Error);
+                DrawStatus("Choose an asset entry in the selected channel and content set.", MessageType.Info);
                 return;
             }
-
+            var languages = context.Channel.Languages.ToArray();
             _languageIndex = Mathf.Clamp(_languageIndex, 0, languages.Length - 1);
-            _languageIndex = EditorGUILayout.Popup(
-                "Target Language",
-                _languageIndex,
-                languages.Select(profile => $"{profile.displayName} ({profile.Code})").ToArray());
-            _assignExtractedTexture = EditorGUILayout.ToggleLeft(
-                "Assign extracted texture to this key in the language AssetTable",
-                _assignExtractedTexture);
-
+            _languageIndex = EditorGUILayout.Popup("Target Language", _languageIndex, languages);
+            string language = languages[_languageIndex];
+            _assignExtractedTexture = EditorGUILayout.ToggleLeft("Assign extracted texture to this entry", _assignExtractedTexture);
+            var sources = context.Set.Sources.FirstOrDefault(s => s.Language == language)?.Sources
+                .Where(s => s.Kind == LocalizationSourceKind.AssetTable && s.ProviderId == "resources").ToArray()
+                ?? Array.Empty<LocalizationSourceReference>();
+            if (!sources.Any(s => s.Address == _destinationAddress)) _destinationAddress = null;
+            if (sources.Length == 1) _destinationAddress = sources[0].Address;
+            if (_assignExtractedTexture && sources.Length > 1)
+            {
+                int selected = Array.FindIndex(sources, s => s.Address == _destinationAddress) + 1;
+                int next = EditorGUILayout.Popup("Destination table", selected,
+                    new[] { "Choose a table" }.Concat(sources.Select(s => s.Address)).ToArray());
+                _destinationAddress = next == 0 ? null : sources[next - 1].Address;
+            }
+            if (_assignExtractedTexture && _destinationAddress == null)
+                EditorGUILayout.HelpBox("Connect a Resources asset table in Simply Localize > Assets and choose the destination. External providers use their own authoring tools.", MessageType.Info);
             var descriptor = GetSelectedRegion();
-            var canExtract = descriptor != null &&
-                             descriptor.SourceTexture != null &&
-                             !string.IsNullOrWhiteSpace(_keyProperty.stringValue);
-
+            bool canExtract = descriptor?.SourceTexture != null && (!_assignExtractedTexture || _destinationAddress != null);
             using (new EditorGUI.DisabledScope(!canExtract))
-            {
                 if (GUILayout.Button("Extract and Import Localization Template", GUILayout.Height(28)))
-                {
-                    ExtractTemplate(descriptor, languages[_languageIndex].Code);
-                }
-            }
-
-            if (!canExtract)
-            {
-                EditorGUILayout.HelpBox(
-                    "Select a valid region and enter a localization key to enable extraction.",
-                    MessageType.Info);
-            }
+                    ExtractTemplate(descriptor, context, entry.Id, language, _destinationAddress);
+            if (descriptor?.SourceTexture == null)
+                EditorGUILayout.HelpBox("Select a valid atlas region to enable extraction.", MessageType.Info);
         }
 
-        private void ExtractTemplate(RegionDescriptor descriptor, string languageCode)
+        private void ExtractTemplate(RegionDescriptor descriptor, EditorProjectContext context, string entryId, string language, string address)
         {
-            var outputPath = SpineRegionExtraction.BuildOutputPath(
-                descriptor.SourceTexture,
-                descriptor.Path,
-                languageCode);
-
-            if (File.Exists(ToAbsolutePath(outputPath)) &&
-                !EditorUtility.DisplayDialog(
-                    "Overwrite localization template?",
-                    $"The file already exists:\n{outputPath}",
-                    "Overwrite",
-                    "Cancel"))
-            {
-                return;
-            }
-
+            string outputPath = SpineRegionExtraction.BuildOutputPath(descriptor.SourceTexture, descriptor.Path, language);
+            if (File.Exists(ToAbsolutePath(outputPath)) && !EditorUtility.DisplayDialog("Overwrite localization template?",
+                    "The file already exists:\n" + outputPath, "Overwrite", "Cancel")) return;
+            Texture2D texture = null;
             try
             {
-                var texture = SpineRegionExtraction.ExtractAndImport(descriptor.Region, outputPath);
-                if (texture == null)
-                    throw new InvalidOperationException("Unity did not import the extracted PNG as a Texture2D.");
-
-                if (_assignExtractedTexture)
+                // Resolve source ownership before writing a PNG; never pick an unrelated first table.
+                using var edit = _assignExtractedTexture ? new LocalizationProjectAssetEdit(context.Config) : null;
+                if (edit != null) edit.SetAsset(entryId, language, null, address);
+                texture = SpineRegionExtraction.ExtractAndImport(descriptor.Region, outputPath);
+                if (texture == null) throw new InvalidOperationException("Unity did not import the extracted PNG as a Texture2D.");
+                if (edit != null)
                 {
-                    var table = FindAssetTable(languageCode);
-                    if (table == null)
-                    {
-                        throw new InvalidOperationException(
-                            $"Could not find a Simply Localize AssetTable for language '{languageCode}'.");
-                    }
-
-                    Undo.RecordObject(table, "Assign localized Spine attachment");
-                    table.Set(_keyProperty.stringValue, texture);
-                    table.Sort();
-                    EditorUtility.SetDirty(table);
-                    AssetDatabase.SaveAssets();
-                    EditorDataCache.Invalidate();
+                    edit.SetAsset(entryId, language, texture, address);
+                    LocalizationProjectUndo.Record(edit.Commit(), "Assign localized Spine attachment");
                 }
-
-                Selection.activeObject = texture;
-                EditorGUIUtility.PingObject(texture);
-                Repaint();
+                Selection.activeObject = texture; EditorGUIUtility.PingObject(texture); Repaint();
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
-                EditorUtility.DisplayDialog(
-                    "Spine localization extraction failed",
-                    exception.Message,
-                    "OK");
+                EditorUtility.DisplayDialog("Spine localization extraction failed",
+                    exception.Message + (texture != null ? "\nThe extracted PNG remains at " + outputPath + "; localization assignment was not saved." : ""), "OK");
             }
         }
 
@@ -676,113 +445,15 @@ namespace SimplyLocalize.SpineIntegration.Editor
             };
         }
 
-        private static List<string> GetTextureAssetKeys()
-        {
-            var keys = new HashSet<string>(StringComparer.Ordinal);
-            var config = EditorDataCache.Config;
-            if (config?.languages == null)
-                return new List<string>();
-
-            foreach (var profile in config.languages)
-            {
-                if (profile == null)
-                    continue;
-
-                var table = FindAssetTable(profile.Code);
-                if (table == null)
-                    continue;
-
-                foreach (var entry in table.Entries)
-                {
-                    if (!string.IsNullOrWhiteSpace(entry.key) &&
-                        (entry.asset == null || entry.asset is Texture2D))
-                    {
-                        keys.Add(entry.key);
-                    }
-                }
-            }
-
-            return keys.OrderBy(key => key, StringComparer.Ordinal).ToList();
-        }
-
-        private static List<LanguageAsset> GetDirectLanguageAssets(string key)
+        private List<LanguageAsset> GetDirectLanguageAssets()
         {
             var result = new List<LanguageAsset>();
-            var config = EditorDataCache.Config;
-            if (config?.languages == null)
-                return result;
-
-            foreach (var profile in config.languages)
-            {
-                if (profile == null)
-                    continue;
-
-                var table = FindAssetTable(profile.Code);
-                if (table != null && table.HasKey(key))
-                    result.Add(new LanguageAsset(profile.Code, table.Get(key)));
-            }
-
+            var context = LocalizationEditorBindings.ContextFor((LocalizedSpineAttachment)target, out var entry);
+            if (context == null || entry == null) return result;
+            foreach (string language in context.Channel.Languages)
+                if (context.Assets.TryGetDirect(entry.Id, language, out var cell))
+                    result.Add(new LanguageAsset(language, cell.Asset));
             return result;
-        }
-
-        private static LocalizationAssetTable FindAssetTable(string languageCode)
-        {
-            var basePath = EditorDataCache.Data?.BasePath;
-            if (string.IsNullOrWhiteSpace(basePath))
-                return null;
-
-            var languageDirectory = Path.Combine(basePath, languageCode);
-            if (!Directory.Exists(languageDirectory))
-                return null;
-
-            foreach (var file in Directory.GetFiles(languageDirectory, "*.asset", SearchOption.TopDirectoryOnly))
-            {
-                var assetPath = ToAssetPath(file);
-                var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(assetPath);
-                if (table != null)
-                    return table;
-            }
-
-            return null;
-        }
-
-        private static void AddKeyToAssetTables(string key)
-        {
-            var config = EditorDataCache.Config;
-            if (config?.languages == null || string.IsNullOrWhiteSpace(key))
-                return;
-
-            foreach (var profile in config.languages)
-            {
-                if (profile == null)
-                    continue;
-
-                var table = FindAssetTable(profile.Code);
-                if (table == null || table.HasKey(key))
-                    continue;
-
-                Undo.RecordObject(table, "Add localization asset key");
-                table.Set(key, null);
-                table.Sort();
-                EditorUtility.SetDirty(table);
-            }
-
-            AssetDatabase.SaveAssets();
-            EditorDataCache.Invalidate();
-        }
-
-        private static string FormatKey(string key)
-        {
-            return key.Contains('/') ? $"{key.Split('/').Last()}    ({key})" : key;
-        }
-
-        private static string ToAssetPath(string absolutePath)
-        {
-            var normalized = absolutePath.Replace('\\', '/');
-            var dataPath = Application.dataPath.Replace('\\', '/');
-            return normalized.StartsWith(dataPath, StringComparison.OrdinalIgnoreCase)
-                ? "Assets" + normalized.Substring(dataPath.Length)
-                : normalized;
         }
 
         private static string ToAbsolutePath(string assetPath)
@@ -920,6 +591,8 @@ namespace SimplyLocalize.SpineIntegration.Editor
         {
             var sourcePath = AssetDatabase.GetAssetPath(sourceTexture).Replace('\\', '/');
             var sourceDirectory = Path.GetDirectoryName(sourcePath)?.Replace('\\', '/') ?? "Assets";
+            if (!sourceDirectory.StartsWith("Assets/", StringComparison.Ordinal) && sourceDirectory != "Assets")
+                sourceDirectory = "Assets/SimplyLocalize/Extracted/Spine";
             var safeRegionPath = Sanitize(regionPath.Replace('/', '_'));
             var leafName = Sanitize(regionPath.Split('/').Last());
             var fileName = $"{leafName}_{Sanitize(languageCode.ToLowerInvariant())}.png";
@@ -928,6 +601,12 @@ namespace SimplyLocalize.SpineIntegration.Editor
 
         public static Texture2D ExtractAndImport(AtlasRegion region, string outputAssetPath)
         {
+            EditorDataPath.ValidateNewAssetPath(outputAssetPath);
+            LocalizationProjectChange.ValidateWritable(outputAssetPath);
+            if (!string.Equals(Path.GetExtension(outputAssetPath), ".png", StringComparison.OrdinalIgnoreCase))
+                throw new ArgumentException("Choose a PNG output path under Assets.", nameof(outputAssetPath));
+            if (File.Exists(outputAssetPath) && (File.GetAttributes(outputAssetPath) & FileAttributes.ReadOnly) != 0)
+                throw new IOException("The output PNG is read-only: " + outputAssetPath);
             if (region?.page?.rendererObject is not Material material ||
                 material.mainTexture is not Texture2D sourceTexture)
             {
@@ -939,6 +618,13 @@ namespace SimplyLocalize.SpineIntegration.Editor
                 throw new InvalidOperationException("The source Spine atlas has no TextureImporter.");
 
             var wasReadable = sourceImporter.isReadable;
+            // A package atlas can be read when already readable, but its importer is never modified.
+            if (!wasReadable)
+            {
+                LocalizationProjectChange.ValidateWritable(sourcePath);
+                if (File.Exists(sourcePath + ".meta") && (File.GetAttributes(sourcePath + ".meta") & FileAttributes.ReadOnly) != 0)
+                    throw new IOException("The source atlas importer is read-only. Copy the atlas into Assets before extracting.");
+            }
             Color32[] sourcePixels;
             int sourceWidth;
             int sourceHeight;
@@ -978,13 +664,15 @@ namespace SimplyLocalize.SpineIntegration.Editor
             var outputWidth = GetOriginalWidth(region);
             var outputHeight = GetOriginalHeight(region);
             var outputTexture = new Texture2D(outputWidth, outputHeight, TextureFormat.RGBA32, false, false);
-            outputTexture.SetPixels32(logicalPixels);
-            outputTexture.Apply(false, false);
-
-            var absolutePath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", outputAssetPath));
-            Directory.CreateDirectory(Path.GetDirectoryName(absolutePath) ?? throw new InvalidOperationException());
-            File.WriteAllBytes(absolutePath, outputTexture.EncodeToPNG());
-            Object.DestroyImmediate(outputTexture);
+            try
+            {
+                outputTexture.SetPixels32(logicalPixels);
+                outputTexture.Apply(false, false);
+                var absolutePath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", outputAssetPath));
+                Directory.CreateDirectory(Path.GetDirectoryName(absolutePath) ?? throw new InvalidOperationException());
+                File.WriteAllBytes(absolutePath, outputTexture.EncodeToPNG());
+            }
+            finally { Object.DestroyImmediate(outputTexture); }
 
             AssetDatabase.ImportAsset(outputAssetPath, ImportAssetOptions.ForceSynchronousImport);
             ConfigureLocalizedTextureImporter(outputAssetPath, sourceImporter);
@@ -1103,6 +791,7 @@ namespace SimplyLocalize.SpineIntegration.Editor
             importer.textureType = TextureImporterType.Default;
             importer.isReadable = false;
             importer.mipmapEnabled = false;
+            importer.npotScale = TextureImporterNPOTScale.None;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.filterMode = sourceImporter != null ? sourceImporter.filterMode : FilterMode.Bilinear;
             importer.alphaIsTransparency = true;
@@ -1122,9 +811,7 @@ namespace SimplyLocalize.SpineIntegration.Editor
 
         private static string Sanitize(string value)
         {
-            var invalid = Path.GetInvalidFileNameChars();
-            return new string(value.Select(character =>
-                invalid.Contains(character) || character == ' ' ? '_' : character).ToArray());
+            return EditorDataPath.StorageName(value.Replace(' ', '_'), "region");
         }
 
         private readonly struct PackedPixels

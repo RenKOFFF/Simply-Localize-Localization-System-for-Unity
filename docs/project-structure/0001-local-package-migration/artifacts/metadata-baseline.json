@@ -1,0 +1,2076 @@
+{
+  "capturedUtc": "2026-11-16T12:16:31.1530255Z",
+  "source": "Migration baseline; SHA-256 verified before and after migration on Windows. GUID is portable across Git line-ending conversion.",
+  "files": [
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab.meta",
+      "guid": "680ffebbfea0a914697fab1c01e5482b",
+      "sha256": "d5f0de959edee5845fe9e6c587d09399193540607acb01863e2fa57436cb6cc5"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/InputSystem_Actions.inputactions.meta",
+      "guid": "052faaac586de48259a63d0c4782560b",
+      "sha256": "3b4e424a80f5b4fa76b6abd774884a24285eaa61f22ff9bb20e5ad505fd8b569"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab.meta",
+      "guid": "24f9d935cdac42b44b3f017de71790a4",
+      "sha256": "a6cfeceb0d9638eec3a087e6a683fb1f5d12d8609a01d69780c7008f7f30b17c"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Readme.asset.meta",
+      "guid": "8105016687592461f977c054a80ce2f2",
+      "sha256": "46c6b89ac1d47bd0c0d1a8b141ae3e32cd95d3e74c49381f0d9f942488c254ce"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Scenes.meta",
+      "guid": "713827994c56b0f47bea08761a3bc28e",
+      "sha256": "1fc904ebda3f03cac125d356ea2add7214da72a36d38808de790a3f3d68235eb"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Settings.meta",
+      "guid": "709f11a7f3c4041caa4ef136ea32d874",
+      "sha256": "73c8e19843240273facb0af6bdbf430d719e397aded705629594060ce25ce7ad"
+    },
+    {
+      "path": "docs/project-structure/0001-local-package-migration/artifacts/former-repository-root.meta.txt",
+      "guid": "00a39b6e0a9707a478816db78b320f0f",
+      "sha256": "34b48258294ecc80344f27e62f4fb0df1935e9ed09af7791f41d0e4afbc2c952"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro.meta",
+      "guid": "f54d1bd14bd3ca042bd867b519fee8cc",
+      "sha256": "8529d84d190a68aeb1a16e0a90308081bd30a738dbcc63c63b2a93c53b9a11b3"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TutorialInfo.meta",
+      "guid": "ba062aa6c92b140379dbc06b43dd3b9b",
+      "sha256": "07f022e5932c833d026e020b27d73452ebd781993b616d76003494af1e140946"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/API-GAPS.md.meta",
+      "guid": "36285300ff991b34792bb25658589a61",
+      "sha256": "a02559cff7bd2316ba695b808ce827a5c06360071ff63ecaf7d73cade2864ded"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/CHANGELOG.md.meta",
+      "guid": "8a5aa378a4e11624dbc6d4244ad0c54f",
+      "sha256": "3c4c0fc2d1efdbe5abb14d5bda93c58f04e5be0198161e73711f3616693ab83d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Content.meta",
+      "guid": "016e90e2091a52944b0540b4b336850e",
+      "sha256": "24dbddb815b4b757fdc8f62cf7a2da4e0fc411c082430adc342a33b09b47e501"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data.meta",
+      "guid": "0c335c880a063344585426363b7672a8",
+      "sha256": "20a423adb85b33706f44a3b1038da4cb17a2818fd371e1ab5e349d77db83a0b5"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Editor.meta",
+      "guid": "d754b50cc7f04ce4ea77103a6aa64769",
+      "sha256": "49cd88cd4f722448b9a12e6d1a6c1a1d855c2c59147969aed00c2d209de910a2"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorApp.cs.meta",
+      "guid": "dd19745c52408c840a8c7900dd896872",
+      "sha256": "9b6f80849db29689aaad4fec2f0de7dc3ee6c0bcf7690997603ecc11db5ca293"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorBenchmark.cs.meta",
+      "guid": "7146591d95bc3744f81210807250750d",
+      "sha256": "703e331a1cee16e9bbcf068707214d6da26d24d0a90f1dffcb61117b2985f259"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorDialoguePlayer.cs.meta",
+      "guid": "1a5ac97b39b61d74e97a1e6532c1db08",
+      "sha256": "ce710ab8033c5f481d6a645b358ce095c8b5fc5f1d1ab88ad773c74b091e829f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorHud.cs.meta",
+      "guid": "a4b88d656c88e8c4a92e511b7fb43c0e",
+      "sha256": "a6b58c1ad1a9c6d1f511c0afcbeb5c0bcbb1281204b964ca4e3a336b60bc29cc"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorInteractable.cs.meta",
+      "guid": "161c717d598f78343a5ae236980b3975",
+      "sha256": "9608eb1529f141c3c716ffeb53d51187f5bae2e4a945eab4b94005be0c3a50b0"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorInteractionQuery.cs.meta",
+      "guid": "318903d865123c54aa599bcd1d487250",
+      "sha256": "8ccbcc418161eea4f8a5f4045328328ace7cb0ed55bce677f2744cecb9164706"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorLanguages.cs.meta",
+      "guid": "229236173cc35814cbe302b795691cc6",
+      "sha256": "daa29339f84a1f3f46e21c55feb5bcaaf0cac122653a6dadd32c86df142b9bba"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorPlayground.cs.meta",
+      "guid": "d408f37e6af63ba42840852b7e2de282",
+      "sha256": "35ca29de7eb28277b8e1bbb96953d8a4bfd3858fb316c04eeb3af53ad5d7f5b3"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorRadioSequence.cs.meta",
+      "guid": "abff92aae0c8e2646ba814910239e197",
+      "sha256": "2c1d6016e597988f2a565fd990545acb91d01de8aa365a2f937172f5800835b1"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorVisualVariant.cs.meta",
+      "guid": "ea7d5747f740bcb43b7045532e99fb3e",
+      "sha256": "d907f89f8f9d0e2fced9a3e703655bf6b32fb5253414b327e4624a917f987b62"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorWorldDefinition.cs.meta",
+      "guid": "2f61166ba9f474142883cc5de477b162",
+      "sha256": "8dee87c9e141804122b2550e659f9287d8b14e656f2a114a2a3a23062280925a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorWorldPresentation.cs.meta",
+      "guid": "14a6d504a92ab754babbbd5c2434461a",
+      "sha256": "88d11821542949e194280139616c31e9f7c6d557d206d015469c3c05612b48d1"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/HorrorWorldSession.cs.meta",
+      "guid": "3855884147639784497898aa506f4fda",
+      "sha256": "40697641f18ecd22f3f46be83648a75d9e6baa2a504f7fd072276a71ac259fee"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials.meta",
+      "guid": "fd6668c22f74ba947be32e2fa1a1c4c4",
+      "sha256": "7db7fee9f626b73fd10fa6c68cd5cd97bb6d767c44c289ae52ef6259d2b0fab2"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media.meta",
+      "guid": "3fea57220c804dc4f9d2b970b8495c86",
+      "sha256": "22aa0f10741f08f0ea1be90ade7d94a9686d9351fa5f8af1680964fe4c2cb30e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/NightShift.unity.meta",
+      "guid": "1143a63722e832642821ea0c618f08b2",
+      "sha256": "3665935604929526ba347f7a4fc947aa0ffcb7ad25d72d7571daa23d3ea4ab3c"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/NightShiftMenu.unity.meta",
+      "guid": "c36867505a76dac4c822fbe9ad7bfa52",
+      "sha256": "38472034d7281cfe542bf51aea25ef52b2a2016af94a82f8eecad715a7d0d1ea"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/README.md.meta",
+      "guid": "c50f72e68edc7864a865877caa45d379",
+      "sha256": "200f48e8142932a7beae42cdf39e1739ae1dec6cb926565c5a5941777ddc9719"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources.meta",
+      "guid": "61ab9ea0df10dcd40a246fc249645dc0",
+      "sha256": "f0c93255cc130efb0c10faa4178c6108ed9e55191451cf3243c4aa535aa1f94a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/VALIDATION.md.meta",
+      "guid": "610a7c46123086d46a4a2784dda07ca3",
+      "sha256": "7abeb8c35a7da2c556bdb41cc789745e7324a5c4ad25290b23e489a27ad79af6"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification.meta",
+      "guid": "2e692db18c8e70044acba51bb5eda808",
+      "sha256": "a538a29a25ee8d51026df199dc41b54b49fbd4579381d49b9baf4f87685966d2"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/VERSION.json.meta",
+      "guid": "b983bc20e7e1ebf46948cf71eee9024a",
+      "sha256": "df71a190a4e175c821f9422316d367da583b61d3117199fcaa20ff08cc640078"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Content/en.json.meta",
+      "guid": "3b0e1902c9e417243a34709ef09abda0",
+      "sha256": "4de1b9f8a7b3c8e9f733a0f07d3270e57bc4a4bed516c0c011f8bc4eedb0e6fd"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Content/pl.json.meta",
+      "guid": "598cc8d830d34f44fb148466be245a87",
+      "sha256": "edebfb1bdc8b1772102f115e977239978cd1049fa1d2f29ca5ce55eb411950ff"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Content/ru.json.meta",
+      "guid": "ad4aace3c22c3b042ad517ac13e981b4",
+      "sha256": "8bda75bb027f6e7e88b71d8de33654454a29ac5d86b3e948798994dae955f567"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/ArtConfig.asset.meta",
+      "guid": "fc6375197d8e1734abe3e8e96b567161",
+      "sha256": "f0264869f5bd4f8cd99691b6b1dc1cd21c9d74d75bc778db8c8d69c84d60d355"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/en.asset.meta",
+      "guid": "848b9cce37c603040ba34bc2f46aaf3e",
+      "sha256": "f403c1817b1ecbaeb96e5126db38e0498715eef020a64642f2af3468fb0b2429"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/Font.asset.meta",
+      "guid": "fbb0047ada5cdda4bac47a75675efe31",
+      "sha256": "b2ca528da2870b66a92ce81f02547e9749b7d93629000b2638eee93200c39acf"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/pl.asset.meta",
+      "guid": "7310bf5addae3614184b3e6897c4d9a8",
+      "sha256": "8cee191f1e8556755f1bdc48d6cdcacfff2dc9e7a0c59e8eb734574e9cf1b7a9"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/Precinct.asset.meta",
+      "guid": "6adefe060fe58d143b6a147740d02ee6",
+      "sha256": "74bf71bb3d36d20e7ce417854b0bf9ff968fa01639b66bad12cf69d4a2d13e22"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/Radio.asset.meta",
+      "guid": "bced31316dffffb4090d57667f745666",
+      "sha256": "49e2341bc0c3634b4fd506d9fb3ff651356cd781d80c23a949fa3aaf3dc66397"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/ru.asset.meta",
+      "guid": "20faaf7130111e14aa1ab4b16bdb13eb",
+      "sha256": "69e29198e781b8191c2e4b3d3079496c9f8b3bea92bf60987a45030c935de90f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/TextConfig.asset.meta",
+      "guid": "62a750ad14bcfaa42a50d7d67d7ca183",
+      "sha256": "da598153598ecd8fe7ebc4d187653f4866683420b002bbc851609e2a2f927005"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants.meta",
+      "guid": "e85659045f411224ab1e57a3d7531456",
+      "sha256": "85a271d89b4c2fd225731399e51f1b603c77983092d180c58f75f578347cf4cc"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VoiceConfig.asset.meta",
+      "guid": "0831b7f267d488e49b0367b49420795d",
+      "sha256": "ac5a79f571284673a3d514458752f0b84c40d6435f69418c87143d1c14bedab6"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/en-Archive.asset.meta",
+      "guid": "318ce7dfae8bbc2479deb4f5106c0952",
+      "sha256": "c98127907adc7ec76d835f76e825e263c38bacdf6bd8edf95ed4a7d6b9c7f3da"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/en-Reception.asset.meta",
+      "guid": "5100e7843ca4e3c49b770ffbfb9aa39b",
+      "sha256": "bbad7a38e1639c72e933d84bf033aa7c2194d90d256d0d103cd5a82028db9fd8"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/en-Warning.asset.meta",
+      "guid": "c834d1b086e099c4782be00a47d0d9dc",
+      "sha256": "64f88ced23db2090c739c42f0ab0d637236ef837ac53c9b9ac4f353db148fb9d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/pl-Archive.asset.meta",
+      "guid": "b0bbe4abf63394049b858ea38098acf6",
+      "sha256": "55fe81651e6ae5659fb1eaeaac3f424d9995f1c9c3d30efe7b6d9630d7a5b845"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/pl-Reception.asset.meta",
+      "guid": "2200804f6e376044b876639027dc51c5",
+      "sha256": "c4073c5a43c204f0c705c07fa3602c2af5aecacba282792b37d1de1ab7a6720a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/pl-Warning.asset.meta",
+      "guid": "0be2ce369c4ac204baf852eed95463f8",
+      "sha256": "64b8a3e7a067ee1b8d7618b2b2d20f14fa137105e607ca1c81c0fde99099cbc5"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/ru-Archive.asset.meta",
+      "guid": "545d2aad431215f4f8ebebd6e9f8060d",
+      "sha256": "4cb881207b38aefcd62719d490927cfddf5fd68ad86c6f7dd1a0fa9fa36a593e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/ru-Reception.asset.meta",
+      "guid": "6e5d3381c22fe824390c376bfd3a3539",
+      "sha256": "5c1c024fad577b6a716c477326730d9d888cf1db229804c514d157823f3c7291"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Data/VisualVariants/ru-Warning.asset.meta",
+      "guid": "2c3e5433696afdc4fa2c147d511c57eb",
+      "sha256": "fde1298f6942fff4ea17f7be316774533fc047159edace86a8908304a323d885"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Editor/GenerateDemoMedia.ps1.meta",
+      "guid": "f869ecc403f2b0243b8c488cd45c60f2",
+      "sha256": "3a37b75facbfd9e16d8f8d25f389acf7e1158955c50d90db66c47fe116a9a64e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Editor/HorrorArchitectureSetup.cs.meta",
+      "guid": "54bbfec6f571d9b4da030c643b669405",
+      "sha256": "f7a11ab9e3e95842caa0c6ea583b8684cc8e69a07033d869bdfbb7a14355dff8"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Editor/HorrorBuildIdentity.cs.meta",
+      "guid": "b6abacdb53f00694ab1c2873e1b32df8",
+      "sha256": "6ef1059479cdcb5ea14f6348f87ec9bb81a95f14d6066e47766b7377ccb073df"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Editor/HorrorInteractionChecks.cs.meta",
+      "guid": "85ce680e6e74db74b84d192f04a41efa",
+      "sha256": "fc7260eb686f62d628b8e168ccb51dee2d17b7fe827be000cc0c277d32b86543"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Editor/HorrorLabChecks.cs.meta",
+      "guid": "c3a90a4060c5e854d81e38553f92e32f",
+      "sha256": "b9f4e69f7d1401b93882792944cc89dcda780c2fc16291c82554fc4da71786d7"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Editor/HorrorLabSetup.cs.meta",
+      "guid": "46d002a7e34bcc44bbad4856f382adff",
+      "sha256": "bbad0a59bea4f59805d5eeed18878b7033b22754ef03b0e567c2329a595fe596"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Brass.mat.meta",
+      "guid": "07c1040cad8689144995030da1d9092a",
+      "sha256": "f98348ce2dba74fa92e5d025f0886c1eef1ddcf4a43a25798982fa3aa6a45a05"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Desk wood.mat.meta",
+      "guid": "93720905e013dba4887a3fabeb8907b3",
+      "sha256": "8ecce31ba2155d3a08a224ec76726569549be4e569345e709b174281aec1c82b"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Emergency lamp.mat.meta",
+      "guid": "dda160412fcc1c444adc1d99ce860958",
+      "sha256": "165b1ad99d3c5858465ee878aeb37cb8e72b6a826f4046eb83c9ccaf4522aa57"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Investigator coat.mat.meta",
+      "guid": "23b207af6fe4111449fad8a8b445e27c",
+      "sha256": "122fe65fdba462c76c39cb26e4ba8fd5d8b67a25802142e2dc43d1cf95573d9d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Iron.mat.meta",
+      "guid": "d62185ed9036bef4e9558f1521a50e96",
+      "sha256": "5884b8bc7856aaf066bb5ddf891e4b02b55c8963945917af079d92377ae89fc9"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Old plaster.mat.meta",
+      "guid": "3997e0301e4612e429c32fe4f25aa8a6",
+      "sha256": "4c65c0ced282013c86e4b551b55c57e888f8a4c3e7ef56255ec2e84d1e83fe43"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Painted wood.mat.meta",
+      "guid": "28db6c9036292044899108e21dc19547",
+      "sha256": "bd9488d33b37fdf9639fce3c2a277b2f23cf846e1ffa7d043b98889ee0e9a8e9"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Paper.mat.meta",
+      "guid": "dd40c7ba6eac0344a85b1655f0930393",
+      "sha256": "6bc369f6a3034ae351de1fb2cfd6bb3b3eb05df5b0b6adf8f17bef52fcb77662"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Sign.asset.meta",
+      "guid": "554d72d1632f2c541b049ef60c5d1be2",
+      "sha256": "640166157091ab6db6b7617ed2debf6b5e4e4cd6ae709151accdae48f135b10f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Skin.mat.meta",
+      "guid": "debad9ce82b96c541a8616783fab675b",
+      "sha256": "c5bf7531fc5e5b804edefae4806cc3d26dae40497f2c2d5f91a0e7cf08c18b22"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Tile A.mat.meta",
+      "guid": "1a6e79f82492b8244b0786a3d9c75619",
+      "sha256": "5a573ffefc044a21740a0cac2d18c0f7d216f8c6036769cbee15c3d7eab76476"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Tile B.mat.meta",
+      "guid": "9dc177698af4eda40843ba3dd0a8ea3c",
+      "sha256": "9212bebb521a3e933bd0cb53204f69e5f7dd22623053cc65d0b7a5001a458110"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Materials/Tube lamp.mat.meta",
+      "guid": "8974d6413150b334e93209d724b44623",
+      "sha256": "df2d9cc4a5c916e43a09ebdd693038e24c564546e11d6ea1de961032f90a6a49"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/en.meta",
+      "guid": "debf5d191d35f1e439f42df4785c6df2",
+      "sha256": "be5c5edebca208a78df56b23cab6155cd4483f5fbda7e0635b7396b635ec1db9"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/pl.meta",
+      "guid": "df512c959aa186a43ad77ca351085c22",
+      "sha256": "bbd0a54653cd11184b7c0aadc8cf6a61e4e1414297e21bb287a4c2d3e78004bd"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/ru.meta",
+      "guid": "96fc3a1f9c9722c4cbf68eba785d84ae",
+      "sha256": "dcd6b5188bfa58adc7f03cc4795ebd9a2c71aed8aaa2be9c66d7c886f1a3cf88"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/en/01.wav.meta",
+      "guid": "29ae00556e4d5334684e611f9c462dea",
+      "sha256": "94465d5e939c3f64364ed3940c6540de077dd60337b32d6f533f1775354b0d95"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/en/02.wav.meta",
+      "guid": "e9b2218ff53ea3d44bbd185cdaec1741",
+      "sha256": "9c51090769d61fcc226da76d36ce64b7c4e23f343db51ec7e8361a67bc51bb4b"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/en/03.wav.meta",
+      "guid": "6d8454835e2b40c4d899c0a7b87dfe89",
+      "sha256": "fd1b3487a2be69fcf0fea3e766f3d909fc6dfdecff13348dbb493857aafcff49"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/en/Archive.png.meta",
+      "guid": "f511c5f418eb7c640ba8d68213c0309e",
+      "sha256": "a8d28c496d7da4870c48c2fc73d14f351c82eb1109413c01d6787a3af1c07e85"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/en/Reception.png.meta",
+      "guid": "6f8c0919a256cfe4394bd8e526bd4028",
+      "sha256": "a5b5b2f5ea317bdde8115e4dc15c81c952f4a907b8e19dd188505fb36201f5e1"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/en/Warning.png.meta",
+      "guid": "927dce9a3b6990d40a9ccb6c25a2dfb4",
+      "sha256": "8c1b250775a47e7a07e4ea7610bf360cfe9e731a83ae7feccadac6b52d520b7a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/pl/Archive.png.meta",
+      "guid": "64ef8dbc2e9d0484a98d42eecc7de0de",
+      "sha256": "b6b9de83aa0dd9f275c7ab6850c18a8dcd19545c2227da3db69f517a9d85f044"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/pl/Reception.png.meta",
+      "guid": "4af1cf1a96493d348adf1bc46131f28d",
+      "sha256": "cfb3bc831f5fe2779a94b7b8d69e9e66738a160cc0c364ca82f313e64d6734fd"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/pl/Warning.png.meta",
+      "guid": "5d652a574d88c4e41bcdac760c74af6a",
+      "sha256": "a838a1a16273bde61926c63497f67d140ab91897dc248eb351a0e5568c934bcb"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/ru/01.wav.meta",
+      "guid": "7baee7eebbbfe0b4b9f544b9e85ddc45",
+      "sha256": "09e0cb898ea53eab273baef586f1bfc49a77747de08c2c1f4ef4be647712cfd7"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/ru/02.wav.meta",
+      "guid": "dddeec5d5df321949980cc422b6e30bc",
+      "sha256": "0625c373c601d02426cdd614049df3ec22bc10f6ad748459fdae505eb8387c9a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/ru/03.wav.meta",
+      "guid": "6bfb15701cda8ad49be0af9164e61144",
+      "sha256": "3c29d18d11df0ab2c8c121874a4f5a0dd78602c17342ae6d186cdd9c5ac2af6f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/ru/Archive.png.meta",
+      "guid": "341a12a0c419bd54f95bc23e8fcb586a",
+      "sha256": "86352c9f9370d8dbf9d7c927c4d939748972b4c0fdbe413c591b336b91476227"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/ru/Reception.png.meta",
+      "guid": "f8474095e910e4a47b69791a4923ffb4",
+      "sha256": "42689f62b25fe842e4cf43289599c187d8d7e25fb90e3c9841a1f75dc27efa70"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Media/ru/Warning.png.meta",
+      "guid": "76fc779a1ab906b4cb69d3379d96724f",
+      "sha256": "18a2bcaf476c3ef5f00d864595f30c6c30cb656ca9652f33a611a7ad9dc51f8b"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift.meta",
+      "guid": "278303c2e16ba9e4c8cb3c2199ab5198",
+      "sha256": "15b85e1eee0019621c96ba8cc9279b5faff2b3ed2896eec8dc26ae7d86e75a5a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/BuildIdentity.json.meta",
+      "guid": "6e4af24c5f32fcb47bdc0b15ae53c67d",
+      "sha256": "36048f4b7b3e614a0990176c1f2d3eebcfeffd4f71206dfbb69208acbc9e141e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text.meta",
+      "guid": "7fdb80fc14be9d24faa7f402fe29ceb6",
+      "sha256": "e7a56acaeb057e7e3f2d85c571e80d9d1db987249bfe2f159762b9c310b13bdb"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds.meta",
+      "guid": "1466240b8e5ab33469a462a987c50716",
+      "sha256": "7def50cda75f8d2a438b1dbf26d52d4f81dbc2aa54300e7f59d98ed290e6c700"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/en.meta",
+      "guid": "006e203a505db1c4db54b9771bbd08c6",
+      "sha256": "d24b444a2ffae1e246bc534b76c68c69f9fb8f32325de04d7c7211059ced4e20"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/pl.meta",
+      "guid": "dd1c34c9fc01ad04aaa4ca3224a1dd1a",
+      "sha256": "05f93313fbe09541fbafe651544c981cb99adc12257b07551db8a9b59ebde640"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/ru.meta",
+      "guid": "a92f7b099ff5c76429667edadc0d92a1",
+      "sha256": "6f9df2e3c106aad91337ba90b30001580029305143d2da528e9ef120f86a64f1"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/en/text.meta",
+      "guid": "a0ce401b50c19784f8bf9eca17016b22",
+      "sha256": "0029aa98de819089cf3221fe702229b6971bbee1396d810925802214015e9334"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/en/text/Dialogue.json.meta",
+      "guid": "8f8a0e7b604981f439c7016ca45ba0c5",
+      "sha256": "99160cd5eb68bfa0de3f1b1d719ace8c26123900a8fed6945f2942a2600c0f94"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/en/text/Document.json.meta",
+      "guid": "680aa93e586a0894ca408a6d8d5d3b6d",
+      "sha256": "ce617ffb0510ee31d29189f7da1efaca9948cade4dd8cdefca4dfb51d36f0b5d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/en/text/Game.json.meta",
+      "guid": "aa86e2f9c03e65544b462e77a598cf55",
+      "sha256": "b9d34faf6895bfb16c5597d830fae8a8f75cf6a7c4f52567ba4de624a0c8295b"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/en/text/UI.json.meta",
+      "guid": "1d76a5e8f9145064f8d6497eccc44fef",
+      "sha256": "d98500400d8afd0b382f153a4339e0d6626f495b84482b5d9544797294232d38"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/en/text/World.json.meta",
+      "guid": "f553976679abda140adbd0cf60aab4f2",
+      "sha256": "b0a96d64f7cf9c65847cdfc85f526dd3a483090bad58cf52681a260b50180869"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/pl/text.meta",
+      "guid": "94f6cc2d93d684e4c976ac93155c0a8c",
+      "sha256": "a512482e0709a65e747fbb6818a4c4cba4f8229ac0ad7849404aa20d9b919277"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/pl/text/Dialogue.json.meta",
+      "guid": "90d0d61043ef1764682134903d2ceb4f",
+      "sha256": "faede47d3e6765d07def1adc3d8ac7a4dad3b69a5c0b3fd39b77d00a29cee1ac"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/pl/text/Document.json.meta",
+      "guid": "7f60c071c2ac7c34f88235bd7154448f",
+      "sha256": "f8590bc787e40ca0a816df1746edb79f0bbf4b070f4d472695622c214d4f7e17"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/pl/text/Game.json.meta",
+      "guid": "49c66202e1f57834a80a37c40d1f3d4c",
+      "sha256": "cefceae594c555e3fd44178dd8d68bc7c8d19bd092ee60536c1b453f6bf8cc27"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/pl/text/UI.json.meta",
+      "guid": "0d66e78e163d8044ab13145c3da157e2",
+      "sha256": "da631b362816b06572450733e752957e15040f41b5d0c3fe61e81687e7f9557d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/pl/text/World.json.meta",
+      "guid": "acd3df837ca02fb45a2c2a0dc15b8d7b",
+      "sha256": "c8917b18f61e17634f6837ee08df6f664307256feaf59c74d9a5bd9b9a90317f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/ru/text.meta",
+      "guid": "5c37361970db9e947b5e67a251e71535",
+      "sha256": "ed0b0ec2f6d438fa2197e94a547754e0429d9f2dd34923811005671cb3fc856b"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/ru/text/Dialogue.json.meta",
+      "guid": "f0a69777ee2b4744ea2f9fccd2ed4b67",
+      "sha256": "fd79bb57fedbbe810c2b1ec683445b2eadd3d2feecddef597a0ea7c133e79e1f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/ru/text/Document.json.meta",
+      "guid": "dbc605959c825f443835cc80d7d7b32c",
+      "sha256": "9b55756ed8fabd028325ddb46dcf225dcce5ceabe0a8bba22299339b1f86d741"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/ru/text/Game.json.meta",
+      "guid": "7c3c68aa4d653cf4daab46db738c7e03",
+      "sha256": "c5406528774f8e65ca928da0e68604b52564bbe015815941def193a53e19c595"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/ru/text/UI.json.meta",
+      "guid": "7d201b53fc2ef9a4690f1d9cd2b68990",
+      "sha256": "3be5ada9fb8f3b7b0d8420d6b1adba830b01458a2d6cd0fe86eb74166ca74271"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Text/ru/text/World.json.meta",
+      "guid": "893fabc033016c94f8a555a657f0753d",
+      "sha256": "b69aeecc8c13c53b023efa28c0116ba4adb3bd79b7fb1fc670ffe117fe2bfb68"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct.meta",
+      "guid": "747c0579886cb6048975352b130637e9",
+      "sha256": "45ada0fe51580d54e4fcd4c567d1ebe99072e15785d2665f56d51d3626ccdee4"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Visuals.meta",
+      "guid": "a647065ee7f227443ad2f49344f21f40",
+      "sha256": "34bb398eab4bb0d2daef1e9abdc7ca35b22c4a556eef158548d210b2339ae069"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Voice.meta",
+      "guid": "907ee40e09623f24f93892439580b517",
+      "sha256": "02eb33f416bba09ca7dd66afb87dd192f281293a8efa66791753b0aa972d11c1"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Visuals/en.meta",
+      "guid": "05389cb18bd4a384293e931b282ef640",
+      "sha256": "9624c6ef4ad739ba39fc3031424e4471feb222f4e465d315ec847e8b7a63527a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Visuals/pl.meta",
+      "guid": "217cd0df0597e534badca0a49b9f6807",
+      "sha256": "5c0a1a7ad66c6b689fcdc4aee4d483297e819d0091d84279dece934bcbd3bfc8"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Visuals/ru.meta",
+      "guid": "a85664d0a742d7b439797a9fb7c4d02f",
+      "sha256": "0caaea40c198ea3b2b22f3a5f37a2cc64c23144bb752dc95a5371469675b20b5"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Visuals/en/Signs.asset.meta",
+      "guid": "c33402baf8bb0fd4398834c594163141",
+      "sha256": "5b142b9ff9fdd3f72464c19c0866e381a868be05b12aec3d87237fe8c4593812"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Visuals/pl/Signs.asset.meta",
+      "guid": "33c57a53342ea9c47a7bf40fe4a80414",
+      "sha256": "4300dd779bda4a4783db6ba3966fbe0b88cae2798ec54b22493e211feb65c8ba"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Visuals/ru/Signs.asset.meta",
+      "guid": "fdda6f34057710c4a8c16e2c781c2aa8",
+      "sha256": "06fad8c3d23b7f0c61b4dc63df8c97562fa1f8ad859c7d27dba9f1e99b2c083e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Voice/en.meta",
+      "guid": "9f202b7855593dd46a5217f8cbbec8a3",
+      "sha256": "076ca5bde70ae74b3de127e6040dd9176e3c24785942bbd1b5f95c8158606bc6"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Voice/ru.meta",
+      "guid": "33fda35f9924b5e49b434b28d5e2e06a",
+      "sha256": "726f09efeaac6a2d5f0697a5771fdb0efe5e9a55e50d3f614fed52e76b217acd"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Voice/en/Radio.asset.meta",
+      "guid": "664af11a2a5d43d499ab1866c36d8a20",
+      "sha256": "e90d82af1c69b6a23ae52fcfd939775095d84240363513d0d9a8742633245573"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Resources/NightShift/Worlds/Precinct/Voice/ru/Radio.asset.meta",
+      "guid": "f8ca0540a407ed94abd5a5d6e80660d3",
+      "sha256": "8bc9b6e8a975cbd4802f57fb1ea2a00e509dcd8bd62ef1de97a2f0b864d099e7"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification/build-identity.json.meta",
+      "guid": "9d0e1a32d691d514f8a6b1bdc1453239",
+      "sha256": "df75cff5e37c419f714a9cdf43c0bc6618d74b022b5174ff4f0d32cd86a51a2b"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification/build.txt.meta",
+      "guid": "4cc97453f70c1704188396b673c30ee7",
+      "sha256": "717c80bde87a29151e4c31c9af567ed13233dae000e8f6a45ed56c865c73b0cc"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification/editor-checks.txt.meta",
+      "guid": "13f44aa6958f8904ea786883439128da",
+      "sha256": "b4fb69a66c39cfa368bd3c4f23e9231df51f6fc82618efca502b1510e9dcd283"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification/network-check.json.meta",
+      "guid": "6c2f1ea7238449f4186ed94c21f99e8e",
+      "sha256": "a7906eaad131f72c32f5ed9006afc9e5add6295e9de1353bb03aefdb4b223032"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/HorrorLab/Verification/player.json.meta",
+      "guid": "6325f032f6fbee84ca48260bbd7a7478",
+      "sha256": "6a3e1e0d573fd6393f286e1e7f54dafd93f67bd78a8f8140c6f43d7c6ee41e7a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Data.meta",
+      "guid": "d9e961856c859da40947cf9bcc43a914",
+      "sha256": "a5245605d65949a0fac5b96205aee6702c8ff0b42fc7fd82a80e647fe1e9d7c0"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Editor.meta",
+      "guid": "781e368a5c695294da37dd98aaaf9346",
+      "sha256": "61dde63a73411879a35a8c9f6721b9d723370cd0e944e7b314006229e45c888c"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/LocalizationLab.cs.meta",
+      "guid": "30c5d1338668ef64faf06451efc6a39a",
+      "sha256": "3fef4d004be2a71b7b0d3dcb45865a469cfc5ccc3de3d9a85e94c1aa796fd50c"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/LocalizationLab.unity.meta",
+      "guid": "219ec3b22c273c9438ae4c7ad18de1d1",
+      "sha256": "1f9e9932057f38b4c8d068b747528843021e2883bea61d3d92609062d0598f65"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/README.md.meta",
+      "guid": "a59aac0ac0ae68540a58288ac6c773bb",
+      "sha256": "817a5ff5f16a913c253452240aa955d61844f356cc803555cf3ff10aa3785cb8"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources.meta",
+      "guid": "98e2393cbe03f2d44981899270fc7850",
+      "sha256": "916ef9753255025d1ac0b449912ff597b89edf20727fd0354fb16cdc4fe6bd61"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/VALIDATION.md.meta",
+      "guid": "ed38f801d8a833245ad7113c0c592b46",
+      "sha256": "c1c24946916091bfd4f9264d01d0a2be28620befe0749a2f82dfb7b10ba16014"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Data/en.asset.meta",
+      "guid": "5b70b8e72480f854c97c65d9d7d1012f",
+      "sha256": "ab3d7c6a4a19aea263a4edddde773574522c658ed30cabbc179da89daeda11f4"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Data/LabConfig.asset.meta",
+      "guid": "9505aafada0e7fd4cb384498385ef08a",
+      "sha256": "761f6f9928d81a4b6c7144d767a5a397548c82fce2906d46f4e8a8b26d8f1ad7"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Data/LabFont.asset.meta",
+      "guid": "c0bc2caa48f9ec443a29b2ab67821ea6",
+      "sha256": "177d458a322115587b253e5a021f04a0971eb5014a4b4f18f7cb811b503efafc"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Data/pl.asset.meta",
+      "guid": "fb55b80ae72352346abd615022ff0e45",
+      "sha256": "7b40e971ae32bad3158969f60e5ea033e059362ee7423fd3af0f736fa882d496"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Data/ru.asset.meta",
+      "guid": "0b0775aa08b1d114b872a6ad5d2ca11e",
+      "sha256": "b1fc031dd2ee50eae89abf35f21c1e95a90d6a7c89d06d0fc202786f65691f8e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Editor/LocalizationLabChecks.cs.meta",
+      "guid": "49c57b1911c75b446aaf4a723c1dbe5a",
+      "sha256": "b7f83024541c784b74883536957d30e1685f257d5bf4528fe150af919b18b1cd"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Editor/LocalizationLabSetup.cs.meta",
+      "guid": "96966a45a871ffd4eb161b68dbb3b5b8",
+      "sha256": "cb0e6c86ec24d8857a24cec1e9a6b01878cc37ad40ae4a76ed65fa6cb7f15b31"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab.meta",
+      "guid": "2104adb82967a6d4b834eb393cff4109",
+      "sha256": "e061373f3892b8b9d95332ad5946e9ddc172bd37fa4b7cd2e5c4b318fdf44ba7"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/en.meta",
+      "guid": "df8780501a17d9743b6faa07c7966392",
+      "sha256": "80860a9e7537b84b874d3de8ee084c53907492ab7ff9a00c3414c899c68d117c"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/pl.meta",
+      "guid": "8a10908b86571ed49bb81908b291cfd4",
+      "sha256": "ca33e10474a3764ef3ccb3d0dcd05fe947eb4a8169c3037f7ac7d829f865d59d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/ru.meta",
+      "guid": "64da7ca65758c3c4c8e5c576ba1a3de7",
+      "sha256": "5c6f0b868275b92e7ee1fafec97e8d6fbdeafdda8a6bd8353c2fbe54c48c5fa0"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/en/text.meta",
+      "guid": "cbc188bdbe21e524c87290b856569a8d",
+      "sha256": "6cf12956e0442387bee6ab0e774f6424725d349d5351976b6a94e70985a5b39b"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/en/text/lab.json.meta",
+      "guid": "6207d0849d6575f4fbaeed3bbc67cc84",
+      "sha256": "bf5d9b744f882fa330a6a28337d8c82f1e5bbef44107be8cc693f332bc848651"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/pl/text.meta",
+      "guid": "bf2ed26ae25d9cc4a925b7ac0280ae81",
+      "sha256": "e45384b2b6bd00e04f52983e923ae4e767167cc8cc84702280283ebda7f0afc4"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/pl/text/lab.json.meta",
+      "guid": "260d6d5ae3538cf4ea28da124449ce6c",
+      "sha256": "5350468b52ca4cc7f3b33a6529d5ea35cc09cd9c721536213bc5d98be0fe6544"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/ru/text.meta",
+      "guid": "78257330b0694f6499ddf1f71aa2f239",
+      "sha256": "ea838b293563a41e76842f38bc972c35484651d841dbac5790e71373d7e7915e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/LocalizationLab/Resources/SimplyLocalizeLab/ru/text/lab.json.meta",
+      "guid": "81e5f0abb3c1e66408c8f8478885a3ae",
+      "sha256": "d62f2f83895b040c0903d10480e8f3af4b9d389d6c4d21f1aaf01537ace151ce"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Scenes/SampleScene.unity.meta",
+      "guid": "99c9720ab356a0642a771bea13969a05",
+      "sha256": "b5815a6b12afaf810577bc89041c4ce46516c7cd6609693f8db616f8e5584d80"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Settings/DefaultVolumeProfile.asset.meta",
+      "guid": "ab09877e2e707104187f6f83e2f62510",
+      "sha256": "efbcb026cee6b8e32fdf27018c06b0515296a6ccbb43969e792fea270310700a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Settings/Mobile_Renderer.asset.meta",
+      "guid": "65bc7dbf4170f435aa868c779acfb082",
+      "sha256": "a148ee2b4987b05b8ff7ae5f9bf84916184f77aefddc821dceb551f5a69f8179"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Settings/Mobile_RPAsset.asset.meta",
+      "guid": "5e6cbd92db86f4b18aec3ed561671858",
+      "sha256": "53ea46647712c615fd1a3f2e0dddfa8559eeedc649e9a1dbf93ff913de28544c"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Settings/PC_Renderer.asset.meta",
+      "guid": "f288ae1f4751b564a96ac7587541f7a2",
+      "sha256": "b5df8ddb2708c6ed4c133a5ff9ee95a75cc20e4ee3ed6181366a61aedbaf31ec"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Settings/PC_RPAsset.asset.meta",
+      "guid": "4b83569d67af61e458304325a23e5dfd",
+      "sha256": "bb469b9b6f318e9e9bed29c3b2e73e79371c04743c6f95dd6603941f1cd3e53e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Settings/SampleSceneProfile.asset.meta",
+      "guid": "10fc4df2da32a41aaa32d77bc913491c",
+      "sha256": "2e23abc214069f0adbf2b2207f1db54be7876629ec2a3681d0f4aa5b61622ef0"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/Settings/UniversalRenderPipelineGlobalSettings.asset.meta",
+      "guid": "18dc0cd2c080841dea60987a38ce93fa",
+      "sha256": "f61661d8bc8dbe531daf09f6211ef978c7ba145c9207c8e76524396ae0722d7c"
+    },
+    {
+      "path": "CHANGELOG_RU.md.meta",
+      "guid": "d8d8090f783240c8ade952cbd12cb169",
+      "sha256": "6e886e7d1a775d2910d568f10f80ab27603053f09b42fda519002ff3b101cb21"
+    },
+    {
+      "path": "CHANGELOG.md.meta",
+      "guid": "5b89787a985aa5147ab2850a83e474c0",
+      "sha256": "dd376cb1dc1aebfcfc318c9a2fcc73f8a928b5531f8ef619cdd1ea5df3e5d714"
+    },
+    {
+      "path": "docs.meta",
+      "guid": "ecd4be5594423a64e950d83ec75b6308",
+      "sha256": "69eb9d9a704960237decf334af2697efc1d87626760df4efc17f094e911a9899"
+    },
+    {
+      "path": "LICENSE.txt.meta",
+      "guid": "e3d72c51bb2aaca4bafee653cf66d646",
+      "sha256": "3cfc3fdbb3774fe2fc88ed2b79b57133fe59c2959749545d1c640e6154208b18"
+    },
+    {
+      "path": "README_RU.md.meta",
+      "guid": "0c4601cc650744fe81e233aa886602f2",
+      "sha256": "d0265fabfb11b7c724403777180f54f29620eaff340a50622a50cd0e84e28795"
+    },
+    {
+      "path": "README.md.meta",
+      "guid": "6c445074fa15a3c4b9066449c0780e7b",
+      "sha256": "3735fc8ac4545abc8df83844087c177bdca8e94ae810957eb87d7eb35902ab0d"
+    },
+    {
+      "path": "src.meta",
+      "guid": "09854e6882fbb8e489523940ed3c54a4",
+      "sha256": "9fa7503002a583b90a9d4a8bb5c5ee34ade2bfbd72770f6c3c2a9b08b8cfaa02"
+    },
+    {
+      "path": "docs/AUDIT_PROGRESS.md.meta",
+      "guid": "d892f6620a718ea4e8f67273d3d27476",
+      "sha256": "aeaef8f08d5238e9f8c82f4b57f43c68432d269bfe0f1f886cfa71ebb82fe8f2"
+    },
+    {
+      "path": "docs/images.meta",
+      "guid": "d96e9bdf1fe641a4281742ad54190966",
+      "sha256": "26ae9bfa63eadcc68fe09c0f23fcf118b4ffa39e17b6c0218fcf33195b886dee"
+    },
+    {
+      "path": "docs/playground-journal.meta",
+      "guid": "76f937ff2e92e4a4a8ff7b83c2f3803f",
+      "sha256": "17c633185b29940fc56061b9c6782ee96d3ab19e24e3a61f99c69d99c59efade"
+    },
+    {
+      "path": "docs/images/assets-tab.gif.meta",
+      "guid": "037428ced0b060044a577c9f92660175",
+      "sha256": "c3d17244d0d63ab3da7476a3e9fb334fb1e09bdbee38487b1560b7be730a8a49"
+    },
+    {
+      "path": "docs/images/coverage-tab.png.meta",
+      "guid": "549f253245cbbde42af82979d0c78bc3",
+      "sha256": "8ed5c418ea3862f9827129b7c22a93400b6a968cdb31a41e16de427fee732db4"
+    },
+    {
+      "path": "docs/images/editor-overview.gif.meta",
+      "guid": "61e5b4d507e45364b971b1e67c3c7dab",
+      "sha256": "a04f25e80b7c77324ef732d064d0936145ca6d691bcf238a0f6460c49d468e64"
+    },
+    {
+      "path": "docs/images/languages-tab.gif.meta",
+      "guid": "698ab18f7cf38d442a652b95405de166",
+      "sha256": "267bd3ac2135946622ccb9555e3806324c412beb2640ab4c1595dcaf5ae49d60"
+    },
+    {
+      "path": "docs/images/simply-localize-banner_mini.png.meta",
+      "guid": "585c8681b8c54cc448516ba74fb8d17c",
+      "sha256": "9131ac44ee42bbf2a31185dadc2056e6024b37134074db1ed1a0a89b8a9f2fc6"
+    },
+    {
+      "path": "docs/images/simply-localize-banner.png.meta",
+      "guid": "c9f6c4a2cd02f47498fabcd370c0afe4",
+      "sha256": "6435a6fc8236d6e411ed78d326f08d42304eec5ec7fee7f3e934bb9b008b3f13"
+    },
+    {
+      "path": "docs/images/translations-tab.gif.meta",
+      "guid": "4085749d2afd4444eaed1b766d5a27c6",
+      "sha256": "95d69232cb98db3b35355be3749453c397ea770d8b9a46e0bccc0e04386e6cb5"
+    },
+    {
+      "path": "docs/playground-journal/night-shift.meta",
+      "guid": "a7f5c64df118e284f87b42ca49440b5f",
+      "sha256": "f2614d438a2a41285903165dbaf6c9ab87d731e5a81f0fcb986187f3a9bb4b09"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/ISSUES.md.meta",
+      "guid": "ebe252a7f544bcc49918be7c94194b54",
+      "sha256": "cbfcd0ea3b01c559d2fb39a2b4c696f4d6ec67f0bebe4bb44726f85aab901862"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/README.md.meta",
+      "guid": "72a45d059aa471941921b9dde753e76d",
+      "sha256": "b3293b19fdb7d913f5dd2aa91c08721fa4c0a0fcdf38e8a95be61874218bbd0b"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/RUN-TEMPLATE.md.meta",
+      "guid": "21a61a9bd1ea2644d88e4328b5e229b5",
+      "sha256": "fa9eccb4b532d9ba9a5ec68f8c3eb2068a8c0570d0ed9c2f113ab53f72a0ec2a"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs.meta",
+      "guid": "89ab0bcc63bcc18418529bcc93ffab32",
+      "sha256": "770166bd4071b3b5bad13ae21ebfac81b3c8d18bf1b802fa90f6d22ae769b11d"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds.meta",
+      "guid": "160f5f8b2653ab54daab93849baa23f6",
+      "sha256": "8f326edfa121727ff6bba9d2be121f5f544e17d0a36f6cabb10c4a925a245d06"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795.meta",
+      "guid": "b68cd05bd87d53c48a8e77591b7ff7ec",
+      "sha256": "5bfce2b4e3f216efa74942048bf97105345b7e3f428a77fd93d2a2aaa1ea00dd"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795.meta",
+      "guid": "a8dfbb2b124b6e5478b2978657a92759",
+      "sha256": "788798efe4d8f5e09ff74a483f1a7052c276706749c7338125cf72bd051e8b27"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/API-GAPS.md.meta",
+      "guid": "a817437f098b12f4fa34ad4a1ef2baaa",
+      "sha256": "02d2b10bdd113db1ec53579bca49d040ca6b12397e8ac199f0f9392175567898"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/README.md.meta",
+      "guid": "f90b997931474134da1dc09480787ffc",
+      "sha256": "a289db301b15b6cf0779df354ec1cfe69fbbfb35cc8731ab699a90aa1db98e9c"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/sample-source.zip.meta",
+      "guid": "47043d1f12ebd3043b92793f09f41df6",
+      "sha256": "e5231f194222e908802bf4a39347670443755d18aa4be9e3a0f262f84d9de039"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/VALIDATION.md.meta",
+      "guid": "3e59fcb69b4502843810ddca169b7769",
+      "sha256": "4e75f3c155ec9bc34ca4d74aae38cec9c1b17ca7d64f9d57bfc50b0cda455722"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/Verification.meta",
+      "guid": "aaba675d866f1ce4cbb2391d93cbbf83",
+      "sha256": "5054db0bb0e4f5e1d17addd9a4b84147ab9ca745fb11a31d69ee5439fa527d34"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/Verification/build.txt.meta",
+      "guid": "82a831b389e7f134aa47cbe93feed166",
+      "sha256": "277ae79364cc7eb287bd28429ee494ee22c987d9dc3540578ec654963f9d83d0"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/Verification/editor-checks.txt.meta",
+      "guid": "4431f7b7722b6bf41aa0a891ba4534e5",
+      "sha256": "f8fc6726df74aa345905107b2e15f46dda7877f806e96f7d9ca56803e2d59452"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/Verification/network-check.json.meta",
+      "guid": "1be3a5d6c8e0cfb4dba9f633d500059a",
+      "sha256": "e6a9ac77d1c790481d984296cbca58fb191d3be6b790baa98fdde28cd35141d8"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/2026-11-16_legacy-workarounds/Verification/player.json.meta",
+      "guid": "1c6f116e786d4ae4796736ae13f2f90a",
+      "sha256": "f940ee55ed5e95ad4659fdf84157cb17c84df343b69f5b3eaa2d1c5be17340ac"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/build-identity.json.meta",
+      "guid": "ae1365fbefb713840b2f4cb89568e679",
+      "sha256": "e2c63a317f92eed21d46dc127cefbfd4eb14e743ca490d5b6f32d78d99b7c027"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/build.txt.meta",
+      "guid": "0bdcaf1e3cfcb8f4c83d5e8526cc79a1",
+      "sha256": "943b73ab49b481087be19ff1be6881391478f2cf6ce107aa8210fc2dbcc3f8d2"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/content-import-metadata.zip.meta",
+      "guid": "ad22c31d17b367d4ca784dd8ff06279f",
+      "sha256": "e81e2224418cf3c3d940ff4edf53cbcddf268e6a35cb40267da0a869327001ea"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/editor-checks.txt.meta",
+      "guid": "7b83c700953c9634184a2c53243631dc",
+      "sha256": "3377c10bfa997e1ac32b23991ad4feb43c567b2a18414fe25b5014afe69e2a7d"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/localizer-package.json.meta",
+      "guid": "5307c1969321d3442be8e3e8732f6888",
+      "sha256": "39cf462dc6e4ffe2089c9a3d00dd8d03f048b874231a1676fff6cd6ab3bda429"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/player.json.meta",
+      "guid": "56693d197cc57904c8d27ad12ce374d8",
+      "sha256": "64f74125f170b5bd6271ed1baa25e99020e356b47165a21e5cc11a0d301624c4"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/player.log.meta",
+      "guid": "e6e4d9810e2555d46a329738526b8eb7",
+      "sha256": "2cc9a19fcbc31c4ce9a238558ddc2aa4a3e33cd5de08959b04ae4005f1f89980"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/playground-source-files.sha256.meta",
+      "guid": "befc64e9f038c20469f767e873907b96",
+      "sha256": "78070c2425ef809d6d66b632f8582a1955dadf655e6c16b8e8f724a40a4e2600"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/playground-source.zip.meta",
+      "guid": "263665c39f9461547bb1e157682faba4",
+      "sha256": "6ec3eb76db48456e73a33c0f36fbe2049edaffd874f1690f2e696e9b5236d184"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/ProjectVersion.txt.meta",
+      "guid": "c2f80c5d128ae8a4dbdc9793f43becf8",
+      "sha256": "8788655416c5b882d1a94aac2bfddf347e1ed609e12180a3b68122398a7bbff8"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/REPORT.md.meta",
+      "guid": "3246d7d97cb5d284ab20dd5d28a86d56",
+      "sha256": "e5be4136973a578b47489cae881464a3383b1f779c9fe2618d0dff3a8e056463"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T112313Z_nightshift-1.0.0_d2f7795/unity-manifest.json.meta",
+      "guid": "7e2477d8f1dd8ef4393a7b4dfce5a27b",
+      "sha256": "03785e1aef2f783583170e993af8a5a777d74b5313896927640862182a6dfac8"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/build-identity.json.meta",
+      "guid": "1ac422d81fa809b4db122d5a2c48d3e5",
+      "sha256": "dae3e49799f021a80203e8825a584f548b0e10d88336f981f2bbe67d62d10235"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/build.txt.meta",
+      "guid": "31697dcae4f6f654d983f02af8bcb8d0",
+      "sha256": "c9e9c4001fa6c0e7c19dd09a91cfe7a07e726c573963e6c99eda38d545505625"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/content-import-metadata.zip.meta",
+      "guid": "b9d4312367daa5044a3f9a50bec38560",
+      "sha256": "816f17bfcb25e9f84b5029f89ea4c4ed3c4d8fcad17bfe9fc322f403ba9507dc"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/editor-checks.txt.meta",
+      "guid": "c90cc90eb0a8ac343a9cbd9e5653c835",
+      "sha256": "665d5f93e26da674640ab55e170e4dc3c2d2a3c660579b904514d3910ddb7f0f"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/localizer-package.json.meta",
+      "guid": "0eca961d98dfb334b9db6f2e8e321924",
+      "sha256": "d91007e92bff3d28f5bdf3448fda6f9357edd964298dc546f6a116d926f04745"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/player.json.meta",
+      "guid": "f0db7a5db36c4cf43bb23ed4f4e0f13a",
+      "sha256": "ab3f062259a621a803dfe678227139e02bf7283215ec4f5301305e0eef42006e"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/player.log.meta",
+      "guid": "78abd98c9c84ca247a9ddeff4f7d8ee3",
+      "sha256": "df2c28afbd96a24745ae8494e44cfdec56c9e9ff1769e025ecd42024407dab97"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/playground-source-files.sha256.meta",
+      "guid": "6374821f5466c75459ddab128f14facb",
+      "sha256": "11782180f2b3d8662a18dc0d171972cdb635b45a0ab4ec054cc133fba5ebdc88"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/playground-source.zip.meta",
+      "guid": "4742ef4c2edbda042865409db2270e73",
+      "sha256": "77cd3f67906f3a643ee0447cd839c9eeb5aa2c320861e012c83e108c9e1d02c9"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/ProjectVersion.txt.meta",
+      "guid": "d5dc6a2577a308845b8079a78f98bdc8",
+      "sha256": "0e02a9eb3d848b920afd3f18e7a19c576986e036b57c419d5d249ef257158c53"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/REPORT.md.meta",
+      "guid": "196e67ad56c08e94eb5d163f16383874",
+      "sha256": "94f5fc102699fec6c3886ae77ca4e476d67e014fd05cf0972a5b3c3f8bff11cb"
+    },
+    {
+      "path": "docs/playground-journal/night-shift/runs/20261116T113518Z_nightshift-1.0.1_d2f7795/unity-manifest.json.meta",
+      "guid": "ae3e19d2a10951a47be3c7bcd302fec5",
+      "sha256": "e63339562974e7e1e55c0dbd93d10edd08576cedfa82a034dbf62de7b642b29c"
+    },
+    {
+      "path": "src/SimplyLocalize.meta",
+      "guid": "49712feeda6dad144bca8d10d1f317a0",
+      "sha256": "b9433cd041c49ca67f9eaf3d05c9b1bf55f7423eb4a07f6e0ec466d550a2e8b9"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor.meta",
+      "guid": "0d3ba756afc074747b251a29ea9da2b1",
+      "sha256": "468631f94cd7a74bbffd4e96a504171e0bdb6ecbf947d14056a3e5a4dba5c28d"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations.meta",
+      "guid": "72ece21f6651cce4298a2ca54e143eb5",
+      "sha256": "077f10fc0b68609ed48b2153a12fe4ac6875ca01e63ce5077f1037da72c2df59"
+    },
+    {
+      "path": "src/SimplyLocalize/package.json.meta",
+      "guid": "11caad4e346be1144be08528be2fbcc9",
+      "sha256": "37751b98aadb1ccb2daa893e3b07ab9cd48ac7c67d0e897b5a88a5dbc8d33cd9"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime.meta",
+      "guid": "d2d382b92e24c7b498c8dab80e5831c3",
+      "sha256": "41689b73981e1cbc427f5b93d80fc3cfe958460a4d5d6ba58f1131b01f62fabc"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests.meta",
+      "guid": "730d613aed690d2409e092c6d4d57a65",
+      "sha256": "83ecb7ad20f4d5f948e88c0582ff40bcc77b5837a245c725e4e3058e36e444e2"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetFilters.meta",
+      "guid": "5542b0cc062eda948a49f89fac0649ea",
+      "sha256": "941b2463bab01d0fe67a96985d2012bdea19e22b69c69d0ab588632ab3721741"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetPreviews.meta",
+      "guid": "94e8b832e312f5d4caa9e9e14e659ac8",
+      "sha256": "e648a6ee46c2ca819d6b5a91d64a079aec80846ecbf64b4d6af8e00072d0b338"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Attributes.meta",
+      "guid": "2a64e84fbafc45189fae1b4f798b46ac",
+      "sha256": "a56d84c86ba498a062e1b6a4e3d6ee93a7c6f379edf3da55cd870473ca3959cc"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data.meta",
+      "guid": "be3d8bb793fa43248984ec4a3115c6fc",
+      "sha256": "c7c207fadc45472149a11fef2706b5dd583d01b60d22210d12b52b540704bea4"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Drawers.meta",
+      "guid": "2e23e3fd50a0418bad3ea5529c06e36d",
+      "sha256": "686437774677d1f58cf46216981ab41772d6b8c24d84189febdf3ca300478cd8"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/GameViewLanguageDropdown.cs.meta",
+      "guid": "e3d08773f1e92db4ea08709bd4ca7d16",
+      "sha256": "0152cc8c1e6049846baf08f3b388ce408936e3ee691023b0932a1c0f64ea1014"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Inspectors.meta",
+      "guid": "562b0dbb4cd545fdb668e1ed74f78e65",
+      "sha256": "cc951c8f247315cb7e94cb196fe518057dd790be96b329f854896d76c53a2ede"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/SimplyLocalize.Editor.asmdef.meta",
+      "guid": "21c77e955d871394baa9cc4a4c8b7a58",
+      "sha256": "7267ffb173ef2adeac5fcac862e288c33bb192a9ce9f9dd12e3b4ae685ae41f8"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/SimplyLocalizeSimulatorPlugin.cs.meta",
+      "guid": "e9117a68b4ed482aa70aee1642649553",
+      "sha256": "00eb260a29d5aeeb20813940bd0426396a77f01b0909720949456d6d3dfd8023"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Sprites.meta",
+      "guid": "1fa77cd03f700f64ba3fbb293d0de265",
+      "sha256": "32be9b814af21d7786472ce76c77d420b7dadad0f1f4c254e77b7316faecbbc3"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Utilities.meta",
+      "guid": "a6459328484949d3b97ae525206bec4e",
+      "sha256": "c2a993a6f55a0d3faa312e858446316d4027dd160384f574349a887af9aeba63"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows.meta",
+      "guid": "d2af0fe2e84160043a2ceb98735565e8",
+      "sha256": "d65d6325f4496251989bcc93bf2c9499c2e15e9b4267b9541a7cec01c025697e"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetFilters/AllAssetFilter.cs.meta",
+      "guid": "182d4bc9e69a2954eb55afba55a40bda",
+      "sha256": "c62c06b99fd24e1a5d8e874696ca865e5ef148d88b2ef318f81dda2f21d97822"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetFilters/AssetTypeFilterRegistry.cs.meta",
+      "guid": "068d8b931950eec45a4eb185aa083842",
+      "sha256": "67be8cb80254fca3a302d357d4901278508bc112a62848b3459aa918ee289b75"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetFilters/AudioClipAssetFilter.cs.meta",
+      "guid": "75af855206817ca4095828346eba5eef",
+      "sha256": "9d749a0e50650970e183f4e65d71a0998e56f1793318495b3a9e56499ebbddf0"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetFilters/IAssetTypeFilter.cs.meta",
+      "guid": "c16d9fdcd50c0314a80b5d05bc23e410",
+      "sha256": "203f6505e234b614f2bb3fa42ad173624e6cc9fbe49ef79f268d06d1823c09ea"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetFilters/SpriteAssetFilter.cs.meta",
+      "guid": "3ed4448b7725b944fbcaf480a22da38a",
+      "sha256": "8933885704fb67ba706e1f1d04b165e70116fc97ccbf74375c73f17960d3b877"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetPreviews/AssetPreviewRegistry.cs.meta",
+      "guid": "f9cfbd6dc59a7714f98399765aef8e77",
+      "sha256": "60f3b0b847ac70c3d0ac18431695a4b46b39378a8827b2357917be7f8cc97351"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetPreviews/AudioClipPreviewRenderer.cs.meta",
+      "guid": "ee7b9a1e2b3a8b34aafdf8b70529dc5c",
+      "sha256": "f216f76b047a20d79cef5b3c42a0cbac563a797636582cb3bcb753f19138d82a"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetPreviews/DefaultAssetPreviewRenderer.cs.meta",
+      "guid": "8ac907f348aae0e47b881081c04a721c",
+      "sha256": "39947b395b5b1a3bca4b8ac14554556b05452771d4eab2abc6c52dc72706bfd5"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetPreviews/IAssetPreviewRenderer.cs.meta",
+      "guid": "b6464ad023cf4e24080c31c3006c0e47",
+      "sha256": "427b57ef2781810b37abe8d97f806d954bd3ed76de6b33fa27721b2bf09c880d"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetPreviews/SpritePreviewRenderer.cs.meta",
+      "guid": "7d79a7a7cc1316d4dba01fbedd0078a4",
+      "sha256": "90ebbf566f275e994a1458f84586bd8e1175d81e5a1049a085de480140312079"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/AssetPreviews/TexturePreviewRenderer.cs.meta",
+      "guid": "cca4dbc73bf3fd94c9beff7d4dea7db7",
+      "sha256": "6264d957aa3b758906cbabeb524f56faf2c9674d4833c9c2701094c60d237ed6"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Attributes/LocalizationEditorTabAttribute.cs.meta",
+      "guid": "5f36710860254585aa11e92823d77d8a",
+      "sha256": "931613f877fc822cba7a6f8e5ba13b16b48914c3502f087366860e2337a4f5db"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/CsvExporter.cs.meta",
+      "guid": "18b287bad4605804b8c6873a33a01189",
+      "sha256": "cf2b77e5d0766744385db8a4c0b733510a3065fc0feb5704dc79927349357732"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/CsvImportPlan.cs.meta",
+      "guid": "63fe7bfdbde930a4783279ede92de2cc",
+      "sha256": "d85c47f0f43d44f261f0fdce7d38f573465258e343f51fb63d7a88a7c6d465ee"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/CsvProfileImport.cs.meta",
+      "guid": "7b33e6004cbff6c41a5dcf3474336db1",
+      "sha256": "528b50d1a7ca93755bf01fb2738369a4fae96517181ff9f8b6968c8ae2390953"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/EditorDataCache.cs.meta",
+      "guid": "9914acb528ba6994da13dc47968f983d",
+      "sha256": "ad91c0629b279a8134a64f5ba521f2546c8f93695a6a159967bc2f7b877be384"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/EditorDataPath.cs.meta",
+      "guid": "a0b0647e7d263c34db2e109ddedb3efb",
+      "sha256": "68aea4f186cdd9e2cd74bc40f152d99ee40a283ae05e579e1a53d1373359901c"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/EditorFileTransaction.cs.meta",
+      "guid": "b01ae7c930d289b499977475e5305e13",
+      "sha256": "1ac56588bbac612e951308be7548ae85bd4db218849c577b2f282dd763eae9fe"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/EditorJsonWriter.cs.meta",
+      "guid": "f652fe354c8a6a74094d24b4d9da6400",
+      "sha256": "5f23a5a8f9e21552185daacb9a0379ab2689af8e28a4af7c42fd55ff7f93544c"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/EditorLocalizationData.cs.meta",
+      "guid": "959f58277af92c24191c737096e0b56b",
+      "sha256": "c2cab065d9b88af2bbb048d30b90637b93f89135bf550ce3784d0d4a3d280df2"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Data/EditorMetadataJson.cs.meta",
+      "guid": "b6d620cf291419645960195709b9c363",
+      "sha256": "9c9843997448597e715760b57da27a62b6e41ee71c98973ac63644c9dc905916"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Drawers/LocalizationKeyDrawer.cs.meta",
+      "guid": "649b3f0a2c54427f9147cd14688edf89",
+      "sha256": "11cd6b579d8cb53cda983c516aa1690250b2de001b112d6c52969b258756fad9"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Drawers/LocalizationPreviewDrawer.cs.meta",
+      "guid": "32352c8a4f224808ae3ecf81538e9c38",
+      "sha256": "4a8f7a29aaf28cab4326febaea3e8cae336c7c1e3cc0da67e2bebba664d5b7d7"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Inspectors/KeySearchWindow.cs.meta",
+      "guid": "d56fa332217411f4fa523d962f608246",
+      "sha256": "4d2a23a3c31ea3022f517f61408035a6ac7062f3df29dc5414912f0f7cb7ea0f"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Inspectors/LanguageProfileEditor.cs.meta",
+      "guid": "667566e7a0a24314b197d8591e33ae29",
+      "sha256": "33b485a45c09c099195497d4962541d34b2e77aa0839e01fe17f565459944d8d"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Inspectors/LocalizedAssetEditor.cs.meta",
+      "guid": "596b0d7762e5437d838800b3b686c20d",
+      "sha256": "7fa9556a205ed6547e94672649bb1c566939202e038697b46776cb87862cf763"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Inspectors/LocalizedProfileOverrideEditor.cs.meta",
+      "guid": "a6f23d68700149438c14e019fffc10e1",
+      "sha256": "4fc7935c3b7bf1a9cafd7152d9e65ac0f8f058164b5d6b828a42eb12ddbd33b0"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Inspectors/LocalizedTextEditor.cs.meta",
+      "guid": "8c32557d9dd8ea34db40480f8298db38",
+      "sha256": "44d9c8128134cb19c453ada2fc2390021db8a2a1af1399c64ad423124bae7a71"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Sprites/language-translation-icon.png.meta",
+      "guid": "e697c3cd25b59d049acc0e934065ba6b",
+      "sha256": "1858cfb936645695dce38f2e3f66dc6aaf05b1a31d0fe6931925c154930b25ea"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Utilities/CoverageAnalyzer.cs.meta",
+      "guid": "4e9681aeb5eafb84297247d3038e42f9",
+      "sha256": "06947825fcf8f8cd5d731996a5d85056175bf39aefd6a54d085ba87b7cb32a14"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Utilities/FallbackResolver.cs.meta",
+      "guid": "fc7763fbae12afc47a859391a42b5292",
+      "sha256": "ea6edb2d2f7fa5bd30127cbf8eea2fd7887fc33fb737a52986cce5fcbb75bfe0"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Utilities/KeyReferenceUpdater.cs.meta",
+      "guid": "d3235592525c4b95a02170b6cbecf37c",
+      "sha256": "4e0c89e3e59df02c129dda45d9a1d6ff94c317b45627e22a35bb68d775de46bd"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Utilities/ParameterHighlighter.cs.meta",
+      "guid": "f934893de9364f9693ff6969173518d2",
+      "sha256": "29ccc8e6421ca20695678a96d3fdff0d4e5459f739a4bce93556ab3ae172b9f8"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/CsvImportPreviewWindow.cs.meta",
+      "guid": "533e5b38ec86c164e88f2068faf8462c",
+      "sha256": "b4a37d11950b62728745488ebd4499d9d5a299a4f61990d33c4baab87fe7caaa"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/LocalizationEditorWindow.cs.meta",
+      "guid": "360af2416c9f3f84093be88bbedf58ef",
+      "sha256": "4464720137a6bddf64221c8bf37047427ee9995e18ba4d69dcde574cb5e79eec"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs.meta",
+      "guid": "d42070d0bd43c2c4c9a8391928e96b6f",
+      "sha256": "1e5a37067977841a6a4941ae8a3d9cede848e0326def33e86f69894db840859c"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/AssetsTab.cs.meta",
+      "guid": "3650edb0de954b82957681ab80d3c1ec",
+      "sha256": "679634ca750c74b1ae1fba6404dd41a2f22208749efc6c03a04456e4cb1eeb44"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/AutoLocalizeTab.cs.meta",
+      "guid": "8aacafa9635845aeaec33b57f195752e",
+      "sha256": "03ee9c505d07e6e7c0d0df9f4454c22cede1a721d39b207279a51b6ff78248d1"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/CoverageTab.cs.meta",
+      "guid": "9b059c57cb9ebed4db8d2d4e3315dbfe",
+      "sha256": "321b2b9f1a3cdd58b28c4cd01c6fd3a026bf83315eec9cb75081e9276074d609"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/IEditorTab.cs.meta",
+      "guid": "17e93289e78882141a2095a7ae50a562",
+      "sha256": "3027c49ca7f26ff2dbd9da06c061b368d1211127e777b2528b77c26a0d95f176"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/KeyTreeBuilder.cs.meta",
+      "guid": "7e488f5238f531c45b696972424df69f",
+      "sha256": "083ea12d83ccf68469aad96af518b61b47bbec909ddb46d67555eea4c58fee98"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/LanguagesTab.cs.meta",
+      "guid": "c6e1162bca4986649b8c65f5efbfeafa",
+      "sha256": "519785a4cca4ccf2e87020cef5e723084d13c0e499a13329c438faaab7bc97a6"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/ProfilesTab.cs.meta",
+      "guid": "b9828b9d508ebe74a8f02fe6204f6acd",
+      "sha256": "33e2f496671266d901379e05c9ec322a89e6c038dc1cfa03cef6cd97664db962"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/SettingsTab.cs.meta",
+      "guid": "3b830d5e423f39041bc62a7dcf05b886",
+      "sha256": "d44fa8f4130cebbe2cc3b3379e62d41df7258b0f7ac112dad53d7cf7b90fe828"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/ToolsTab.cs.meta",
+      "guid": "c985c131a5f1d5346bca9e0ea68ba066",
+      "sha256": "8828291b710274ab730ddcb951fa36cfd7d80abf7d7bca4f88fec60334068268"
+    },
+    {
+      "path": "src/SimplyLocalize/Editor/Windows/Tabs/TranslationsTab.cs.meta",
+      "guid": "5dd012590c041ad4bb07ab32d93f3ae7",
+      "sha256": "7c38ce4bedcac40b74882fc81488770817739cb0b3a865ad6e5f05649e3c2b7c"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine.meta",
+      "guid": "441bcb6fbb0bd4f4d91eee26283c9937",
+      "sha256": "2f8879068866e08c8710db06feaefbcc1c4a1aa1c6fd38b0c28ae0e2c13f9645"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine/Editor.meta",
+      "guid": "04cf178e78644d1291647b72e6d89520",
+      "sha256": "ce8f2d515aad472bb2a23d99eb634c46f9444e8bb4b0915a6197970c50bac3f8"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine/LocalizedSpineAttachment.cs.meta",
+      "guid": "c47bc79293cc4c244a1454608b870f18",
+      "sha256": "bd595744a2312820db8e6288d6b8867e79e32d9a0202f69a6b53dbbede1f4371"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine/LocalizedSpineTexture.cs.meta",
+      "guid": "229249372a77411890b244c1f5e76fc7",
+      "sha256": "e8451699630a1ce5ba1fc35f1b15d61647dd3e1fbf06a27eaab81195003c86be"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine/README.md.meta",
+      "guid": "a045c7b787934e8aa43fd16ce0af797f",
+      "sha256": "001c3aeb91e5b38be8e8e2cb856b1b53bf39f73f224307ceb975f0f1ff49dc4f"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine/SimplyLocalize.SpineIntegration.asmdef.meta",
+      "guid": "c1d7b9821cde8584e9524ae008b63e77",
+      "sha256": "7abb7625977e55df162b48e605183550cec7a9e5cfe80cf48328a596dd461fa1"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine/Editor/LocalizedSpineAttachmentEditor.cs.meta",
+      "guid": "1533de796e0740229e099e143fa4ef9d",
+      "sha256": "d3270d33d4a7cce2bb17bcbbe2c2b39393df664d7fb059a1a9190907d594d382"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine/Editor/LocalizedSpineTextureEditor.cs.meta",
+      "guid": "a4f7c58d0e9141d8a63c1b82e8f99120",
+      "sha256": "5ceae3f63d898a7764165d78e5196bc6f3811493117c16ea9ddb7190097450a1"
+    },
+    {
+      "path": "src/SimplyLocalize/Integrations/Spine/Editor/SimplyLocalize.SpineIntegration.Editor.asmdef.meta",
+      "guid": "f8f252986d89453fb7d846e5e204d81a",
+      "sha256": "bbb5ffa6806a259a107428ad1cb3c1ff4d19ca744a680bf9c1dc5b3a23b9a195"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Attributes.meta",
+      "guid": "5b347636f026420bbab4e1b7b7802a92",
+      "sha256": "7f108edf25be86ca906e3c171598a5e1c968da810b86e264468c12dc54780677"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components.meta",
+      "guid": "bcee2e6b0d534565bf3cd3262c72e379",
+      "sha256": "9ff892ee3496b95b44920345713117dad30f26db86c555e2fd0497833be68e4f"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core.meta",
+      "guid": "b8e06e4d8a40dec428a65aacafaa57a9",
+      "sha256": "9939bd248005a1fb8e3511852f425517c1787113cb57da750341173dc9b279ce"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Plugins.meta",
+      "guid": "3cbb4d3360f84afb8cf32d838c53ec0e",
+      "sha256": "d3461ec4cfa942398194dc2d8bf8171546471eac4ea61cfbe40303d0c2ee8ba1"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/SimplyLocalize.Runtime.asmdef.meta",
+      "guid": "e55ffc05c840e854da074020f5a1f025",
+      "sha256": "0b9a674b2ed28c4e4528ad31f43ae305d1334bc86de9e934711f1783929a1859"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Attributes/LocalizationKeyAttribute.cs.meta",
+      "guid": "255f6efaeb9b475a8067bd16da78d942",
+      "sha256": "2976e20be709c5e904f658defe43069ca9a62fc549fdc0d4d6bb6a2705c3c5b6"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components/FormattableLocalizedText.cs.meta",
+      "guid": "af212a1648c84c16ba54f024513984ab",
+      "sha256": "a631083f3ab98dda1fcc65e46a95d27316f0b95977fb56987065ad92d99780f9"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components/LocalizedAsset.cs.meta",
+      "guid": "989ff57c27024d1787421a551e3e10d2",
+      "sha256": "219525e0792cfc2a301e34744672a840e1a3db97fe7a2af9a4173bc4ba20ded5"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components/LocalizedAudioClip.cs.meta",
+      "guid": "62c19533db9149bc837f56bd813a2474",
+      "sha256": "1fc096e1186245d8d2254fe62534bf78e1ba47d0edfa236e70387d79fe12f0b4"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components/LocalizedComponentBase.cs.meta",
+      "guid": "0d07f89035b509d478f20e21b4e53df1",
+      "sha256": "c8dd62f362938bdc57af5dc6d26b15214e9ad220bbeacf08bd5d6e6b9056ca9e"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components/LocalizedEvent.cs.meta",
+      "guid": "bbdf4bf044d34b7495b30c38ca40e333",
+      "sha256": "3e0feb7fd5f3f7cc3364527debca73157144eefd79513ecf350ccc08fb479e70"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components/LocalizedProfileOverride.cs.meta",
+      "guid": "43b904890bfb216448435e01329a84ef",
+      "sha256": "ea203f57524fc3985e916cf671ad33dd69f4b8d69ea705750f50a115bf03b703"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components/LocalizedSprite.cs.meta",
+      "guid": "7952f708d6664063a86d8fdbc71c22c7",
+      "sha256": "55f4985dfdc65db0c250ceaf547aaf1d806cec2627b34eb340bf5a864cff4494"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Components/LocalizedText.cs.meta",
+      "guid": "4d30c7eb49e447e6a9247afd6677c14a",
+      "sha256": "bf0b20122dd199ca92b5294b658db0a5eb44a1f18f845774e9060954d9119603"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Data.meta",
+      "guid": "198eea6d744def3438433a80da82730e",
+      "sha256": "784cb4678288449619bd289b06938cdd4c441579296db9e0d95d23d21363cd39"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Enums.cs.meta",
+      "guid": "b0d475294a0166a44abc4ee4d158417c",
+      "sha256": "c3eb8a74b77366532c09ee972b6f89c0fd6c9e314541d74b06d93525e7c1c7bb"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/LanguageProfile.cs.meta",
+      "guid": "9c656d61dc1323749b99cd62da1d7a85",
+      "sha256": "e2dcc83b5f9fe0da5059da5411ecc363eb1b5e1b716b8ef78c504af0146464a9"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Localization.cs.meta",
+      "guid": "cbc82261d572d9d43936e946a7f43f7a",
+      "sha256": "d576ff75cc8dfefc67580aca2038a8fda80daee0c1174dfb1d0d1fbf7c0de094"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/LocalizationAutoInitializer.cs.meta",
+      "guid": "cb9903bb922df904c86f08f7aed61101",
+      "sha256": "76c7816604174e56013ef2aad74d79146cab7f888a732ff85a3c03e3d337201a"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/LocalizationBootstrap.cs.meta",
+      "guid": "013404baccb8b2744804d8169c2f6620",
+      "sha256": "cca6cc7c242c8118e80a2bd3c2ed9404974e3507982ba5466e34d1608e38257b"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/LocalizationConfig.cs.meta",
+      "guid": "0573262d8afcf004eab34c4e5341e3d9",
+      "sha256": "68ccbad1fbfc38e2c0bf536094fd575ff453ac88eb928d9f2f7a2a1998d1bed2"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/LocalizationLogger.cs.meta",
+      "guid": "3dafba92066c7a24eb212cd6e6b2dece",
+      "sha256": "97f2d83abb206f848c9e26aa6770442560d80f5480ef2cdfd4a83ebc61c8b8fe"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/LocalizationManager.cs.meta",
+      "guid": "bc7a7da25aaf16e40a6a8d1e61c3927c",
+      "sha256": "17309d4d6c97aaa9fcb216aff61dc61eb9696f7dafea82dc6f15dd98b6797760"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization.meta",
+      "guid": "16981823394e23742873c0dfd743744a",
+      "sha256": "40b1dbdfe9f4d6774941300d95127e2db56ec34d7fa4e9299effabf3ad3c7ad8"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/ProfileApplier.cs.meta",
+      "guid": "ef4a621364a57024a871fd871f545aec",
+      "sha256": "74cebf8bd448554cffb89e60d6da8e12ae1926a1ffbd0f6b1592550858273ebc"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/ProfileFontCache.cs.meta",
+      "guid": "5926f0a93d79d71418a5e1ac7fa14dc6",
+      "sha256": "dbccf5394935a230696233ae70c399f399ccbdc03e12e93de8e905ba4aa38685"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/TextProcessing.meta",
+      "guid": "0004b9f67f9877a439c680ad5634bb25",
+      "sha256": "462ff4c5a9fc6ca41a95cd92e18f7451fbcc01e6ff5268da65c897a91d7ce0f3"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Data/ILocalizationDataProvider.cs.meta",
+      "guid": "02aefe448705c2642bcd9ad45549ddfc",
+      "sha256": "84b3129d214c7b18ebe8b9f4a797dece19e2a483d2bcaab99528706cff9af8fd"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Data/LocalizationAssetTable.cs.meta",
+      "guid": "b9bbf4c68ec9415a937dfa4db47268ca",
+      "sha256": "4119244515fe3652d7f2714036a64a5515f7bf9f46be460971faa8eb33e3085e"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Data/LocalizationFileParser.cs.meta",
+      "guid": "9996f395015e7ad4eaf484e747ba605a",
+      "sha256": "f109d51a6dd2826445134b55699b701cb3f7289578da2bd7d874870991ad4002"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Data/ResourcesDataProvider.cs.meta",
+      "guid": "8af2fbf7cad78714fb40b9e3bacef815",
+      "sha256": "6b6af8dc45d87a47122cb5436f79195d63b5be0fe2317c099d0d4064cc2f6d56"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/ArabicPluralRule.cs.meta",
+      "guid": "ff49507b231d8a8439aae2032bdd4dc3",
+      "sha256": "ade7bc7fd24cd77a46263b53a58343cf48ec0fa2b6361aa9fe2fa49fd7a3a512"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/CardinalPluralRule.cs.meta",
+      "guid": "feaf087e50375b94d990fa981856c200",
+      "sha256": "849463677803a57ab159baf487b5fb1d4fe4fffa5563fb8f47354c4b210081bd"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/EastAsianPluralRule.cs.meta",
+      "guid": "8e3b80354bb2d0a4eb7dd5060ead8a54",
+      "sha256": "9758b681f0db2196edece4d54f42c218213586b4d4c4873fa87fc00812a7bec7"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/GermanicPluralRule.cs.meta",
+      "guid": "6b415f7ce5177eb47addb4bf4f68839e",
+      "sha256": "d6a6ac53b7b038d5efc4878110ac83994408bedc069a09c40b7ac447b216b1aa"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/IDecimalPluralRule.cs.meta",
+      "guid": "414c98c15a2595f419710d5f888fa163",
+      "sha256": "7039f6c5403022bc293580c32a92ac3deac027e5c6fd60d4fbaa53734a8e8d5e"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/IPluralRule.cs.meta",
+      "guid": "5a56d69d006eda64db4a572b6bfeb9fd",
+      "sha256": "aa9944515b3723c5e2a1f2507cdb92ea727af45a1801f1dd67b2b4aa74a488c1"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/PluralRuleProvider.cs.meta",
+      "guid": "fee139a72b5320e4bb14aff55583d2fa",
+      "sha256": "e98cda29b18cb7c94dc93472a0007b6f1602ef603935d3cd66fdd0adec3fa79f"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/RomancePluralRule.cs.meta",
+      "guid": "4562cecce905ead46a22205da2814318",
+      "sha256": "1eca8e251bd82fdeaf4eca8e75d2d01f0d7c93b1594b0957802e028161db8f17"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/Pluralization/SlavicPluralRule.cs.meta",
+      "guid": "c99a6f758a2b5254b8d3747bf6aca708",
+      "sha256": "64b8bd08123567b4341c78753a93304cf5e81db88fd8658014bcffca9b88271e"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/TextProcessing/FormSelector.cs.meta",
+      "guid": "ab4c85ae9a403ee438fa7c5fd752ec95",
+      "sha256": "934519d9adfd0e2986e11009916fb33ca8617fa5782cac82d7086552a4ef21a9"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/TextProcessing/ParsedTemplate.cs.meta",
+      "guid": "9a89ad6d80bf51a45a58304fb9d46c89",
+      "sha256": "7089f2d3790a60f8ed77bf4530b2669e1c5090e19caf47d0ce49d7cb0a1619c6"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/TextProcessing/TextFormatter.cs.meta",
+      "guid": "86977dac09e08c042b996452fe0d7fd0",
+      "sha256": "ca364b6ad580ead82d626662a6231f736a7fa47d0a45d785bb94416c7450e099"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Core/TextProcessing/TokenParser.cs.meta",
+      "guid": "5396e51d79e529b418cdfa1adcd9a1dc",
+      "sha256": "84e569df3857ce715380262c53f8c26ec09e7c5ef1ce531240e6469820cbe821"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Plugins/WebGL.meta",
+      "guid": "468d8668295345ecb00f2ed5d054372c",
+      "sha256": "dfb4a6f1085f850883926e147e166373c800c7374d6350fdfbb3cab4dac1c6a3"
+    },
+    {
+      "path": "src/SimplyLocalize/Runtime/Plugins/WebGL/SimplyLocalizeConsole.jslib.meta",
+      "guid": "4491493a0918a5941b3a7d5aa1fbba9c",
+      "sha256": "025aa17bf83aa1210152bef7a36164fae340b6232ef405a0fce5e89e451f33e3"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode.meta",
+      "guid": "699c2713c68de3f4093fab27dde6fce8",
+      "sha256": "33c0b67347d9b4800c2a02ea4cce19f22764e8d9d9ea7735bb2b776068785859"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/PlayMode.meta",
+      "guid": "c3d0898ab074f0d41a80d97f5f83e784",
+      "sha256": "f89942ec14733be460786317bf1a463fe91f844af36fe809cb00c2d459aeedaa"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/CsvPersistenceTests.cs.meta",
+      "guid": "62c1346fe25120f4aa01f094ea2ee33f",
+      "sha256": "62d3c05910b14486c7d1e73867e6e24a6e18bcadd9c5017aa05f826f3eeed6f5"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/FormattingTests.cs.meta",
+      "guid": "1d0c1c0526edee94a92cd48736c4ef7b",
+      "sha256": "bca1e3224df611581672fa65948a6d6b89860cea75fcdcc699913e154f916fcd"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/LifecycleDiagnosticsTests.cs.meta",
+      "guid": "ce7da850917857f4e9ad20b34ee179de",
+      "sha256": "edea66b36dc57f5a03f947ea69b5afe8986b4c192a73a198c60ddc2350c08090"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/LocalizationLoadingTests.cs.meta",
+      "guid": "28f5566a10c135a43a1fa1605212bb65",
+      "sha256": "3ba400994bfaaeba8b3fdc4d2d62f44edc3021fc7f27d3f6666258306b33d05a"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/MetadataPersistenceTests.cs.meta",
+      "guid": "6fb32a8179d7cc443b49c1a522f30d14",
+      "sha256": "75a0f81d18d5bb9c70349ee8cebec07cf8125fb2ab19fd5a40ed4586fea0df82"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/PlaySessionResetTests.cs.meta",
+      "guid": "d11dbbb5a96a6d241b62391594eef5d8",
+      "sha256": "e1685d1142d83a3ca40789274b23e265cedb7bea1b3b43d41f3b363f9c1554cd"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/ProfileApplierTests.cs.meta",
+      "guid": "464865a1ca460d645b3f1df7ecc0ea16",
+      "sha256": "94f54abd12a57b7517c1dc2ee065a90ad3df860e9e83f2b7f7f9b67eac59c9ac"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/ResourcesLoadingTests.cs.meta",
+      "guid": "5256bf52507b89944a402f615f740a00",
+      "sha256": "40702b2da048341fed31370072272aa074e40daf29069182888df0c9dc2feb97"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/RtlDiagnosticsTests.cs.meta",
+      "guid": "8142c58464d685b4dab7c885ff645d6f",
+      "sha256": "63de729ff9a9b95ec2c7533793abe36aea33190b530d6de415549a432168ae08"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/EditMode/SimplyLocalize.Tests.EditMode.asmdef.meta",
+      "guid": "15053d4c03124a8488c537d0b994dd76",
+      "sha256": "395eef397077c046b9a4fed6fb43a015213b50ac0a3f45442b5355c5ec61cccc"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/PlayMode/BootstrapLifecycleTests.cs.meta",
+      "guid": "1b22f1b9ba0f4ab4daf7a4b4197e94c7",
+      "sha256": "7e62be18273c668ba7d77b190d75f089792f8a167538d41a1ac54391b117211b"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/PlayMode/LocalizationRefreshTests.cs.meta",
+      "guid": "13d437652e7bbf64c92093bde56100d7",
+      "sha256": "fac71e90de6dcd26e92efbfbe01c6cd8d53f99ce2e15e2fd7135db2ceb4b22ae"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/PlayMode/ProfileOverrideTests.cs.meta",
+      "guid": "77b85ee64f6b22e458d8e2722466d905",
+      "sha256": "41e70a5ba20f8f33a19eb1cb058a39cc25d815f8b5798c93390083710e6263a1"
+    },
+    {
+      "path": "src/SimplyLocalize/Tests/PlayMode/SimplyLocalize.Tests.PlayMode.asmdef.meta",
+      "guid": "dde02aa003d4cea42a2ea8bcc2eba85d",
+      "sha256": "f6dee40b7cd048dff6cc4cfb67dce05fcec93832e5e5a81048da19dd71184c44"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Fonts.meta",
+      "guid": "6ab70aee4d56447429c680537fbf93ed",
+      "sha256": "11e80153fa39b86efadb8917ecde12a0402fe0729f2c88f6f8d1999f3fb04748"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources.meta",
+      "guid": "243e06394e614e5d99fab26083b707fa",
+      "sha256": "167448559db07c9857b206a0f5a0aedcd6a6dad900d618b35b0702d636573805"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders.meta",
+      "guid": "e9f693669af91aa45ad615fc681ed29f",
+      "sha256": "c109eb7e331affedb377f7051df3d4881f8529b65f9593234585713e6e94ed30"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Sprites.meta",
+      "guid": "d0603b6d5186471b96c778c3949c7ce2",
+      "sha256": "41e002b97ba2235689fba502d1ee4419f50ea0095cd3632cdc50bc90ca8a94de"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Fonts/LiberationSans - OFL.txt.meta",
+      "guid": "6e59c59b81ab47f9b6ec5781fa725d2c",
+      "sha256": "5dbec32c014c17d94674af5f1494d49b42ba00edd50397f895f088c868ccbf86"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Fonts/LiberationSans.ttf.meta",
+      "guid": "e3265ab4bf004d28a9537516768c1c75",
+      "sha256": "e2e35a015703584fb119355fa02631764d111c3e112d32519801d46bd697b596"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Fonts & Materials.meta",
+      "guid": "731f1baa9d144a9897cb1d341c2092b8",
+      "sha256": "8917470a9265beb1ef55a28c6a3718eb12ec8004554499998cc345056247995f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/LineBreaking Following Characters.txt.meta",
+      "guid": "fade42e8bc714b018fac513c043d323b",
+      "sha256": "d5a86d8b7db6aa3ca6f4a63750eb94e0c42a64909b47d8c6c6f2565845534490"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/LineBreaking Leading Characters.txt.meta",
+      "guid": "d82c1b31c7e74239bff1220585707d2b",
+      "sha256": "6a925814d5e251a0ced6de210db2bacf2de29b4f0dc2991e85c908632e9565e4"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Sprite Assets.meta",
+      "guid": "512a49d95c0c4332bdd98131869c23c9",
+      "sha256": "5605affac803b81f876f35577f075c9b7e5ea73cf812fdfcc74277bf0f40140e"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Style Sheets.meta",
+      "guid": "4aecb92fff08436c8303b10eab8da368",
+      "sha256": "1fdf0423552f46284fb97894f36adcd34d32e595aaf5c7cf1ce38a2349faaf89"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/TMP Settings.asset.meta",
+      "guid": "3f5b5dff67a942289a9defa416b206f3",
+      "sha256": "a65193b095ec3606789a3191751a837704cf52d4f461993ae7903024c6d43f45"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF - Drop Shadow.mat.meta",
+      "guid": "e73a58f6e2794ae7b1b7e50b7fb811b0",
+      "sha256": "ef2eee63b288d47823da38109e3e8c879f4717a82dc662ac2d5e2460dacde698"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF - Fallback.asset.meta",
+      "guid": "2e498d1c8094910479dc3e1b768306a4",
+      "sha256": "d6d86504040cf6e736767fda9bdef494afb06d5304384243e2dd703eba3a4a3d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF - Outline.mat.meta",
+      "guid": "79459efec17a4d00a321bdcc27bbc385",
+      "sha256": "a8cf0ee9888a163e892368b4660b9c62a7375e7f8afdb8ee02e5c91ca1cdb355"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset.meta",
+      "guid": "8f586378b4e144a9851e7b34d9b748ee",
+      "sha256": "37233890984555987cb585551bc885069f2849a9b0d1c2191af073b9376aa10f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Sprite Assets/EmojiOne.asset.meta",
+      "guid": "c41005c129ba4d66911b75229fd70b45",
+      "sha256": "097525b164260b0fb34b4e0c73b3187c693f4dfe2991f475b5b416dbf07dfbbc"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Resources/Style Sheets/Default Style Sheet.asset.meta",
+      "guid": "f952c082cb03451daed3ee968ac6c63e",
+      "sha256": "b832663ca09ec7af8c8e816fd91a718b2af6c21ab4f126fa818871ad53bce763"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/SDFFunctions.hlsl.meta",
+      "guid": "96de908384869cd409c75efa351d5edf",
+      "sha256": "e1d0c5347b3c55930759f5bc0985e11611a4b2ff22eef24523eb108687bd1642"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_Bitmap-Custom-Atlas.shader.meta",
+      "guid": "48bb5f55d8670e349b6e614913f9d910",
+      "sha256": "91be1d5618a7da33c878e20cf2be3e13b897d4976c70bde0cda7a67dbd502cd2"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_Bitmap-Mobile.shader.meta",
+      "guid": "1e3b057af24249748ff873be7fafee47",
+      "sha256": "7430f3e97ae1b46f34e1ca75508705bb7b944307c41dc568ea728011f327086d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_Bitmap.shader.meta",
+      "guid": "128e987d567d4e2c824d754223b3f3b0",
+      "sha256": "3d462e6f8ba57f45dc5e6000020db066c36ed5a1a24f74f749727812373c2325"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF Overlay.shader.meta",
+      "guid": "dd89cf5b9246416f84610a006f916af7",
+      "sha256": "fb8fc84b612e19c169cdf3596195b416e68d227a8987a0eaa90d8c137fb69797"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF SSD.shader.meta",
+      "guid": "14eb328de4b8eb245bb7cea29e4ac00b",
+      "sha256": "bea74d576f181a8bb04b8cf02eedd0136540325ecb2824928a3aa52c75adcb13"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-HDRP LIT.shadergraph.meta",
+      "guid": "ca2ed216f98028c4dae6c5224a952b3c",
+      "sha256": "d1b70558e8b974d918e13c010db6d375fef815ba530bc2421ab031aa3a784ee8"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-HDRP UNLIT.shadergraph.meta",
+      "guid": "f63d574838ccfb44f84acc05fed0af48",
+      "sha256": "8cd498ce8f6ed2e7c0560d605eb912455cd6fdaf09a4d545d9743f63b3426bd0"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Masking.shader.meta",
+      "guid": "bc1ede39bf3643ee8e493720e4259791",
+      "sha256": "3744d078f9a8b6d3c5d9bca51e43f9223544fcafaf9396e121f49ea84a0609d3"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile Overlay.shader.meta",
+      "guid": "a02a7d8c237544f1962732b55a9aebf1",
+      "sha256": "1eeca1536c7506f79d4d877b866a5fb88db8f402634e091b6d78aa9d21c9d18b"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile SSD.shader.meta",
+      "guid": "c8d12adcee749c344b8117cf7c7eb912",
+      "sha256": "e3412891b9306b017e60cba4ae4f6d258ee8b161d986dcde9cefb3d60345514d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile-2-Pass.shader.meta",
+      "guid": "0178fcb869bafef4690d177d31d17db8",
+      "sha256": "65ecbce6f1621f2d7ddc5e6004dda5e55e1f58ec6e01178f3691e1e81e01de55"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-Mobile.shader.meta",
+      "guid": "fe393ace9b354375a9cb14cdbbc28be4",
+      "sha256": "f2112f50c72762d4e6731391495ea11f76975d677b698e9bcfdd38275ea18f9d"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-Surface-Mobile.shader.meta",
+      "guid": "85187c2149c549c5b33f0cdb02836b17",
+      "sha256": "95aa060f371ee503a22c0a0b018e029c0328bd82b9317feaa784432b0a787343"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-Surface.shader.meta",
+      "guid": "f7ada0af4f174f0694ca6a487b8f543d",
+      "sha256": "42439f5ac7491998f562e8ede73d64c3512953eb99fb1b49e833f5d9999a7660"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-URP Lit.shadergraph.meta",
+      "guid": "a3d800b099a06e0478fb790c5e79057a",
+      "sha256": "4c36abf5f2611c9d2cb04e7da8c30e42077503a17cb218020e171b6d3ff664f7"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF-URP Unlit.shadergraph.meta",
+      "guid": "124c112a6e8f1a54e8b0870e881b56d8",
+      "sha256": "f1ef815e2672fd770f47ee424c64f7ecdbdc642b7475828c29db032586aa10b6"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_SDF.shader.meta",
+      "guid": "68e6db2ebdc24f95958faec2be5558d6",
+      "sha256": "0897fb06d170043fffa2d28783b347bbaee87a3f09f08374ca44b2c3848697d6"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMP_Sprite.shader.meta",
+      "guid": "cf81c85f95fe47e1a27f6ae460cf182c",
+      "sha256": "9609584c5249687f3765f0018a93dfd6445c7e35d5aee4e87556f111c8852819"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMPro_Mobile.cginc.meta",
+      "guid": "c334973cef89a9840b0b0c507e0377ab",
+      "sha256": "2e16fa15ef884a60a402d8b696f8b09e5315cbb468ba223d256030c7fe2b0667"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMPro_Properties.cginc.meta",
+      "guid": "3997e2241185407d80309a82f9148466",
+      "sha256": "edace33591894d86d9a4144466fb3606e538d3341030fe22f908551755120ea5"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMPro_Surface.cginc.meta",
+      "guid": "d930090c0cd643c7b55f19a38538c162",
+      "sha256": "247746f3a4e39dd24d1ad99e4fae03ae8976586307948b2846529a876dcb0a63"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Shaders/TMPro.cginc.meta",
+      "guid": "407bc68d299748449bbf7f48ee690f8d",
+      "sha256": "a9cf9d5431b809e36b8ffff4377b5ebda7d386a36d48838cd134bc09f3caec6c"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Sprites/EmojiOne Attribution.txt.meta",
+      "guid": "381dcb09d5029d14897e55f98031fca5",
+      "sha256": "9fffc8ac513116b8ac394d86d81ca9ac4ec52ee92c63c114d355808384ea16fc"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Sprites/EmojiOne.json.meta",
+      "guid": "8f05276190cf498a8153f6cbe761d4e6",
+      "sha256": "ac2c551b5bc7f7d636d54ded634dfc3493e249567283b2efc06d1299f9360061"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TextMesh Pro/Sprites/EmojiOne.png.meta",
+      "guid": "dffef66376be4fa480fb02b19edbe903",
+      "sha256": "eb63c0321658b980b138ce5f675d44689b8c7144df43976931e132e7706d1e1a"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TutorialInfo/Icons.meta",
+      "guid": "8a0c9218a650547d98138cd835033977",
+      "sha256": "546e7d7af6b4d5e17d284c8f1188d05472e681911b8359905ee9b9e20769a106"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TutorialInfo/Layout.wlt.meta",
+      "guid": "eabc9546105bf4accac1fd62a63e88e6",
+      "sha256": "b8745a251df078ffa75dbaac0c4c6debecb61ab306b5b119a490ce6c635a11d8"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TutorialInfo/Scripts.meta",
+      "guid": "5a9bcd70e6a4b4b05badaa72e827d8e0",
+      "sha256": "930d0c8276cea1559a3e315f8500ea6ca8b58d980eee3b44aaa1d461742c47e0"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TutorialInfo/Icons/URP.png.meta",
+      "guid": "727a75301c3d24613a3ebcec4a24c2c8",
+      "sha256": "b330f1fcfc4e6ceccc95fc34a38434141603469b135633e1c4e8a03c19f9fdbc"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TutorialInfo/Scripts/Editor.meta",
+      "guid": "3ad9b87dffba344c89909c6d1b1c17e1",
+      "sha256": "7036bdbc8af05799b5fd508484343b35c28a68b390198da4673d34357d7d667f"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TutorialInfo/Scripts/Readme.cs.meta",
+      "guid": "fcf7219bab7fe46a1ad266029b2fee19",
+      "sha256": "80a3df9969fab6e656583ee9bbca884d0507e2b7de3417f6ea3118fba901cd60"
+    },
+    {
+      "path": "playgrounds/SimplyLocalize-Lab/Assets/TutorialInfo/Scripts/Editor/ReadmeEditor.cs.meta",
+      "guid": "476cc7d7cd9874016adc216baab94a0a",
+      "sha256": "f59080b424c16fa13edd105bf006fdbad98c11fce0c921043e63c8877f144cd9"
+    }
+  ]
+}

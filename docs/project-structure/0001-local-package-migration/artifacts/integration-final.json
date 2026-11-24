@@ -1,0 +1,34 @@
+{
+  "verifiedUtc": "2026-11-16T12:09:59.0883628Z",
+  "unity": "6000.0.62f1",
+  "package": "com.renkoff.simply-localize",
+  "version": "2.0.2",
+  "source": "Local",
+  "resolvedPath": "D:\\Unity\\Projects\\SimplyLocalize\\src\\SimplyLocalize",
+  "metadataGuids": 356,
+  "checkedReferences": 928,
+  "scenes": [
+    "Assets/HorrorLab/NightShift.unity",
+    "Assets/HorrorLab/NightShiftMenu.unity",
+    "Assets/LocalizationLab/LocalizationLab.unity",
+    "Assets/Scenes/SampleScene.unity"
+  ],
+  "editorWindowConstructed": true,
+  "probeGuid": "",
+  "allProjectReferencesResolved": false,
+  "unresolvedReferences": [
+    "Unresolved GUID 60f3b30c03e6ba64d9a27dc9dba8f28d in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\DefaultVolumeProfile.asset",
+    "Unresolved GUID 0fd9ee276a1023e439cf7a9c393195fa in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\DefaultVolumeProfile.asset",
+    "Unresolved GUID 5a00a63fdd6bd2a45ab1f2d869305ffd in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\DefaultVolumeProfile.asset",
+    "Unresolved GUID 74955a4b0b4243bc87231e8b59ed9140 in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\DefaultVolumeProfile.asset",
+    "Unresolved GUID e5c6678ed2aaa91408dd3df699057aae in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\PC_Renderer.asset",
+    "Unresolved GUID 03cfc4915c15d504a9ed85ecc404e607 in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\PC_Renderer.asset",
+    "Unresolved GUID 53a11f4ebaebf4049b3638ef78dc9664 in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\PC_Renderer.asset",
+    "Unresolved GUID 8f96cd657dc40064aa21efcc7e50a2e7 in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\PC_Renderer.asset",
+    "Unresolved GUID 57d7c4c16e2765b47a4d2069b311bffe in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\PC_Renderer.asset",
+    "Unresolved GUID 24ec0e140fb444a44ab96ee80844e18e in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\PC_Renderer.asset",
+    "Unresolved GUID b9a23f869c4fd45f19c5ada54dd82176 in D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/Assets\\Settings\\PC_Renderer.asset"
+  ],
+  "playgroundChecksPassed": true,
+  "failures": []
+}

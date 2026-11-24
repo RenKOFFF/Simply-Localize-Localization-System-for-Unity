@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9bbf4c68ec9415a937dfa4db47268ca, type: 3}
+  m_Name: Clips
+  m_EditorClassIdentifier:
+  _entries:
+  - key: audio/primary
+    asset: {fileID: 8300000, guid: 8d9863780eac0e4498e67cf4e46252fc, type: 3}
+  - key: audio/fallback
+    asset: {fileID: 8300000, guid: f4da629892320964b9154753af41b7e4, type: 3}
+  - key: audio/extra
+    asset: {fileID: 8300000, guid: 697d1620bfaf1c549810bcb49aac1c61, type: 3}

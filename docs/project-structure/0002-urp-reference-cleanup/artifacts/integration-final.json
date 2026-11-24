@@ -1,0 +1,22 @@
+{
+  "verifiedUtc": "2026-11-16T12:32:30.5324771Z",
+  "unity": "6000.0.62f1",
+  "package": "com.renkoff.simply-localize",
+  "version": "2.0.2",
+  "source": "Local",
+  "resolvedPath": "D:\\Unity\\Projects\\SimplyLocalize\\src\\SimplyLocalize",
+  "metadataGuids": 356,
+  "checkedReferences": 909,
+  "scenes": [
+    "Assets/HorrorLab/NightShift.unity",
+    "Assets/HorrorLab/NightShiftMenu.unity",
+    "Assets/LocalizationLab/LocalizationLab.unity",
+    "Assets/Scenes/SampleScene.unity"
+  ],
+  "editorWindowConstructed": true,
+  "probeGuid": "",
+  "allProjectReferencesResolved": true,
+  "unresolvedReferences": [],
+  "playgroundChecksPassed": true,
+  "failures": []
+}

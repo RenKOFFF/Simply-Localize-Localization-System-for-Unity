@@ -1,0 +1,32 @@
+{
+  "playgroundSourceSha256": {
+    "expected": "4ac1ac7c64d77701f7a795538b44003b8e6ab460da3a6ab37aadca69a34a8406",
+    "actual": "4ac1ac7c64d77701f7a795538b44003b8e6ab460da3a6ab37aadca69a34a8406",
+    "matches": true
+  },
+  "localizerRuntimeSha256": {
+    "expected": "28881e1867ede76de726cb58b175ee19f88e6c45df13479e33e50f0630691e41",
+    "actual": "28881e1867ede76de726cb58b175ee19f88e6c45df13479e33e50f0630691e41",
+    "matches": true
+  },
+  "fixtureDataSha256": {
+    "expected": "8c91791e5a55c9d505f4ca3fc710a6f56d2ca59e5c06cfec4ba9807582ab513d",
+    "actual": "8c91791e5a55c9d505f4ca3fc710a6f56d2ca59e5c06cfec4ba9807582ab513d",
+    "matches": true
+  },
+  "scopeFixtureSha256": {
+    "expected": "1e4637b79c68a43fa74cb24429b080b1d9cacce1703016fb433cf5b92baa470c",
+    "actual": "1e4637b79c68a43fa74cb24429b080b1d9cacce1703016fb433cf5b92baa470c",
+    "matches": true
+  },
+  "worldSceneSha256": {
+    "expected": "a53b5c0126bd19d7e606007b2d820a727b750d76a92d7647580608834b83770c",
+    "actual": "a53b5c0126bd19d7e606007b2d820a727b750d76a92d7647580608834b83770c",
+    "matches": true
+  },
+  "menuSceneSha256": {
+    "expected": "3e336161c2f1bcd0faffeb3cf306f346c83cdccaf7677f6e273dec68318dd430",
+    "actual": "3e336161c2f1bcd0faffeb3cf306f346c83cdccaf7677f6e273dec68318dd430",
+    "matches": true
+  }
+}

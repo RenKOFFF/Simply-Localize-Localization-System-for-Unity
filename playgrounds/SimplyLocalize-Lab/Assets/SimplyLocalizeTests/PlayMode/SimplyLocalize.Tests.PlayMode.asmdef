@@ -1,0 +1,7 @@
+{
+    "name": "SimplyLocalize.Tests.PlayMode",
+    "rootNamespace": "SimplyLocalize.Tests",
+    "references": ["SimplyLocalize", "UnityEngine.UI", "Unity.TextMeshPro"],
+    "optionalUnityReferences": ["TestAssemblies"],
+    "autoReferenced": false
+}

@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "com.renkoff.simply-localize": "git+file:///D:/Unity/Projects/SimplyLocalize/playgrounds/SimplyLocalize-Lab/TestResults/Stage62/GitSource?path=/src/SimplyLocalize#cd2c149979847cee583c1aabdf7ebcfa48cf080b",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0"
+  }
+}

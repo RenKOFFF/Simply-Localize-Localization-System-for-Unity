@@ -1,0 +1,13 @@
+{
+    "unityVersion": "6000.0.62f1",
+    "scope": "NightShift/Worlds/Precinct/Voice",
+    "requestedKey": "Radio/01",
+    "resolvedLanguage": "ru",
+    "audioLoadState": "Unloaded",
+    "legacyFirstLookupReads": 1,
+    "preparationReads": 2,
+    "readyLookupReads": 0,
+    "preparedTableEntries": 6,
+    "preparationMilliseconds": 21.844900000000004,
+    "readyLookupMilliseconds": 7.1614
+}

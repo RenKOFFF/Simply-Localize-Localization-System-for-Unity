@@ -1,0 +1,34 @@
+[
+  {
+    "view": "menu",
+    "width": 1280,
+    "height": 720,
+    "beforeSha256": "a94a03f1d39a5f8d67045c33f5745c7e113a3730de501bb62ab10eddc292ceee",
+    "afterSha256": "a94a03f1d39a5f8d67045c33f5745c7e113a3730de501bb62ab10eddc292ceee",
+    "identical": true
+  },
+  {
+    "view": "overview",
+    "width": 1280,
+    "height": 720,
+    "beforeSha256": "7fbf917b043e3754059f7f92a0ff79edcb532fb382dd1a23fcdb9f1195b56274",
+    "afterSha256": "7fbf917b043e3754059f7f92a0ff79edcb532fb382dd1a23fcdb9f1195b56274",
+    "identical": true
+  },
+  {
+    "view": "reception",
+    "width": 1280,
+    "height": 720,
+    "beforeSha256": "a3836cf208f788662ccb00e96770d19b72a75b2f5085ca1b87e3ddd500e71cd1",
+    "afterSha256": "a3836cf208f788662ccb00e96770d19b72a75b2f5085ca1b87e3ddd500e71cd1",
+    "identical": true
+  },
+  {
+    "view": "archive",
+    "width": 1280,
+    "height": 720,
+    "beforeSha256": "92faf48445ae80ca6b20b45e721b3e6967d42523a4cfb8364c416066825b6a05",
+    "afterSha256": "92faf48445ae80ca6b20b45e721b3e6967d42523a4cfb8364c416066825b6a05",
+    "identical": true
+  }
+]

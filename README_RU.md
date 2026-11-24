@@ -2,56 +2,15 @@
 
 ![Simply Localize Баннер](docs/images/simply-localize-banner.png)
 
-Современная гибкая система локализации для Unity. Управляет переводами, локализованными ассетами (спрайты, звуки, любые `UnityEngine.Object`), шрифтами для разных языков, плюрализацией, переключением языка во время игры и удобным редактором — всё без внешних зависимостей.
+Simply Localize переводит текст и ассеты Unity. Меню и субтитры могут использовать один язык, а озвучка — другой. Для небольшой игры достаточно одного канала и одного набора контента.
 
-*На других языках: [English](README.md).*
+[English](README.md) · [Журнал изменений](CHANGELOG_RU.md)
 
----
-
-## Содержание
-
-- [Возможности](#возможности)
-- [Установка](#установка)
-  - [Через OpenUPM](#через-openupm)
-  - [Через Package Manager (Git URL)](#через-package-manager-git-url)
-  - [Через manifest.json](#через-manifestjson)
-- [Быстрый старт](#быстрый-старт)
-- [Структура папок](#структура-папок)
-- [Окно редактора](#окно-редактора)
-- [Runtime API](#runtime-api)
-- [Компоненты](#компоненты)
-- [Интеграция со Spine](#интеграция-со-spine)
-- [Плюрализация и параметры](#плюрализация-и-параметры)
-- [Профили языков и шрифты](#профили-языков-и-шрифты)
-- [Цепочки fallback'ов](#цепочки-fallbackов)
-- [Локализованные ассеты](#локализованные-ассеты)
-- [Dependency Injection](#dependency-injection)
-- [Расширяемость](#расширяемость)
-- [Атрибуты](#атрибуты)
-- [Миграция с v1](#миграция-с-v1)
-
----
-
-## Возможности
-
-- **Локализация текста** — JSON, по одной папке на язык, несколько файлов на язык объединяются автоматически
-- **Локализация ассетов** — спрайты, аудио, материалы, префабы или любой `UnityEngine.Object` через таблицы ассетов; единый runtime-API `Localization.GetAsset<T>(key)` для всех типов
-- **Плюрализация** — встроенные правила для германских, славянских, романских, восточноазиатских и арабского языков, через простой inline-синтаксис (`{0|яблоко|яблока|яблок}`)
-- **Подстановка параметров** — индексированные (`{0}`), именованные (`{playerName}`) или смешанные
-- **Профили языков** — на каждый язык: TMP-шрифт + fallback-шрифт, legacy-шрифт, множитель размера, толщина, межсимвольный/межстрочный/межсловный интервал, направление текста (LTR/RTL), переопределение выравнивания
-- **Per-language fallback chain** — например, `украинский → русский → английский`; каждый профиль указывает на свой fallback, обход с защитой от циклов
-- **Per-component override профилей** — отдельные UI-элементы могут переопределять конкретные секции (только шрифт, только spacing и т.д.) из глобального профиля
-- **Переключение языка во время игры** — один вызов обновляет все активные компоненты через события
-- **Опциональная интеграция со Spine** — локализация отдельных attachments или полная замена страниц атласа без изменения общих Spine-ассетов
-- **Богатый редактор** — виртуализированная таблица переводов, поиск, drag-and-drop таблиц ассетов, inline-превью, undo/redo, переименование ключей с автообновлением ссылок в сценах и префабах, анализ покрытия, экспорт в CSV
-- **Расширяемость** — кастомные рендереры превью и фильтры типов через простые интерфейсы + `TypeCache`-обнаружение; кастомные табы через атрибут `[LocalizationEditorTab]`
-- **DI-friendly** — статический фасад `Localization` для простоты или прямая инъекция `LocalizationManager` для тестируемости
-- **WebGL** — встроенный мост для логирования
-- **Без сторонних пакетов** — чистый C#
-
----
+[Установка](#установка) · [Быстрый старт](#быстрый-старт) · [Окно](#окно-редактора) · [Runtime API](#runtime-api) · [Форматирование](#плюрализация-и-параметры) · [Обновление](#обновление-с-202)
 
 ## Установка
+
+Руководство для **2.1.0**. OpenUPM устанавливает опубликованную версию. Для установки из локальной копии репозитория выберите **Package Manager → + → Install package from disk** и откройте `src/SimplyLocalize/package.json`.
 
 ### Через OpenUPM
 
@@ -78,130 +37,27 @@ openupm add com.renkoff.simply-localize
     }
   ],
   "dependencies": {
-    "com.renkoff.simply-localize": "2.0.1"
+    "com.renkoff.simply-localize": "2.1.0"
   }
 }
 ```
 
 ### Через Package Manager (Git URL)
 
-1. Открой `Window → Package Manager`
-2. Нажми `+ → Add package from git URL`
-3. Вставь:
+При установке из Git укажите подпапку пакета. Замените `<revision>` на опубликованный тег или коммит, доступный в вашем удалённом репозитории.
 
+```text
+https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=/src/SimplyLocalize#<revision>
 ```
-https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=src/SimplyLocalize
-```
-
-### Через manifest.json
-
-Добавь в `Packages/manifest.json`:
-
-```json
-{
-  "dependencies": {
-    "com.renkoff.simply-localize": "https://github.com/RenKOFFF/Simply-Localize-Localization-System-for-Unity.git?path=src/SimplyLocalize"
-  }
-}
-```
-
----
 
 ## Быстрый старт
 
-### 1. Создай Localization Config
+1. Откройте **Window → Simply Localize → Localization Editor**. В Setup выберите языки, укажите основной и резервный и нажмите **Create localization**. Окно создаст `Assets/SimplyLocalize/Resources/SimplyLocalizeSettings.asset`.
+2. Оставьте выбранными **Main / Common**. Во вкладке **Translations** добавьте ключ `Menu/Play`, заполните перевод для каждого языка и сохраните.
+3. Добавьте `LocalizedText` на объект с TMP или обычным Text и выберите запись. В Play Mode переключите язык Main и проверьте обе надписи. Картинки и аудиоклипы настраиваются во вкладке **Assets**.
+4. Готовый JSON или таблицу ассетов подключите через **Settings → Content sets → Connect a source**. Выберите язык и зарегистрируйте ключи. JSON можно редактировать в текстовом редакторе и перечитывать через **Reload from disk**.
 
-`Create → SimplyLocalize → Localization Config`
-
-Помести его в любую папку `Resources` чтобы он автоматически загружался при старте.
-
-### 2. Создай Language Profiles
-
-`Create → SimplyLocalize → Language Profile` для каждого языка (English, Russian, Japanese и т.д.)
-
-Заполни поля `languageCode`, `displayName`, `systemLanguage` и добавь профиль в список `LocalizationConfig.languages`.
-
-> **Совет:** Языки можно создавать прямо из окна редактора через таб **Languages** — оно само сгенерирует структуру папок и JSON-файлы.
-
-### 3. Открой окно редактора
-
-`Window → SimplyLocalize → Localization Editor`
-
-В окне 8 табов: **Translations**, **Assets**, **Languages**, **Profiles**, **Coverage**, **Auto Localize**, **Tools**, **Settings**.
-
-![Обзор окна редактора](docs/images/editor-overview.gif)
-<!-- TODO: добавить скриншот -->
-
-### 4. Добавь первые ключи
-
-В табе **Translations**:
-- Нажми **`+ Add key`** в тулбаре
-- Введи ключ (например, `UI/MainMenu/Play`) и выбери файл
-- Заполни переводы для всех языков inline в таблице
-
-### 5. Инициализация в runtime
-
-```csharp
-using SimplyLocalize;
-using UnityEngine;
-
-public class GameBootstrap : MonoBehaviour
-{
-    [SerializeField] private LocalizationConfig _config;
-
-    private void Awake()
-    {
-        // Инициализация с явным конфигом
-        Localization.Initialize(_config);
-
-        // Или авто-определение системного языка
-        Localization.SetLanguageAuto();
-    }
-}
-```
-
-Альтернатива — включи **Auto Initialize** в ассете `LocalizationConfig`, и система загрузится сама из `Resources` ещё до загрузки сцены.
-
-### 6. Используй
-
-```csharp
-string greeting = Localization.Get("UI/Welcome");
-string score = Localization.Get("UI/Score", 100);
-Sprite flag = Localization.GetAsset<Sprite>("flags/current");
-```
-
-Или просто кинь компонент `LocalizedText` на любой TextMeshPro / legacy Text и выбери ключ в Inspector — без кода.
-
----
-
-## Структура папок
-
-Локализационные данные лежат в любой папке `Resources`:
-
-```
-Assets/
-└── Resources/
-    └── Localization/        ← базовый путь (настраивается в LocalizationConfig)
-        ├── _meta.json       ← метаданные ключей (описания, история переименований)
-        ├── en/
-        │   ├── text/
-        │   │   ├── global.json
-        │   │   ├── ui.json
-        │   │   └── items.json
-        │   └── AssetTable.asset    ← локализованные спрайты/звуки/etc для английского
-        ├── ru/
-        │   ├── text/
-        │   │   ├── global.json
-        │   │   ├── ui.json
-        │   │   └── items.json
-        │   └── AssetTable.asset
-        └── ja/
-            ├── text/
-            │   └── ...
-            └── AssetTable.asset
-```
-
-Несколько JSON-файлов на один язык **объединяются** при загрузке — разделяй ключи по фичам (ui.json, items.json, dialogue.json и т.д.) для лучшей организации и удобства мерджа в системе контроля версий.
+**Канал** выбирает язык. **Набор контента** объединяет записи, которые загружаются вместе. Например, если озвучка только на английском, создайте независимый канал Voice с языком `en` и подключите к нему набор с клипами. Субтитры оставьте в Main с `en` и `ru`. Набор большой главы можно подключить к каналу и загружать при входе в главу.
 
 ### Формат JSON
 
@@ -217,134 +73,135 @@ Assets/
 }
 ```
 
----
-
 ## Окно редактора
+
+Окно редактирует один проектный конфиг. Для работы с контентом выбери канал и набор.
+Этот редакторский выбор не переключает язык запущенной игры.
+Setup начинает с Main/Common; независимые и FollowMain-каналы добавляются по необходимости.
 
 ### Таб Translations
 
-![Translations tab](docs/images/translations-tab.gif)
-<!-- TODO: скриншот таба Translations -->
+Выбери запись в виртуализированном списке с поиском, затем редактируй переводы и
+описание в панели деталей. Прямые значения отделены от результата fallback.
+Save сохраняет черновик, Cancel отменяет правки. При переходе в другой контекст
+окно предлагает сохранить, отменить переход или отбросить черновик.
+Reload from disk перечитывает JSON после внешних правок.
 
-- **Виртуализированный список** — без лагов даже на тысячах ключей
-- **Вложенные группы** — ключи типа `UI/Popup/Title` автоматически складываются в дерево `UI → Popup → Title`
-- **Поиск** — фильтр по ключу или значению с дебаунсом 150мс
-- **Множественный выбор** — Ctrl+клик / Shift+клик
-- **Inline-редактирование** — все языки колонками, клик по любой ячейке для редактирования
-- **TAB / Shift+TAB** — навигация между ячейками без мыши
-- **Undo/Redo** — Ctrl+Z / Ctrl+Y
-- **Отсутствующие переводы подсвечены** красным
-- **Контекстное меню** на любом ключе: копировать, переименовать (с автообновлением ссылок), переместить в другой файл, удалить, добавить описание
-- **Описания ключей** хранятся в `_meta.json` — отображаются под ключом в таблице
+Переименование и перенос сохраняют ID записи. Компоненты со ссылкой по ID не требуют
+перезаписи сцен/префабов; строковый поиск продолжает зависеть от канала, набора и ключа.
+Заметки привязаны к EntryId и лежат в
+`Assets/SimplyLocalize/Editor/Notes/<GUID конфига>.json`, вне runtime Resources.
+Конфликт или внешнее изменение останавливает сохранение устаревшего черновика.
 
 ### Таб Assets
 
-![Assets tab](docs/images/assets-tab.gif)
-<!-- TODO: скриншот таба Assets -->
-
-- Управление локализованными ассетами (спрайты, аудио, материалы, меши, что угодно)
-- **Динамические фильтры по типам** — список фильтров в dropdown генерируется автоматически из типов, которые реально лежат в твоих таблицах
-- **Древовидное представление** — сначала по типу ассета, затем по пути ключа
-- **Inline-превью** — клик по ▶ рядом с ключом разворачивает полные превью на каждый язык, со специализированным рендерингом для спрайтов (с учётом UV-rect атласов), текстур, аудио (с кнопкой Play)
-- **Drag-and-drop** — кидай любой ассет прямо в ячейку нужного языка
-- **Поиск и переименование** — тот же workflow что и в табе Translations
-- **Авто-типизация полей** — в режиме "All" каждый ObjectField для ключа сужен до того типа, что уже назначен (нельзя случайно подменить Sprite на AudioClip)
+Выбери зарегистрированную запись ассета, сравни прямые/fallback значения и превью,
+назначь объекты по языкам. Создавай или подключай конкретные таблицы-источники.
+Если таблиц несколько, место назначения выбирается явно. Изменения конфигурации и
+ассетов сохраняются вместе, с откатом при ошибке и Unity Undo/Redo.
 
 ### Таб Languages
 
-![Languages tab](docs/images/languages-tab.gif)
-<!-- TODO: скриншот таба Languages -->
+Ищи язык по названию или стандартному коду либо добавь custom-язык.
+Доступные языки канала, default и fallback выбираются из каталога проекта.
+Окно показывает встроенное, пользовательское или общее plural-правило; наличие
+языка в каталоге не гарантирует отдельное правило или нужные символы в шрифте.
+Источники регистрируются явно; удаление определения не удаляет файлы переводов молча.
 
-- Список всех настроенных языков с badge'ами типов контента (показывает какие типы ассетов есть в каждом языке)
-- Селекторы Default и Fallback языков
-- Отображение fallback-цепочки (`Fallback: ru → en (global)`)
-- Создание нового языка с автогенерацией папок и JSON
-- Добавление существующих LanguageProfile-ассетов в конфиг
-- Удаление языка (два варианта: только из конфига, или вместе со всеми данными)
+### Таб Appearance
 
-### Таб Profiles
-
-Встроенный inspector для любого `LanguageProfile` ассета — редактируй шрифты, типографику, spacing, layout/направление прямо здесь, не ища ассет в Project window.
+Идентичность языка отделена от оформления. Создавай или подключай источник
+`LocalizationAppearance`, редактируй шрифты, типографику, интервалы и направление
+в окне. Конфиг хранит адрес оформления, а не прямые ссылки на все шрифты.
 
 ### Таб Coverage
 
-![Coverage tab](docs/images/coverage-tab.png)
-<!-- TODO: скриншот таба Coverage -->
-
-- Прогресс-бары покрытия по каждому языку (переведено / всего)
-- Предупреждения о пропущенных переводах
-- Предупреждения о несовпадении параметров (например, в reference есть `{playerName}`, а в переводе нет)
+Проверка читает зарегистрированные источники выбранного канала/набора, различает
+прямые, пустые, пробельные и fallback-значения, проверяет параметры и plural-формы.
+Незарегистрированные ключи показываются отдельно. Ошибка или повреждённый источник
+делает проверку неполной. Наличие ассета не доказывает соответствие типу любого
+компонента. Состояние запущенной игры не меняется.
 
 ### Таб Auto Localize
 
-Сканирует сцену на все `TMP_Text` / `Text` компоненты и массово добавляет к ним `LocalizedText` с автогенерируемыми ключами.
+Сканируй выбранные объекты TMP/Text, проверь ключи и привязки в предпросмотре, затем
+применяй. Для prefab-объектов доступны пропуск, overrides экземпляров или изменение
+prefab-ассетов. Компоненты получают ID записей; сцена и файлы участвуют в общем Undo.
+После перезагрузки сборок ввод scan/CSV сохраняется, но требуется новый предпросмотр.
 
 ### Таб Tools
 
 - Экспорт в CSV (для отправки в переводческие сервисы)
-- Импорт из CSV
-- Сортировка ключей
-- Поиск неиспользуемых ключей
+- Импорт из CSV с проверкой и предпросмотром изменений
+
+CSV работает с выбранным каналом и набором. Минимальный заголовок — `Key,en,ru,...`.
+Необязательные колонки `SetId`, `EntryId` и `Description` задают набор, сохраняют идентичность при
+переименовании/переносе и содержат заметки. Экспорт включает ID. Колонки `Source:en` позволяют выбрать
+уже подключённый источник, если файлов несколько. Старые колонка `File` и API `CsvExporter` удалены;
+перед редактированием экспортируйте новый CSV. Автоматического переноса старых конфигов/профилей нет.
+
+Поддерживаются запятые и экранированные кавычки внутри quoted-полей, многострочные значения, BOM
+и переносы CR/LF/CRLF. Файл строго декодируется как UTF-8 либо UTF-16/UTF-32 с BOM. Пробелы в переводах
+и описаниях сохраняются; ключи не могут начинаться/заканчиваться пробелом. Коды нормализуются
+(`EN` → `en`, `pt-br` → `pt-BR`). Повторяющиеся нормализованные колонки, конфликты ID, повреждённые
+строки и неподключённые назначения отменяют весь предпросмотр без записи данных.
+
+Пустые ячейки **по умолчанию сохраняют прежние значения**; для удаления выберите явную очистку.
+Отсутствующие языковые колонки и Description остаются без изменений. Проверьте предпросмотр
+и примените его либо отмените без создания файлов и определений. Новый язык включается только
+в выбранном канале. Внешняя правка делает предпросмотр устаревшим. После перезагрузки сборок
+нужно построить его заново из сохранённого ввода.
+
+Editor-скрипты используют `ProjectCsv.Export(config)` и `ProjectCsv.Preview(config, csv)`.
+При отмене вызовите Dispose у плана. `plan.Apply()` сохраняет отдельную транзакцию и возвращает
+`LocalizationProjectChange`. Для Unity Undo используйте
+`LocalizationProjectUndo.Record(plan.Apply(), "Import CSV")`; окно Tools делает это автоматически.
+Параметр `emptyCells: CsvEmptyCellPolicy.Clear` включает очистку. Заголовок без строк ничего не меняет;
+пустой ввод считается ошибкой. Импорт не сохраняет отдельные незавершённые правки редактора.
+
+Запись использует временные файлы и замену отдельных файлов. Перехваченная ошибка откатывает
+предыдущие записи, включая конфиг и новые источники. Дополнительные поля JSON сохраняются.
+После ошибки можно повторить применение, если причина устранима без изменения исходных данных
+предпросмотра. Это не журнал восстановления после падения процесса или отключения питания;
+при ошибке самого отката сообщение указывает сохранённые копии. Используйте Git или резервные копии.
 
 ### Таб Settings
 
-- Режим конвертации ключей (как обрабатываются пробелы при создании новых ключей)
-- Тогглы логирования
+- Автозапуск или явный bootstrap; определение языка устройства по желанию.
+- Каналы, режим Independent/FollowMain, доступные наборы и наборы для старта.
+- Регистрация точных источников; видимые стабильные ID без ручного редактирования.
 - **Game View / Simulator language dropdown → Show in Play Mode** — отображение меню выбора языка в режиме Play Mode. В Game View меню расположено поверх изображения игры, в Device Simulator — в **Control Panel → Simply Localize**. Выбор языка доступен после инициализации локализации.
 - **Game View position** — положение меню Game View: слева, по центру или справа.
 
----
+### Таб Diagnostics
+
+Показывает каналы runtime, владельцев загрузок, общие источники и состояние
+загрузки/освобождения. Освобождение владения отделено от подтверждённого освобождения
+физической памяти: снимок провайдера не учитывает все внешние ссылки и не заменяет
+профилировщик памяти Unity.
 
 ## Runtime API
 
-### Статический фасад (самый простой способ)
+Статический класс читает данные основного канала Main. Перед первым чтением из игрового кода дождитесь инициализации. Компоненты интерфейса обновятся, когда данные загрузятся.
 
 ```csharp
 using SimplyLocalize;
+using System.Threading.Tasks;
 
-// Инициализация
-Localization.Initialize(config);                    // явный конфиг
-Localization.Initialize(config, "ru");              // явный язык
-Localization.Initialize();                          // авто-поиск в Resources
-Localization.SetLanguageAuto();                     // подобрать под язык устройства
-
-// Текст
-string s1 = Localization.Get("UI/Welcome");
-string s2 = Localization.Get("UI/Score", 100);
-string s3 = Localization.Get("UI/Stats",
-    new object[] { 10, 20 },
-    new Dictionary<string, object> { { "playerName", "Alex" } });
-
-// Ассеты (generic, работает для ЛЮБОГО UnityEngine.Object)
-Sprite flag = Localization.GetAsset<Sprite>("flags/current");
-AudioClip voice = Localization.GetAsset<AudioClip>("voice/intro");
-Material mat = Localization.GetAsset<Material>("fx/hit");
-AnimationClip anim = Localization.GetAsset<AnimationClip>("anim/idle");
-
-// Переключение языка
-Localization.SetLanguage("ru");
-Localization.SetLanguage(russianProfile);
-
-// Запросы
-bool exists = Localization.HasKey("UI/Welcome");
-bool hasRu = Localization.HasTranslation("UI/Welcome", "ru");
-string current = Localization.CurrentLanguage;
-LanguageProfile profile = Localization.CurrentProfile;
-
-// События
-Localization.OnLanguageChanged += OnLangChanged;
-Localization.OnProfileChanged += OnProfileChanged;
-
-// Shutdown и перезагрузка
-Localization.Shutdown();
-Localization.Reload();
+public static class LanguageMenu
+{
+    public static async Task<string> SelectAsync(string language)
+    {
+        await Localization.InitializeAsync();
+        await Localization.SetLanguageAsync(language);
+        return Localization.Get("Menu/Play");
+    }
+}
 ```
 
-### Instance API (для DI и тестов)
+Аудиоклип можно получить через `Localization.GetAsset<AudioClip>(key)`, перечитать источники через `Localization.ReloadAsync()`. `AvailableLanguages` возвращает коды языков. Для явного запуска назначьте `LocalizationProjectConfig` на Bootstrap. При использовании DI можно создать свой `LocalizationRuntime`, дождаться `InitializeAsync()` и вызвать `ReleaseAsync()` при завершении.
 
-См. [Dependency Injection](#dependency-injection).
-
----
+Чтобы переключить независимый канал, передайте его ID в `runtime.SwitchLanguageAsync(channelId, "en")`. При входе в главу сохраните результат `await runtime.AcquireSetAsync(channelId, setId)`. При выходе вызовите `await handle.ReleaseAsync()`. Если данные нужны ещё одному владельцу, он продолжит ими пользоваться.
 
 ## Компоненты
 
@@ -352,14 +209,7 @@ Localization.Reload();
 
 Локализует TextMeshPro или legacy `Text` компонент.
 
-1. Добавь `LocalizedText` на GameObject где есть text-компонент
-2. Выбери ключ из dropdown'а (поисковый popup со всеми доступными ключами)
-3. Готово — текст автоматически обновляется при смене языка
-
-```csharp
-// Опционально: смена ключа из кода
-GetComponent<LocalizedText>().Key = "UI/NewKey";
-```
+Выберите запись на компоненте, чтобы связать текст с каналом и набором.
 
 ### FormattableLocalizedText
 
@@ -403,9 +253,7 @@ text.ClearParams();
 
 ### LocalizedProfileOverride
 
-Переопределяет конкретные секции глобального `LanguageProfile` для отдельного компонента. Полезно когда, например, нужен один конкретный заголовок с увеличенным шрифтом для китайского, но без затрагивания остальных языков.
-
-Секции, которые можно переопределить независимо: **Font**, **Typography**, **Spacing**, **Layout**. У каждой свой per-language список плюс тоггл включения/выключения.
+Для каждой записи на компоненте выберите код языка. Шрифт, типографика, интервалы и расположение можно переопределить для одного объекта. Общие настройки языка задаются во вкладке **Appearance**.
 
 ### Интеграция со Spine
 
@@ -425,36 +273,6 @@ dependencies пакета.
 `SkeletonDataAsset`, материалы атласа и исходные текстуры. Если локализованный ассет отсутствует,
 остаётся оригинальный контент. Полный workflow и правила для многостраничных атласов описаны в
 [`Integrations/Spine/README.md`](src/SimplyLocalize/Integrations/Spine/README.md).
-
-### Свой локализованный компонент
-
-Если нужно локализовать свой тип ассета — наследуйся от `LocalizedAsset<T>`:
-
-```csharp
-using SimplyLocalize;
-using SimplyLocalize.Components;
-using UnityEngine;
-
-[DisallowMultipleComponent]
-public class LocalizedMaterial : LocalizedAsset<Material>
-{
-    [SerializeField] private Renderer _target;
-
-    protected override void ApplyAsset(Material asset)
-    {
-        if (_target != null) _target.material = asset;
-    }
-
-    protected override Material ReadCurrentAsset()
-    {
-        return _target != null ? _target.material : null;
-    }
-}
-```
-
-И всё — базовый класс сам подписывается на событие смены языка, делает первоначальную загрузку и переприменяет ассет при переключениях. Селектор ключа в инспекторе автоматически отфильтрует только ключи с типом `Material` в твоих таблицах.
-
----
 
 ## Плюрализация и параметры
 
@@ -482,7 +300,7 @@ Localization.Get("Greeting",
 
 ### Плюрализация
 
-Синтаксис `{N|форма1|форма2|...}` выбирает форму на основе значения параметра `N`, используя правило плюрализации текущего языка.
+Синтаксис `{N|форма1|форма2|...}` выбирает форму на основе значения параметра `N` по правилу языка найденного перевода, в том числе при fallback.
 
 ```json
 "Items": "{0} {0|item|items}",
@@ -499,149 +317,44 @@ Localization.Get("ItemsRu", 3); // "3 предмета"
 Localization.Get("ItemsRu", 5); // "5 предметов"
 ```
 
-### Поддерживаемые семейства плюрализации
+### Plural-правила и совместимость
 
-| Семейство   | Языки                                              | Форм |
-|-------------|----------------------------------------------------|------|
-| Германские  | Английский, немецкий, голландский, шведский, датский | 2  |
-| Романские   | Французский, испанский, итальянский, португальский | 2    |
-| Славянские  | Русский, украинский, польский, чешский, сербский   | 3    |
-| Восточноазиатские | Японский, китайский, корейский, тайский, вьетнамский | 1 |
-| Арабский    | Арабский                                           | 6    |
+Для обычных чисел используются количественные правила [Unicode CLDR 48](https://www.unicode.org/cldr/charts/48/supplemental/language_plural_rules.html). В таблице указан **порядок позиций в шаблонах пакета**, а не порядок категорий CLDR. Прежние позиции сохраняются; дополнительные категории добавляются в конец.
 
-Правило выбирается автоматически из `LanguageProfile.systemLanguage`. Можно переопределить через свою реализацию `IPluralRule` и регистрацию через `PluralRuleProvider`.
+| Коды языков | Формы по порядку в шаблоне |
+|---|---|
+| `en de nl sv fy fi et gl` | one, other |
+| `af fo no nb nn ka tr hu` | one, other (включая дробную запись 1.0) |
+| `da is` | one, other, с собственными правилами для дробей |
+| `fr pt pt-BR` | one, other, **many** |
+| `es it ca pt-PT` | one, other, **many** (разные условия для one) |
+| `ru uk be pl` | one, few, many, **other** |
+| `hr sr bs` | one, few, other |
+| `cs sk` | one, few, other, **many** |
+| `sl` | one, few, other, **two** |
+| `ro` | one, other, **few** |
+| `ja zh ko vi th id ms my lo km` | other |
+| `ar` | zero, one, two, few, many, other |
 
----
+Если форм недостаточно, используется последняя доступная. Например, французский `{0|pièce|pièces}` остаётся рабочим; форму many можно дописать третьей. Исправленные правила намеренно меняют ошибочный выбор, например для польского 21 и испанского 0. Для окситанского (`oc`) сохранено прежнее правило с двумя формами; неизвестные коды используют английское правило.
 
-## Профили языков и шрифты
+Правило определяется по коду языка найденного перевода, включая региональные варианты вроде `pt-PT`. Собственные правила `IPluralRule` можно зарегистрировать в `LocalizationPluralRules` и передать в форматтер своего runtime.
 
-`LanguageProfile` хранит **всё про один язык**:
+Встроенные правила принимают стандартные целочисленные типы и дроби без переполнения Int32. Чтобы сохранить число знаков после запятой, передавайте `decimal` или числовую строку с точкой: для `1m` и `1.0m` правила могут отличаться. Float/double используют точную обратимую десятичную запись. Отсутствующие, нечисловые, бесконечные значения, NaN и числа за пределами Decimal используют прежнее значение по умолчанию — ноль. Старые реализации `IPluralRule.Evaluate(int)` работают без изменений: дроби усекаются, большие значения ограничиваются диапазоном Int32. Для полного поддерживаемого диапазона есть дополнительный интерфейс `IDecimalPluralRule`. Правила порядковых чисел, диапазонов и сокращённой записи с показателем степени не поддерживаются.
 
-- **Identity** — `languageCode`, `displayName`, `systemLanguage`
-- **Font** — основной TMP-шрифт, TMP fallback-шрифт, legacy UI Text шрифт
-- **Typography** — множитель размера, толщина, стиль
-- **Spacing** — корректировки межстрочного / межсимвольного / межсловного интервала
-- **Layout** — направление текста (LTR/RTL), переопределение выравнивания
-- **Fallback** — ссылка на другой `LanguageProfile` как per-language fallback
+### Явный выбор формы и обработка шаблонов
 
-У каждой секции есть **тоггл override**. Секции с выключенным тогглом не трогают исходные значения компонента — так что можно сделать китайский профиль, который только меняет шрифт, не трогая spacing или размер.
-
-`ProfileApplier` автоматически кеширует исходные значения компонента (font, size, material, spacing, alignment, RTL flag) при первом обращении и восстанавливает их когда переключаешься на профиль, который не переопределяет соответствующую секцию.
-
----
-
-## Цепочки fallback'ов
-
-Каждый язык может указать на другой язык как на свой **per-language fallback** через поле `fallbackProfile`. Система проходит по этой цепочке прежде чем упасть на глобальный `LocalizationConfig.fallbackLanguage`.
-
-Пример цепочки: украинский → русский → английский (глобальный)
-
-```
-LanguageProfile_uk.fallbackProfile = LanguageProfile_ru
-LanguageProfile_ru.fallbackProfile = null
-LocalizationConfig.fallbackLanguage = LanguageProfile_en
-```
-
-Когда ищем ключ в украинском:
-1. Смотрим данные `uk` → не найдено
-2. Идём в `ru` (per-language fallback) → не найдено
-3. Идём в `en` (глобальный fallback) → найдено! Используем.
-4. Если всё ещё нет — возвращаем сам ключ как есть
-
-Защита от циклов через `HashSet<string>` посещённых кодов.
-
----
-
-## Локализованные ассеты
-
-### Концепция
-
-У каждого языка есть один ScriptableObject **`LocalizationAssetTable`** в `Resources/Localization/{lang}/AssetTable.asset`. Таблица — это словарь `key → Object`, тип ассета хранится per-entry а не per-table — то есть одна таблица может содержать спрайты, аудио и кастомные типы вперемешку.
-
-В runtime `LocalizationManager` загружает **только таблицы текущего языка** (плюс таблицы из fallback-цепочки когда нужно) — экономя память.
-
-### Использование
+Обычные числовые параметры сохраняют plural-семантику. Для выбора по индексу передайте `FormSelector`, оставив текст шаблона прежним:
 
 ```csharp
-// Работает для ЛЮБОГО наследника UnityEngine.Object
-Sprite sprite = Localization.GetAsset<Sprite>("ui/flag");
-AudioClip clip = Localization.GetAsset<AudioClip>("voice/intro");
-Mesh mesh = Localization.GetAsset<Mesh>("models/character");
-Material material = Localization.GetAsset<Material>("fx/explosion");
-MyCustomSO config = Localization.GetAsset<MyCustomSO>("configs/region");
+using SimplyLocalize.TextProcessing;
+// Перевод: "{gender|Он|Она} играет за {0|воина|мага|разбойника}"
+Localization.Get("Character", new object[] { new FormSelector(2) },
+    new Dictionary<string, object> { ["gender"] = new FormSelector(1) });
+// "Она играет за разбойника", независимо от языка
 ```
 
-### Редактирование
-
-Используй таб **Assets** в окне локализации. Перетаскивай ассеты в ячейки, фильтруй по типам, смотри inline-превью.
-
----
-
-## Dependency Injection
-
-Если ты предпочитаешь DI вместо статического фасада `Localization`, можно создавать и инжектить `LocalizationManager` напрямую. Все члены публичные.
-
-### Пример с VContainer
-
-```csharp
-using VContainer;
-using VContainer.Unity;
-using SimplyLocalize;
-
-public class GameLifetimeScope : LifetimeScope
-{
-    [SerializeField] private LocalizationConfig _config;
-
-    protected override void Configure(IContainerBuilder builder)
-    {
-        // Регистрируем как singleton
-        builder.Register<LocalizationManager>(Lifetime.Singleton)
-            .WithParameter(_config)
-            .AsSelf();
-
-        // Потребители инжектят LocalizationManager напрямую
-        builder.Register<MainMenuController>(Lifetime.Singleton);
-    }
-}
-
-public class MainMenuController
-{
-    private readonly LocalizationManager _loc;
-
-    public MainMenuController(LocalizationManager loc)
-    {
-        _loc = loc;
-        _loc.SetLanguage("en");
-    }
-
-    public string GetTitle() => _loc.Get("UI/MainMenu/Title");
-}
-```
-
-### Пример с Zenject
-
-```csharp
-public class GameInstaller : MonoInstaller
-{
-    [SerializeField] private LocalizationConfig _config;
-
-    public override void InstallBindings()
-    {
-        Container.Bind<LocalizationManager>()
-            .AsSingle()
-            .WithArguments(_config);
-    }
-}
-```
-
-### Известное ограничение
-
-Встроенные компоненты (`LocalizedText`, `LocalizedSprite` и т.д.) сейчас используют статический фасад `Localization` внутри. Если ты хочешь полностью работать через DI, есть два варианта:
-
-1. **Параллельно инициализировать статический фасад** — вызови `Localization.Initialize(config)` один раз при старте. Встроенные компоненты будут использовать его, а твой DI-инжектированный `LocalizationManager` может сосуществовать рядом. Оба разделяют один и тот же конфиг.
-2. **Писать свои компоненты** — наследуйся от `LocalizedAsset<T>` или пиши свой `MonoBehaviour` который получает `LocalizationManager` через method injection. Хуки базового класса публичные.
-
----
+Индексы начинаются с нуля; выход за границы выбирает первую или последнюю форму. Экранирование `{{` и `}}` работает во всех перегрузках `Get`, в том числе внутри текста форм. Для совместимости три закрывающие скобки сначала завершают токен, затем добавляют литеральную `}`: `{0|one|other}}}` при значении 1 даёт `one}`. Не найденные простые параметры сохраняют исходное написание. Повреждённые и вложенные конструкции остаются текстом: рекурсивные выражения, выравнивание и спецификаторы `string.Format` не входят в этот синтаксис. Значения параметров не разбираются повторно как шаблоны.
 
 ## Расширяемость
 
@@ -727,24 +440,9 @@ public class GlossaryTab : IEditorTab
 
 Таб появится в баре табов автоматически, отсортированным по `order`. Регистрация не нужна.
 
-### Свои Data Providers
+### Свой источник данных
 
-Замени `ResourcesDataProvider` своей реализацией `ILocalizationDataProvider` — например, для загрузки переводов из Addressables, удалённого сервера или встроенной БД.
-
-```csharp
-public class MyDataProvider : ILocalizationDataProvider
-{
-    public Dictionary<string, string> LoadTextData(string languageCode) { ... }
-    public bool HasTextData(string languageCode) { ... }
-    public List<LocalizationAssetTable> LoadAssetTables(string languageCode) { ... }
-}
-
-// При старте
-Localization.Initialize(config);
-Localization.SetDataProvider(new MyDataProvider());
-```
-
----
+Реализуйте `ILocalizationSourceProvider` в проекте игры, зарегистрируйте его под своим ID в `LocalizationSourceRegistry` и передайте реестр в `Localization.InitializeAsync(config, providers: registry)`. Каждая успешная загрузка возвращает `LocalizationSourceLease` с действием для освобождения данных. Для встроенного Resources дополнительный код не требуется. Обязательных зависимостей от Addressables и AssetBundle нет. Игра, которая хранит переводы в Addressables, может подключить свой провайдер.
 
 ## Атрибуты
 
@@ -777,30 +475,33 @@ public string key;
 
 ---
 
-## Миграция с v1
+## Обновление с 2.0.2
 
-Если обновляешься с более ранней версии Simply Localize, изменилось следующее:
+**В 2.1.0 есть несовместимые изменения.** Перед обновлением сохраните копию проекта и выпишите настройки профилей, языков, fallback и пути к источникам. Если игровые скрипты используют удалённые типы, сначала исправьте ошибки компиляции, чтобы открылось окно редактора.
 
-| v1 | v2 |
-|----|----|
-| Один `localization.json` со всеми языками | Папка на язык, несколько JSON-файлов |
-| `LocalizationText` | `LocalizedText` |
-| `FormattableLocalizationText` | `FormattableLocalizedText` |
-| `LocalizationImage` | `LocalizedSprite` |
-| `Localization.SetLocalization("ru")` | `Localization.SetLanguage("ru")` |
-| `text.TranslateByKey("key")` | Задаётся в Inspector или через `component.Key = "key"` |
-| `text.SetValue(param)` | `component.SetArgs(param)` / `SetParam(name, value)` на `FormattableLocalizedText` |
-| `Localization.GetSprite(key)` | `Localization.GetAsset<Sprite>(key)` |
-| `Localization.GetAudio(key)` | `Localization.GetAsset<AudioClip>(key)` |
-| Per-language флаги `hasText` / `hasSprites` | Автоматически — сканируется из реальных таблиц |
+- Создайте конфиг в Setup и подключите старые JSON и таблицы ассетов. Уникальные строковые ключи в Main можно оставить. При переносе записи в другой канал явно выберите её на компоненте.
+- В каждом явно используемом `LocalizationBootstrap` назначьте новый конфиг и язык. Общие настройки шрифтов перенесите в Appearance. В старых записях `LocalizedProfileOverride` и `LocalizedEvent` заново выберите язык.
+- Замените `Localization.SetLanguage("ru")` на `await Localization.SetLanguageAsync("ru")`. Свои провайдеры перенесите на реестр источников. Если в старом CSV есть колонка `File`, экспортируйте новый шаблон.
 
-Миграция не автоматическая. Нужно:
-1. Реорганизовать JSON-данные в per-language папки
-2. Заменить старые ссылки на компоненты в сценах/префабах
-3. Заменить `SetLocalization` → `SetLanguage` в коде
-4. Заменить `GetSprite` / `GetAudio` на `GetAsset<T>`
+[Пошаговый переход](docs/channel-architecture/UPGRADE.md) · [Примеры каналов и наборов](docs/channel-architecture/WINDOW_GUIDE.md)
 
----
+[Окно прежней версии (GIF)](docs/images/editor-overview.gif)
+
+## Настройка из кода Editor и автоматизация
+
+```csharp
+var result = SimplyLocalize.Editor.LocalizationProjectAuthoring.Configure(
+    new[] { "en", "ru" }, "en", "en");
+// result.Config; result.Change при обновлении существующего стартового конфига
+```
+
+Метод доступен в Editor без диалогов. Configure явно работает с фиксированным стартовым путём. Повторный вызов сохраняет ID, существующие названия, флаги запуска и файлы переводов; переданные default/fallback применяются к Main. Чтобы использовать конфиг из другого места, вызови `LocalizationProjectAuthoring.UseForAutomaticStartup(config)`. `LocalizationProjectAuthoring.AddLanguage(config, "pl")` добавляет язык без смены default; независимые каналы настраиваются явно. JSON можно редактировать вне Unity, затем обновить снимок редактора. Ручные правки конфига сначала нужно сохранить. Конфликт или неверный ввод вызывают исключение без частичной настройки. Проверка перед сборкой валидирует адрес, тип и настройки стартового конфига; она не запускает провайдеры и не требует стартового конфига при явном bootstrap.
+
+```text
+Unity -batchmode -quit -projectPath <project>
+  -executeMethod SimplyLocalize.Editor.LocalizationProjectAuthoring.ConfigureFromCommandLine
+  -slLanguages en,ru -slDefault en -slFallback en
+```
 
 ## Лицензия
 

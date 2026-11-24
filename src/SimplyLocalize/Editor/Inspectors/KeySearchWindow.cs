@@ -22,9 +22,10 @@ namespace SimplyLocalize.Editor.Inspectors
 
         public void Init(List<string> keys, Action<string> onSelectEntry, string pendingNewKey = null)
         {
-            _keys = keys;
+            _keys = keys ?? new List<string>();
             _onSelectEntry = onSelectEntry;
             _pendingNewKey = pendingNewKey;
+            hideFlags = HideFlags.HideAndDontSave;
         }
 
         public List<SearchTreeEntry> CreateSearchTree(SearchWindowContext context)
@@ -47,7 +48,7 @@ namespace SimplyLocalize.Editor.Inspectors
                 tree.Add(new SearchTreeEntry(new GUIContent(AddNewPrefix + _pendingNewKey))
                 {
                     level = 1,
-                    userData = AddNewPrefix + _pendingNewKey
+                    userData = new NewKey { Value = _pendingNewKey }
                 });
             }
 
@@ -57,7 +58,7 @@ namespace SimplyLocalize.Editor.Inspectors
             // Build a tree structure, then flatten with correct ordering
             var root = new TreeNode("", false);
 
-            foreach (var key in _keys)
+            foreach (var key in _keys.Where(k => !string.IsNullOrEmpty(k)).Distinct(StringComparer.Ordinal))
             {
                 var parts = key.Split('/');
                 var current = root;
@@ -76,7 +77,7 @@ namespace SimplyLocalize.Editor.Inspectors
                 // Leaf node — the actual key
                 string leafName = parts[^1];
                 var leaf = new TreeNode(leafName, true) { FullKey = key };
-                current.Children[key] = leaf; // use full key to avoid name collisions
+                current.Leaves.Add(leaf); // A key can also be a folder prefix: menu and menu/play.
             }
 
             // Flatten tree into search entries
@@ -93,8 +94,7 @@ namespace SimplyLocalize.Editor.Inspectors
                 .OrderBy(c => c.Name)
                 .ToList();
 
-            var leaves = node.Children.Values
-                .Where(c => c.IsLeaf)
+            var leaves = node.Leaves
                 .OrderBy(c => c.Name)
                 .ToList();
 
@@ -122,18 +122,17 @@ namespace SimplyLocalize.Editor.Inspectors
 
         public bool OnSelectEntry(SearchTreeEntry entry, SearchWindowContext context)
         {
-            string selected = entry.userData as string;
-
-            if (selected != null && selected.StartsWith(AddNewPrefix))
+            if (entry.userData is NewKey added)
             {
-                string newKey = selected.Substring(AddNewPrefix.Length);
-                _onSelectEntry?.Invoke(newKey);
+                _onSelectEntry?.Invoke(added.Value);
                 return true;
             }
-
+            if (!(entry.userData is string selected)) return false;
             _onSelectEntry?.Invoke(selected);
             return true;
         }
+
+        private sealed class NewKey { internal string Value; }
 
         private class TreeNode
         {
@@ -141,6 +140,7 @@ namespace SimplyLocalize.Editor.Inspectors
             public bool IsLeaf;
             public string FullKey;
             public Dictionary<string, TreeNode> Children = new();
+            public List<TreeNode> Leaves = new();
 
             public TreeNode(string name, bool isLeaf)
             {
