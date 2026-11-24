@@ -442,7 +442,18 @@ The tab appears automatically in the window's tab bar, sorted by `order`. No reg
 
 ### Custom source providers
 
-Implement `ILocalizationSourceProvider` in the game, register it by ID in `LocalizationSourceRegistry` and pass the registry to `Localization.InitializeAsync(config, providers: registry)`. Each successful load supplies a `LocalizationSourceLease` with a release action. The built-in Resources provider works out of the box. The package has no required Addressables or AssetBundle dependency. A game that stores translations in Addressables can supply its own provider.
+Implement `ILocalizationSourceProvider` in the game, register it by ID in `LocalizationSourceRegistry` and pass the registry to `Localization.InitializeAsync(config, providers: registry)`. Each successful load supplies a `LocalizationSourceLease` with a release action. The built-in Resources provider works out of the box. The package has no required Addressables or AssetBundle dependency.
+
+### Chapter voice with Addressables (development branch)
+
+Install **Addressables** through Unity Package Manager, then open **Simply Localize**.
+
+1. In **Settings**, create an independent Voice channel with `en` and a Chapter 1 set. Include the set in Voice and turn off **Load at startup**. Keep subtitles in Main.
+2. In **Content sets → Chapter 1 → Connect a source**, select `en` and **Create Addressables table**. Save outside Resources. To reuse a table, select **Existing table → Connect with Addressables**.
+3. Select Voice and Chapter 1 at the top of the window. In **Assets**, add the voice key, assign the AudioClip and save. Select this entry on the **Localized Audio Clip** component next to the AudioSource.
+4. Under **Settings → Channels → Voice**, expand **Load while a scene object is active** for this set. Select the chapter root and click **Bind chapter object**. Enabling it loads the table and its clips. Disabling it releases that object's ownership.
+
+**Build Addressables content** builds the project's catalog and bundles for the active platform. For independent unloading, keep clips outside Resources and avoid direct scene references to them. New tables use separate bundles by default. Existing Addressables entries keep their original group.
 
 ## Attribute Reference
 

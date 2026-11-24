@@ -442,7 +442,18 @@ public class GlossaryTab : IEditorTab
 
 ### Свой источник данных
 
-Реализуйте `ILocalizationSourceProvider` в проекте игры, зарегистрируйте его под своим ID в `LocalizationSourceRegistry` и передайте реестр в `Localization.InitializeAsync(config, providers: registry)`. Каждая успешная загрузка возвращает `LocalizationSourceLease` с действием для освобождения данных. Для встроенного Resources дополнительный код не требуется. Обязательных зависимостей от Addressables и AssetBundle нет. Игра, которая хранит переводы в Addressables, может подключить свой провайдер.
+Реализуйте `ILocalizationSourceProvider` в проекте игры, зарегистрируйте его под своим ID в `LocalizationSourceRegistry` и передайте реестр в `Localization.InitializeAsync(config, providers: registry)`. Каждая успешная загрузка возвращает `LocalizationSourceLease` с действием для освобождения данных. Для встроенного Resources дополнительный код не требуется. Обязательных зависимостей от Addressables и AssetBundle нет.
+
+### Озвучка главы через Addressables (ветка разработки)
+
+Установите **Addressables** через Unity Package Manager. В окне **Simply Localize**:
+
+1. В **Settings** создайте независимый канал Voice с языком `en` и набор Chapter 1. Подключите набор к Voice, снимите **Load at startup**. Субтитры оставьте в Main.
+2. В **Content sets → Chapter 1 → Connect a source** выберите `en` и **Create Addressables table**. Сохраните таблицу вне Resources. Для готовой таблицы используйте **Existing table → Connect with Addressables**.
+3. Выберите Voice и Chapter 1 в верхней части окна. Во вкладке **Assets** добавьте ключ реплики, назначьте AudioClip и сохраните. Укажите ту же запись на компоненте **Localized Audio Clip** рядом с AudioSource.
+4. В **Settings → Channels → Voice** у набора раскройте **Load while a scene object is active**, перетащите корневой объект главы и нажмите **Bind chapter object**. При активации объекта загрузится таблица главы с клипами. При выключении объекта его ссылка освободится. Повторный вход снова загрузит данные.
+
+Команда **Build Addressables content** собирает каталог и бандлы проекта для активной платформы. Для независимой выгрузки глав храните клипы вне Resources и избегайте прямых ссылок на них из сцен. Новые таблицы по умолчанию упаковываются отдельно. Уже подключённые Addressables-таблицы сохраняют свою группу.
 
 ## Атрибуты
 

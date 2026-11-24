@@ -11,27 +11,27 @@ namespace SimplyLocalize.Editor.Data
     public sealed partial class LocalizationProjectAssetEdit
     {
         private readonly Dictionary<string, string> entryRoutes = new(StringComparer.Ordinal);
-        private readonly Dictionary<string, (LocalizationSourceReference source, string path)> sourcePaths = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, (LocalizationSourceReference source, string path)> sourcePaths = new(StringComparer.Ordinal);
         private ResourcesEditorTextReader sourceIndex;
 
-        /// <summary>Opens an exact native Resources source and tracks its address for Commit validation.</summary>
+        /// <summary>Opens a writable native source and revalidates its address before commit.</summary>
         public T EditSource<T>(LocalizationSourceReference source) where T : ScriptableObject
         {
             EnsureOpen(); if (source == null) throw new ArgumentNullException(nameof(source));
-            if (source.ProviderId != "resources") throw new NotSupportedException("Provider '" + source.ProviderId + "' needs its own Editor writer.");
+            bool resources = source.ProviderId == LocalizationSourceReference.ResourcesProvider;
             Type expected = source.Kind == LocalizationSourceKind.AssetTable ? typeof(LocalizationAssetTable)
                 : source.Kind == LocalizationSourceKind.Appearance ? typeof(LocalizationAppearance)
                 : throw new ArgumentException("Expected an asset table or appearance source.", nameof(source));
-            var pending = assets.Values.SingleOrDefault(a => a.Bytes == null && string.Equals(ResourcesEditorTextReader.ResourceAddress(a.Path), source.Address, StringComparison.OrdinalIgnoreCase));
+            var pending = resources ? assets.Values.SingleOrDefault(a => a.Bytes == null && string.Equals(ResourcesEditorTextReader.ResourceAddress(a.Path), source.Address, StringComparison.OrdinalIgnoreCase)) : null;
             ScriptableObject draft; string path;
             if (pending != null) { draft = pending.Draft; path = pending.Path; }
             else
             {
-                path = (sourceIndex ??= new ResourcesEditorTextReader()).ResolveSourceAssetPath(source);
+                path = resources ? (sourceIndex ??= new ResourcesEditorTextReader()).ResolveSourceAssetPath(source) : LocalizationEditorReaders.ResolveWritableTable(source);
                 draft = Edit(AssetDatabase.LoadAssetAtPath<ScriptableObject>(path));
             }
             if (!expected.IsInstanceOfType(draft) || !(draft is T typed)) throw new ArgumentException("Source asset type does not match the requested type.", nameof(source));
-            sourcePaths[source.Kind + ":" + source.Address] = (source, path); return typed;
+            sourcePaths[source.ProviderId + ":" + source.Kind + ":" + source.Address] = (source, path); return typed;
         }
         public void SetAsset(string entryId, string language, Object value, string destinationAddress = null)
         {
@@ -117,13 +117,17 @@ namespace SimplyLocalize.Editor.Data
                 if (tables.Length == 1) return tables[0];
                 throw new InvalidOperationException("Choose an explicit asset source for '" + key + "'; register one if none exists.");
             }
-            var target = tables.SingleOrDefault(t => string.Equals(Address(t), address, StringComparison.OrdinalIgnoreCase));
+            var target = tables.SingleOrDefault(t => SourcesFor(t).Any(s => SameAddress(s, address)));
             if (target == null) throw new ArgumentException("Destination is not connected for this set/language.", nameof(address));
             if (present != null && present != target) throw new InvalidOperationException("Key already belongs to another asset source."); return target;
         }
-        private string Address(LocalizationAssetTable table) => ResourcesEditorTextReader.ResourceAddress(assets.Values.Single(a => a.Draft == table).Path);
-        private bool Uses(LocalizationContentSet set, LocalizationAssetTable table) => set.Sources.SelectMany(s => s.Sources).Any(s => s.ProviderId == "resources"
-            && s.Kind == LocalizationSourceKind.AssetTable && string.Equals(s.Address, Address(table), StringComparison.OrdinalIgnoreCase));
+        private IEnumerable<LocalizationSourceReference> SourcesFor(LocalizationAssetTable table) =>
+            sourcePaths.Values.Where(p => assets[p.path].Draft == table).Select(p => p.source);
+        private static bool SameAddress(LocalizationSourceReference source, string address) =>
+            string.Equals(source.Address, address, source.ProviderId == "resources" ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+        private bool Uses(LocalizationContentSet set, LocalizationAssetTable table) =>
+            set.Sources.SelectMany(s => s.Sources).Any(s => s.Kind == LocalizationSourceKind.AssetTable &&
+                SourcesFor(table).Any(actual => actual.ProviderId == s.ProviderId && SameAddress(actual, s.Address)));
         private bool OtherEntryUses(LocalizationAssetTable table, string key, string excluded) => Draft.Sets.Any(s => s.Entries.Any(e => e.Kind == LocalizationEntryKind.Asset && e.Key == key && e.Id != excluded) && Uses(s, table));
         private void TrackRoutes(LocalizationContentSet set)
         {
@@ -140,7 +144,7 @@ namespace SimplyLocalize.Editor.Data
             }
             var index = sourcePaths.Count == 0 ? null : new ResourcesEditorTextReader();
             foreach (var source in sourcePaths.Values)
-                if (assets[source.path].Bytes != null && index.ResolveSourceAssetPath(source.source) != source.path)
+                if (assets[source.path].Bytes != null && (source.source.ProviderId == "resources" ? index.ResolveSourceAssetPath(source.source) : LocalizationEditorReaders.ResolveWritableTable(source.source)) != source.path)
                     throw new InvalidOperationException("Source address changed. Reload before saving: " + source.source.Address);
         }
         private static string AssetRoutes(LocalizationContentSet set) => JsonConvert.SerializeObject(set.Sources.OrderBy(s => s.Language, StringComparer.Ordinal)

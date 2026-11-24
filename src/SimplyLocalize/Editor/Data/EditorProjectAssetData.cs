@@ -11,6 +11,11 @@ namespace SimplyLocalize.Editor.Data
     {
         LocalizationEditorAssetSource Read(LocalizationSourceReference source);
     }
+    /// <summary>Opt in to transactional editing of a native asset table at the resolved path.</summary>
+    public interface ILocalizationEditorTableWriter : ILocalizationEditorAssetReader
+    {
+        string ResolveTablePath(LocalizationSourceReference source);
+    }
     public sealed class LocalizationEditorAssetSource
     {
         public string AssetPath { get; }
@@ -109,6 +114,10 @@ namespace SimplyLocalize.Editor.Data
             if (source == null || source.Kind != LocalizationSourceKind.AssetTable) throw new ArgumentException("Expected an asset table source.", nameof(source));
             string path = index.ResolveSourceAssetPath(source); var table = AssetDatabase.LoadAssetAtPath<LocalizationAssetTable>(path);
             if (table == null) throw new InvalidOperationException("Cannot load asset table: " + path);
+            return ReadTable(path, table);
+        }
+        internal static LocalizationEditorAssetSource ReadTable(string path, LocalizationAssetTable table)
+        {
             var values = new Dictionary<string, Object>(StringComparer.Ordinal);
             foreach (var entry in table.Entries)
             {

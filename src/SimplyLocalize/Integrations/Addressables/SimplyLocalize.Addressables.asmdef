@@ -1,0 +1,20 @@
+{
+  "name": "SimplyLocalize.Addressables",
+  "references": [
+    "SimplyLocalize",
+    "Unity.Addressables",
+    "Unity.ResourceManager"
+  ],
+  "includePlatforms": [],
+  "defineConstraints": [
+    "SIMPLY_LOCALIZE_ADDRESSABLES"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.unity.addressables",
+      "expression": "1.21.0",
+      "define": "SIMPLY_LOCALIZE_ADDRESSABLES"
+    }
+  ],
+  "autoReferenced": true
+}

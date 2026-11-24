@@ -53,6 +53,12 @@ namespace SimplyLocalize.Editor.Data
             var reader = source.ProviderId == "resources" ? resourcesText ??= new ResourcesEditorTextReader() : Find(source).Text;
             return reader?.Read(source) ?? throw new InvalidOperationException("No Editor text reader/data for " + source.ProviderId);
         }
+        internal static string ResolveWritableTable(LocalizationSourceReference source)
+        {
+            if (source.Kind == LocalizationSourceKind.AssetTable && readers.TryGetValue(source.ProviderId, out var registration) && registration.Assets is ILocalizationEditorTableWriter writer)
+                return writer.ResolveTablePath(source);
+            throw new NotSupportedException("Provider '" + source.ProviderId + "' needs its own Editor writer.");
+        }
         public static LocalizationEditorAssetSource ReadAssets(LocalizationSourceReference source)
         {
             Require(source, LocalizationSourceKind.AssetTable);

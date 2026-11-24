@@ -34,8 +34,9 @@ namespace SimplyLocalize
         {
             Generation++; Shared.Clear(); Addresses.Clear(); RootAddresses.Clear(); LocalizationResourceDiagnostics.ResetSession();
         }
-        private void EnsureSession()
-        { if (generation != Generation) throw new OperationCanceledException("Localization context belongs to a previous play session."); }
+        private void EnsureSession() => EnsureSession(generation);
+        private static void EnsureSession(int session)
+        { if (session != Generation) throw new OperationCanceledException("Localization context belongs to a previous play session."); }
         private readonly bool owned;
         private bool released;
         private Exception loadFailure;
@@ -150,12 +151,15 @@ namespace SimplyLocalize
                 foreach (var dependency in dependencies.GetLocalizationDependencies() ?? Array.Empty<Object>()) Track(dependency, address, language);
         }
 
-        internal async Task PrepareAudioAsync(double timeoutSeconds, CancellationToken token)
+        internal Task PrepareAudioAsync(double timeoutSeconds, CancellationToken token) =>
+            PrepareAudioAsync(Audio, generation, timeoutSeconds, token);
+
+        internal static async Task PrepareAudioAsync(IEnumerable<AudioClip> clips, int generation, double timeoutSeconds, CancellationToken token)
         {
             var timer = System.Diagnostics.Stopwatch.StartNew();
-            foreach (var clip in Audio)
+            foreach (var clip in clips)
             {
-                EnsureSession(); token.ThrowIfCancellationRequested();
+                EnsureSession(generation); token.ThrowIfCancellationRequested();
                 if (clip.loadState == AudioDataLoadState.Unloaded && !clip.LoadAudioData())
                     throw new InvalidOperationException("Cannot load audio data: " + clip.name);
                 while (generation == Generation && clip != null && clip.loadState == AudioDataLoadState.Loading)
@@ -164,7 +168,7 @@ namespace SimplyLocalize
                     if (timer.Elapsed.TotalSeconds > timeoutSeconds) throw new TimeoutException("Timed out preparing localization audio.");
                     await Task.Yield();
                 }
-                EnsureSession(); token.ThrowIfCancellationRequested();
+                EnsureSession(generation); token.ThrowIfCancellationRequested();
                 if (clip == null || clip.loadState != AudioDataLoadState.Loaded)
                     throw new InvalidOperationException("Localization audio did not become ready: " + (clip != null ? clip.name : "destroyed clip"));
             }

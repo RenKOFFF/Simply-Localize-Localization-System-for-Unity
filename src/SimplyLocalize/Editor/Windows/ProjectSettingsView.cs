@@ -12,6 +12,7 @@ namespace SimplyLocalize.Editor.Windows
     /// <summary>Startup, channel and content routing authoring. All policy edits target definitions, never a running game.</summary>
     public sealed class ProjectSettingsView : ScrollView
     {
+        internal static event Action<VisualElement, LocalizationProjectConfig, string, Func<string>, Action<Action>> OptionalSourceControls;
         private readonly LocalizationProjectConfig config;
         private readonly Action changed;
         private readonly Action<string> editLanguages;
@@ -93,6 +94,7 @@ namespace SimplyLocalize.Editor.Windows
                     if (included) row.Add(Toggle("Load at startup", "startupSet_" + id + "_" + setId, channel.StartupSetIds.Contains(setId),
                         value => Save(d => Channel(d, id).SetStartup(setId, value), "Change content loading")));
                     fold.Add(row);
+                    if (included && !channel.StartupSetIds.Contains(setId)) AddChapterBinding(fold, id, setId);
                 }
                 if (id != config.MainChannelId) fold.Add(new Button(() => Save(d => d.RemoveChannel(id), "Remove channel"))
                     { text = "Remove channel", name = "removeChannel_" + id, tooltip = "Keeps content sets and source files." });
@@ -118,6 +120,30 @@ namespace SimplyLocalize.Editor.Windows
             var setName = new TextField("New set") { name = "newSetName" }; sets.Add(setName);
             sets.Add(new Button(() => Save(d => expandedSet = d.AddSet(setName.value).Id, "Add content set")) { text = "Add set", name = "addSet" }); Add(sets);
         }
+        private void AddChapterBinding(VisualElement parent, string channelId, string setId)
+        {
+            var controls = new Foldout { text = "Load while a scene object is active" };
+            var target = new ObjectField("Chapter object") { objectType = typeof(GameObject), allowSceneObjects = true };
+            controls.Add(target);
+            var bind = new Button(() => Run(() => BindChapter((GameObject)target.value, channelId, setId))) { text = "Bind chapter object" };
+            bind.SetEnabled(false);
+            target.RegisterValueChangedCallback(e => bind.SetEnabled(e.newValue is GameObject go && go.scene.IsValid() && !EditorApplication.isPlayingOrWillChangePlaymode));
+            controls.Add(bind);
+            parent.Add(controls);
+        }
+
+        public static void BindChapter(GameObject target, string channelId, string setId)
+        {
+            if (!target || !target.scene.IsValid() || EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Choose an object in an editable scene.");
+            if (target.GetComponents<Components.LocalizedContentSetScope>().Any(scope => scope.ChannelId == channelId && scope.SetId == setId)) return;
+            var component = Undo.AddComponent<Components.LocalizedContentSetScope>(target);
+            using var data = new SerializedObject(component);
+            data.FindProperty("_channelId").stringValue = channelId;
+            data.FindProperty("_setId").stringValue = setId;
+            data.ApplyModifiedProperties();
+        }
+
         private void AddSources(VisualElement parent, LocalizationContentSet set)
         {
             foreach (var binding in set.Sources)
@@ -157,7 +183,9 @@ namespace SimplyLocalize.Editor.Windows
                     Path.GetDirectoryName(AssetDatabase.GetAssetPath(config)).Replace('\\', '/'));
                 if (string.IsNullOrEmpty(path)) return;
                 Run(() => { using var edit = new LocalizationProjectEdit(config, set.Id); edit.CreateTextSource(set.Id, language.value, path); LocalizationProjectUndo.Record(edit.Commit(), "Create text source"); });
-            }) { text = "Create empty JSON", name = "createSource_" + set.Id }); parent.Add(add);
+            }) { text = "Create empty JSON", name = "createSource_" + set.Id });
+            OptionalSourceControls?.Invoke(add, config, set.Id, () => language.value, Run);
+            parent.Add(add);
         }
         private void Save(Action<LocalizationProjectConfig> mutation, string label) => Run(() =>
         { using var edit = new LocalizationProjectEdit(config); mutation(edit.Draft); LocalizationProjectUndo.Record(edit.Commit(), label); });

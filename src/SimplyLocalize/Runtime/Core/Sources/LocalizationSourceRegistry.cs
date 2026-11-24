@@ -12,8 +12,13 @@ namespace SimplyLocalize
         private readonly Dictionary<string, ILocalizationSourceProvider> providers = new(StringComparer.Ordinal);
         private readonly int thread = Environment.CurrentManagedThreadId;
         private readonly int session = LocalizationResourceLease.Generation;
+        internal static event Action<LocalizationSourceRegistry> InstallOptionalProviders;
         public LocalizationSourceRegistry(bool includeResources = true)
-        { if (includeResources) providers.Add(LocalizationSourceReference.ResourcesProvider, new ResourcesLocalizationSourceProvider()); }
+        {
+            if (!includeResources) return;
+            Register(LocalizationSourceReference.ResourcesProvider, new ResourcesLocalizationSourceProvider());
+            InstallOptionalProviders?.Invoke(this);
+        }
         public void Register(string id, ILocalizationSourceProvider provider)
         {
             EnsureUsable();
